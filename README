@@ -1,0 +1,321 @@
+Biobox provides a collection of data structures and methods for loading, manipulating and analyzing atomistic and pseudoatomistic structures.
+Automatically generated documentation on every function is available in "doc" folder.
+
+Biobox main features:
+- importing of PDB, PQR and GRO files, possibly containing multiple conformations (e.g. multi PDB, gro trajectory)
+- generation of coarse grain shapes composed of specific arrangements of pseudoatoms
+- loading and manipulation of density maps, including their transformation into a solid object upon isovalue definition
+- assemblies of any points arrangement can be produced (i.e. densities converted in solid and geometric shapes can be equally treated).
+- allowed operations on structures incude:
+  . rototranslation and alignment on principal axes
+  . on ensembles: RMSD, RMSF, PCA and clustering
+  . calculation of CCS, SAXS, SASA, convex hull, s2 (for molecules), mass and volume estimation
+  . atomselect for molecules and assemblies of molecules
+  . shortest physical paths between atoms on molecule using Theta* (or A*)
+  . density map simulation
+
+last update of this document: 27.12.2016
+
+
+#################################
+# INSTALLATION AND REQUIREMENTS #
+#################################
+
+Biobox requires Python2.7 and the following packages:
+- numpy
+- scipy
+- scikit-klearn
+- cython
+
+install with:
+python setup.py install
+
+Optional external software:
+- CCS calculation relies on a call to IMPACT
+- SAXS simulations rely on a call to crysol, from ATSAS suite
+
+
+###########
+# CREDITS #
+###########
+
+author: Matteo Degiacomi (matteo.degiacomi@chem.ox.ac.uk), University of Oxford
+
+other contributions:
+- Importing of MRC format maps extracted from CHIMERA source
+- Kabsch algorithm for RMSD calculation from Pymol source
+- A* implementation from www.redblobgames.com
+
+
+#######################
+# ONGOING DEVELOPMENT #
+#######################
+
+- for molecules, atomselect returning also properties slice
+- allow tangential displacement of subunits in polyhedral architectures (shift boxes of individual molecules along second and third principal axes)
+- improve convex Hull output (provide triangular faces, not only vertices)
+- fix guess_chain_split (flag "use backbone", default "True")
+- allow using Density class to load arbitrary 3D array (useful to exploit the thresholding and writer)
+
+
+#####################
+# KNOWN BUGS/ISSUES #
+#####################
+
+- polyhedra construction: scaffolding cubes can invert when small radii are used. This leads to invert the angles rotating the molecules.
+
+
+####################
+# MAIN UPDATES LOG #
+####################
+
+05.08.2016
+----------
+- in path class, alternative linking sites now feature concentric golden spheres (used to get a "soft sphere" effect)
+
+26.04.2016
+----------
+- fixed inconsistency between IMPACT called as library and binary. Accuracy increased (atomtype guessed, instead of using default CCS radius)
+
+05.04.2016
+----------
+- in Molecule class, added guess_atomtype method, exploiting a knowledge base to assign atomtypes when these are absent from imported file
+
+18.03.2016
+----------
+- patched application of symmetry operator from PDB in Molecule class (internally calling the same method as the biomatrix method).
+- added beta factor from RMSF and RMSF from beta factor methods in Molecule class
+- methods in Molecule class now raise exceptions (instead of printing an error and returning -1)
+
+17.03.2016
+----------
+- in Molecule, introduced get_subset method, extracting atoms and frames subset from a Molecule object
+- in Molecule, introduced get_vdw_density method, returning a molecule derived density using a atomic radii as knowledge base
+- now PQR files can also be loaded in Molecule class. As such, a new entry in the properties database ("charge") has been introduced.
+- in Molecule, introduced get_electrostatics method (experimental)
+- patched make_molecule class in Multimer (was not precalculating molecule center)
+
+10.03.2016
+----------
+- debugged and profiled Path and Graph classes. Removed expensive data structures (storage of coordinates of every single mesh point).
+  Now only a small amount of memory is needed for execution.
+
+02.03.2016
+----------
+- converted the whole Graph class in cython (path detection execution times down by ~%75), lazy theta star confirmed better than theta star
+- implemented surface area calculation method (Shrake-Rupley) and Bresenham algorithm in cython
+- rolled back from multiobjective to iterative path detection calculation. No major speedup achieved, with paths resulting slightly longer
+- cleaned path postprocessing (line-of-sight and smoothing) methods, lines are now straighter (and paths shorter)
+- patched a glitch in in Molecule class, concerning writing a pdb of only desired atom indices
+
+09.02.2016
+----------
+- introduced application of symmetry operations on a molecule loaded from a pdb file (SMTRY statements)
+
+19.11.2015
+----------
+- introduced multiobjective path detection for A*, theta* and lazy theta*, to be applied when modelling cross-linking with flexibile side-chains
+
+04.11.2015
+---------
+- introduced lazy theta * algorithm in path detection
+- Path detection heuristic switched from Euclidean to Manhattan distance (much faster)
+
+31.10.2015
+----------
+- improved path detection algorithm with density-based meshgrid points clearing (less memory intensive and more precise, though slower).
+
+23.10.2015
+----------
+- added write_dx method in Density class, allowing to output density files
+- introduced get_density in Structure class, allowing the creation of density maps out of point clouds
+
+20.08.2015
+----------
+- patched bug in Xlink using golden spheres (would crash if both spheres contain only one point).
+
+27.07.2015
+----------
+- call to DBSCAN clustering algorithm to clean electron density data from dust
+
+12.06.2015
+---------
+- BIOMAT statements in pdb files can be now used to generate complexes (according to provided molecular symmetry)
+
+14.05.2015
+----------
+- added s2 calculation to Molecule class
+- updated tools folder (added a heuristic distance clustering tool for atoms of interest in a protein, a surface atom detector, and a small README file)
+- added blurring method to Density class
+- added same_residue method in molecule class, allowing to select atoms having same chain and resid of an atom of choice.
+- upgraded Path search flexibility method. Now spheres only account for region in the same half sphere as the side chain in crystal (preserve chirality).
+
+26.04.2015
+----------
+- added possibility of using Impact as library (both windows and linux). No change for small protein, much faster for large ones and densities.
+- measurement unit for density map thresholding converted into the more commonly used sigma.
+- patched straightening algorithm in path detection (previously, it would not deal with chains having two points in the same spot).
+
+10.04.2015
+----------
+- fixed heuristic in path detection, now returned paths are shorter.
+- created Path subclass Xlink. Path is a generic Path detection algorithm, Xlink provides helper functions to deal with molecules.
+
+30.03.2015
+----------
+- merged two version of Path detection into a single code (global search with a unique grid, and local search with a movable smaller grid)
+- updated parsing of Impact calculation to its latest version (v.0.5), removed regexp calls and made it cross-platform.
+  Note: result now directly includes rescaling by power function, so no more rescaling by 1.14 is needed. CCS method allows to select raw PA output instead of rescaled one. 
+
+26.03.2015
+----------
+- cleaned density_MRC.py file (proper indentation, and removal of reserved keywords as variables).
+- Density.py upgraded. Now can store [threshold, volume, ccs] data. Further data can also be appended to the list in a second moment. Exception handling also improved.
+
+05.03.2015
+----------
+- in Cluster class, it is now possible to return a flattened version of the tree, with Cluster.tree.flatten_tree().
+
+24.02.2015
+----------
+- Path class: before measuring distance, targets solvent accessibility is ensured.
+- alternative version of Path class: much slower, but much less memory demanding.
+
+26.01.2015
+----------
+- implementated A* and theta* algorithm for path finding (Path class). Bendy deprecated.
+
+15.01.2015
+----------
+- cleanup: removed all tab-spacings from code, added more comments for doxygen documentation generation.
+- added dictionary type as accepted keyword type in Parser class.
+
+15.12.2014
+----------
+- added the possibility of deforming a polyhedron along desired axes. To do so, self.deformation database had been added in Polyhedron class.
+  Deformation database can be altered directly or (better) via the add_deformation method. Deformation axes are divided in classes, so scaling factors can be grouped.
+
+17.11.2014
+----------
+- Molecule class can now read and write PDB files containing hexadecimal notation (i.e. now ignores expected int type, treating index as a text)
+- distances between ensembles of points are now computed with the much faster scipy.spatial.distance.cdist method
+- improved SASA calculation speed. Additionally, the method now returns surface atoms IDs as well. An additional parameters allows to cancel false positives.
+
+09.11.2014
+----------
+- Detected issue in make_stacked_rings method for the creation of double disks (preserves chirality along plane symmetry axis).
+  Solved by creating a new method (assembly.make_prism), generating actual double double disks.
+
+24.10.2014
+----------
+- added method Molecule.get_network(idx,cutoff), to compute neighborhood distance of within an ensemble of points, within a certain cutoff.
+  Can be used to detect disulfide bridges, or predict possible cross links (see tools/network_measure.py).
+- expanded Molecule.atomselect method, a flag now controls the possibility of searching by resname instead of resid.
+- patched format of gro file output in molecule class, according to gromacs manual definition
+- structure.get_surface() method can now be run on a points subset feeding indices of interest via a keyword
+- first version of a method computing individual aminoacids SASA using structure.get_surface(). Not yet integrated, current test version in tools/get_exposed.py
+
+13.8.2014
+---------
+- fully disconnected polyhedron assembly procedure from functions imported from old polymake.
+  NOTE: since now edges kinds are available, and polyhedra are build from a unit scaffold, non-plato polyhedra are no more special cases.
+
+29.7.2014
+---------
+- added a rudimentary Parser class as a helper to import read text files
+- added possibility of appending an alternate conformation to an Assembly instance
+
+1.7.2014
+--------
+- Spheres can now be squeezed (keeping their volume constant). Partially superseedes the Ellipsoid class (may be soon deprecated).
+- Sphere class now features the check_inclusion method as well.
+
+11.6.2014
+---------
+- created interaction class, to compute quantities between two ensembles of points.
+
+11.5.2014
+---------
+- Superseeded existing clustering algorithm with a new, different one, and redid the GUI. Algorithm is much faster and does not return wrong results anymore.
+  In this implementation, clustering is completely disconnected from the kind of structure feeding data, i.e. can be even used independently from Biobox.
+- filename is now stored in molecule class, when loading a pdb
+- created a tools folder, that will contain specific applications of Biobox
+- added cluster_maker.py into tools folder. Runs the clustering algorithm on an ensemble of pdbs stored in a folder
+  (given that pdb represent alternative coordinates of the same struture, i.e. have identical number of atoms).
+
+7.5.2014
+--------
+- added GUI to dendrogram clustering. Note that GUI was already available in original dendrogram clustering implementation, written in collaboration with Giorgio Tamo (giorgio.tamo@epfl.ch).
+  Here, a major refactoring with a switch to matplotlib has been performed.
+
+1.5.2014
+---------
+- added generation of RMSD-based distance matrix for Structures and Polyhedra
+- integration of dendrogram-like clustering algorithm (cluster.py). Can cluster on a tree any dataset, provided a distance matrix.
+  Useful for error estimation on a single solution, when a full scan is provided.
+
+5.4.2014
+---------
+- added Assembly.append method, allowing the addition of a new Structure in an existing assembly
+- added Bendy_self.get_best_measure method, allowing to find the shortest chain in an ensemble of combinations
+- added Bendy_self.get_chains_as_molecule, returning all detected chains in a Molecule structure
+- added Bendy_self.get_all_as_molecule, returning all detected chains and the starting protein in a new Molecule structure
+- patched Molecule.atomselect method to better support '*' wildcards
+- modified bendy_self, now calls pseudoatoms for chains with specific name (SPH, atomtype Z)
+- added methods to transform an Assembly into a Structure and Multimer and Molecule
+- added Polyhedon.get_neighbors method, allowing to retrieve neighborhood information (get chains in contact via a vertex)
+- inserted benchmark performing an automatic complete wire up of an octahedron in test/complete_test.py.
+  method seems fast and stable, but more tests are needed.
+
+22.3.2014
+---------
+- fixed the align_axes method to align a Structure on its principal axes.
+- added Structure.get_principal_axes method, to compute a Structure's principal axes.
+- added Structure.rotation_matrix method, to generate rotation matrices around an arbitrary axis
+- in polymake, structures used as building blocks are now automatically centered and aligned on their principal axes
+
+20.3.2014
+---------
+- implemented RMSF calculation in Structure class.
+- cleaned polycalc_core and _cuboid_adjust methods in Polyhedron class.
+  removed useless vbox (was needed only for returning the box shape), vrect_outer and vrecty_outer variables (not needed)
+- created first instance of a script running a full benchmark of main functions (test/complete_test.py)
+- added possibilty of calling crysol (ATSAS library) for SAXS simulation on Structures and Assemblies
+- fixed surface and volume calculations in cone and cylinder, and rototranslations of Structures having multiple conformations
+
+17.3.2014
+---------
+- added support to .gro (reading and writing) files in molecule.py (possibly containing several structures).
+  conversion to .pdb to .gro and viceversa is now possible.
+- improved atomselect mechanism for polyhedral architectures. Now possible to select simultaneously atoms in different units.
+- added RMSD calculation of alternative structures stored in a polyhedral assembly architecture. 
+- now possible to merge an assembly into another one.
+
+1.3.2014
+--------
+Polymake integrated into Biobox. Polymake is a tool for assemblying and analyzing pdb structures in polyhedral architectures.
+Here follows a description of all the changes and upgrades as compared to the original polymake implementation.
+
+. polyhedra database:
+   - new feature: information about vertices connectivity has been precalculated for all structures and is now provided directly in database
+                  . advantage 1: increased speed when assemblying multiple polyhedra
+                  . advantage 2: topology will never change between several polyhedra, making comparisons easier
+                                 (in original polymake topology creation relies on a stochastic process).
+   - new feature: edges can be classified by type (information also in database), allowing rototranslations to be applied to subsets of edges.
+                  edges classification can be reassigned at runtime if needed
+   - reformatted database in simple space separated columns
+
+. general workflow:
+   - new feature: unlike original polymake, database is accessed only once, and polyhedra topology preloaded
+   - new feature: alternative polyhedra conformations can be loaded in the same data structure, allowing easy comparison (RMSD, PCA,...)
+   - in original polymake, construction of an assembly and its analysis are entangled. In Biobox assembly and analysis have been completely decoupled.
+     i.e. the polymake algorithm is used only for assemblying and returning structures. Analysis is perfrmed with available Biobox tools.
+   - new feature: heteromultimer can also be assembled.
+   - polyhedra size control is now determined by mean sphere radius, and not by monomer's box size (necessary when dealing with heteromultimers, and more "visual").
+   - any combination of radius and rotation angles is considered as a polyhedron (the gravwalker procedure has been therefore removed)
+     structural assessment is done outside Biobox, e.g. in a POW optimization a Van der Waals coarse-grain potential is used on CA atoms.
+
+. technical notes:
+   - converted all core mathematical operations in numpy, leading to important speedup
+
+assembly of rings and double rings is also supported in Biobox, but this feature is not part of polymake integration (was already available in standard Biobox).
