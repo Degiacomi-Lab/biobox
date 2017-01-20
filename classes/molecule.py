@@ -1,12 +1,12 @@
 # Copyright (c) 2014-2017 Matteo Degiacomi
 #
-# SBT is free software ;
+# BiobOx is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
 # either version 2 of the License, or (at your option) any later version.
-# SBT is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;
+# BiobOx is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 # See the GNU General Public License for more details.
-# You should have received a copy of the GNU General Public License along with SBT ;
+# You should have received a copy of the GNU General Public License along with BiobOx ;
 # if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #
 # Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com
@@ -779,7 +779,7 @@ class Molecule(Structure):
         return ccs
 
     def atomselect(self, chain, res, atom, get_index=False, use_resname=False):
-        ''''
+        '''
         Select specific atoms in the protein providing chain, residue ID and atom name.
 
         :param chain: selection of a specific chain name (accepts * as wildcard). Can also be a list or numpy array of strings.
@@ -841,11 +841,38 @@ class Molecule(Structure):
         # slice data array and return result (colums 5 to 7 contain xyz coords)
         query = np.logical_and(np.logical_and(chain_query, res_query), atom_query)
 
-        #@todo mass of termini to add!
         if get_index:
             return [self.points[query], np.where(query == True)[0]]
         else:
             return self.points[query]
+
+    def atomignore(self, chain, res, atom, get_index=False, use_resname=False):
+        '''
+        Select specific atoms that do not match a specific query (chain, residue ID and atom name).
+        Useful to remove from a molecule atoms unwanted for further analysis, alternative conformations, etc...
+
+        :param chain: chain name (accepts * as wildcard). Can also be a list or numpy array of strings.
+        :param res: residue ID (accepts * as wildcard). Can also be a list or numpy array of of int.
+        :param atom: atom name (accepts * as wildcard). Can also be a list or numpy array of strings.
+        :param get_index: if set to True, returns the indices of atoms in self.points array (and self.properties['data'])
+        :param use_resname: if set to True, consider information in "res" variable as resnames, and not resids
+        :returns: coordinates of the selected points not matching the query, if get_index is set to true, their indices in self.points array.
+        '''
+        
+        #extract indices of atoms matching the query
+        idxs = self.atomselect(chain, res, atom, get_index=True, use_resname=use_resname)[1]
+        
+        #invert the selection
+        idxs2 = []
+        for i in xrange(len(self.points)):
+            if i not in idxs:
+                idxs2.append(i)
+        
+        if get_index:
+            return [self.points[idxs2], np.array(idxs2)]
+        else:
+            return self.points[idxs2]
+
 
     def same_residue(self, index, get_index=False):
         '''
@@ -978,11 +1005,11 @@ class Molecule(Structure):
 
     def guess_chain_split(self, distance=3, use_backbone=True):
         '''
-        reassign chain name, using distance cutoff.
+        reassign chain name, using distance cutoff (cannot be undone).
         If two consecutive atoms are beyond a cutoff, a new chain is assigned.
 
         :param distance: distance cutoff distance
-        :param use_backbone: if True, splitting will be performed considering backbone atoms, all atoms in a sequence otherwise
+        :param use_backbone: if True, splitting will be performed considering backbone atoms (N and C), all atoms in a sequence otherwise
         '''
 
         # wipe current chain assignment
@@ -998,12 +1025,13 @@ class Molecule(Structure):
                     intervals.append(i + 1)
 
         else:
-            idxs = self.atomselect("*", "*", ["N", "C"], get_index=True)[1]
-            for i in xrange(len(idxs)-1):
-                if self.properties["data"][idxs[i], 2] == "C" and self.properties["data"][idxs[i+1], 2] == "N":
-                    dist = np.sqrt(np.dot(self.points[idxs[i]] - self.points[idxs[i+1]], self.points[idxs[i]] - self.points[idxs[i+1]]))
-                    if dist > distance:
-                        intervals.append(idxs[i+1])
+            #aminoacids start with N. Find where a C is too far from the next N.
+            posN, idxN = self.atomselect("*", "*", "N", get_index=True)
+            posC = self.atomselect("*", "*", "C")
+            for i in xrange(len(idxN)-1):
+                dist = np.sqrt(np.dot(posC[i] - posN[i+1], posC[i] - posN[i+1]))
+                if dist > distance:
+                    intervals.append(idxN[i+1])
         
         intervals.append(len(self.coordinates[0]))
 

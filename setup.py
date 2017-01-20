@@ -1,29 +1,11 @@
-#call: python setup.py install
-
-
-#graph classes for path detection
-#cython -a graph.pyx
-#gcc -shared -pthread -fPIC -fwrapv -O2 -Wall -fno-strict-aliasing -I/usr/include/python2.6 -o graph.so graph.c
-
-#fast mathematical methods
-#cython -a fastmath.pyx
-#gcc -shared -pthread -fPIC -fwrapv -O3 -Wall -fno-strict-aliasing -I/usr/include/python2.6 -o fastmath.so fastmath.c
+# to compile cython sources, call:
+# python setup.py install
 #
-#
-#module = Extension('tools',
-#                    define_macros = [('MAJOR_VERSION', '1'),
-#                                     ('MINOR_VERSION', '0')],
-#                    include_dirs = [np.get_include()],
-#                    sources = ['fastmath.c', 'graph.c'],
-#                    compiler_directives={'boundscheck': False,'wraparound': False},
-#                    extra_compile_args=['-fno-strict-aliasing', '-O3','-fPIC','-shared', '-pthread', '-fwrapv', '-Wall'],
-#                    )
-#
-#setup (name = 'Biobox_fast_tools',
-#       description = 'Tools for speeding up operations in Biobox',
-#       author = 'Matteo T. Degiacomi',
-#       author_email = 'matteo.degiacomi@gmail.com',
-#       ext_modules = [module])
+# Compilation can otherwise be obtained via the following commands:
+# cython -a graph.pyx
+# gcc -shared -pthread -fPIC -fwrapv -O2 -Wall -fno-strict-aliasing -I/usr/include/python2.6 -o graph.so graph.c
+# cython -a fastmath.pyx
+# gcc -shared -pthread -fPIC -fwrapv -O3 -Wall -fno-strict-aliasing -I/usr/include/python2.6 -o fastmath.so fastmath.c
 
 import os
 import shutil
@@ -71,10 +53,3 @@ setup(
 
 # continuation of the small hack
 os.rename("tmp", "__init__.py")
-
-
-#fout = open("__init__.py", "w")
-#fout.write("from biobox.lib.fastmath import *\n")
-#fout.write("from biobox.lib.graph import *\n")
-#fout.write("from biobox.lib.interaction import *\n")#fout.close()
-
