@@ -1,12 +1,12 @@
 # Copyright (c) 2014-2017 Matteo Degiacomi
 #
-# SBT is free software ;
+# BiobOx is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
 # either version 2 of the License, or (at your option) any later version.
-# SBT is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;
+# BiobOx is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 # See the GNU General Public License for more details.
-# You should have received a copy of the GNU General Public License along with SBT ;
+# You should have received a copy of the GNU General Public License along with BiobOx ;
 # if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #
 # Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com
@@ -252,13 +252,6 @@ class Structure(object):
         d_square = np.sum((self.points - self.get_center())**2, axis=1)
         return np.sqrt(np.sum(d_square) / d_square.shape[0])
 
-    def check_inclusion(self, p):
-        '''
-        verify whether a given point is inside or outside the shape.
-
-        .. note:: not yet implemented!
-        '''
-        raise Exception("awww, no implementation yet available for this method...")
 
     def get_size(self):
         '''

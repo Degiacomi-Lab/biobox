@@ -1,6 +1,5 @@
 import unittest
 
-#add path of upper main directory
 from biobox import Multimer, Molecule, Structure, Sphere, Cone, Cylinder, Ellipsoid, Prism, Density, Xlink
 import os
 
