@@ -8,11 +8,8 @@ if "%SPHINXBUILD%" == "" (
 	set SPHINXBUILD=sphinx-build
 )
 set SOURCEDIR=.
-set BUILDDIR=../../biobox-docs
+set BUILDDIR=.
 set SPHINXPROJ=biobox
-set PDFBUILDDIR=.
-set PDF=../manual.pdf
-
 
 if "%1" == "" goto help
 
@@ -31,11 +28,6 @@ if errorlevel 9009 (
 
 %SPHINXBUILD% -M %1 %SOURCEDIR% %BUILDDIR% %SPHINXOPTS%
 goto end
-
-:latexpdf
-%SPHINXBUILD% -b latex %ALLSPHINXOPTS% %PDFBUILDDIR%/latex
-make -C %PDFBUILDDIR%\latex all-pdf
-copy %PDFBUILDDIR%\latex\*.pdf %PDF%
 
 :help
 %SPHINXBUILD% -M help %SOURCEDIR% %BUILDDIR% %SPHINXOPTS%

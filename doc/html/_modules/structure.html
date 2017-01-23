@@ -1,0 +1,1131 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>structure &#8212; biobox 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">biobox 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for structure</h1><div class="highlight"><pre>
+<span class="c"># Copyright (c) 2014-2017 Matteo Degiacomi</span>
+<span class="c">#</span>
+<span class="c"># BiobOx is free software ;</span>
+<span class="c"># you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;</span>
+<span class="c"># either version 2 of the License, or (at your option) any later version.</span>
+<span class="c"># BiobOx is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;</span>
+<span class="c"># without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</span>
+<span class="c"># See the GNU General Public License for more details.</span>
+<span class="c"># You should have received a copy of the GNU General Public License along with BiobOx ;</span>
+<span class="c"># if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.</span>
+<span class="c">#</span>
+<span class="c"># Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com</span>
+
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">string</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">deepcopy</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.signal</span>
+
+<span class="kn">import</span> <span class="nn">biobox.lib.fastmath</span> <span class="k">as</span> <span class="nn">FM</span>  <span class="c"># cython routines</span>
+<span class="kn">import</span> <span class="nn">biobox.lib.interaction</span> <span class="k">as</span> <span class="nn">I</span>
+
+<div class="viewcode-block" id="Structure"><a class="viewcode-back" href="../structure.html#structure.Structure">[docs]</a><span class="k">class</span> <span class="nc">Structure</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    A Structure consists of an ensemble of points in 3D space and some associated properties.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[],</span> <span class="p">[]]),</span> <span class="n">r</span><span class="o">=</span><span class="mf">1.9</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Point coordinates and properties data structures are first initialized.</span>
+<span class="sd">        properties is a dictionary initially containing an entry for &#39;center&#39; (center of geometry) and &#39;radius&#39; (average radius of points).</span>
+
+<span class="sd">        :param p: coordinates data structure as a mxnx3 numpy array (alternative conformation x atom x 3D coordinate). nx3 numpy array can be supplied, in case a single conformation is present.</span>
+<span class="sd">        :param r: average radius of every point in dataset (float), or radius of every point (numpy array)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span> <span class="o">=</span> <span class="n">p</span>
+            <span class="sd">&#39;&#39;&#39;numpy array containing an ensemble of alternative coordinates in 3D space&#39;&#39;&#39;</span>
+
+        <span class="k">elif</span> <span class="n">p</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">p</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: expected numpy array with 2 or three dimensions, but %s dimensions were found&quot;</span> <span class="o">%</span><span class="n">p</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="sd">&#39;&#39;&#39;index of currently selected conformation&#39;&#39;&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">]</span>
+        <span class="sd">&#39;&#39;&#39;pointer to currently selected conformation&#39;&#39;&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="sd">&#39;&#39;&#39;collection of properties. By default, &#39;center&#39; (geometric center of the Structure) is defined&#39;&#39;&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;center&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_center</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span>  <span class="c"># average radius of every point</span>
+
+<div class="viewcode-block" id="Structure.get"><a class="viewcode-back" href="../structure.html#structure.Structure.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prop</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        return property from properties array</span>
+
+<span class="sd">        :param prop: desired property to extract from property dictionary</span>
+<span class="sd">        :returns: or nan if failed</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">prop</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">prop</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># print &quot;property %s not found!&quot;%prop</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Structure.set_current"><a class="viewcode-back" href="../structure.html#structure.Structure.set_current">[docs]</a>    <span class="k">def</span> <span class="nf">set_current</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        select current frame (place frame pointer at desired position)</span>
+
+<span class="sd">        :param pos: number of alternative conformation (starting from 0)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">pos</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">=</span> <span class="n">pos</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;center&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_center</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: position %s requested, but only %s conformations available&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span></div>
+
+<div class="viewcode-block" id="Structure.add_property"><a class="viewcode-back" href="../structure.html#structure.Structure.add_property">[docs]</a>    <span class="k">def</span> <span class="nf">add_property</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        create a new property.</span>
+
+<span class="sd">        :param name: name of the new property to add.</span>
+<span class="sd">        :param value: value of the new property. Can be any data structure.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span></div>
+
+<div class="viewcode-block" id="Structure.get_xyz"><a class="viewcode-back" href="../structure.html#structure.Structure.get_xyz">[docs]</a>    <span class="k">def</span> <span class="nf">get_xyz</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="p">[]):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        get points coordinates.</span>
+
+<span class="sd">        :param indices: indices of points to select. If none is provided, all points coordinates are returned.</span>
+<span class="sd">        :returns: coordinates of all points indexed by the provided indices list, or all of them if no list is provided.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">indices</span> <span class="o">==</span> <span class="p">[]:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Structure.set_xyz"><a class="viewcode-back" href="../structure.html#structure.Structure.set_xyz">[docs]</a>    <span class="k">def</span> <span class="nf">set_xyz</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        set point coordinates.</span>
+
+<span class="sd">        :param coords: array of 3D points</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Structure.add_xyz"><a class="viewcode-back" href="../structure.html#structure.Structure.add_xyz">[docs]</a>    <span class="k">def</span> <span class="nf">add_xyz</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        add a new alternative conformation to the database</span>
+
+<span class="sd">        :param coords: array of 3D points, or array of arrays of 3D points (in case multiple alternative coordinates must be added at the same time)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c"># self.coordinates numpy array containing an ensemble of alternative</span>
+        <span class="c"># coordinates in 3D space</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">coords</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">coords</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">coords</span><span class="p">]))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">coords</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">,</span> <span class="n">coords</span><span class="p">))</span>
+            <span class="c"># set new frame to the first of the newly inserted ones</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">coords</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">coords</span><span class="p">])))</span>
+            <span class="c"># set new frame to the first of the newly inserted ones</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: expected numpy array with 2 or three dimensions, but %s dimensions were found&quot;</span> <span class="o">%</span><span class="n">np</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Structure.delete_xyz"><a class="viewcode-back" href="../structure.html#structure.Structure.delete_xyz">[docs]</a>    <span class="k">def</span> <span class="nf">delete_xyz</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        remove one conformation from the conformations database.</span>
+
+<span class="sd">        the new current conformation will be the previous one.</span>
+
+<span class="sd">        :param index: alternative coordinates set to remove</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">index</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Structure.clear"><a class="viewcode-back" href="../structure.html#structure.Structure.clear">[docs]</a>    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        remove all the coordinates.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[[],</span> <span class="p">[]],</span> <span class="p">[[],</span> <span class="p">[]]])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Structure.translate"><a class="viewcode-back" href="../structure.html#structure.Structure.translate">[docs]</a>    <span class="k">def</span> <span class="nf">translate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        translate the whole structure by a given amount.</span>
+
+<span class="sd">        :param x: translation around x axis</span>
+<span class="sd">        :param y: translation around y axis</span>
+<span class="sd">        :param z: translation around z axis</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c"># if center has not been defined yet (may happen when using</span>
+        <span class="c"># subclasses), compute it</span>
+        <span class="k">if</span> <span class="s">&#39;center&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_center</span><span class="p">()</span>
+
+        <span class="c"># translate all points</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;center&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">x</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;center&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">y</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;center&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">z</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">x</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">y</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">z</span></div>
+
+<div class="viewcode-block" id="Structure.rotate"><a class="viewcode-back" href="../structure.html#structure.Structure.rotate">[docs]</a>    <span class="k">def</span> <span class="nf">rotate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        rotate the structure provided angles of rotation around x, y and z axes (in degrees).</span>
+
+<span class="sd">        This is a rotation with respect of the origin.</span>
+<span class="sd">        Make sure that the center of your structure is at the origin, if you don&#39;t want to get a translation as well!</span>
+<span class="sd">        rotating an object being not centered requires to first translate the ellipsoid at the origin, rotate it, and bringing it back.</span>
+
+<span class="sd">        :param x: rotation around x axis</span>
+<span class="sd">        :param y: rotation around y axis</span>
+<span class="sd">        :param z: rotation around z axis</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">gamma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+        <span class="n">Rx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                       <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">),</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">)],</span>
+                       <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">)]])</span>
+        <span class="n">Ry</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">beta</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">beta</span><span class="p">)],</span>
+                       <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                       <span class="p">[</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">beta</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">beta</span><span class="p">)]])</span>
+        <span class="n">Rz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">gamma</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">gamma</span><span class="p">),</span> <span class="mi">0</span><span class="p">],</span>
+                       <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">gamma</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">gamma</span><span class="p">),</span> <span class="mi">0</span><span class="p">],</span>
+                       <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+        <span class="n">rotation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Rx</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Ry</span><span class="p">,</span> <span class="n">Rz</span><span class="p">))</span>
+        <span class="c"># multiply rotation matrix with each point of the ellipsoid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">apply_transformation</span><span class="p">(</span><span class="n">rotation</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_center</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Structure.apply_transformation"><a class="viewcode-back" href="../structure.html#structure.Structure.apply_transformation">[docs]</a>    <span class="k">def</span> <span class="nf">apply_transformation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">M</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        apply a 3x3 transformation matrix</span>
+
+<span class="sd">        :param M: 3x3 transformation matrix (2D numpy array)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="n">M</span><span class="p">)</span>
+        <span class="c"># new memory allocated? Pointer needs to be moved</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Structure.get_center"><a class="viewcode-back" href="../structure.html#structure.Structure.get_center">[docs]</a>    <span class="k">def</span> <span class="nf">get_center</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        compute protein center of geometry (also assigns it to self.center variable).</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;center&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;center&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;center&#39;</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Structure.center_to_origin"><a class="viewcode-back" href="../structure.html#structure.Structure.center_to_origin">[docs]</a>    <span class="k">def</span> <span class="nf">center_to_origin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        move the structure so that its center of geometry is at the origin.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_center</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="o">-</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="n">c</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="n">c</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="Structure.rgyr"><a class="viewcode-back" href="../structure.html#structure.Structure.rgyr">[docs]</a>    <span class="k">def</span> <span class="nf">rgyr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        compute radius of gyration.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">d_square</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_center</span><span class="p">())</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">d_square</span><span class="p">)</span> <span class="o">/</span> <span class="n">d_square</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="Structure.get_size"><a class="viewcode-back" href="../structure.html#structure.Structure.get_size">[docs]</a>    <span class="k">def</span> <span class="nf">get_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        compute the dimensions of the object along x, y and z.</span>
+
+<span class="sd">        .. note: points radii are not kept into account.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="c"># +self.properties[&#39;radius&#39;]*2</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="c"># +self.properties[&#39;radius&#39;]*2</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="Structure.rotation_matrix"><a class="viewcode-back" href="../structure.html#structure.Structure.rotation_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">rotation_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        compute matrix needed to rotate the system around an arbitrary axis (using Euler-Rodrigues formula).</span>
+
+<span class="sd">        :param axis: 3d vector (numpy array), representing the axis around which to rotate</span>
+<span class="sd">        :param theta: desired rotation angle</span>
+<span class="sd">        :returns: 3x3 rotation matrix</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c"># if rotation angle is equal to zero, no rotation is needed</span>
+        <span class="k">if</span> <span class="n">theta</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+
+        <span class="c"># method taken from</span>
+        <span class="c"># http://stackoverflow.com/questions/6802577/python-rotation-of-3d-vector</span>
+        <span class="n">axis</span> <span class="o">=</span> <span class="n">axis</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">axis</span><span class="p">))</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="o">-</span><span class="n">axis</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">a</span> <span class="o">*</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span> <span class="o">*</span> <span class="n">b</span> <span class="o">-</span> <span class="n">c</span> <span class="o">*</span> <span class="n">c</span> <span class="o">-</span> <span class="n">d</span> <span class="o">*</span> <span class="n">d</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">b</span> <span class="o">*</span> <span class="n">c</span> <span class="o">-</span> <span class="n">a</span> <span class="o">*</span> <span class="n">d</span><span class="p">),</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">b</span> <span class="o">*</span> <span class="n">d</span> <span class="o">+</span> <span class="n">a</span> <span class="o">*</span> <span class="n">c</span><span class="p">)],</span>
+                         <span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">b</span> <span class="o">*</span> <span class="n">c</span> <span class="o">+</span> <span class="n">a</span> <span class="o">*</span> <span class="n">d</span><span class="p">),</span> <span class="n">a</span> <span class="o">*</span> <span class="n">a</span> <span class="o">+</span> <span class="n">c</span> <span class="o">*</span> <span class="n">c</span> <span class="o">-</span> <span class="n">b</span> <span class="o">*</span> <span class="n">b</span> <span class="o">-</span> <span class="n">d</span> <span class="o">*</span> <span class="n">d</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">c</span> <span class="o">*</span> <span class="n">d</span> <span class="o">-</span> <span class="n">a</span> <span class="o">*</span> <span class="n">b</span><span class="p">)],</span>
+                         <span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">b</span> <span class="o">*</span> <span class="n">d</span> <span class="o">-</span> <span class="n">a</span> <span class="o">*</span> <span class="n">c</span><span class="p">),</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">c</span> <span class="o">*</span> <span class="n">d</span> <span class="o">+</span> <span class="n">a</span> <span class="o">*</span> <span class="n">b</span><span class="p">),</span> <span class="n">a</span> <span class="o">*</span> <span class="n">a</span> <span class="o">+</span> <span class="n">d</span> <span class="o">*</span> <span class="n">d</span> <span class="o">-</span> <span class="n">b</span> <span class="o">*</span> <span class="n">b</span> <span class="o">-</span> <span class="n">c</span> <span class="o">*</span> <span class="n">c</span><span class="p">]])</span></div>
+
+<div class="viewcode-block" id="Structure.get_principal_axes"><a class="viewcode-back" href="../structure.html#structure.Structure.get_principal_axes">[docs]</a>    <span class="k">def</span> <span class="nf">get_principal_axes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        compute Structure&#39;s principal axes.</span>
+
+<span class="sd">        :returns: 3x3 numpy array, containing the 3 principal axes ranked from smallest to biggest.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c"># method taken from chempy source code, geometry.py, method</span>
+        <span class="c"># getMomentOfInertiaTensor()</span>
+
+        <span class="c"># compute moment of inertia tensor</span>
+        <span class="n">I0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">mass</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c"># self.mass[atom] / constants.Na</span>
+            <span class="n">I0</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">mass</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+            <span class="n">I0</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">mass</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+            <span class="n">I0</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">mass</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">I0</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="n">mass</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">I0</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-=</span> <span class="n">mass</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+            <span class="n">I0</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-=</span> <span class="n">mass</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+
+        <span class="n">I0</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">I0</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">I0</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">I0</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+        <span class="n">I0</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">I0</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+
+        <span class="c"># Calculate and return the principal moments of inertia and corresponding</span>
+        <span class="c"># principal axes for the current geometry.</span>
+        <span class="n">e_values</span><span class="p">,</span> <span class="n">e_vectors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eig</span><span class="p">(</span><span class="n">I0</span><span class="p">)</span>
+
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">e_values</span><span class="p">)</span>
+        <span class="n">e_values</span> <span class="o">=</span> <span class="n">e_values</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span>
+        <span class="n">e_vectors</span> <span class="o">=</span> <span class="n">e_vectors</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">e_vectors</span></div>
+
+<div class="viewcode-block" id="Structure.align_axes"><a class="viewcode-back" href="../structure.html#structure.Structure.align_axes">[docs]</a>    <span class="k">def</span> <span class="nf">align_axes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Align structure on its principal axes.</span>
+
+<span class="sd">        First principal axis aligned along x, second along y and third along z.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c"># this method is inspired from the procedure followed in in VMD&#39;s orient package:</span>
+        <span class="c"># set I [draw principalaxes $sel]           &lt;--- show/calc the principal axes</span>
+        <span class="c"># set A [orient $sel [lindex $I 2] {0 0 1}] &lt;--- rotate axis 2 to match Z</span>
+        <span class="c"># $sel move $A</span>
+        <span class="c"># set I [draw principalaxes $sel]           &lt;--- recalc principal axes to check</span>
+        <span class="c"># set A [orient $sel [lindex $I 1] {0 1 0}] &lt;--- rotate axis 1 to match Y</span>
+        <span class="c"># $sel move $A</span>
+        <span class="c"># set I [draw principalaxes $sel]           &lt;--- recalc principal axes</span>
+        <span class="c"># to check</span>
+
+        <span class="c"># center the Structure</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">center_to_origin</span><span class="p">()</span>
+
+        <span class="c"># get principal axes (ranked from smallest to biggest)</span>
+        <span class="n">axes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_principal_axes</span><span class="p">()</span>
+
+        <span class="c"># align smallest principal axis against z axis</span>
+        <span class="n">rotvec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]))</span>  <span class="c"># rotation axis</span>
+        <span class="n">sine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">rotvec</span><span class="p">)</span>
+        <span class="n">cosine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]))</span>
+        <span class="n">angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">sine</span><span class="p">,</span> <span class="n">cosine</span><span class="p">)</span>  <span class="c"># angle to rotate around axis</span>
+
+        <span class="n">rotmatrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotation_matrix</span><span class="p">(</span><span class="n">rotvec</span><span class="p">,</span> <span class="n">angle</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">apply_transformation</span><span class="p">(</span><span class="n">rotmatrix</span><span class="p">)</span>
+
+        <span class="c"># compute new principal axes (after previous rotation)</span>
+        <span class="n">axes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_principal_axes</span><span class="p">()</span>
+
+        <span class="c"># align second principal axis against y axis</span>
+        <span class="n">rotvec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]))</span>  <span class="c"># rotation axis</span>
+        <span class="n">sine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">rotvec</span><span class="p">)</span>
+        <span class="n">cosine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]))</span>
+        <span class="n">angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">sine</span><span class="p">,</span> <span class="n">cosine</span><span class="p">)</span>  <span class="c"># angle to rotate around axis</span>
+
+        <span class="n">rotmatrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotation_matrix</span><span class="p">(</span><span class="n">rotvec</span><span class="p">,</span> <span class="n">angle</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">apply_transformation</span><span class="p">(</span><span class="n">rotmatrix</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Structure.write_pdb"><a class="viewcode-back" href="../structure.html#structure.Structure.write_pdb">[docs]</a>    <span class="k">def</span> <span class="nf">write_pdb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="p">[]):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        write a multi PDB file where every point is a sphere. VdW radius is written into beta factor.</span>
+
+<span class="sd">        :param filename: name of file to output</span>
+<span class="sd">        :param index: list of frame indices to write to file. By default, a multipdb with all frames will be produced.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c"># if a subset of all available frames is requested to be written,</span>
+        <span class="c"># select them first</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">frames</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">):</span>
+                <span class="n">frames</span> <span class="o">=</span> <span class="n">index</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: requested coordinate index %s, but only %s are available&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">index</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">)))</span>
+
+        <span class="n">fout</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">frames</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">99999</span><span class="p">:</span>
+                    <span class="n">nb</span> <span class="o">=</span> <span class="nb">hex</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">nb</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">l</span> <span class="o">=</span> <span class="p">(</span><span class="n">nb</span><span class="p">,</span> <span class="s">&quot;SPH&quot;</span><span class="p">,</span> <span class="s">&quot;SPH&quot;</span><span class="p">,</span> <span class="s">&quot;A&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">9999</span><span class="p">),</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="n">f</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="n">f</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="n">f</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">],</span>
+                     <span class="mf">1.0</span><span class="p">,</span> <span class="s">&quot;Z&quot;</span><span class="p">)</span>
+                <span class="n">L</span> <span class="o">=</span> <span class="s">&#39;ATOM  %5s  %-4s%-4s%1s%4i    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">l</span>
+                <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+
+            <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;END</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+
+        <span class="n">fout</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Structure.ccs"><a class="viewcode-back" href="../structure.html#structure.Structure.ccs">[docs]</a>    <span class="k">def</span> <span class="nf">ccs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_lib</span><span class="o">=</span><span class="k">True</span><span class="p">,</span> <span class="n">impact_path</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">impact_options</span><span class="o">=</span><span class="s">&quot;-Octree -nRuns 32 -cMode sem -convergence 0.01&quot;</span><span class="p">,</span> <span class="n">pdbname</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="k">False</span><span class="p">,</span> <span class="n">proberad</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        compute CCS calling either impact.</span>
+
+<span class="sd">        :param use_lib: if true, impact library will be used, if false a system call to impact executable will be performed instead</span>
+<span class="sd">        :param impact_path: by default, the environment variable IMPACTPATH is sought. This allows redirecting to a specific impact root folder. </span>
+<span class="sd">        :param impact_options: flags to be passes to impact executable</span>
+<span class="sd">        :param pdbname: if a file has been already written, impact can be asked to analyze it</span>
+<span class="sd">        :param scale: if True, CCS value calculated with PA method is scaled to better match trajectory method.</span>
+<span class="sd">        :param proberad: radius of probe. Do find out if your impact library already adds this value by default or not (old ones do)!</span>
+<span class="sd">        :returns: CCS value in A^2. Error return: -1 = input filename not found, -2 = unknown code for CCS calculation\n</span>
+<span class="sd">                  -3 CCS calculator failed, -4 = parsing of CCS calculation results failed</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">if</span> <span class="n">use_lib</span> <span class="ow">and</span> <span class="n">pdbname</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+
+            <span class="c">#if True:</span>
+            <span class="kn">from</span> <span class="nn">biobox.classes.ccs</span> <span class="k">import</span> <span class="n">CCS</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">impact_path</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">impact_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;IMPACTPATH&#39;</span><span class="p">],</span> <span class="s">&quot;lib&quot;</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;IMPACTPATH environment variable undefined&quot;</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="s">&quot;win&quot;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="p">:</span>
+                    <span class="n">libfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">impact_path</span><span class="p">,</span> <span class="s">&quot;libimpact.dll&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">libfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">impact_path</span><span class="p">,</span> <span class="s">&quot;libimpact.so&quot;</span><span class="p">)</span>
+
+                <span class="n">C</span> <span class="o">=</span> <span class="n">CCS</span><span class="p">(</span><span class="n">libfile</span><span class="o">=</span><span class="n">libfile</span><span class="p">)</span>
+
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="s">&quot;atom_ccs&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">radii</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;atom_ccs&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">proberad</span>
+
+            <span class="k">elif</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">],</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">__module__</span> <span class="o">==</span> <span class="s">&#39;numpy&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">():</span>
+                <span class="n">radii</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">proberad</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">radii</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">proberad</span>
+
+            <span class="k">if</span> <span class="n">scale</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">C</span><span class="o">.</span><span class="n">get_ccs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="n">radii</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">C</span><span class="o">.</span><span class="n">get_ccs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="n">radii</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c"># generate random file name to capture CCS software terminal output</span>
+        <span class="n">tmp_outfile</span> <span class="o">=</span> <span class="n">random_string</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
+        <span class="k">while</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">tmp_outfile</span><span class="p">):</span>
+            <span class="n">tmp_outfile</span> <span class="o">=</span> <span class="s">&quot;%s.pdb&quot;</span> <span class="o">%</span> <span class="n">random_string</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">pdbname</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+            <span class="c"># write temporary pdb file of current structure on which to launch</span>
+            <span class="c"># CCS calculation</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="s">&quot;%s.pdb&quot;</span> <span class="o">%</span> <span class="n">random_string</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
+            <span class="k">while</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+                <span class="n">filename</span> <span class="o">=</span> <span class="s">&quot;%s.pdb&quot;</span> <span class="o">%</span> <span class="n">random_string</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_pdb</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">])</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">pdbname</span>
+            <span class="c"># if file was already provided, verify its existence first!</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">pdbname</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: %s not found!&quot;</span> <span class="o">%</span> <span class="n">pdbname</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">impact_path</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">impact_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;IMPACTPATH&#39;</span><span class="p">],</span> <span class="s">&quot;bin&quot;</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;IMPACTPATH environment variable undefined&quot;</span><span class="p">)</span>
+
+            <span class="c"># if using impact, create parameterization file containing a</span>
+            <span class="c"># description for Z atoms (pseudoatom name used in this code)</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;params&#39;</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="s">&#39;radius&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">],</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">],</span> <span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">):</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;[ defaults ]</span><span class="se">\n</span><span class="s"> H 2.2</span><span class="se">\n</span><span class="s"> C 2.91</span><span class="se">\n</span><span class="s"> N 2.91</span><span class="se">\n</span><span class="s"> O 2.91</span><span class="se">\n</span><span class="s"> P 2.91</span><span class="se">\n</span><span class="s"> S 2.91</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;Z %s&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">])</span>
+                    <span class="n">impact_options</span> <span class="o">+=</span> <span class="s">&quot; -param params&quot;</span>
+
+            <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="s">&quot;win&quot;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="p">:</span>
+                <span class="n">impact_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">impact_path</span><span class="p">,</span> <span class="s">&quot;impact.exe&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">impact_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">impact_path</span><span class="p">,</span> <span class="s">&quot;impact&quot;</span><span class="p">)</span>
+
+            <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="s">&#39;%s  %s -rProbe %s %s &gt; %s&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">impact_name</span><span class="p">,</span> <span class="n">impact_options</span><span class="p">,</span> <span class="n">proberad</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">tmp_outfile</span><span class="p">),</span> <span class="n">shell</span><span class="o">=</span><span class="k">True</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+        <span class="c">#parse output generated by IMPACT and written into a file</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">tmp_outfile</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">w</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;CCS&quot;</span><span class="p">:</span>
+
+                    <span class="k">if</span> <span class="n">scale</span><span class="p">:</span>
+                        <span class="n">v</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">v</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+
+                    <span class="k">break</span>
+
+            <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+            <span class="c"># clean temp files if needed</span>
+            <span class="c">#(if a filename is provided, don&#39;t delete it!)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">tmp_outfile</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">pdbname</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">v</span>
+
+        <span class="k">except</span><span class="p">:</span>
+            <span class="c"># clean temp files</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">tmp_outfile</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">pdbname</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="o">-</span><span class="mi">4</span></div>
+
+<div class="viewcode-block" id="Structure.saxs"><a class="viewcode-back" href="../structure.html#structure.Structure.saxs">[docs]</a>    <span class="k">def</span> <span class="nf">saxs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">crysol_path</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">crysol_options</span><span class="o">=</span><span class="s">&quot;-lm 20 -ns 500&quot;</span><span class="p">,</span> <span class="n">pdbname</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        compute SAXS curve using crysol (from ATSAS suite)</span>
+
+<span class="sd">        :param crysol_path: path to crysol executable. By default, the environment variable ATSASPATH is sought. This allows redirecting to a specific impact root folder.</span>
+<span class="sd">        :param crysol_options: flags to be passes to impact executable</span>
+<span class="sd">        :param pdbname: if a file has been already written, crysol can be asked to analyze it</span>
+<span class="sd">        :returns: SAXS curve (nx2 numpy array)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">if</span> <span class="n">crysol_path</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">crysol_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;ATSASPATH&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ATSASPATH environment variable undefined&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">pdbname</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+            <span class="c"># write temporary pdb file of current structure on which to launch</span>
+            <span class="c"># SAXS calculation</span>
+            <span class="n">pdbname</span> <span class="o">=</span> <span class="s">&quot;%s.pdb&quot;</span> <span class="o">%</span> <span class="n">random_string</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
+            <span class="k">while</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">pdbname</span><span class="p">):</span>
+                <span class="n">pdbname</span> <span class="o">=</span> <span class="s">&quot;%s.pdb&quot;</span> <span class="o">%</span> <span class="n">random_string</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_pdb</span><span class="p">(</span><span class="n">pdbname</span><span class="p">,</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">])</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># if file was already provided, verify its existence first!</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">pdbname</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: %s not found!&quot;</span> <span class="o">%</span> <span class="n">pdbname</span><span class="p">)</span>
+
+        <span class="c"># get basename for output</span>
+        <span class="n">outfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">pdbname</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">call_line</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">crysol_path</span><span class="p">,</span><span class="s">&quot;crysol&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="s">&#39;%s %s %s &gt;&amp; /dev/null&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">call_line</span><span class="p">,</span> <span class="n">crysol_options</span><span class="p">,</span> <span class="n">pdbname</span><span class="p">),</span> <span class="n">shell</span><span class="o">=</span><span class="k">True</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: crysol calculation failed!&quot;</span><span class="p">)</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s">&quot;%s00.int&quot;</span> <span class="o">%</span> <span class="n">outfile</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s">&quot;%s00.alm&quot;</span> <span class="o">%</span> <span class="n">outfile</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s">&quot;%s00.int&quot;</span> <span class="o">%</span> <span class="n">outfile</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s">&quot;%s00.log&quot;</span> <span class="o">%</span> <span class="n">outfile</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s">&quot;%s.pdb&quot;</span> <span class="o">%</span> <span class="n">outfile</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">return</span> <span class="n">data</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Structure.convex_hull"><a class="viewcode-back" href="../structure.html#structure.Structure.convex_hull">[docs]</a>    <span class="k">def</span> <span class="nf">convex_hull</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        compute Structure&#39;s convex Hull using QuickHull algorithm.</span>
+
+<span class="sd">        .. note:: Qhull available only on scipy &gt;=0.12</span>
+
+<span class="sd">        :returns: :func:`Structure &lt;structure.Structure&gt;` object, containing the coordinates of vertices composing the convex hull</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="k">import</span> <span class="n">ConvexHull</span>
+            <span class="n">verts</span> <span class="o">=</span> <span class="n">ConvexHull</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">Structure</span><span class="p">(</span><span class="n">verts</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Quick Hull algorithm available in scipy &gt;=0.12!&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Structure.get_surface_c"><a class="viewcode-back" href="../structure.html#structure.Structure.get_surface_c">[docs]</a>    <span class="k">def</span> <span class="nf">get_surface_c</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targets</span><span class="o">=</span><span class="p">[],</span> <span class="n">probe</span><span class="o">=</span><span class="mf">1.4</span><span class="p">,</span>
+                      <span class="n">n_sphere_point</span><span class="o">=</span><span class="mi">960</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.05</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        compute the accessible surface area using the Shrake-Rupley algorithm (&quot;rolling ball method&quot;)</span>
+
+<span class="sd">        :param targets: indices to be used for surface estimation. By default, all indices are kept into account.</span>
+<span class="sd">        :param probe: radius of the &quot;rolling ball&quot;</span>
+<span class="sd">        :param n_sphere_point: number of mesh points per atom</span>
+<span class="sd">        :param threshold: fraction of points in sphere, above which structure points are considered as exposed</span>
+<span class="sd">        :returns: accessible surface area in A^2</span>
+<span class="sd">        :returns: mesh numpy array containing the found points forming the accessible surface mesh</span>
+<span class="sd">        :returns: IDs of surface points</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c"># getting radii associated to every atom</span>
+        <span class="n">radii</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">radii</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">radii</span><span class="p">)</span><span class="o">.</span><span class="n">__module__</span> <span class="o">==</span> <span class="s">&#39;numpy&#39;</span><span class="p">):</span>
+            <span class="n">radii</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">radii</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: length vdw radii (%s) and points quantity (%s) mismatch!&quot;</span> <span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">radii</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">)))</span>
+
+        <span class="k">if</span> <span class="n">threshold</span> <span class="o">&lt;</span> <span class="mf">0.0</span> <span class="ow">or</span> <span class="n">threshold</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: threshold should be a floating point between 0 and 1!&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">FM</span><span class="o">.</span><span class="n">c_get_surface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="n">radii</span><span class="p">,</span> <span class="n">probe</span><span class="p">,</span> <span class="n">n_sphere_point</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">FM</span><span class="o">.</span><span class="n">c_get_surface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">targets</span><span class="p">],</span> <span class="n">radii</span><span class="p">,</span> <span class="n">probe</span><span class="p">,</span> <span class="n">n_sphere_point</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Structure.get_surface"><a class="viewcode-back" href="../structure.html#structure.Structure.get_surface">[docs]</a>    <span class="k">def</span> <span class="nf">get_surface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targets</span><span class="o">=</span><span class="p">[],</span> <span class="n">probe</span><span class="o">=</span><span class="mf">1.4</span><span class="p">,</span> <span class="n">n_sphere_point</span><span class="o">=</span><span class="mi">960</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.05</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        compute the accessible surface area using the Shrake-Rupley algorithm (&quot;rolling ball method&quot;)</span>
+
+<span class="sd">        :param targets: indices to be used for surface estimation. By default, all indices are kept into account.</span>
+<span class="sd">        :param probe: radius of the &quot;rolling ball&quot;</span>
+<span class="sd">        :param n_sphere_point: number of mesh points per atom</span>
+<span class="sd">        :param threshold: fraction of points in sphere, above which structure points are considered as exposed</span>
+<span class="sd">        :returns: accessible surface area in A^2</span>
+<span class="sd">        :returns: mesh numpy array containing the found points forming the accessible surface mesh</span>
+<span class="sd">        :returns: IDs of surface points</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">targets</span> <span class="o">=</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c"># getting radii associated to every atom</span>
+        <span class="n">radii</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">radii</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">radii</span><span class="p">)</span><span class="o">.</span><span class="n">__module__</span> <span class="o">==</span> <span class="s">&#39;numpy&#39;</span><span class="p">):</span>
+            <span class="n">radii</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">radii</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: length vdw radii (%s) and points quantity (%s) mismatch!&quot;</span> <span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">radii</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">)))</span>
+
+        <span class="k">if</span> <span class="n">threshold</span> <span class="o">&lt;</span> <span class="mf">0.0</span> <span class="ow">or</span> <span class="n">threshold</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: threshold should be a floating point between 0 and 1!&quot;</span><span class="p">)</span>
+
+        <span class="c"># create unit sphere points cloud (using golden spiral)</span>
+        <span class="n">pts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">inc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">n_sphere_point</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">n_sphere_point</span><span class="p">)):</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">k</span> <span class="o">*</span> <span class="n">offset</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="n">offset</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">y</span> <span class="o">*</span> <span class="n">y</span><span class="p">)</span>
+            <span class="n">phi</span> <span class="o">=</span> <span class="n">k</span> <span class="o">*</span> <span class="n">inc</span>
+            <span class="n">pts</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">*</span> <span class="n">r</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">*</span> <span class="n">r</span><span class="p">])</span>
+
+        <span class="n">sphere_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pts</span><span class="p">)</span>
+        <span class="n">const</span> <span class="o">=</span> <span class="mf">4.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">sphere_points</span><span class="p">)</span>
+
+        <span class="n">contact_map</span> <span class="o">=</span> <span class="n">I</span><span class="o">.</span><span class="n">distance_matrix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">)</span>
+
+        <span class="n">asa</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">surface_atoms</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">mesh_pts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c"># compute accessible surface for every atom</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">targets</span><span class="p">:</span>
+
+            <span class="c"># place mesh points around atom of choice</span>
+            <span class="n">mesh</span> <span class="o">=</span> <span class="n">sphere_points</span> <span class="o">*</span> <span class="p">(</span><span class="n">radii</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">probe</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+            <span class="c"># compute distance matrix between mesh points and neighboring atoms</span>
+            <span class="n">test</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">contact_map</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">&lt;</span> <span class="n">radii</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="n">probe</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">neigh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">test</span><span class="p">]</span>
+            <span class="n">dist</span> <span class="o">=</span> <span class="n">I</span><span class="o">.</span><span class="n">distance_matrix</span><span class="p">(</span><span class="n">neigh</span><span class="p">,</span> <span class="n">mesh</span><span class="p">)</span> <span class="o">-</span> <span class="n">radii</span><span class="p">[</span><span class="n">test</span><span class="p">][:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+
+            <span class="c"># lines=atoms, columns=mesh points. Count columns containing values greater than probe*2</span>
+            <span class="c"># i.e. allowing sufficient space for a probe to fit completely</span>
+            <span class="n">cnt</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">dist</span><span class="p">[:,</span> <span class="n">m</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">probe</span><span class="p">):</span>
+                    <span class="n">cnt</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">mesh_pts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mesh</span><span class="p">[</span><span class="n">m</span><span class="p">])</span>
+
+            <span class="c"># calculate asa for current atom, if a sufficient amount of mesh</span>
+            <span class="c"># points is exposed (NOTE: to verify)</span>
+            <span class="k">if</span> <span class="n">cnt</span> <span class="o">&gt;</span> <span class="n">n_sphere_point</span> <span class="o">*</span> <span class="n">threshold</span><span class="p">:</span>
+                <span class="n">surface_atoms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">asa</span> <span class="o">+=</span> <span class="n">const</span> <span class="o">*</span> <span class="n">cnt</span> <span class="o">*</span> <span class="p">(</span><span class="n">radii</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">probe</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+
+        <span class="k">return</span> <span class="n">asa</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mesh_pts</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">surface_atoms</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Structure.get_density"><a class="viewcode-back" href="../structure.html#structure.Structure.get_density">[docs]</a>    <span class="k">def</span> <span class="nf">get_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">kernel_half_width</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">buff</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        generate density map from points</span>
+
+<span class="sd">        :param step: size of cubic voxels, in Angstrom</span>
+<span class="sd">        :param sigma: gaussian kernel sigma</span>
+<span class="sd">        :param kernel_half_width: kernel half width, in voxels</span>
+<span class="sd">        :param buff: padding to add at points cloud boundaries</span>
+<span class="sd">        :returns: :func:`Density &lt;density.Density&gt;` object, containing a simulated density map</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">pts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span>
+
+        <span class="c"># rectangular box boundaries</span>
+        <span class="n">bnds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">pts</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="n">buff</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">pts</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">buff</span><span class="p">],</span>
+                         <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">pts</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="n">buff</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">pts</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="n">buff</span><span class="p">],</span>
+                         <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">pts</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span> <span class="o">-</span> <span class="n">buff</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">pts</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span> <span class="o">+</span> <span class="n">buff</span><span class="p">]])</span>
+
+        <span class="n">xax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">bnds</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">bnds</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">step</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+        <span class="n">yax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">bnds</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">bnds</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">step</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+        <span class="n">zax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">bnds</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">bnds</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">step</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+
+        <span class="c"># create empty box</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">xax</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">yax</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">zax</span><span class="p">)))</span>
+
+        <span class="c"># place Kronecker deltas in mesh grid</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pts</span><span class="p">:</span>
+            <span class="n">xpos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">xax</span> <span class="o">-</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+            <span class="n">ypos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">yax</span> <span class="o">-</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">zpos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">zax</span> <span class="o">-</span> <span class="n">p</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+            <span class="n">d</span><span class="p">[</span><span class="n">xpos</span><span class="p">,</span> <span class="n">ypos</span><span class="p">,</span> <span class="n">zpos</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c"># create 3d gaussian kernel</span>
+        <span class="n">window</span> <span class="o">=</span> <span class="n">kernel_half_width</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="n">window</span><span class="p">,</span> <span class="n">window</span><span class="p">)</span>
+
+        <span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="p">[(</span><span class="n">ss</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.</span> <span class="k">for</span> <span class="n">ss</span> <span class="ow">in</span> <span class="n">shape</span><span class="p">]</span>
+
+        <span class="n">x_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="n">m</span><span class="p">,</span> <span class="n">m</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">y_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">z_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="n">k</span><span class="p">,</span> <span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">x_</span><span class="p">,</span> <span class="n">y_</span><span class="p">,</span> <span class="n">z_</span><span class="p">)</span>
+
+        <span class="n">h</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">y</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="n">z</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">sigma</span> <span class="o">*</span> <span class="n">sigma</span><span class="p">))</span>
+        <span class="n">h</span><span class="p">[</span><span class="n">h</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span> <span class="o">*</span> <span class="n">h</span><span class="o">.</span><span class="n">max</span><span class="p">()]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">sumh</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">sumh</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">h</span> <span class="o">/=</span> <span class="n">sumh</span>
+
+        <span class="c"># convolve point mesh with 3d gaussian kernel</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">fftconvolve</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;same&#39;</span><span class="p">)</span>
+        <span class="n">b</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+
+        <span class="c"># prepare density data structure</span>
+        <span class="kn">from</span> <span class="nn">biobox.classes.density</span> <span class="k">import</span> <span class="n">Density</span>
+        <span class="n">D</span> <span class="o">=</span> <span class="n">Density</span><span class="p">()</span>
+        <span class="n">D</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;density&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">b</span>
+        <span class="n">D</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">D</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;origin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="n">step</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
+        <span class="n">D</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;delta&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">step</span>
+        <span class="n">D</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;format&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;dx&#39;</span>
+        <span class="n">D</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;filename&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="n">D</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&quot;sigma&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+
+        <span class="c"># D.place_points()</span>
+
+        <span class="k">return</span> <span class="n">D</span></div>
+
+<div class="viewcode-block" id="Structure.rmsf"><a class="viewcode-back" href="../structure.html#structure.Structure.rmsf">[docs]</a>    <span class="k">def</span> <span class="nf">rmsf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        compute Root Mean Square Fluctuation (RMSF) of selected atoms.</span>
+
+<span class="sd">        :param indices: indices of points for which RMSF will be calculated. If no indices list is provided, RMSF of all points will be calculated.</span>
+<span class="sd">        :param step: timestep between two conformations (useful when using conformations extracted from molecular dynamics)</span>
+<span class="sd">        :returns: numpy aray with RMSF of all provided indices, in the same order</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: to compute RMSF several conformations must be available!&quot;</span><span class="p">)</span>
+
+        <span class="c"># if no index is provided, compute RMSF of all points</span>
+        <span class="k">if</span> <span class="n">indices</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+        <span class="n">means</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[:,</span> <span class="n">indices</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c"># cumulate all squared distances with respect of mean</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">d</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">indices</span><span class="p">]</span> <span class="o">-</span> <span class="n">means</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+
+        <span class="c"># compute square root of sum of mean squared distances</span>
+        <span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">step</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Structure.pca"><a class="viewcode-back" href="../structure.html#structure.Structure.pca">[docs]</a>    <span class="k">def</span> <span class="nf">pca</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">project_thresh</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        compute Principal Components Analysis (PCA) on specific points within all the alternative coordinates.</span>
+
+<span class="sd">        :param indices: points indices to be considered for PCA</span>
+<span class="sd">        :param project_thresh: eigenvectors energy value [0,1]. Determines how many vectors are relevant to describe the points main motions,\n</span>
+<span class="sd">               the higher value, the larger the amount of selected eigenvectors. Every alternative coordinate will be projected in the selected sub-eigenspace.</span>
+<span class="sd">        :returns: numpy array of ranked eigenvalues</span>
+<span class="sd">        :returns: numpy array of eigenvectors, ranked according to their eigenvalue</span>
+<span class="sd">        :returns: optionally returned, when project_thresh is provided as input</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">if</span> <span class="n">project_thresh</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">project_thresh</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">project_thresh</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: project_thresh should be a number between 0 and 1, %s received&quot;</span> <span class="o">%</span> <span class="n">project_thresh</span><span class="p">)</span>
+
+        <span class="c"># compute displacement matrix (removing mean pos from atom pos in</span>
+        <span class="c"># coords matrix)</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[:,</span> <span class="n">indices</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+            <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+
+        <span class="c"># check whether conditions for PCA analysis are good</span>
+        <span class="c"># if coords.shape[1]&lt;coords.shape[0]:</span>
+        <span class="c">#    print &quot;ERROR: found %s conformations and only %s degrees of freedom&quot;%(coords.shape[1], coords.shape[0])</span>
+        <span class="c">#    print &quot;ERROR: conformations number should be greater than the system&#39;s degrees of freedom (3N)!&quot;</span>
+        <span class="c">#    return -1</span>
+
+        <span class="n">disp</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">disp</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">disp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">disp</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="c"># compute covariance matrix, eigenvalues and eigenvectors</span>
+        <span class="c"># print &quot;&gt;&gt; computing covariance matrix...&quot;</span>
+        <span class="n">covariance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cov</span><span class="p">(</span><span class="n">disp</span><span class="p">)</span>
+        <span class="c"># print &quot;&gt;&gt; extracting eigenvalues and eigenvectors (might take few</span>
+        <span class="c"># minutes)...&quot;</span>
+        <span class="p">[</span><span class="n">eigenval</span><span class="p">,</span> <span class="n">eigenvec</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eig</span><span class="p">(</span><span class="n">covariance</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">project_thresh</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="c"># compute representative number of eigenvectors according to desired ratio (user provided)</span>
+            <span class="c"># print &quot;\n   nb., eigenvalue, cumulative ratio&quot;</span>
+            <span class="c"># print &quot;   ---------------------------------&quot;</span>
+            <span class="n">cumulative</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">cnt</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">eigenval</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">cumulative</span> <span class="o">+=</span> <span class="n">eigenval</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="c"># print &quot;   %s, %s, %s&quot;%(i+1, eigenval[i],</span>
+                <span class="c"># cumulative/np.sum(eigenval))</span>
+                <span class="k">if</span> <span class="n">cumulative</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">eigenval</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">project_thresh</span><span class="p">:</span>
+                    <span class="n">cnt</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+                    <span class="k">break</span>
+
+            <span class="c"># compute projection of trajectory on the significant number of eigenvectors</span>
+            <span class="c"># lines = n-th eigenvector component, columns = simulation frame</span>
+            <span class="c"># print &quot;\n&gt;&gt; projecting trajectory on %s eigenvectors...&quot;%cnt</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">cnt</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">eigenvec</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">coords</span><span class="p">))</span>
+
+            <span class="n">proj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">eigenval</span><span class="p">,</span> <span class="n">eigenvec</span><span class="p">,</span> <span class="n">proj</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">eigenval</span><span class="p">,</span> <span class="n">eigenvec</span></div>
+
+<div class="viewcode-block" id="Structure.rmsd_one_vs_all"><a class="viewcode-back" href="../structure.html#structure.Structure.rmsd_one_vs_all">[docs]</a>    <span class="k">def</span> <span class="nf">rmsd_one_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref_index</span><span class="p">,</span> <span class="n">points_index</span><span class="o">=</span><span class="p">[],</span> <span class="n">align</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Calculate the RMSD between all structures with respect of a reference structure.</span>
+<span class="sd">        uses Kabsch alignement algorithm.</span>
+
+<span class="sd">        :param ref_index: index of reference structure in conformations database</span>
+<span class="sd">        :param points_index: if set, only specific points will be considered for comparison</span>
+<span class="sd">        :param align: if set to true, all conformations will be aligned to reference (note: cannot be undone!)</span>
+<span class="sd">        :returns: RMSD of all structures with respect of reference structure (in a numpy array)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c"># see: http://www.pymolwiki.org/index.php/Kabsch#The_Code</span>
+
+        <span class="n">bkpcurrent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current</span>
+
+        <span class="k">if</span> <span class="n">ref_index</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: index %s requested, but only %s exist in database&quot;</span> <span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">)))</span>
+
+        <span class="c"># define reference frame, and center it</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">points_index</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">m1</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="n">ref_index</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">points_index</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">points_index</span><span class="p">)</span><span class="o">.</span><span class="n">__module__</span> <span class="o">==</span> <span class="s">&#39;numpy&#39;</span><span class="p">:</span>
+            <span class="n">m1</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="n">ref_index</span><span class="p">,</span> <span class="n">points_index</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: please, provide me with a list of indices to compute RMSD (or no index at all)&quot;</span><span class="p">)</span>
+
+        <span class="n">L</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">m1</span><span class="p">)</span>
+        <span class="n">COM1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+        <span class="n">m1</span> <span class="o">-=</span> <span class="n">COM1</span>
+        <span class="n">m1sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">m1</span> <span class="o">*</span> <span class="n">m1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">RMSD</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">ref_index</span><span class="p">:</span>
+                <span class="n">RMSD</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+
+                <span class="c"># define current frame, and center it</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">points_index</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">m2</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">points_index</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">points_index</span><span class="p">)</span><span class="o">.</span><span class="n">__module__</span> <span class="o">==</span> <span class="s">&#39;numpy&#39;</span><span class="p">:</span>
+                    <span class="n">m2</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">points_index</span><span class="p">])</span>
+
+                <span class="n">COM2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">m2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+                <span class="n">m2</span> <span class="o">-=</span> <span class="n">COM2</span>
+
+                <span class="n">E0</span> <span class="o">=</span> <span class="n">m1sum</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">m2</span> <span class="o">*</span> <span class="n">m2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+                <span class="c"># This beautiful step provides the answer. V and Wt are the orthonormal</span>
+                <span class="c"># bases that when multiplied by each other give us the rotation matrix, U.</span>
+                <span class="c"># S, (Sigma, from SVD) provides us with the error!  Isn&#39;t SVD</span>
+                <span class="c"># great!</span>
+                <span class="n">V</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">Wt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">m2</span><span class="p">),</span> <span class="n">m1</span><span class="p">))</span>
+
+                <span class="c"># if alignement is required, move pointer to current frame, and</span>
+                <span class="c"># apply rotation matrix</span>
+                <span class="k">if</span> <span class="n">align</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                    <span class="n">rotation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">Wt</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">apply_transformation</span><span class="p">(</span><span class="n">rotation</span><span class="p">)</span>
+
+                <span class="n">reflect</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
+                    <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">V</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">Wt</span><span class="p">))))</span>
+
+                <span class="k">if</span> <span class="n">reflect</span> <span class="o">==</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">:</span>
+                    <span class="n">S</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">S</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">V</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">V</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+                <span class="n">rmsdval</span> <span class="o">=</span> <span class="n">E0</span> <span class="o">-</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">(</span><span class="n">S</span><span class="p">))</span>
+                <span class="n">rmsdval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">rmsdval</span> <span class="o">/</span> <span class="n">L</span><span class="p">))</span>
+
+                <span class="n">RMSD</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rmsdval</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">bkpcurrent</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">RMSD</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Structure.rmsd"><a class="viewcode-back" href="../structure.html#structure.Structure.rmsd">[docs]</a>    <span class="k">def</span> <span class="nf">rmsd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">points_index</span><span class="o">=</span><span class="p">[]):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Calculate the RMSD between two structures in alternative coordinates ensemble.</span>
+<span class="sd">        uses Kabsch alignement algorithm.</span>
+
+<span class="sd">        :param i: index of the first structure</span>
+<span class="sd">        :param j: index of the second structure</span>
+<span class="sd">        :param points_index: if set, only specific points will be considered for comparison</span>
+<span class="sd">        :returns: RMSD of the two structures</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c"># see: http://www.pymolwiki.org/index.php/Kabsch#The_Code</span>
+
+        <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: index %s requested, but only %s exist in database&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">)))</span>
+
+        <span class="k">if</span> <span class="n">j</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: index %s requested, but only %s exist in database&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">)))</span>
+
+        <span class="c"># get first structure and center it</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">points_index</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">m1</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">points_index</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">points_index</span><span class="p">)</span><span class="o">.</span><span class="n">__module__</span> <span class="o">==</span> <span class="s">&#39;numpy&#39;</span><span class="p">:</span>
+            <span class="n">m1</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">points_index</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: give me a list of indices to compute RMSD, or nothing at all, please!&quot;</span><span class="p">)</span>
+
+        <span class="c"># get second structure</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">points_index</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">m2</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">points_index</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">points_index</span><span class="p">)</span><span class="o">.</span><span class="n">__module__</span> <span class="o">==</span> <span class="s">&#39;numpy&#39;</span><span class="p">:</span>
+            <span class="n">m2</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">points_index</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: give me a list of indices to compute RMSD, or nothing at all, please!&quot;</span><span class="p">)</span>
+
+        <span class="n">L</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">m1</span><span class="p">)</span>
+        <span class="n">COM1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+        <span class="n">m1</span> <span class="o">-=</span> <span class="n">COM1</span>
+        <span class="n">m1sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">m1</span> <span class="o">*</span> <span class="n">m1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">COM2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">m2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+        <span class="n">m2</span> <span class="o">-=</span> <span class="n">COM2</span>
+
+        <span class="n">E0</span> <span class="o">=</span> <span class="n">m1sum</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">m2</span> <span class="o">*</span> <span class="n">m2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c"># This beautiful step provides the answer. V and Wt are the orthonormal</span>
+        <span class="c"># bases that when multiplied by each other give us the rotation matrix, U.</span>
+        <span class="c"># S, (Sigma, from SVD) provides us with the error!  Isn&#39;t SVD great!</span>
+        <span class="n">V</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">Wt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">m2</span><span class="p">),</span> <span class="n">m1</span><span class="p">))</span>
+
+        <span class="n">reflect</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">V</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">Wt</span><span class="p">))))</span>
+
+        <span class="k">if</span> <span class="n">reflect</span> <span class="o">==</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">:</span>
+            <span class="n">S</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">S</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">V</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">V</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">rmsdval</span> <span class="o">=</span> <span class="n">E0</span> <span class="o">-</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">(</span><span class="n">S</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">rmsdval</span> <span class="o">/</span> <span class="n">L</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Structure.rmsd_distance_matrix"><a class="viewcode-back" href="../structure.html#structure.Structure.rmsd_distance_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">rmsd_distance_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points_index</span><span class="o">=</span><span class="p">[],</span> <span class="n">flat</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        compute distance matrix between structures (using RMSD as metric).</span>
+
+<span class="sd">        :param points_index: if set, only specific points will be considered for comparison</span>
+<span class="sd">        :param flat: if True, returns flattened distance matrix</span>
+<span class="sd">        :returns: RMSD distance matrix</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">if</span> <span class="n">flat</span><span class="p">:</span>
+            <span class="n">rmsd</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rmsd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">)))</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rmsd</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">points_index</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">flat</span><span class="p">:</span>
+                    <span class="n">rmsd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">rmsd</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span>
+                    <span class="n">rmsd</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span>
+
+        <span class="k">if</span> <span class="n">flat</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rmsd</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">rmsd</span></div></div>
+
+
+<div class="viewcode-block" id="random_string"><a class="viewcode-back" href="../structure.html#structure.random_string">[docs]</a><span class="k">def</span> <span class="nf">random_string</span><span class="p">(</span><span class="n">length</span><span class="o">=</span><span class="mi">32</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    generate a random string of arbitrary characters. Useful to generate temporary file names.</span>
+
+<span class="sd">    :param length: length of random string</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">string</span><span class="o">.</span><span class="n">ascii_letters</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">length</span><span class="p">)])</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">biobox 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Matteo Degiacomi.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+    </div>
+  </body>
+</html>
