@@ -17,7 +17,7 @@ import numpy as np
 import scipy.signal
 
 from biobox.classes.structure import Structure
-#import biobox.classes.interaction as I
+import biobox.lib.interaction as I
 
 
 class Molecule(Structure):

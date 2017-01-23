@@ -252,13 +252,6 @@ class Structure(object):
         d_square = np.sum((self.points - self.get_center())**2, axis=1)
         return np.sqrt(np.sum(d_square) / d_square.shape[0])
 
-    def check_inclusion(self, p):
-        '''
-        verify whether a given point is inside or outside the shape.
-
-        .. note:: not yet implemented!
-        '''
-        raise Exception("awww, no implementation yet available for this method...")
 
     def get_size(self):
         '''
