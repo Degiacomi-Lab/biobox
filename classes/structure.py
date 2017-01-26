@@ -20,6 +20,7 @@ from copy import deepcopy
 
 import numpy as np
 import scipy.signal
+import pandas as pd
 
 import biobox.lib.fastmath as FM  # cython routines
 import biobox.lib.interaction as I
