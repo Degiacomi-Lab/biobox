@@ -598,7 +598,7 @@ class Xlink(Path):
             for i in surf_id:
                 # if point is surface atom, and not backbone or CB, flag for
                 # removal
-                if self.molecule.properties['data'][i, 2] not in atoms:
+                if self.molecule.data["name"][i] not in atoms:
                     remove_id.append(i)
 
             p = self.molecule.get_xyz()
@@ -612,7 +612,7 @@ class Xlink(Path):
 
         if atoms_vdw:
             # if no atomype is present, guess it
-            if np.any(self.molecule.properties["data"][:, 8] == ''):
+            if np.any(self.molecule.data["atomtype"] == ''):
                 self.molecule.assign_atomtype()
 
             # knowledge base: define points standard deviations
@@ -625,7 +625,7 @@ class Xlink(Path):
             self.params[:, 1] = 1.0  # set defaults
             a_cnt = 1
             for a in atomdata:
-                pos = self.molecule.properties["data"][idxs, 8] == a[0]
+                pos = self.molecule.data["atomtype"][idxs] == a[0]
                 self.params[pos, 0] = a_cnt
                 self.params[pos, 1] = a[2]  # *2.0
                 self.params[pos, 2] = a[3]
@@ -701,7 +701,7 @@ class Xlink(Path):
             spheres = []
             for i in indices:
                 try:
-                    #s = self._get_sphere(i)
+                #s = self._get_sphere(i)
                     s = self._get_half_sphere(i, pts_surf=sphere_pts_surf)
 
                 except Exception, ex:
@@ -740,10 +740,10 @@ class Xlink(Path):
                     continue
 
                 # extract atom's residue information, in case verbosity is
-                # requested
+                # requested              
                 if verbose:
-                    l1 = self.molecule.properties['data'][indices[i], 3:6]
-                    l2 = self.molecule.properties['data'][indices[j], 3:6]
+                    l1 = self.molecule.data[indices[i], ["resname", "chain", "resid"]].values
+                    l2 = self.molecule.data[indices[j], ["resname", "chain", "resid"]].values
 
                 # if sidechain flexibility is needed, launch ensemble of
                 # measures on spheres
@@ -862,7 +862,7 @@ class Xlink(Path):
     # build sphere around a sidechain atom
     def _get_sphere(self, i, thresh=2.0):
 
-        D = self.molecule.properties['data']
+        D = self.molecule.data
         l = D[i]
         if l[2] == "CA":
             raise Exception(
@@ -902,7 +902,7 @@ class Xlink(Path):
     # build sphere around a sidechain atom. List of radii is valid for lysine
     def _get_half_sphere(self, i, pts_surf=4.0, thresh=2.0, radii=[6.3, 5.9, 5.4, 4.8]):
 
-        D = self.molecule.properties['data']
+        D = self.molecule.data.values
         l = D[i]
         if l[2] == "CA":
             raise Exception("For flexible mode, a side chain atom must be provided!")

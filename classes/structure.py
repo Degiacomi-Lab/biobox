@@ -27,10 +27,10 @@ import biobox.lib.interaction as I
 
 class Structure(object):
     '''
-    A Structure consists of an ensemble of points in 3D space and some associated properties.
+    A Structure consists of an ensemble of points in 3D space, and metadata associated to each of them.
     '''
 
-    def __init__(self, p=np.array([[], []]), r=1.9):
+    def __init__(self, p=np.array([[], []]), r=1.0):
         '''
         Point coordinates and properties data structures are first initialized.
         properties is a dictionary initially containing an entry for 'center' (center of geometry) and 'radius' (average radius of points).
@@ -57,20 +57,18 @@ class Structure(object):
         '''collection of properties. By default, 'center' (geometric center of the Structure) is defined'''
 
         self.properties['center'] = self.get_center()
-        self.properties['radius'] = r  # average radius of every point
+       
+        if isinstance(r, list) or type(r).__module__ == 'numpy': 
+            if len(r) > 0:
+                rad = r*np.ones(len(self.points))
+                idx = np.arange(len(self.points))
 
-    def get(self, prop):
-        '''
-        return property from properties array
-
-        :param prop: desired property to extract from property dictionary
-        :returns: or nan if failed
-        '''
-        if str(prop) in self.properties:
-            return self.properties[str(prop)]
+                self.data = pd.DataFrame(rad, index=idx, columns=["radius"])
+                ''' metadata about each atom (pandas Dataframe)'''
         else:
-            # print "property %s not found!"%prop
-            return float('nan')
+            self.data = pd.DataFrame(index=[], columns=[])
+
+
 
     def set_current(self, pos):
         '''
@@ -84,15 +82,6 @@ class Structure(object):
             self.properties['center'] = self.get_center()
         else:
             raise Exception("ERROR: position %s requested, but only %s conformations available" %(pos, self.coordinates.shape[0]))
-
-    def add_property(self, name, value):
-        '''
-        create a new property.
-
-        :param name: name of the new property to add.
-        :param value: value of the new property. Can be any data structure.
-        '''
-        self.properties[name] = value
 
     def get_xyz(self, indices=[]):
         '''
@@ -161,10 +150,12 @@ class Structure(object):
 
     def clear(self):
         '''
-        remove all the coordinates.
+        remove all the coordinates and empty metadata
         '''
         self.coordinates = np.array([[[], []], [[], []]])
         self.points = self.coordinates[0]
+        self.data = pd.DataFrame(index=[], columns=[])
+
 
     def translate(self, x, y, z):
         '''
@@ -397,7 +388,7 @@ class Structure(object):
                      self.coordinates[f, i, 0],
                      self.coordinates[f, i, 1],
                      self.coordinates[f, i, 2],
-                     self.properties['radius'],
+                     self.data['radius'][i],
                      1.0, "Z")
                 L = 'ATOM  %5s  %-4s%-4s%1s%4i    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % l
                 fout.write(L)
@@ -406,7 +397,7 @@ class Structure(object):
 
         fout.close()
 
-    def ccs(self, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMode sem -convergence 0.01", pdbname="", scale=False, proberad=1.0):
+    def ccs(self, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMode sem -convergence 0.01", pdbname="", tjm_scale=False, proberad=1.0):
         '''
         compute CCS calling either impact.
 
@@ -414,7 +405,7 @@ class Structure(object):
         :param impact_path: by default, the environment variable IMPACTPATH is sought. This allows redirecting to a specific impact root folder. 
         :param impact_options: flags to be passes to impact executable
         :param pdbname: if a file has been already written, impact can be asked to analyze it
-        :param scale: if True, CCS value calculated with PA method is scaled to better match trajectory method.
+        :param tjm_scale: if True, CCS value calculated with PA method is scaled to better match trajectory method.
         :param proberad: radius of probe. Do find out if your impact library already adds this value by default or not (old ones do)!
         :returns: CCS value in A^2. Error return: -1 = input filename not found, -2 = unknown code for CCS calculation\n
                   -3 CCS calculator failed, -4 = parsing of CCS calculation results failed
@@ -442,16 +433,12 @@ class Structure(object):
             except Exception as e:
                 raise Exception(str(e))
 
-            if "atom_ccs" in self.properties.keys():
-                radii = self.properties['atom_ccs'] + proberad
-
-            elif (isinstance(self.properties['radius'], list) or type(self.properties['radius']).__module__ == 'numpy') and self.properties['radius'].shape != ():
-                radii = self.properties['radius'] + proberad
-
+            if "atom_ccs" in self.data.columns:
+                radii = self.data['atom_ccs'].values + proberad
             else:
-                radii = np.ones(len(self.points)) * self.properties['radius'] + proberad
+                radii = self.data['radius'].values + proberad
 
-            if scale:
+            if tjm_scale:
                 return C.get_ccs(self.points, radii)[0]
             else:
                 return C.get_ccs(self.points, radii, a=1.0, b=1.0)[0]
@@ -488,11 +475,10 @@ class Structure(object):
             # description for Z atoms (pseudoatom name used in this code)
             f = open('params', 'w')
 
-            if 'radius' in self.properties:
-                if isinstance(self.properties['radius'], int) or isinstance(self.properties['radius'], float) or isinstance(self.properties['radius'], np.float64):
-                    f.write('[ defaults ]\n H 2.2\n C 2.91\n N 2.91\n O 2.91\n P 2.91\n S 2.91\n')
-                    f.write('Z %s' % self.properties['radius'])
-                    impact_options += " -param params"
+            f.write('[ defaults ]\n H 2.2\n C 2.91\n N 2.91\n O 2.91\n P 2.91\n S 2.91\n')
+            #@fix this for the general case of multiple atoms with different radius
+            f.write(' Z %s' % (np.unique(self.data['radius'])[0] + proberad))
+            impact_options += " -param params"
 
             f.close()
 
@@ -501,7 +487,7 @@ class Structure(object):
             else:
                 impact_name = os.path.join(impact_path, "impact")
 
-            subprocess.check_call('%s  %s -rProbe %s %s > %s' % (impact_name, impact_options, proberad, filename, tmp_outfile), shell=True)
+            subprocess.check_call('%s  %s -rProbe 0 %s > %s' % (impact_name, impact_options, filename, tmp_outfile), shell=True)
 
         except Exception as e:
             raise Exception(str(e))
@@ -513,7 +499,7 @@ class Structure(object):
                 w = line.split()
                 if len(w) > 0 and w[0] == "CCS":
 
-                    if scale:
+                    if tjm_scale:
                         v = float(w[-2])
                     else:
                         v = float(w[3])
@@ -619,12 +605,7 @@ class Structure(object):
         '''
 
         # getting radii associated to every atom
-        radii = self.properties['radius']
-        if not (isinstance(radii, list) or type(radii).__module__ == 'numpy'):
-            radii = np.ones(len(self.points)) * self.properties['radius']
-
-        if len(radii) != len(self.points):
-            raise Exception("ERROR: length vdw radii (%s) and points quantity (%s) mismatch!" %(len(radii), len(self.points)))
+        radii = self.data['radius'].values
 
         if threshold < 0.0 or threshold > 1.0:
             raise Exception("ERROR: threshold should be a floating point between 0 and 1!")
@@ -651,12 +632,7 @@ class Structure(object):
             targets = xrange(0, len(self.points), 1)
 
         # getting radii associated to every atom
-        radii = self.properties['radius']
-        if not (isinstance(radii, list) or type(radii).__module__ == 'numpy'):
-            radii = np.ones(len(self.points)) * self.properties['radius']
-
-        if len(radii) != len(self.points):
-            raise Exception("ERROR: length vdw radii (%s) and points quantity (%s) mismatch!" %(len(radii), len(self.points)))
+        radii = self.data['radius'].values
 
         if threshold < 0.0 or threshold > 1.0:
             raise Exception("ERROR: threshold should be a floating point between 0 and 1!")
@@ -768,8 +744,6 @@ class Structure(object):
         D.properties['format'] = 'dx'
         D.properties['filename'] = ''
         D.properties["sigma"] = np.std(b)
-
-        # D.place_points()
 
         return D
 

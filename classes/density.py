@@ -16,6 +16,7 @@ import os
 import scipy.ndimage.filters
 from sklearn.cluster import DBSCAN
 import numpy as np
+import pandas as pd
 
 from biobox.classes.structure import Structure
 
@@ -267,8 +268,13 @@ class Density(Structure):
 
             self.add_xyz(pts2)
 
+
         else:
             self.add_xyz(points)
+
+        #update radii list (useful for instance for CCS calculation)
+        idx = np.arange(len(self.points))
+        self.data = pd.DataFrame(idx, index=idx, columns=["radius"])
 
         # self.get_center()
 

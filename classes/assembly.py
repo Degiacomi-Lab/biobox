@@ -517,7 +517,6 @@ class Assembly(object):
         :param filename: name of pdb file to be produced
         '''
 
-        radius = self.unit[0].properties['radius']
         fout = open(filename, "w")
 
         for i in xrange(0, len(self.unit), 1):
@@ -525,7 +524,7 @@ class Assembly(object):
             for j in xrange(0, len(self.unit[i].points), 1):
                 l = (i + len(self.unit) * j, "SPH", "SPH", self.chain_names[i],
                      i, self.unit[i].points[j, 0], self.unit[i].points[j, 1],
-                     self.unit[i].points[j, 2], radius, 1.0, "C")
+                     self.unit[i].points[j, 2], self.unit[i].data["radius"][j], 1.0, "C")
                 L = 'ATOM  %5i  %-4s%-4s%1s%4i    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % l
                 fout.write(L)
 
