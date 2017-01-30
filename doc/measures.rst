@@ -6,7 +6,7 @@ measuring characteristics
 
 .. automodule:: biobox.measures.calculators
    :members:
-   :exclude-members: random_string
+   :exclude-members: random_string, CCS
 
 
 measuring distances

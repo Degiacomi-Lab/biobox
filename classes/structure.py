@@ -16,8 +16,6 @@ import numpy as np
 import scipy.signal
 import pandas as pd
 
-import biobox.lib.fastmath as FM  # cython routines
-
 class Structure(object):
     '''
     A Structure consists of an ensemble of points in 3D space, and metadata associated to each of them.
@@ -60,7 +58,6 @@ class Structure(object):
                 ''' metadata about each atom (pandas Dataframe)'''
         else:
             self.data = pd.DataFrame(index=[], columns=[])
-
 
     def set_current(self, pos):
         '''
@@ -148,7 +145,6 @@ class Structure(object):
         self.points = self.coordinates[0]
         self.data = pd.DataFrame(index=[], columns=[])
 
-
     def translate(self, x, y, z):
         '''
         translate the whole structure by a given amount.
@@ -228,14 +224,6 @@ class Structure(object):
         '''
         c = self.get_center()
         self.translate(-c[0], -c[1], -c[2])
-
-    def rgyr(self):
-        '''
-        compute radius of gyration.
-        '''
-        d_square = np.sum((self.points - self.get_center())**2, axis=1)
-        return np.sqrt(np.sum(d_square) / d_square.shape[0])
-
 
     def get_size(self):
         '''
@@ -404,100 +392,6 @@ class Structure(object):
 
         except Exception as e:
             raise Exception("Quick Hull algorithm available in scipy >=0.12!")
-
-    def get_surface_c(self, targets=[], probe=1.4,
-                      n_sphere_point=960, threshold=0.05):
-        '''
-        compute the accessible surface area using the Shrake-Rupley algorithm ("rolling ball method")
-
-        :param targets: indices to be used for surface estimation. By default, all indices are kept into account.
-        :param probe: radius of the "rolling ball"
-        :param n_sphere_point: number of mesh points per atom
-        :param threshold: fraction of points in sphere, above which structure points are considered as exposed
-        :returns: accessible surface area in A^2
-        :returns: mesh numpy array containing the found points forming the accessible surface mesh
-        :returns: IDs of surface points
-        '''
-
-        # getting radii associated to every atom
-        radii = self.data['radius'].values
-
-        if threshold < 0.0 or threshold > 1.0:
-            raise Exception("ERROR: threshold should be a floating point between 0 and 1!")
-
-        if len(targets) == 0:
-            return FM.c_get_surface(self.points, radii, probe, n_sphere_point, threshold)
-        else:
-            return FM.c_get_surface(self.points[targets], radii, probe, n_sphere_point, threshold)
-
-    def get_surface(self, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
-        '''
-        compute the accessible surface area using the Shrake-Rupley algorithm ("rolling ball method")
-
-        :param targets: indices to be used for surface estimation. By default, all indices are kept into account.
-        :param probe: radius of the "rolling ball"
-        :param n_sphere_point: number of mesh points per atom
-        :param threshold: fraction of points in sphere, above which structure points are considered as exposed
-        :returns: accessible surface area in A^2
-        :returns: mesh numpy array containing the found points forming the accessible surface mesh
-        :returns: IDs of surface points
-        '''
-
-        import biobox.measures.interaction as I
-
-        if len(targets) == 0:
-            targets = xrange(0, len(self.points), 1)
-
-        # getting radii associated to every atom
-        radii = self.data['radius'].values
-
-        if threshold < 0.0 or threshold > 1.0:
-            raise Exception("ERROR: threshold should be a floating point between 0 and 1!")
-
-        # create unit sphere points cloud (using golden spiral)
-        pts = []
-        inc = np.pi * (3 - np.sqrt(5))
-        offset = 2 / float(n_sphere_point)
-        for k in range(int(n_sphere_point)):
-            y = k * offset - 1 + (offset / 2)
-            r = np.sqrt(1 - y * y)
-            phi = k * inc
-            pts.append([np.cos(phi) * r, y, np.sin(phi) * r])
-
-        sphere_points = np.array(pts)
-        const = 4.0 * np.pi / len(sphere_points)
-
-        contact_map = I.distance_matrix(self.points, self.points)
-
-        asa = 0.0
-        surface_atoms = []
-        mesh_pts = []
-        # compute accessible surface for every atom
-        for i in targets:
-
-            # place mesh points around atom of choice
-            mesh = sphere_points * (radii[i] + probe) + self.points[i]
-
-            # compute distance matrix between mesh points and neighboring atoms
-            test = np.where(contact_map[i, :] < radii.max() + probe * 2)[0]
-            neigh = self.points[test]
-            dist = I.distance_matrix(neigh, mesh) - radii[test][:, np.newaxis]
-
-            # lines=atoms, columns=mesh points. Count columns containing values greater than probe*2
-            # i.e. allowing sufficient space for a probe to fit completely
-            cnt = 0
-            for m in range(dist.shape[1]):
-                if not np.any(dist[:, m] < probe):
-                    cnt += 1
-                    mesh_pts.append(mesh[m])
-
-            # calculate asa for current atom, if a sufficient amount of mesh
-            # points is exposed (NOTE: to verify)
-            if cnt > n_sphere_point * threshold:
-                surface_atoms.append(i)
-                asa += const * cnt * (radii[i] + probe)**2
-
-        return asa, np.array(mesh_pts), np.array(surface_atoms)
 
     def get_density(self, step=1.0, sigma=1.0, kernel_half_width=5, buff=3):
         '''

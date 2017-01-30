@@ -54,7 +54,7 @@ class test_biobox(unittest.TestCase):
 
         print "\n> testing molecule's SASA"
         try:
-            [sasa, mesh, surf_idx] = self.M.get_surface(n_sphere_point=400)
+            [sasa, mesh, surf_idx] = bb.sasa(self.M, n_sphere_point=400)
         except Exception, ex:
             assert False
 

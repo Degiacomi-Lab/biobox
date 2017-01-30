@@ -123,7 +123,7 @@ class Density(Structure):
 
         self.properties["sigma"] = np.std(self.properties['density'])
 
-    def import_numpy(self, data, origin=[0,0,0], delta=np.identity(3)):
+    def import_numpy(self, data, origin=[0, 0, 0], delta=np.identity(3)):
         '''
         import a numpy 3D array to allow manipulation as a density map
 

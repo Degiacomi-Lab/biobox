@@ -454,72 +454,6 @@ class Assembly(object):
         contacts = self.unit[u1].check_inclusion(self.unit[u2].points)
         return float(contacts)
 
-    def get_surface(self):
-        '''
-        compute accessible surface area.
-
-        :returns: accessible_surface area in A^2
-        '''
-        points = self.get_all_xyz()
-        S = Structure(points)
-        return S.get_surface()
-
-    def ccs(self, use_lib=True, impact_path='',
-            impact_options="-Octree -nRuns 32 -cMode sem -convergence 0.01 -rProbe 1.0", outname="", scale=False):
-        '''
-        compute assembly CCS.
-
-        :param use_lib: if true, impact library will be used, if false a system call to impact executable will be performed instead
-        :param impact_path: location of impact executable
-        :param impact_options: flags to be passes to impact executable
-        :param scale: if True, CCS value calculated with PA method is scaled to better match trajectory method.
-        :param outname: name of temporary output file to be generate for CCS calculation. If none is provided, a random name is picked.
-        :returns: CCS value in A^2. Returns 0 if CCS calculation failed.
-        '''
-        M = self.make_structure()
-        return M.ccs(use_lib=use_lib, impact_path=impact_path, impact_options=impact_options, pdbname=outname, scale=scale)
-
-    def saxs(self, crysol_path='~/atsas-2.5.2-1/bin/',
-             crysol_options="-lm 18 -ns 500", outname=""):
-        '''
-        compute SAXS curve using crysol (from ATSAS suite)
-
-        :param crysol_path: location of impact executable
-        :param crysol_options: flags to be passes to impact executable
-        :param outname: if a file has been already written, impact can be asked to analyze it
-        :returns: SAXS curve (nx2 numpy array). returns -1 if failed.
-        '''
-
-        # if a filename is not provided for output, generate a random name
-        # (make sure it does not exist yet)
-        if outname == "":
-            outname = "%s.pdb" % random_string()
-            while os.path.exists(outname):
-                outname = "%s.pdb" % random_string()
-
-        # output a file for saxs calculation
-        self.write_pdb(outname)
-        S = Structure()  # instance created just to be able to access to the saxs calculation method
-
-        # very big PDB files may not be completely written before saxs
-        # calculation is invoked. This is therefore tried several times before
-        # renouncing.
-        cnt = 0
-        saxs = []
-        while len(saxs) == 0 and cnt < 10:
-            cnt += 1
-            try:
-                saxs = S.saxs(crysol_path=crysol_path, crysol_options=crysol_options, pdbname=outname)
-            except Exception, ex:
-                saxs = []
-                continue
-
-        if len(saxs) == 0 and cnt == 10:
-            self.write_pdb("%s.pdb" % outname)
-            print "WARNING: SAXS could not be calculated! You're possibly trying to write a too big PDB file."
-
-        return saxs
-
     def get_buried(self):
         '''
         compute buried surface (assembly sum of components asa minus assembly asa).
@@ -527,13 +461,15 @@ class Assembly(object):
         :returns: buried_surface in A^2
         '''
 
+        from biobox.measures.calculators import sasa
+        
         # sum asa of individual components
         asa = 0
         for i in xrange(0, len(self.unit), 1):
-            asa += self.unit[i].get_surface()
+            asa += sasa(self.unit[i])[0]
 
         # subtract assembly asa
-        asa -= self.get_surface()
+        asa -= sasa(self)[0]
         return asa
 
     def write_pdb(self, filename):

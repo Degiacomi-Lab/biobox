@@ -591,7 +591,8 @@ class Xlink(Path):
         if densify:
 
             # get indices of surface atoms
-            surf_id = self.molecule.get_surface(n_sphere_point=300)[2]
+            from biobox.measures.calculators import sasa
+            surf_id = sasa(self.molecule, n_sphere_point=300)[2]
 
             remove_id = []
             for i in surf_id:
