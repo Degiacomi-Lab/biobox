@@ -15,7 +15,7 @@ import os
 from copy import deepcopy
 import numpy as np
 from biobox.classes.structure import Structure
-from biobox.classes.measures import random_string
+from biobox.measures.calculators import random_string
 import pandas as pd
 
 
@@ -190,7 +190,7 @@ class Assembly(object):
 
     def make_structure(self):
         '''
-        returns a :func:`Structure <structure.Structure>` object containing all the points of the assembly
+        returns a :func:`Structure <structure.Structure>` object containing all the points of the assembly.
 
         :returns: :func:`Structure <structure.Structure>` object
         '''
@@ -203,7 +203,7 @@ class Assembly(object):
         :param angle: chain curvature
         :param dist: distance between centers of mass
         :param groups: if set, a chain is formed by considering groups of loaded structures as unique objects.
-        If unset, every object is independently moved.
+                       If unset, every object is independently moved.
         '''
 
         # if no group has been selected, every subunit forms a group by itself

@@ -11,6 +11,10 @@
 #
 # Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com
 
+'''
+Functions to measure characteristics of any BiobOx object
+'''
+
 import subprocess
 import os
 import sys
@@ -103,7 +107,7 @@ def ccs(M, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMod
     if use_lib and pdbname == "":
 
         #if True:
-        from biobox.classes.measures import CCS
+        from biobox.measures.calculators import CCS
         try:
             if impact_path == '':
 

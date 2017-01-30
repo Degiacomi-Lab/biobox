@@ -17,7 +17,6 @@ import scipy.signal
 import pandas as pd
 
 import biobox.lib.fastmath as FM  # cython routines
-import biobox.lib.interaction as I
 
 class Structure(object):
     '''
@@ -443,6 +442,8 @@ class Structure(object):
         :returns: mesh numpy array containing the found points forming the accessible surface mesh
         :returns: IDs of surface points
         '''
+
+        import biobox.measures.interaction as I
 
         if len(targets) == 0:
             targets = xrange(0, len(self.points), 1)

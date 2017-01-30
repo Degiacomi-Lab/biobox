@@ -11,11 +11,9 @@
 #
 # Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com
 
-import os
 import numpy as np
 import pandas as pd
 
-from biobox.classes.structure import Structure
 from biobox.classes.polyhedron import Polyhedron
 from biobox.classes.molecule import Molecule
 

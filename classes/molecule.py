@@ -18,8 +18,6 @@ import scipy.signal
 import pandas as pd
 
 from biobox.classes.structure import Structure
-import biobox.lib.interaction as I
-
 
 class Molecule(Structure):
     '''
@@ -1380,6 +1378,8 @@ class Molecule(Structure):
         :param cutoff: minimal distance to consider a couple as linkable.
         :returns: nx3 numpy array containing, for every valid connection, id of first atom, id of second atom and distance between the two.
         '''
+
+        import biobox.measures.interaction as I
 
         points1 = self.get_xyz()[idx]
 

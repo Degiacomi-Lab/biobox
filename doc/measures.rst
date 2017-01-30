@@ -1,5 +1,14 @@
-Pairwise interactions
-=====================
+Measures
+========
+
+measuring characteristics
+-------------------------
+
+.. automodule:: biobox.measures.measures
+
+
+measuring distances
+-------------------
 
 Helper functions and classes are available to assess points' pairwise interactions between points. These are divided in two categories:
 
@@ -7,14 +16,8 @@ Helper functions and classes are available to assess points' pairwise interactio
 * paths (e.g. used to model cross-linking data) 
 
 
-straight line
--------------
-
-.. automodule:: biobox.lib.interaction
+.. automodule:: biobox.measures.interaction
    :members:
 
-paths
------
-
-.. automodule:: path
+.. automodule:: biobox.measures.path
    :members:

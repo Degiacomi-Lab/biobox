@@ -15,7 +15,6 @@ import heapq
 import scipy.spatial.distance as SD
 import numpy as np
 
-
 import biobox.lib.fastmath as FM # cythonized
 from biobox.lib.graph import Graph # cythonized
 
