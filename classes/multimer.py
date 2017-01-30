@@ -93,8 +93,8 @@ class Multimer(Polyhedron):
         # append the coordinates of every unit within the query 
         pts = np.empty([0, 3])        
         for u in np.unique(targets[:,0]):
+            pos = targets[targets[:,0] == u, 1].astype(int)
             this_unit = self.unit_labels[u]
-            pos = targets[targets[:,0] == this_unit, 1]            
             pts = np.concatenate((pts, self.unit[this_unit].points[pos]))
 
         if get_index:
@@ -103,7 +103,7 @@ class Multimer(Polyhedron):
             return pts
 
 
-    def atomselect(self, u, chain, resid, atom, get_index=False):
+    def atomselect(self, u, chain, resid, atom, get_index=False, use_resname = True):
         '''
         ## select specific atoms in a multimer providing unit, chain, residue ID and atom name.
 
@@ -112,6 +112,7 @@ class Multimer(Polyhedron):
         :param resid: residue ID of desired atoms (accepts '*' as wildcard). Can also be a list or numpy array of of int.
         :param atom: name of desired atom (accepts '*' as wildcard). Can also be a list or numpy array of strings.
         :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)
+        :param use_resname: if set to True, consider information in "res" variable as resnames, and not resids
         :returns: coordinates of the selected points (in a unique array) and, if get_index is set to true, a list of their indices in subunits' self.points array.
         '''
 
@@ -140,7 +141,7 @@ class Multimer(Polyhedron):
         pts = np.empty([0, 3])
         for i in xrange(0, len(self.unit), 1):
             if i in unit_id:
-                [pts_tmp, index_tmp] = self.unit[i].atomselect(chain, resid, atom, True)
+                [pts_tmp, index_tmp] = self.unit[i].atomselect(chain, resid, atom, True, use_resname=use_resname)
                 pts = np.concatenate((pts, pts_tmp))
                 indices.append(index_tmp)
             else:

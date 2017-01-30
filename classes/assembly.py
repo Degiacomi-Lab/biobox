@@ -167,7 +167,8 @@ class Assembly(object):
         dfs = [self.data]
         for i in xrange(len(self.unit), len(self.unit) + len(struct_list), 1):
             # create dictionary with neighbors
-            self.unit.append(deepcopy(struct_list[i]))
+            e = deepcopy(struct_list[i])
+            self.unit.append(e)
 
             if len(labels) != 0:
                 lbl = labels[i]
@@ -177,9 +178,9 @@ class Assembly(object):
             self.unit_labels[lbl] = i
 
             #add labeling to structures tables, prior concatenation
-            self.unit.data["unit"] = lbl
-            self.data.data["unit_index"] = self.unit.data.index
-            dfs.append(self.data.data)
+            e.data["unit"] = lbl
+            e.data["unit_index"] = e.data.index
+            dfs.append(e.data)
 
         #create dataframe collecting information from all structures
         self.data = pd.concat(dfs)
