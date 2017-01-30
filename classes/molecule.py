@@ -811,6 +811,14 @@ class Molecule(Structure):
 
     
     def query(self, query_text, get_index=False):
+        '''
+        ## select specific atoms in a multimer un the basis of a text query.
+
+        :param query_text: string selecting atoms of interest. Uses the pandas query syntax, can access all columns in the dataframe self.data.
+        :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)
+        :returns: coordinates of the selected points (in a unique array) and, if get_index is set to true, a list of their indices in subunits' self.points array.
+        '''
+
         idx = self.data.query(query_text).index.values
 
         if get_index:

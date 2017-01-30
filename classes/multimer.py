@@ -75,6 +75,34 @@ class Multimer(Polyhedron):
         os.remove(outname)
         return ccs
 
+
+    def query(self, query_text, get_index=False):
+        '''
+        ## select specific atoms in a multimer un the basis of a text query.
+
+        :param query_text: string selecting atoms of interest. Uses the pandas query syntax, can access all columns in the dataframe self.data.
+        :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)
+        :returns: coordinates of the selected points (in a unique array) and, if get_index is set to true, a list of their indices in subunits' self.points array.
+        '''
+
+        idx = self.data.query(query_text).index.values
+
+        res = self.data.iloc[idx] #this is a new sliced dataframe
+        targets = np.array(res.ix[:,["unit","unit_index"]].values)
+
+        # append the coordinates of every unit within the query 
+        pts = np.empty([0, 3])        
+        for u in np.unique(targets[:,0]):
+            this_unit = self.unit_labels[u]
+            pos = targets[targets[:,0] == this_unit, 1]            
+            pts = np.concatenate((pts, self.unit[this_unit].points[pos]))
+
+        if get_index:
+            return [pts, idx]
+        else:
+            return pts
+
+
     def atomselect(self, u, chain, resid, atom, get_index=False):
         '''
         ## select specific atoms in a multimer providing unit, chain, residue ID and atom name.

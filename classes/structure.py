@@ -69,7 +69,6 @@ class Structure(object):
             self.data = pd.DataFrame(index=[], columns=[])
 
 
-
     def set_current(self, pos):
         '''
         select current frame (place frame pointer at desired position)

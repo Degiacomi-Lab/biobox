@@ -15,6 +15,7 @@ import os
 from copy import deepcopy
 import numpy as np
 from biobox.classes.structure import Structure, random_string
+import pandas as pd
 
 
 class Assembly(object):
@@ -44,6 +45,10 @@ class Assembly(object):
         # current conformation selected from conformational database
         self.current = -1
 
+        #metadata associated to every point
+        self.data = pd.DataFrame(index=[], columns=[])
+
+
     def clear(self):
         '''
         remove all elements loaded in the assembly.
@@ -59,11 +64,21 @@ class Assembly(object):
         :param n: number of units
         :param struct: object of class Structure (or subclasses)
         '''
+        dfs = [self.data]
         for i in xrange(len(self.unit), len(self.unit) + n, 1):
             e = deepcopy(struct)
             self.unit.append(e)
             self.unit_labels[str(i)] = i
 
+            #add labeling to structures tables, prior concatenation
+            e.data["unit"] = str(i)
+            e.data["unit_index"] = e.data.index
+            dfs.append(e.data)
+
+        #create dataframe collecting information from all structures
+        self.data = pd.concat(dfs)
+        self.data.index = np.arange(len(self.data))
+        
         self.current = 0
 
     def merge(self, assembly, n=1):
@@ -96,6 +111,13 @@ class Assembly(object):
                 self.unit.append(structure)
             else:
                 raise Exception("ERROR: label %s already existing in multimer!" %label)
+
+
+        #append structure to dataframe
+        structure.data["unit"]=label
+        structure.data["unit_index"]=structure.data.index
+        self.data = pd.concat([self.data, structure.data])
+        self.data.index = np.arange(len(self.data))
 
         return label
 
@@ -142,14 +164,27 @@ class Assembly(object):
                     raise Exception("ERROR: label %s already exists!" % l)
 
         # append new structures to old ones
+        dfs = [self.data]
         for i in xrange(len(self.unit), len(self.unit) + len(struct_list), 1):
             # create dictionary with neighbors
             self.unit.append(deepcopy(struct_list[i]))
 
             if len(labels) != 0:
-                self.unit_labels[labels[i]] = i
+                lbl = labels[i]
             else:
-                self.unit_labels[str(i)] = i
+                lbl = str(i)
+
+            self.unit_labels[lbl] = i
+
+            #add labeling to structures tables, prior concatenation
+            self.unit.data["unit"] = lbl
+            self.data.data["unit_index"] = self.unit.data.index
+            dfs.append(self.data.data)
+
+        #create dataframe collecting information from all structures
+        self.data = pd.concat(dfs)
+        self.data.index = np.arange(len(self.data))
+
 
     def make_structure(self):
         '''
@@ -165,7 +200,7 @@ class Assembly(object):
 
         :param angle: chain curvature
         :param dist: distance between centers of mass
-        :param groups: if set, a chain is formed by considering groups of loaded structures as unique objects.\n
+        :param groups: if set, a chain is formed by considering groups of loaded structures as unique objects.
         If unset, every object is independently moved.
         '''
 
@@ -416,17 +451,6 @@ class Assembly(object):
         u2 = self.unit_labels[str(unit2)]
         contacts = self.unit[u1].check_inclusion(self.unit[u2].points)
         return float(contacts)
-
-    def distance(self, atom1, atom2):
-        '''
-        measure shortest euclidean distance within two ensembles of points
-        '''
-        d = []
-        for i in xrange(0, len(atom1), 1):
-            d.append(np.sqrt(np.sum((atom2 - atom1[i])**2, axis=1)))
-
-        dist = np.array(d)
-        return np.min(dist)
 
     def get_surface(self):
         '''
