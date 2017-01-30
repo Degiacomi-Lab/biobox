@@ -774,21 +774,6 @@ class Molecule(Structure):
 
         fin.close()
 
-    def ccs(self, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMode sem -convergence 0.01", tjm_scale=True, proberad=1.0):
-        '''
-        Calculate molecule CCS
-
-        :param use_lib: if true, impact library will be used, if false a system call to impact executable will be performed instead
-        :param impact_path: location of impact executable
-        :param impact_options: flags to be passes to impact executable
-        :param scale: if True, CCS value calculated with PA method is scaled to better match trajectory method.
-        :returns: CCS value in A^2. Error return: -1 = input filename not found, -2 = unknown code for CCS calculation\n
-                  -3 CCS calculator failed, -4 = parsing of CCS calculation results failed
-        '''
-
-        self.assign_atomtype()
-        self.get_atoms_ccs()
-        return super(Molecule, self).ccs(use_lib=use_lib, impact_path=impact_path, impact_options=impact_options, tjm_scale=tjm_scale, proberad=proberad)
 
     def get_atoms_ccs(self):
         '''

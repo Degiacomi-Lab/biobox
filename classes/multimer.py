@@ -15,7 +15,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from biobox.classes.structure import Structure, random_string
+from biobox.classes.structure import Structure
 from biobox.classes.polyhedron import Polyhedron
 from biobox.classes.molecule import Molecule
 
@@ -26,55 +26,6 @@ class Multimer(Polyhedron):
 
     subclass of :func:`Polyhedron <polyhedron.Polyhedron>`.
     '''
-
-    def ccs(self, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMode sem -convergence 0.01 -rProbe 1.0", outname="", tjm_scale=False, proberad=1.0):
-        '''
-        Override superclass method to compute CCS method. Here, atomic CCS radii are kept into account
-
-        :param use_lib: if true, impact library will be used, if false a system call to impact executable will be performed instead
-        :param impact_path: location of impact executable
-        :param impact_options: flags to be passes to impact executable
-        :param outname: name of temporary output file to be generate for CCS calculation. If none is provided, a random name is picked.
-        :param scale: if True, CCS value calculated with PA method is scaled to better match trajectory method.
-        :returns: CCS: value in A^2. Error return: -1 = input filename not found, -2 = unknown code for CCS calculation, -3 CCS calculator failed, -4 = parsing of CCS calculation results failed
-        '''
-
-        if use_lib:
-            MM = self.make_molecule()
-            MM.get_atoms_ccs()
-            return MM.ccs(use_lib=use_lib, impact_path=impact_path, impact_options=impact_options, tjm_scale=tjm_scale, proberad=proberad)
-
-        # if impact has to be called via system call, a random filename will be
-        # generated (if none is given)
-        if outname == "":
-            outname = "%s.pdb" % random_string()
-            while os.path.exists(outname):
-                outname = "%s.pdb" % random_string()
-
-        # output a file for ccs calculation
-        self.write_pdb(outname)
-        S = Structure()  # instance created just to be able to access to the ccs calculation method
-
-        # very big PDB files may not be completely written before ccs
-        # calculation is invoked. This is therefore tried several times before
-        # renouncing.
-        cnt = 0
-        ccs = 0
-        while ccs <= 0 and cnt < 10:
-            cnt += 1
-            try:
-                ccs = S.ccs(use_lib=use_lib, impact_path=impact_path, impact_options=impact_options, pdbname=outname, scale=scale, proberad=proberad)
-            except Exception, ex:
-                ccs = 0
-                continue
-
-        if ccs == 0 and cnt == 10:
-            raise Exception("ERROR: CCS could not be calculated! You're possibly trying to write a too big PDB file.")
-
-        # clear temporary file
-        os.remove(outname)
-        return ccs
-
 
     def query(self, query_text, get_index=False):
         '''

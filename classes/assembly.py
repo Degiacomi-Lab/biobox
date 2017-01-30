@@ -14,7 +14,8 @@
 import os
 from copy import deepcopy
 import numpy as np
-from biobox.classes.structure import Structure, random_string
+from biobox.classes.structure import Structure
+from biobox.classes.measures import random_string
 import pandas as pd
 
 
