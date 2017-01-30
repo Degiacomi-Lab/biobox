@@ -20,9 +20,7 @@ from biobox.classes.molecule import Molecule
 
 class Multimer(Polyhedron):
     '''
-    Construct and manipulate a protein assembly composed of several :func:`Molecule <molecule.Molecule>` instances.
-
-    subclass of :func:`Polyhedron <polyhedron.Polyhedron>`.
+    Construct and manipulate a protein assembly composed of several :func:`Molecule <molecule.Molecule>` instances. Subclass of :func:`Polyhedron <polyhedron.Polyhedron>`.
     '''
 
     def query(self, query_text, get_index=False):

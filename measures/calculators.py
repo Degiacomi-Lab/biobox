@@ -224,7 +224,7 @@ class CCS(object):
     CCS calculator (wrapper for C library)
     '''
 
-    def __init__(self, libfile="lib/libimpact.dll"):
+    def __init__(self, libfile):
         '''
         initialize by loading IMPACT library
 

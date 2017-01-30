@@ -13,10 +13,8 @@ For comfort, the current conformation is accessible in the **points** Nx3 array,
 
 >>> self.points = self.coordinates[self.current]
 
-Points properties are stored in a **properties** dictionary. These can be:
-
-* global properties (e.g. self.properties["center"], keeping track of the point center of geometry)
-* point-specific properties (e.g. self.properties["radius"], that can store an Nx1 array of points radii).
+Points attributes are stored in a pandas **dataframe**. For instance, self.data["radius"] contains each point's radius.
+A property of the whole point cloud can be stored in a properties dictionary (e.g. self.properties["center"]).
 
 Several :func:`Structure <structure.Structure>` subclasses are available (:func:`Molecule <molecule.Molecule>`, :func:`Ellipsoid <convex.Ellipsoid>`, :func:`Cylinder <convex.Cylinder>`, :func:`Cone <convex.Cone>`, :func:`Sphere <convex.Sphere>`, :func:`Prism <convex.Prism>`, :func:`Density <density.Density>`, see below).
 
@@ -33,7 +31,7 @@ Molecule
 
 .. automodule:: molecule
    :members:
-   
+   :show-inheritance:
 
 Convex Point Clouds
 -------------------
@@ -43,10 +41,11 @@ All these classes are subclass of :func:`Structure <structure.Structure>`.
 
 .. automodule:: convex
    :members:
-
+   :show-inheritance:
 
 Density
 -------
 
 .. automodule:: density
    :members:
+   :show-inheritance:

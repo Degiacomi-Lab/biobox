@@ -38,10 +38,17 @@ class test_biobox(unittest.TestCase):
         try:       
             D = bb.Density()
             D.import_map("EMD-1080.mrc", "mrc")
-            D.place_points(0.1)
+            D.place_points(5)
+            
         except Exception, ex:
             assert False
  
+        try:          
+            D.threshold_vol_ccs(sampling_points=1, append=False, noise_filter=0)
+        except Exception, ex:
+            assert False
+        
+       
 
     def test_SASA(self):
 

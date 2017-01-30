@@ -6,14 +6,18 @@ Selecting atoms from a (multi)PDB
 
 Let's load a molecule, and identify only the backbone atoms of chain A.
 
->>> from biobox import Molecule
->>> M = Molecule()
+>>> M = biobox.Molecule()
 >>> M.import_pdb("protein.pdb")
 >>> pos, idx = M.atomselect("A", "*", ["CA","C","N","O"], get_index=True)
 
 :func:`atomselect <molecule.Molecule.atomselect>` accepts as parameters single strings, lists or "*" as wildcard.
 After this call, pos contains the coordinates of all selected atoms, and idx their indices.
-The latter can be used to save a subset of the initial pdb in a new one, or to create a new :func:`Molecule <molecule.Molecule>` object containing only them.
+Another way to select atoms, is to use the :func:`atomselect <molecule.Molecule.query>` method. The following call will yield the same result as the atomselect above.
+
+>>> pos, idx = M.query('chain == "A" and name == ["CA","C","N","O"]', get_index=True)
+
+The query methods follows the pandas query syntax, and allows to be more expressive. Any column stored in M.data (call M.data.columns) can be addressed.
+Now that we have identified indices of interest, we can save a subset of the initial pdb in a new one, or to create a new :func:`Molecule <molecule.Molecule>` object containing only them.
 
 >>> M.write_pdb("chainA.pdb", index=idx)
 >>> M2 = M.get_subset(idx)
@@ -39,10 +43,9 @@ protein conformations clustering
 Suppose you have several PDB files of the same protein (same number of atoms), and you want to cluster them according to a hierarchical clustering.
 We can for example add the coordinates of all pdb files to the same :func:`Molecule <molecule.Molecule>` instance (supposing that they all have the same amount of atoms):
 
->>> from biobox import Molecule
 >>> import glob
 >>> files = glob.glob("*pdb")
->>> M = Molecule()
+>>> M = biobox.Molecule()
 >>> M.import_pdb(files[0])
 >>> for f in xrange(1, len(files)):
 >>>     M2 = Molecule()
@@ -66,15 +69,14 @@ protein polyhedral assemblies
 We want to produce several protein tetrahedral assemblies, and compare them to each other.
 First, let's load our protein building block:
 
->>> from biobox import Molecule, Multimer
->>> M = Molecule()
+>>> M = biobox.Molecule()
 >>> M.import_pdb("protein.pdb")
 
 Now, let's create a :func:`Multimer <multimer.Multimer>` arranged according to a tetrahedral symmetry.
 To do so, we have to load information about the tetrahedral scaffold BiobOx will exploit to align six monomers.
 By default this information is stored in the file classes/polyhedron_database.dat, though the user can import his own database.
 
->>> P = Multimer()
+>>> P = biobox.Multimer()
 >>> P.setup_polyhedron('Tetrahedron', M)
 >>> P.generate_polyhedron(10,180,20,10)
 
@@ -96,6 +98,14 @@ Now, we want to calculate the RMSD between the created multimers' alpha carbons.
 
 >>> idxs = P.atomselect("*", "*" ,"*", "CA", get_index=True)[1]
 >>> dist_mat = P.rmsd_distance_matrix(points_indices=idxs)
+
+Note that, as for the case of :func:`atomselect <molecule.Molecule>` objects, a :func:`query <molecule.Multimer.query>` method is also available. The same selection as the command above can be obtained with:
+
+>>> idx = M.query('name == "CA"', get_index=True)[1]
+
+To select atoms from some specific units, the following command can be issued:
+
+>>> idx = M.query('unit == ["0", "3", "5"] and name == "CA"', get_index=True)[1]
 
 Subunits can also be grouped, and different groups can be rotated differently.
 In the following example, the tetrahedron's chains A, B, C and D, E, F form different groups that are rotated independently.
@@ -134,15 +144,14 @@ Unless otherwise specified (using the optional keyword radius), every point comp
 To simulate a smooth surface, one can either increase the points radius, or their density.
 Here, we will use default values, and the resulting cylinder will then be rotated by 45 degrees along the x axis.
 
->>> from biobox import Cylinder, Assembly
 >>> cylinder_length = 20
 >>> cylinder_radius = 10
->>> C = Cylinder(cylinder_length, cylinder_radius)
+>>> C = biobox.Cylinder(cylinder_length, cylinder_radius)
 >>> C.rotate(45, 0, 0)
 
 We will now create an assembly loading ten copies of our template cylinder, arrange them in a 30 Angstrom-wide circle, and save the resulting structure into a PDB file.
 
->>> A = Assembly()
+>>> A = biobox.Assembly()
 >>> A.load(C, 10)
 >>> A.make_circular_symmetry(30)
 >>> A.write_pdb("assembly.pdb")
@@ -163,13 +172,12 @@ Here we collapse the Assembly's units coordinates in a single :func:`Structure <
 In case not all the subunits of the assembly are the same, a list of subunits can be loaded.
 In this case, we will load a :func:`Sphere <convex.Sphere>` (and call it "S") as well as two identical cylinders (called "C1" and "C2").
 
->>> from biobox import Sphere
 >>> sphere_radius = 20
 >>> cylinder_radius = 5
 >>> cylinder_length = 50
->>> S = Sphere(sphere_radius)
->>> C = Cylinder(cylinder_radius, cylinder_length)
->>> A2 = Assembly()
+>>> S = biobox.Sphere(sphere_radius)
+>>> C = biobox.Cylinder(cylinder_radius, cylinder_length)
+>>> A2 = biobox.Assembly()
 >>> A2.load_list([S, C, C], ["S", "C1", "C2"])
 
 Now, we will arrange the three loaded structures so that the bases of two cylinders are in touch with the sphere, and one cylinder is rotated by 45 degrees with respect to the other.
@@ -192,8 +200,7 @@ Here we show how to relate IM data with a electron density 3D reconstruction obt
 
 We first import a GroEL density map EMD-1457.mrc.
 
->>> from biobox import Density
->>> D = Density()
+>>> D = biobox.Density()
 >>> D.import_map("EMD-1457.mrc", "mrc")
 
 Depending on which threshold value one selects, the resulting isosurface will have a certain volume and CCS.
@@ -230,9 +237,8 @@ where do lipids spend most of their time?
 Given an MD simulation, in a preprocessing step, align all frames around the protein, and save the resulting trajectory in a multi-PDB file.
 First, we identify the position of every phosphorus atom (P):
 
->>> from biobox import Molecule, Structure
 >>> import numpy as np
->>> M = Molecule()
+>>> M = biobox.Molecule()
 >>> M.import_pdb("trajectory.pdb")
 >>> idx = M.atomselect("*", "*", "P", get_index=True)[1]
 
@@ -243,12 +249,11 @@ We then extract the coordinate of every selected atom at any time in the simulat
 
 We finally generate a density map of the resulting collection of points, and save it in a DX file.
 
->>> S = Structure(atoms)
+>>> S = biobox.Structure(atoms)
 >>> D = S.get_density()
 >>> D.write_dx("density.dx")
 
 .. seealso:: The approach described here was used in `Landreh et al., Integrating mass spectrometry with MD simulations reveals the role of lipids in Na+/H+ antiporters,  Nature Communications, 2017 <http://www.nature.com/articles/ncomms13993>`_
-
 
 
 calculating cross-linking distance 
@@ -259,8 +264,7 @@ This distance, measured by a cross-linker molecule, is however not a straight li
 
 To identify in a structure which lysines may be cross-linked, we start loading it and identifying the location of all lysines' NZ atoms:
 
->>> from biobox import Molecule, Xlink
->>> M = Molecule()
+>>> M = biobox.Molecule()
 >>> M.import_pdb("protein.pdb")
 >>> idx = M.atomselect("*", "LYS", "NZ", use_resname=True, get_index=True)[1]
 
@@ -268,7 +272,7 @@ To calculate the path distance between all these atoms, we must first define whi
 Here, we select all backbone atoms as well as beta carbon ones. Furthermore, atoms buried in the protein core are also added (with densify=True).
 This makes the protein core more "dense", reducing the likelihood that a path will find its way through the protein, instead of around it.
 
->>> XL = Xlink(M)
+>>> XL = biobox.Xlink(M)
 >>> XL.set_clashing_atoms(atoms=["CA", "C", "N", "O", "CB"], densify=True)
 
 We then set up the grid used by the path detection algorithms.

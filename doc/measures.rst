@@ -4,7 +4,9 @@ Measures
 measuring characteristics
 -------------------------
 
-.. automodule:: biobox.measures.measures
+.. automodule:: biobox.measures.calculators
+   :members:
+   :exclude-members: random_string
 
 
 measuring distances
@@ -21,3 +23,4 @@ Helper functions and classes are available to assess points' pairwise interactio
 
 .. automodule:: biobox.measures.path
    :members:
+   :exclude-members: PriorityQueue
