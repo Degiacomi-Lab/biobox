@@ -31,10 +31,9 @@ class Molecule(Structure):
 
     def __init__(self):
         '''
-        At instantiation, properties associated to every individual atoms are stored as an array under the key "data" in the properties dictionary.
-        The columns of the "data" array contain the following information (as string):
-
-        [atom/hetatm, index, atom name, resname, chain name, residue ID, beta factor, occupancy, atomtype].
+        At instantiation, properties associated to every individual atoms are stored in a pandas Dataframe self.data.
+        The columns of the self.data have the following names:
+        atom, index, name, resname, chain, resid, beta, occupancy, atomtype, radius, charge.
 
         self.knowledge contains a knowledge base about atoms and residues properties. Default values are:
 

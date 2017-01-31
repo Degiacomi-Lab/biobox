@@ -12,11 +12,11 @@ Allowed operations on structures incude:
 * calculation of CCS, SAXS, SASA, convex hull, s2 (for molecules), mass and volume estimation (for densities)
 * atomselect for molecules and assemblies of molecules
 * shortest physical paths between atoms on molecule using lazy Theta* (or A*)
-* density map simulation
+* density map simulation.
 
-See full documentation and examples here[https://degiacom.github.io/biobox/].
+See full documentation and examples [here](https://degiacom.github.io/biobox/).
 
-Author: Matteo T. Degiacomi (matteo.degiacomi[at]gmail.com).
+Author: Matteo T. Degiacomi, matteo.degiacomi[at]gmail.com
 
 License: GPL3
 
