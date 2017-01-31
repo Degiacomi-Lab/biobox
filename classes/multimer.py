@@ -11,70 +11,46 @@
 #
 # Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com
 
-import os
 import numpy as np
+import pandas as pd
 
-from biobox.classes.structure import Structure, random_string
 from biobox.classes.polyhedron import Polyhedron
 from biobox.classes.molecule import Molecule
 
 
 class Multimer(Polyhedron):
     '''
-    Construct and manipulate a protein assembly composed of several :func:`Molecule <molecule.Molecule>` instances.
-
-    subclass of :func:`Polyhedron <polyhedron.Polyhedron>`.
+    Construct and manipulate a protein assembly composed of several :func:`Molecule <molecule.Molecule>` instances. Subclass of :func:`Polyhedron <polyhedron.Polyhedron>`.
     '''
 
-    def ccs(self, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMode sem -convergence 0.01 -rProbe 1.0", outname="", scale=False, proberad=1.0):
+    def query(self, query_text, get_index=False):
         '''
-        Override superclass method to compute CCS method. Here, atomic CCS radii are kept into account
+        ## select specific atoms in a multimer un the basis of a text query.
 
-        :param use_lib: if true, impact library will be used, if false a system call to impact executable will be performed instead
-        :param impact_path: location of impact executable
-        :param impact_options: flags to be passes to impact executable
-        :param outname: name of temporary output file to be generate for CCS calculation. If none is provided, a random name is picked.
-        :param scale: if True, CCS value calculated with PA method is scaled to better match trajectory method.
-        :returns: CCS: value in A^2. Error return: -1 = input filename not found, -2 = unknown code for CCS calculation, -3 CCS calculator failed, -4 = parsing of CCS calculation results failed
+        :param query_text: string selecting atoms of interest. Uses the pandas query syntax, can access all columns in the dataframe self.data.
+        :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)
+        :returns: coordinates of the selected points (in a unique array) and, if get_index is set to true, a list of their indices in subunits' self.points array.
         '''
 
-        if use_lib:
-            MM = self.make_molecule()
-            MM.get_atoms_ccs()
-            return MM.ccs(use_lib=use_lib, impact_path=impact_path, impact_options=impact_options, scale=scale, proberad=proberad)
+        idx = self.data.query(query_text).index.values
 
-        # if impact has to be called via system call, a random filename will be
-        # generated (if none is given)
-        if outname == "":
-            outname = "%s.pdb" % random_string()
-            while os.path.exists(outname):
-                outname = "%s.pdb" % random_string()
+        res = self.data.iloc[idx] #this is a new sliced dataframe
+        targets = np.array(res.ix[:, ["unit", "unit_index"]].values)
 
-        # output a file for ccs calculation
-        self.write_pdb(outname)
-        S = Structure()  # instance created just to be able to access to the ccs calculation method
+        # append the coordinates of every unit within the query
+        pts = np.empty([0, 3])
+        for u in np.unique(targets[:, 0]):
+            pos = targets[targets[:, 0] == u, 1].astype(int)
+            this_unit = self.unit_labels[u]
+            pts = np.concatenate((pts, self.unit[this_unit].points[pos]))
 
-        # very big PDB files may not be completely written before ccs
-        # calculation is invoked. This is therefore tried several times before
-        # renouncing.
-        cnt = 0
-        ccs = 0
-        while ccs <= 0 and cnt < 10:
-            cnt += 1
-            try:
-                ccs = S.ccs(use_lib=use_lib, impact_path=impact_path, impact_options=impact_options, pdbname=outname, scale=scale, proberad=proberad)
-            except Exception, ex:
-                ccs = 0
-                continue
+        if get_index:
+            return [pts, idx]
+        else:
+            return pts
 
-        if ccs == 0 and cnt == 10:
-            raise Exception("ERROR: CCS could not be calculated! You're possibly trying to write a too big PDB file.")
 
-        # clear temporary file
-        os.remove(outname)
-        return ccs
-
-    def atomselect(self, u, chain, resid, atom, get_index=False):
+    def atomselect(self, u, chain, resid, atom, get_index=False, use_resname=True):
         '''
         ## select specific atoms in a multimer providing unit, chain, residue ID and atom name.
 
@@ -82,7 +58,8 @@ class Multimer(Polyhedron):
         :param chain: selection of a specific chain name (accepts '*' as wildcard). Can also be a list or numpy array of strings.
         :param resid: residue ID of desired atoms (accepts '*' as wildcard). Can also be a list or numpy array of of int.
         :param atom: name of desired atom (accepts '*' as wildcard). Can also be a list or numpy array of strings.
-        :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.properties['data'])
+        :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)
+        :param use_resname: if set to True, consider information in "res" variable as resnames, and not resids
         :returns: coordinates of the selected points (in a unique array) and, if get_index is set to true, a list of their indices in subunits' self.points array.
         '''
 
@@ -111,7 +88,7 @@ class Multimer(Polyhedron):
         pts = np.empty([0, 3])
         for i in xrange(0, len(self.unit), 1):
             if i in unit_id:
-                [pts_tmp, index_tmp] = self.unit[i].atomselect(chain, resid, atom, True)
+                [pts_tmp, index_tmp] = self.unit[i].atomselect(chain, resid, atom, True, use_resname=use_resname)
                 pts = np.concatenate((pts, pts_tmp))
                 indices.append(index_tmp)
             else:
@@ -139,42 +116,48 @@ class Multimer(Polyhedron):
         c = []
         skipcharge = False
         for i in xrange(0, len(self.unit), 1):
-            data_tmp = self.unit[i].properties['data']
-            #data_tmp[:, 8] = data_tmp[:, 4]
+            data_tmp = self.unit[i].data[[
+                "atom", "index", "name", "resname", "chain",
+                "resid", "beta", "occupancy", "atomtype"]].values
+
             data_tmp[:, 4] = self.chain_names[i]
             data = np.concatenate((data, data_tmp))
 
-            # merge knowledge about CCS aquired by different molecules
+            # merge knowledge about CCS acquired by different molecules
             atom_ccs = {}
             for k in self.unit[i].knowledge['atom_ccs'].keys():
                 atom_ccs[k] = self.unit[i].knowledge['atom_ccs'][k]
 
             if len(r) == 0:
-                r = self.unit[i].properties['radius']
+                r = self.unit[i].data['radius']
             else:
-                r = np.concatenate((r, self.unit[i].properties['radius']))
+                r = np.concatenate((r, self.unit[i].data['radius']))
 
             try:
                 if len(c) == 0:
-                    c = self.unit[i].properties['charge']
+                    c = self.unit[i].data['charge']
                 else:
-                    c = np.concatenate((c, self.unit[i].properties['charge']))
+                    c = np.concatenate((c, self.unit[i].data['charge']))
             except Exception, ex:
                 skipcharge = True
                 continue
 
         data[:, 1] = np.linspace(1, len(data), len(data)).astype(int)
+        cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
+        idx = np.arange(len(data))
 
         # create molecule, and push created data information
         M = Molecule()
         M.add_xyz(self.get_all_xyz())
-        M.properties['data'] = data
-        M.properties['radius'] = r
+        M.data = pd.DataFrame(data, index=idx, columns=cols)
         M.properties['center'] = M.get_center()
         M.knowledge['atom_ccs'] = atom_ccs
+        M.data['radius'] = r
 
         if not skipcharge:
-            M.properties['charge'] = c
+            M.data['charge'] = c
+
+
 
         return M
 

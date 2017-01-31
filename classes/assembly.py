@@ -14,7 +14,8 @@
 import os
 from copy import deepcopy
 import numpy as np
-from biobox.classes.structure import Structure, random_string
+from biobox.classes.structure import Structure
+import pandas as pd
 
 
 class Assembly(object):
@@ -44,6 +45,10 @@ class Assembly(object):
         # current conformation selected from conformational database
         self.current = -1
 
+        #metadata associated to every point
+        self.data = pd.DataFrame(index=[], columns=[])
+
+
     def clear(self):
         '''
         remove all elements loaded in the assembly.
@@ -59,11 +64,21 @@ class Assembly(object):
         :param n: number of units
         :param struct: object of class Structure (or subclasses)
         '''
+        dfs = [self.data]
         for i in xrange(len(self.unit), len(self.unit) + n, 1):
             e = deepcopy(struct)
             self.unit.append(e)
             self.unit_labels[str(i)] = i
 
+            #add labeling to structures tables, prior concatenation
+            e.data["unit"] = str(i)
+            e.data["unit_index"] = e.data.index
+            dfs.append(e.data)
+
+        #create dataframe collecting information from all structures
+        self.data = pd.concat(dfs)
+        self.data.index = np.arange(len(self.data))
+        
         self.current = 0
 
     def merge(self, assembly, n=1):
@@ -96,6 +111,13 @@ class Assembly(object):
                 self.unit.append(structure)
             else:
                 raise Exception("ERROR: label %s already existing in multimer!" %label)
+
+
+        #append structure to dataframe
+        structure.data["unit"] = label
+        structure.data["unit_index"] = structure.data.index
+        self.data = pd.concat([self.data, structure.data])
+        self.data.index = np.arange(len(self.data))
 
         return label
 
@@ -142,18 +164,32 @@ class Assembly(object):
                     raise Exception("ERROR: label %s already exists!" % l)
 
         # append new structures to old ones
+        dfs = [self.data]
         for i in xrange(len(self.unit), len(self.unit) + len(struct_list), 1):
             # create dictionary with neighbors
-            self.unit.append(deepcopy(struct_list[i]))
+            e = deepcopy(struct_list[i])
+            self.unit.append(e)
 
             if len(labels) != 0:
-                self.unit_labels[labels[i]] = i
+                lbl = labels[i]
             else:
-                self.unit_labels[str(i)] = i
+                lbl = str(i)
+
+            self.unit_labels[lbl] = i
+
+            #add labeling to structures tables, prior concatenation
+            e.data["unit"] = lbl
+            e.data["unit_index"] = e.data.index
+            dfs.append(e.data)
+
+        #create dataframe collecting information from all structures
+        self.data = pd.concat(dfs)
+        self.data.index = np.arange(len(self.data))
+
 
     def make_structure(self):
         '''
-        returns a :func:`Structure <structure.Structure>` object containing all the points of the assembly
+        returns a :func:`Structure <structure.Structure>` object containing all the points of the assembly.
 
         :returns: :func:`Structure <structure.Structure>` object
         '''
@@ -165,8 +201,8 @@ class Assembly(object):
 
         :param angle: chain curvature
         :param dist: distance between centers of mass
-        :param groups: if set, a chain is formed by considering groups of loaded structures as unique objects.\n
-        If unset, every object is independently moved.
+        :param groups: if set, a chain is formed by considering groups of loaded structures as unique objects.
+                       If unset, every object is independently moved.
         '''
 
         # if no group has been selected, every subunit forms a group by itself
@@ -417,83 +453,6 @@ class Assembly(object):
         contacts = self.unit[u1].check_inclusion(self.unit[u2].points)
         return float(contacts)
 
-    def distance(self, atom1, atom2):
-        '''
-        measure shortest euclidean distance within two ensembles of points
-        '''
-        d = []
-        for i in xrange(0, len(atom1), 1):
-            d.append(np.sqrt(np.sum((atom2 - atom1[i])**2, axis=1)))
-
-        dist = np.array(d)
-        return np.min(dist)
-
-    def get_surface(self):
-        '''
-        compute accessible surface area.
-
-        :returns: accessible_surface area in A^2
-        '''
-        points = self.get_all_xyz()
-        S = Structure(points)
-        return S.get_surface()
-
-    def ccs(self, use_lib=True, impact_path='',
-            impact_options="-Octree -nRuns 32 -cMode sem -convergence 0.01 -rProbe 1.0", outname="", scale=False):
-        '''
-        compute assembly CCS.
-
-        :param use_lib: if true, impact library will be used, if false a system call to impact executable will be performed instead
-        :param impact_path: location of impact executable
-        :param impact_options: flags to be passes to impact executable
-        :param scale: if True, CCS value calculated with PA method is scaled to better match trajectory method.
-        :param outname: name of temporary output file to be generate for CCS calculation. If none is provided, a random name is picked.
-        :returns: CCS value in A^2. Returns 0 if CCS calculation failed.
-        '''
-        M = self.make_structure()
-        return M.ccs(use_lib=use_lib, impact_path=impact_path, impact_options=impact_options, pdbname=outname, scale=scale)
-
-    def saxs(self, crysol_path='~/atsas-2.5.2-1/bin/',
-             crysol_options="-lm 18 -ns 500", outname=""):
-        '''
-        compute SAXS curve using crysol (from ATSAS suite)
-
-        :param crysol_path: location of impact executable
-        :param crysol_options: flags to be passes to impact executable
-        :param outname: if a file has been already written, impact can be asked to analyze it
-        :returns: SAXS curve (nx2 numpy array). returns -1 if failed.
-        '''
-
-        # if a filename is not provided for output, generate a random name
-        # (make sure it does not exist yet)
-        if outname == "":
-            outname = "%s.pdb" % random_string()
-            while os.path.exists(outname):
-                outname = "%s.pdb" % random_string()
-
-        # output a file for saxs calculation
-        self.write_pdb(outname)
-        S = Structure()  # instance created just to be able to access to the saxs calculation method
-
-        # very big PDB files may not be completely written before saxs
-        # calculation is invoked. This is therefore tried several times before
-        # renouncing.
-        cnt = 0
-        saxs = []
-        while len(saxs) == 0 and cnt < 10:
-            cnt += 1
-            try:
-                saxs = S.saxs(crysol_path=crysol_path, crysol_options=crysol_options, pdbname=outname)
-            except Exception, ex:
-                saxs = []
-                continue
-
-        if len(saxs) == 0 and cnt == 10:
-            self.write_pdb("%s.pdb" % outname)
-            print "WARNING: SAXS could not be calculated! You're possibly trying to write a too big PDB file."
-
-        return saxs
-
     def get_buried(self):
         '''
         compute buried surface (assembly sum of components asa minus assembly asa).
@@ -501,13 +460,15 @@ class Assembly(object):
         :returns: buried_surface in A^2
         '''
 
+        from biobox.measures.calculators import sasa
+        
         # sum asa of individual components
         asa = 0
         for i in xrange(0, len(self.unit), 1):
-            asa += self.unit[i].get_surface()
+            asa += sasa(self.unit[i])[0]
 
         # subtract assembly asa
-        asa -= self.get_surface()
+        asa -= sasa(self)[0]
         return asa
 
     def write_pdb(self, filename):
@@ -517,7 +478,6 @@ class Assembly(object):
         :param filename: name of pdb file to be produced
         '''
 
-        radius = self.unit[0].properties['radius']
         fout = open(filename, "w")
 
         for i in xrange(0, len(self.unit), 1):
@@ -525,7 +485,7 @@ class Assembly(object):
             for j in xrange(0, len(self.unit[i].points), 1):
                 l = (i + len(self.unit) * j, "SPH", "SPH", self.chain_names[i],
                      i, self.unit[i].points[j, 0], self.unit[i].points[j, 1],
-                     self.unit[i].points[j, 2], radius, 1.0, "C")
+                     self.unit[i].points[j, 2], self.unit[i].data["radius"][j], 1.0, "C")
                 L = 'ATOM  %5i  %-4s%-4s%1s%4i    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % l
                 fout.write(L)
 

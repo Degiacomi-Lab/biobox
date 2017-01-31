@@ -15,10 +15,9 @@ import os
 from copy import deepcopy
 import numpy as np
 import scipy.signal
+import pandas as pd
 
 from biobox.classes.structure import Structure
-import biobox.lib.interaction as I
-
 
 class Molecule(Structure):
     '''
@@ -35,7 +34,7 @@ class Molecule(Structure):
         At instantiation, properties associated to every individual atoms are stored as an array under the key "data" in the properties dictionary.
         The columns of the "data" array contain the following information (as string):
 
-        [atom/hetatm, index, atomname, resname, chain name, residue ID, beta factor, occupancy, atomtype].
+        [atom/hetatm, index, atom name, resname, chain name, residue ID, beta factor, occupancy, atomtype].
 
         self.knowledge contains a knowledge base about atoms and residues properties. Default values are:
 
@@ -47,11 +46,6 @@ class Molecule(Structure):
         '''
 
         super(Molecule, self).__init__(r=np.array([]))
-
-        # pdb data information. for every atom store (in order): ATOM/HETATM,
-        # index, atomname, resname, chain name, residue ID, occupancy, beta
-        # factor, atomtype
-        self.properties['data'] = np.array([])
 
         # knowledge base about atoms and residues properties (entry keys:
         # 'residue_mass', 'atom_vdw', 'atom_, mass' can be edited)
@@ -85,7 +79,6 @@ class Molecule(Structure):
             return self.knowledge[str(prop)]
         else:
             raise Exception("entry %s not found in knowledge base!" % prop)
-            # return float('nan')
 
     def import_pdb(self, pdb, include_hetatm=False):
         '''
@@ -105,7 +98,7 @@ class Molecule(Structure):
             raise Exception('ERROR: file %s not found!' % pdb)
 
         # store filename
-        self.add_property("filename", pdb)
+        self.properties["filename"] = pdb
 
         data_in = []
         p = []
@@ -132,29 +125,32 @@ class Molecule(Structure):
                     raise Exception("ERROR: symmetry matrix format seems corrupted")
 
             # if a complete model was parsed store all the saved data into
-            # self.properties entries (if needed) and temporary alternative
+            # self.data entries (if needed) and temporary alternative
             # coordinates list
             if record == "ENDMDL" or record == "END":
 
                 if len(alternative) == 0:
 
-                    # load all the parsed data in superclass properties['data']
+                    # load all the parsed data in superclass data (Dataframe)
                     # and points data structures
                     try:
-                        # ATOM/HETATM, index, atomname, resname, chain name,
-                        # residue ID, beta factor, occupancy, atomtype
-                        self.properties['data'] = np.array(data_in).astype(str)
+                        #building dataframe
+                        data = np.array(data_in).astype(str)
+                        cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
+                        idx = np.arange(len(data))
+                        self.data = pd.DataFrame(data, index=idx, columns=cols)
+
                     except Exception, ex:
                         raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' %pdb)
 
                     # saving vdw radii
                     try:
-                        self.properties['radius'] = np.array(r)
+                        self.data['radius'] = np.array(r)
                     except Exception, ex:
                         raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' %pdb)
 
                     # save default charge state
-                    self.properties['charge'] = np.array(e)
+                    self.data['charge'] = np.array(e)
 
                 # save 3D coordinates of every atom and restart the accumulator
                 try:
@@ -225,14 +221,17 @@ class Molecule(Structure):
                 # load all the parsed data in superclass properties['data'] and
                 # points data structures
                 try:
-                    # ATOM/HETATM, index, atomname, resname, chain name,
-                    # residue ID, beta factor, occupancy, atomtype
-                    self.properties['data'] = np.array(data_in).astype(str)
+                    #building dataframe
+                    data = np.array(data_in).astype(str)
+                    cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
+                    idx = np.arange(len(data))
+                    self.data = pd.DataFrame(data, index=idx, columns=cols)
+
                 except Exception, ex:
                     raise Exception('ERROR: something went wrong when saving data in %s!\nERROR: are all the columns separated?' %pdb)
 
                 try:
-                    self.properties['radius'] = np.array(r)
+                    self.data['radius'] = np.array(r)
                 except Exception, ex:
                     raise Exception('ERROR: something went wrong when saving van der Waals radii in %s!\nERROR: are all the columns separated?' % pdb)
 
@@ -268,10 +267,10 @@ class Molecule(Structure):
             # test whether there are enough lines to create biomatrix
             # statements
             if np.mod(len(biomt), 3):
-                raise Exception('ERROR: found %s BIOMT entries. A multiple of 3 is expected' % len(biomt))
+                raise Exception('ERROR: found %s BIOMT entries. A multiple of 3 is expected'%len(biomt))
 
             b = np.array(biomt).astype(float).reshape((len(biomt) / 3, 3, 4))
-            self.add_property("biomatrix", b)
+            self.properties["biomatrix"] = b
 
         # if symmetry information is provided, create entry in properties
         if len(symm) > 0:
@@ -279,10 +278,17 @@ class Molecule(Structure):
             # test whether there are enough lines to create biomatrix
             # statements
             if np.mod(len(symm), 3):
-                raise Exception('ERROR: found %s SMTRY entries. A multiple of 3 is exptecte' %len(symm))
+                raise Exception('ERROR: found %s SMTRY entries. A multiple of 3 is expected'%len(symm))
 
             b = np.array(symm).astype(float).reshape((len(symm) / 3, 3, 4))
-            self.add_property("symmetry", b)
+            self.properties["symmetry"] = b
+
+        #correctly set types of columns requiring other than string
+        self.data["resid"] = self.data["resid"].astype(int)
+        self.data["index"] = self.data["index"].astype(int)
+        self.data["occupancy"] = self.data["occupancy"].astype(float)
+        self.data["beta"] = self.data["beta"].astype(float)
+
 
     def import_pqr(self, pqr, include_hetatm=False):
         '''
@@ -302,7 +308,7 @@ class Molecule(Structure):
             raise Exception('ERROR: file %s not found!' % pqr)
 
         # store filename
-        self.add_property("filename", pqr)
+        self.properties["filename"] = pqr
 
         data_in = []
         p = []  # collects coordinates for every model
@@ -319,21 +325,24 @@ class Molecule(Structure):
                     # load all the parsed data in superclass properties['data']
                     # and points data structures
                     try:
-                        # ATOM/HETATM, index, atomname, resname, chain name,
-                        # residue ID, beta factor, occupancy, atomtype
-                        self.properties['data'] = np.array(data_in).astype(str)
+                        #building dataframe
+                        data = np.array(data_in).astype(str)
+                        cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
+                        idx = np.arange(len(data))
+                        self.data = pd.DataFrame(data, index=idx, columns=cols)
+
                     except Exception, ex:
                         raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' %pqr)
 
                     # saving vdw radii
                     try:
-                        self.properties['radius'] = np.array(r)
+                        self.data['radius'] = np.array(r)
                     except Exception, ex:
                         raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' %pqr)
 
                     # saving electrostatics
                     try:
-                        self.properties['charge'] = np.array(e)
+                        self.data['charge'] = np.array(e)
                     except Exception, ex:
                         raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' % pqr)
 
@@ -405,14 +414,17 @@ class Molecule(Structure):
                 # load all the parsed data in superclass properties['data'] and
                 # points data structures
                 try:
-                    # ATOM/HETATM, index, atomname, resname, chain name,
-                    # residue ID, beta factor, occupancy, atomtype
-                    self.properties['data'] = np.array(data_in).astype(str)
+                    #building dataframe
+                    data = np.array(data_in).astype(str)
+                    cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
+                    idx = np.arange(len(data))
+                    self.data = pd.DataFrame(data, index=idx, columns=cols)
+
                 except Exception, ex:
                     raise Exception('ERROR: something went wrong when saving data in %s!\nERROR: are all the columns separated?' % pqr)
 
                 try:
-                    self.properties['radius'] = np.array(r)
+                    self.data['radius'] = np.array(r)
                 except Exception, ex:
                     raise Exception('ERROR: something went wrong when saving van der Waals radii in %s!\nERROR: are all the columns separated?' %pqr)
 
@@ -439,22 +451,26 @@ class Molecule(Structure):
         else:
             raise Exception('ERROR: something went wrong when saving alternative coordinates in %s!\nERROR: no model was loaded... are ENDMDL statements there?' % pqr)
 
+        #correctly set types of columns requiring other than string
+        self.data["resid"] = self.data["resid"].astype(int)
+        self.data["index"] = self.data["index"].astype(int)
+        self.data["occupancy"] = self.data["occupancy"].astype(float)
+        self.data["beta"] = self.data["beta"].astype(float)
+
     def assign_atomtype(self):
         '''
-        guess atomtype from atomnames
+        guess atomtype from atom names
         '''
-
-        if not np.any(self.properties["data"][:, 8] == ""):
-            return
-
-        for i in xrange(0, len(self.properties["data"]), 1):
-            atom = self.properties["data"][i, 2]
+        
+        a_type = []
+        for i in xrange(0, len(self.data), 1):
+            atom = self.data["name"][i]
             try:
-                atomtype = self.knowledge["atomtype"][atom]
+                a_type.append(self.knowledge["atomtype"][atom])
             except Exception, ex:
-                atomtype = ""
+                a_type.append("")
 
-            self.properties["data"][i, 8] = atomtype
+        self.data["name"] = a_type
 
     def get_vdw_density(self, buff=3, step=0.5, kernel_half_width=10):
         '''
@@ -523,7 +539,7 @@ class Molecule(Structure):
 
         try:
             # numpy array of charges [c1, c2, c3, ...]
-            charges = self.properties['charge'][idx]
+            charges = self.data['charge'][idx]
         except Exception, e:
             raise Exception('ERROR: No charges associated with %s' % self)
 
@@ -646,9 +662,14 @@ class Molecule(Structure):
             xyz2 = np.dot(xyz2, m[:, 0:3])  # rotate
             xyzall.extend(xyz2)  # merge
 
-            d = self.properties["data"].copy()
-            d[:, 4] = self.chain_names[cnt]
-            data.extend(d)
+            #assign a specific name to the new chain
+            newdata = deepcopy(self.data)
+            newdata["chain"] = self.chain_names[cnt]
+
+            if cnt == 0:
+                data = [newdata]
+            else:
+                data.append(newdata)
 
             cnt += 1
 
@@ -663,8 +684,7 @@ class Molecule(Structure):
 
         newdata = np.array(data)
         indices = np.linspace(1, len(newdata), len(newdata)).astype(int)
-        newdata[:, 1] = vhex(indices)
-        M2.properties["data"] = newdata
+        self.data["index"] = vhex(indices)
 
         return M2
 
@@ -736,28 +756,21 @@ class Molecule(Structure):
             line = fin.readline()  # attempt to get header of next frame
 
         # store data information and box size for every frame
-        self.properties['data'] = np.array(d_data).astype(str)
         self.properties['box'] = np.array(b).astype(float) * 10
-        self.properties['radius'] = np.ones(len(d_data)) * self.know('atom_vdw')['.']
-        self.properties['charge'] = np.zeros(len(d_data))
+
+
+        #building dataframe
+        data = np.array(d_data).astype(str)
+        cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
+        idx = np.arange(len(data))
+        self.data = pd.DataFrame(data, index=idx, columns=cols)
+
+        #add additional information about van der waals radius and atoms charge
+        self.data['radius'] = np.ones(len(d_data)) * self.know('atom_vdw')['.']
+        self.data['charge'] = np.zeros(len(d_data))
 
         fin.close()
 
-    def ccs(self, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMode sem -convergence 0.01", scale=True, proberad=1.0):
-        '''
-        Calculate molecule CCS
-
-        :param use_lib: if true, impact library will be used, if false a system call to impact executable will be performed instead
-        :param impact_path: location of impact executable
-        :param impact_options: flags to be passes to impact executable
-        :param scale: if True, CCS value calculated with PA method is scaled to better match trajectory method.
-        :returns: CCS value in A^2. Error return: -1 = input filename not found, -2 = unknown code for CCS calculation\n
-                  -3 CCS calculator failed, -4 = parsing of CCS calculation results failed
-        '''
-
-        self.assign_atomtype()
-        self.get_atoms_ccs()
-        return super(Molecule, self).ccs(use_lib=use_lib, impact_path=impact_path, impact_options=impact_options, scale=scale, proberad=proberad)
 
     def get_atoms_ccs(self):
         '''
@@ -766,17 +779,35 @@ class Molecule(Structure):
         :returns: CCS in Angstrom^2
         '''
 
-        if "atom_ccs" in self.properties.keys():
-            return self.properties["atom_ccs"]
+        if "atom_ccs" in self.data.columns:
+            return self.data["atom_ccs"]
 
         ccs = np.ones(len(self.points)) * self.know("atom_ccs")["."]
         for e in self.know("atom_ccs").keys():
             if "e" != ".":
-                ccs[self.properties["data"][:, 8] == e] = self.knowledge["atom_ccs"][e]
+                ccs[self.data["atomtype"].values == e] = self.knowledge["atom_ccs"][e]
 
-        self.properties["atom_ccs"] = ccs
+        self.data["atom_ccs"] = ccs
 
         return ccs
+
+    
+    def query(self, query_text, get_index=False):
+        '''
+        ## select specific atoms in a multimer un the basis of a text query.
+
+        :param query_text: string selecting atoms of interest. Uses the pandas query syntax, can access all columns in the dataframe self.data.
+        :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)
+        :returns: coordinates of the selected points (in a unique array) and, if get_index is set to true, a list of their indices in subunits' self.points array.
+        '''
+
+        idx = self.data.query(query_text).index.values
+
+        if get_index:
+            return [self.points[idx], idx]
+        else:
+            return self.points[idx]
+
 
     def atomselect(self, chain, res, atom, get_index=False, use_resname=False):
         '''
@@ -795,33 +826,41 @@ class Molecule(Structure):
             if chain == '*':
                 chain_query = np.array([True] * len(self.points))
             else:
-                chain_query = self.properties['data'][:, 4] == chain
+                chain_query = self.data["chain"] == chain
 
         elif isinstance(chain, list) or type(chain).__module__ == 'numpy':
-            chain_query = self.properties['data'][:, 4] == chain[0]
+            chain_query = self.data["chain"].values == chain[0]
             for c in xrange(1, len(chain), 1):
-                chain_query = np.logical_or(chain_query, self.properties['data'][:, 4] == chain[c])
+                chain_query = np.logical_or(chain_query, self.data["chain"].values == chain[c])
         else:
             raise Exception("ERROR: wrong type for chain selection. Should be str, list, or numpy")
-
-        # resid boolean selector
-        # pick appropriate column for boolean selection
-        if use_resname:
-            refcolumn = 3
-        else:
-            refcolumn = 5
 
         if isinstance(res, str):
             if res == '*':
                 res_query = np.array([True] * len(self.points))
+            elif use_resname:
+                res_query = self.data["resname"] == res
             else:
-                res_query = self.properties['data'][:, refcolumn] == res
+                res_query = self.data["resid"] == res
+
         elif isinstance(res, int):
-            res_query = self.properties['data'][:, refcolumn] == str(res)
+            if use_resname:
+                res_query = self.data["resname"] == str(res)
+            else:
+                res_query = self.data["resid"] == res
+
         elif isinstance(res, list) or type(res).__module__ == 'numpy':
-            res_query = self.properties['data'][:, refcolumn] == str(res[0])
+            if use_resname:
+                res_query = self.data["resname"] == str(res[0])
+            else:
+                res_query = self.data["resid"] == res[0]
+
             for r in xrange(1, len(res), 1):
-                res_query = np.logical_or(res_query, self.properties['data'][:, refcolumn] == str(res[r]))
+                if use_resname:
+                    res_query = np.logical_or(res_query, self.data["resname"] == str(res[r]))
+                else:
+                    res_query = np.logical_or(res_query, self.data["resid"] == res[r])
+
         else:
             raise Exception("ERROR: wrong type for resid selection. Should be int, list, or numpy")
 
@@ -830,16 +869,16 @@ class Molecule(Structure):
             if atom == '*':
                 atom_query = np.array([True] * len(self.points))
             else:
-                atom_query = self.properties['data'][:, 2] == atom
+                atom_query = self.data["name"].values == atom
         elif isinstance(atom, list) or type(atom).__module__ == 'numpy':
-            atom_query = self.properties['data'][:, 2] == atom[0]
+            atom_query = self.data["name"].values == atom[0]
             for a in xrange(1, len(atom), 1):
-                atom_query = np.logical_or(atom_query, self.properties['data'][:, 2] == atom[a])
+                atom_query = np.logical_or(atom_query, self.data["name"].values == atom[a])
         else:
             raise Exception("ERROR: wrong type for atom selection. Should be str, list, or numpy")
 
         # slice data array and return result (colums 5 to 7 contain xyz coords)
-        query = np.logical_and(np.logical_and(chain_query, res_query), atom_query)
+        query = np.logical_and(np.logical_and(chain_query, res_query), atom_query).values
 
         if get_index:
             return [self.points[query], np.where(query == True)[0]]
@@ -858,21 +897,20 @@ class Molecule(Structure):
         :param use_resname: if set to True, consider information in "res" variable as resnames, and not resids
         :returns: coordinates of the selected points not matching the query, if get_index is set to true, their indices in self.points array.
         '''
-        
+
         #extract indices of atoms matching the query
         idxs = self.atomselect(chain, res, atom, get_index=True, use_resname=use_resname)[1]
-        
+
         #invert the selection
         idxs2 = []
         for i in xrange(len(self.points)):
             if i not in idxs:
                 idxs2.append(i)
-        
+
         if get_index:
             return [self.points[idxs2], np.array(idxs2)]
         else:
             return self.points[idxs2]
-
 
     def same_residue(self, index, get_index=False):
         '''
@@ -883,7 +921,7 @@ class Molecule(Structure):
         :returns: coordinates of the selected points and, if get_index is set to true, their indices in self.points array.
         '''
 
-        D = self.properties['data']
+        D = self.data.values
         l = D[index]
 
         if len(l.shape) == 1:
@@ -917,7 +955,7 @@ class Molecule(Structure):
         except Exception, e:
             idlist = [index]
 
-        D = self.properties['data']
+        D = self.data.values
         pts = []
         idxs = []
         for i in idlist:
@@ -991,9 +1029,7 @@ class Molecule(Structure):
         M = Molecule()
         postmp = self.coordinates[:, idxs]
         M.coordinates = postmp[frames]
-        M.properties['data'] = self.properties['data'][idxs]
-        M.properties['radius'] = self.properties['radius'][idxs]
-        M.properties['charge'] = self.properties['charge'][idxs]
+        M.data = self.data[idxs]
 
         M.current = 0
         M.points = M.coordinates[M.current]
@@ -1001,7 +1037,6 @@ class Molecule(Structure):
         M.properties['center'] = M.get_center()
 
         return M
-
 
     def guess_chain_split(self, distance=3, use_backbone=True):
         '''
@@ -1013,7 +1048,7 @@ class Molecule(Structure):
         '''
 
         # wipe current chain assignment
-        self.properties["data"][:, 4] = ""
+        self.data["chain"] = ""
 
         # identify different chains
         intervals = [0]
@@ -1032,13 +1067,13 @@ class Molecule(Structure):
                 dist = np.sqrt(np.dot(posC[i] - posN[i+1], posC[i] - posN[i+1]))
                 if dist > distance:
                     intervals.append(idxN[i+1])
-        
+
         intervals.append(len(self.coordinates[0]))
 
         # separate chains
         for i in xrange(len(intervals) - 1):
             thepos = i % len(self.chain_names)
-            self.properties["data"][intervals[i]:intervals[i + 1], 4] = self.chain_names[thepos]
+            self.data[intervals[i]:intervals[i + 1], 4] = self.chain_names[thepos]
 
         return len(intervals) - 1
 
@@ -1048,7 +1083,7 @@ class Molecule(Structure):
 
         Returned data is a list containing strings for points data and floats for point coordinates
         in the same order as a pdb file, i.e.
-        ATOM/HETATM, index, atomname, resname, chain name, residue ID, x, y, z, occupancy, beta factor, atomtype.
+        ATOM/HETATM, index, name, resname, chain name, residue ID, x, y, z, occupancy, beta factor, atomtype.
 
         :returns: list aggregated data and coordinates for every point, as string.
         '''
@@ -1059,18 +1094,18 @@ class Molecule(Structure):
         # coordinates and properties)
         d = []
         for i in index:
-            d.append([self.properties['data'][i, 0],
-                      self.properties['data'][i, 1],
-                      self.properties['data'][i, 2],
-                      self.properties['data'][i, 3],
-                      self.properties['data'][i, 4],
-                      self.properties['data'][i, 5],
+            d.append([self.data["atom"][i],
+                      self.data["index"][i],
+                      self.data["name"][i],
+                      self.data["resname"][i],
+                      self.data["chain"][i],
+                      self.data["resid"][i],
                       self.points[i, 0],
                       self.points[i, 1],
                       self.points[i, 2],
-                      self.properties['data'][i, 6],
-                      self.properties['data'][i, 7],
-                      self.properties['data'][i, 8]])
+                      self.data["beta"][i],
+                      self.data["occupancy"][i],
+                      self.data["atomtype"][i]])
 
         return d
 
@@ -1150,7 +1185,7 @@ class Molecule(Structure):
             # list
             self.set_current(f)
 
-            # ATOM/HETATM, index, atomname, resname, chain name, residue ID, x,
+            # ATOM/HETATM, index, atom name, resname, chain name, residue ID, x,
             # y, z, beta factor, occupancy, atomtype
             d = self.get_pdb_data(index)
             for i in xrange(0, len(d), 1):
@@ -1159,7 +1194,7 @@ class Molecule(Structure):
                 f_out.write(L)
 
             if "box" in self.properties:
-                b = self.get("box")[f] / 10.0
+                b = self.properties["box"][f] / 10.0
             else:
                 minpos = np.min(self.points, axis=0) / 10.0
                 b = np.max(self.points, axis=0) - minpos / 10.0
@@ -1193,9 +1228,9 @@ class Molecule(Structure):
 
         try:
             if len(indices) == 0:
-                b = self.properties["data"][:, 7].astype(float)
+                b = self.data["beta"].astype(float)
             else:
-                b = self.properties["data"][indices, 7].astype(float)
+                b = self.data["beta"][indices].astype(float)
 
             return np.sqrt(b * 3 / (8 * np.pi * np.pi))
 
@@ -1215,11 +1250,11 @@ class Molecule(Structure):
         #@todo mass of N and C termini to add for every chain
 
         mass = 0
-        chains = np.unique(self.properties['data'][:, 4])
+        chains = np.unique(self.data["chain"])
         for chainname in chains:
             # for every chain, get a list of all its (unique) resids
             indices = self.atomselect(chainname, "*", "*", True)[1]
-            resids = np.unique(self.properties['data'][indices, 5])
+            resids = np.unique(self.data['resid'][indices])
 
             for r in resids:
                 # for every residue in the chain, get the index of its first
@@ -1249,9 +1284,9 @@ class Molecule(Structure):
         '''
 
         mass = 0
-        for i in xrange(0, len(self.properties['data']), 1):
-            resname = self.properties['data'][i, 3]
-            atomtype = self.properties['data'][i, 8]
+        for i in xrange(0, len(self.data), 1):
+            resname = self.data["resname"][i]
+            atomtype = self.data["atomtype"][i]
 
             if resname not in skip_resname:
                 try:
@@ -1275,11 +1310,10 @@ class Molecule(Structure):
         '''
 
         Nidx = self.atomselect("*", "*", atomname1, get_index=True)[1]
-        # ouch, get a simulation with H!!!
         Hidx = self.atomselect("*", "*", atomname2, get_index=True)[1]
 
-        Ndata = self.properties['data'][Nidx, 4:6]
-        Hdata = self.properties['data'][Hidx, 4:6]
+        Ndata = self.data[Nidx, ["chain", "resid"]]
+        Hdata = self.data[Hidx, ["chain", "resid"]]
 
         a1 = []
         a2 = []
@@ -1342,6 +1376,8 @@ class Molecule(Structure):
         :param cutoff: minimal distance to consider a couple as linkable.
         :returns: nx3 numpy array containing, for every valid connection, id of first atom, id of second atom and distance between the two.
         '''
+
+        import biobox.measures.interaction as I
 
         points1 = self.get_xyz()[idx]
 

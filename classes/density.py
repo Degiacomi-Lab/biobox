@@ -16,9 +16,9 @@ import os
 import scipy.ndimage.filters
 from sklearn.cluster import DBSCAN
 import numpy as np
+import pandas as pd
 
 from biobox.classes.structure import Structure
-
 
 class Density(Structure):
     '''
@@ -123,7 +123,7 @@ class Density(Structure):
 
         self.properties["sigma"] = np.std(self.properties['density'])
 
-    def import_numpy(self, data, origin=[0,0,0], delta=np.identity(3)):
+    def import_numpy(self, data, origin=[0, 0, 0], delta=np.identity(3)):
         '''
         import a numpy 3D array to allow manipulation as a density map
 
@@ -215,7 +215,6 @@ class Density(Structure):
 
         :param sigma: intensity threshold value.
         :param noise_filter: launch DBSCAN clustering algorithm to detect connected regions in density map. Regions representing less than noise_filter of the total will be removed. This is a ratio, value should be between 0 and 1.
-
         '''
 
         thresh = self.get_thresh_from_sigma(sigma)
@@ -267,8 +266,13 @@ class Density(Structure):
 
             self.add_xyz(pts2)
 
+
         else:
             self.add_xyz(points)
+
+        #update radii list (useful for instance for CCS calculation)
+        idx = np.arange(len(self.points))
+        self.data = pd.DataFrame(idx, index=idx, columns=["radius"])
 
         # self.get_center()
 
@@ -311,21 +315,22 @@ class Density(Structure):
 
         return r
 
-    def find_data_from_sigma(self, sigma, exact=True, append=False):
+    def find_data_from_sigma(self, sigma, exact=True, append=False, noise_filter=0.01):
         '''
         map experimental data to given threshold
 
         :param sigma: density threshold
-        '''
+        :param noise_filter: launch DBSCAN clustering algorithm to detect connected regions in density map. Regions representing less than noise_filter of the total will be removed. This is a ratio, value should be between 0 and 1.        '''
 
         thresh = self.get_sigma_from_thresh(sigma)
 
         if exact:
+            import biobox as bb
 
             try:
-                self.place_points(thresh)
+                self.place_points(thresh, noise_filter)
                 vol = self.get_volume()
-                ccs = self.ccs(scale=False)
+                ccs = bb.ccs(self, scale=False)
             except Exception, ex:
                 vol = 0
                 ccs = 0
@@ -361,13 +366,15 @@ class Density(Structure):
         return self.properties['scan'][
             np.argmin(np.abs(self.properties['scan'][:, 2] - ccs))]
 
-    def threshold_vol_ccs(self, low="", high="", sampling_points=1000, append=False):
+    def threshold_vol_ccs(self, low="", high="", sampling_points=1000, append=False, noise_filter=0.01):
         '''
         return the volume to threshold to CCS relationship
 
         :param sampling_points: number of measures to perform between min and max intensity in density map
         :returns: array reporting tested values and error on mass ([threshold, model_mass-target_mass])
         '''
+        
+        import biobox as bb
 
         if low == "":
             low = self.get_sigma_from_thresh(np.min(self.properties['density']))
@@ -377,9 +384,10 @@ class Density(Structure):
         result = []
         for thresh in np.linspace(low, high, num=sampling_points):
             try:
-                self.place_points(thresh)
+                self.place_points(thresh, noise_filter=noise_filter)
+                print "placed!"
                 vol = self.get_volume()
-                ccs = self.ccs(scale=False)
+                ccs = bb.ccs(self, scale=False)
             except Exception, ex:
                 vol = 0
                 ccs = 0
@@ -633,3 +641,20 @@ class Density(Structure):
         .. warning:: supposes unskewed voxels.
         '''
         return self.properties['delta'][0, 0] * self.properties['delta'][1, 1] * self.properties['delta'][2, 2] * len(self.points)
+
+
+
+if __name__ == "__main__":
+
+    import biobox as bb
+    
+    print "loading density..."
+    D = bb.Density()
+    D.import_map("..\\test\\EMD-1080.mrc", "mrc")
+    
+    print "placing points..."
+    D.place_points(6, noise_filter=0)
+    
+    
+    print "one point of CCS calculation..."
+    D.threshold_vol_ccs(sampling_points=1, append=False, noise_filter=0)

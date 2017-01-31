@@ -11,25 +11,17 @@
 #
 # Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com
 
-import subprocess
-import os
-import sys
-import random
-import string
 from copy import deepcopy
-
 import numpy as np
 import scipy.signal
-
-import biobox.lib.fastmath as FM  # cython routines
-import biobox.lib.interaction as I
+import pandas as pd
 
 class Structure(object):
     '''
-    A Structure consists of an ensemble of points in 3D space and some associated properties.
+    A Structure consists of an ensemble of points in 3D space, and metadata associated to each of them.
     '''
 
-    def __init__(self, p=np.array([[], []]), r=1.9):
+    def __init__(self, p=np.array([[], []]), r=1.0):
         '''
         Point coordinates and properties data structures are first initialized.
         properties is a dictionary initially containing an entry for 'center' (center of geometry) and 'radius' (average radius of points).
@@ -56,20 +48,16 @@ class Structure(object):
         '''collection of properties. By default, 'center' (geometric center of the Structure) is defined'''
 
         self.properties['center'] = self.get_center()
-        self.properties['radius'] = r  # average radius of every point
+       
+        if isinstance(r, list) or type(r).__module__ == 'numpy':
+            if len(r) > 0:
+                rad = r*np.ones(len(self.points))
+                idx = np.arange(len(self.points))
 
-    def get(self, prop):
-        '''
-        return property from properties array
-
-        :param prop: desired property to extract from property dictionary
-        :returns: or nan if failed
-        '''
-        if str(prop) in self.properties:
-            return self.properties[str(prop)]
+                self.data = pd.DataFrame(rad, index=idx, columns=["radius"])
+                ''' metadata about each atom (pandas Dataframe)'''
         else:
-            # print "property %s not found!"%prop
-            return float('nan')
+            self.data = pd.DataFrame(index=[], columns=[])
 
     def set_current(self, pos):
         '''
@@ -83,15 +71,6 @@ class Structure(object):
             self.properties['center'] = self.get_center()
         else:
             raise Exception("ERROR: position %s requested, but only %s conformations available" %(pos, self.coordinates.shape[0]))
-
-    def add_property(self, name, value):
-        '''
-        create a new property.
-
-        :param name: name of the new property to add.
-        :param value: value of the new property. Can be any data structure.
-        '''
-        self.properties[name] = value
 
     def get_xyz(self, indices=[]):
         '''
@@ -160,10 +139,11 @@ class Structure(object):
 
     def clear(self):
         '''
-        remove all the coordinates.
+        remove all the coordinates and empty metadata
         '''
         self.coordinates = np.array([[[], []], [[], []]])
         self.points = self.coordinates[0]
+        self.data = pd.DataFrame(index=[], columns=[])
 
     def translate(self, x, y, z):
         '''
@@ -229,7 +209,7 @@ class Structure(object):
 
     def get_center(self):
         '''
-        compute protein center of geometry (also assigns it to self.center variable).
+        compute protein center of geometry (also assigns it to self.properties["center"] key).
         '''
         if len(self.points) > 0:
             self.properties['center'] = np.mean(self.points, axis=0)
@@ -244,14 +224,6 @@ class Structure(object):
         '''
         c = self.get_center()
         self.translate(-c[0], -c[1], -c[2])
-
-    def rgyr(self):
-        '''
-        compute radius of gyration.
-        '''
-        d_square = np.sum((self.points - self.get_center())**2, axis=1)
-        return np.sqrt(np.sum(d_square) / d_square.shape[0])
-
 
     def get_size(self):
         '''
@@ -396,7 +368,7 @@ class Structure(object):
                      self.coordinates[f, i, 0],
                      self.coordinates[f, i, 1],
                      self.coordinates[f, i, 2],
-                     self.properties['radius'],
+                     self.data['radius'][i],
                      1.0, "Z")
                 L = 'ATOM  %5s  %-4s%-4s%1s%4i    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % l
                 fout.write(L)
@@ -404,188 +376,6 @@ class Structure(object):
             fout.write("END\n")
 
         fout.close()
-
-    def ccs(self, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMode sem -convergence 0.01", pdbname="", scale=False, proberad=1.0):
-        '''
-        compute CCS calling either impact.
-
-        :param use_lib: if true, impact library will be used, if false a system call to impact executable will be performed instead
-        :param impact_path: by default, the environment variable IMPACTPATH is sought. This allows redirecting to a specific impact root folder. 
-        :param impact_options: flags to be passes to impact executable
-        :param pdbname: if a file has been already written, impact can be asked to analyze it
-        :param scale: if True, CCS value calculated with PA method is scaled to better match trajectory method.
-        :param proberad: radius of probe. Do find out if your impact library already adds this value by default or not (old ones do)!
-        :returns: CCS value in A^2. Error return: -1 = input filename not found, -2 = unknown code for CCS calculation\n
-                  -3 CCS calculator failed, -4 = parsing of CCS calculation results failed
-        '''
-
-        if use_lib and pdbname == "":
-
-            #if True:
-            from biobox.classes.ccs import CCS
-            try:
-                if impact_path == '':
-
-                    try:
-                        impact_path = os.path.join(os.environ['IMPACTPATH'], "lib")
-                    except KeyError:
-                        raise Exception("IMPACTPATH environment variable undefined")
-
-                if "win" in sys.platform:
-                    libfile = os.path.join(impact_path, "libimpact.dll")
-                else:
-                    libfile = os.path.join(impact_path, "libimpact.so")
-
-                C = CCS(libfile=libfile)
-
-            except Exception as e:
-                raise Exception(str(e))
-
-            if "atom_ccs" in self.properties.keys():
-                radii = self.properties['atom_ccs'] + proberad
-
-            elif (isinstance(self.properties['radius'], list) or type(self.properties['radius']).__module__ == 'numpy') and self.properties['radius'].shape != ():
-                radii = self.properties['radius'] + proberad
-
-            else:
-                radii = np.ones(len(self.points)) * self.properties['radius'] + proberad
-
-            if scale:
-                return C.get_ccs(self.points, radii)[0]
-            else:
-                return C.get_ccs(self.points, radii, a=1.0, b=1.0)[0]
-
-        # generate random file name to capture CCS software terminal output
-        tmp_outfile = random_string(32)
-        while os.path.exists(tmp_outfile):
-            tmp_outfile = "%s.pdb" % random_string(32)
-
-        if pdbname == "":
-            # write temporary pdb file of current structure on which to launch
-            # CCS calculation
-            filename = "%s.pdb" % random_string(32)
-            while os.path.exists(filename):
-                filename = "%s.pdb" % random_string(32)
-
-            self.write_pdb(filename, [self.current])
-
-        else:
-            filename = pdbname
-            # if file was already provided, verify its existence first!
-            if os.path.isfile(pdbname) != 1:
-                raise Exception("ERROR: %s not found!" % pdbname)
-
-        try:
-
-            if impact_path == '':
-                    try:
-                        impact_path = os.path.join(os.environ['IMPACTPATH'], "bin")
-                    except KeyError:
-                        raise Exception("IMPACTPATH environment variable undefined")
-
-            # if using impact, create parameterization file containing a
-            # description for Z atoms (pseudoatom name used in this code)
-            f = open('params', 'w')
-
-            if 'radius' in self.properties:
-                if isinstance(self.properties['radius'], int) or isinstance(self.properties['radius'], float) or isinstance(self.properties['radius'], np.float64):
-                    f.write('[ defaults ]\n H 2.2\n C 2.91\n N 2.91\n O 2.91\n P 2.91\n S 2.91\n')
-                    f.write('Z %s' % self.properties['radius'])
-                    impact_options += " -param params"
-
-            f.close()
-
-            if "win" in sys.platform:
-                impact_name = os.path.join(impact_path, "impact.exe")
-            else:
-                impact_name = os.path.join(impact_path, "impact")
-
-            subprocess.check_call('%s  %s -rProbe %s %s > %s' % (impact_name, impact_options, proberad, filename, tmp_outfile), shell=True)
-
-        except Exception as e:
-            raise Exception(str(e))
-
-        #parse output generated by IMPACT and written into a file
-        try:
-            f = open(tmp_outfile, 'r')
-            for line in f:
-                w = line.split()
-                if len(w) > 0 and w[0] == "CCS":
-
-                    if scale:
-                        v = float(w[-2])
-                    else:
-                        v = float(w[3])
-
-                    break
-
-            f.close()
-
-            # clean temp files if needed
-            #(if a filename is provided, don't delete it!)
-            os.remove(tmp_outfile)
-            if pdbname == "":
-                os.remove(filename)
-
-            return v
-
-        except:
-            # clean temp files
-            os.remove(tmp_outfile)
-            if pdbname == "":
-                os.remove(filename)
-
-            return -4
-
-    def saxs(self, crysol_path='', crysol_options="-lm 20 -ns 500", pdbname=""):
-        '''
-        compute SAXS curve using crysol (from ATSAS suite)
-
-        :param crysol_path: path to crysol executable. By default, the environment variable ATSASPATH is sought. This allows redirecting to a specific impact root folder.
-        :param crysol_options: flags to be passes to impact executable
-        :param pdbname: if a file has been already written, crysol can be asked to analyze it
-        :returns: SAXS curve (nx2 numpy array)
-        '''
-
-        if crysol_path == '':
-            try:
-                crysol_path = os.environ['ATSASPATH']
-            except KeyError:
-                raise Exception("ATSASPATH environment variable undefined")
-
-        if pdbname == "":
-            # write temporary pdb file of current structure on which to launch
-            # SAXS calculation
-            pdbname = "%s.pdb" % random_string(32)
-            while os.path.exists(pdbname):
-                pdbname = "%s.pdb" % random_string(32)
-
-            self.write_pdb(pdbname, [self.current])
-
-        else:
-            # if file was already provided, verify its existence first!
-            if os.path.isfile(pdbname) != 1:
-                raise Exception("ERROR: %s not found!" % pdbname)
-
-        # get basename for output
-        outfile = os.path.basename(pdbname).split('.')[0]
-
-        call_line = os.path.join(crysol_path,"crysol")
-        try:
-            subprocess.check_call('%s %s %s >& /dev/null' %(call_line, crysol_options, pdbname), shell=True)
-        except Exception as e:
-            raise Exception("ERROR: crysol calculation failed!")
-
-        data = np.loadtxt("%s00.int" % outfile, skiprows=1)
-        try:
-            os.remove("%s00.alm" % outfile)
-            os.remove("%s00.int" % outfile)
-            os.remove("%s00.log" % outfile)
-            os.remove("%s.pdb" % outfile)
-        except Exception, ex:
-            pass
-
-        return data[:, 0:2]
 
     def convex_hull(self):
         '''
@@ -602,108 +392,6 @@ class Structure(object):
 
         except Exception as e:
             raise Exception("Quick Hull algorithm available in scipy >=0.12!")
-
-    def get_surface_c(self, targets=[], probe=1.4,
-                      n_sphere_point=960, threshold=0.05):
-        '''
-        compute the accessible surface area using the Shrake-Rupley algorithm ("rolling ball method")
-
-        :param targets: indices to be used for surface estimation. By default, all indices are kept into account.
-        :param probe: radius of the "rolling ball"
-        :param n_sphere_point: number of mesh points per atom
-        :param threshold: fraction of points in sphere, above which structure points are considered as exposed
-        :returns: accessible surface area in A^2
-        :returns: mesh numpy array containing the found points forming the accessible surface mesh
-        :returns: IDs of surface points
-        '''
-
-        # getting radii associated to every atom
-        radii = self.properties['radius']
-        if not (isinstance(radii, list) or type(radii).__module__ == 'numpy'):
-            radii = np.ones(len(self.points)) * self.properties['radius']
-
-        if len(radii) != len(self.points):
-            raise Exception("ERROR: length vdw radii (%s) and points quantity (%s) mismatch!" %(len(radii), len(self.points)))
-
-        if threshold < 0.0 or threshold > 1.0:
-            raise Exception("ERROR: threshold should be a floating point between 0 and 1!")
-
-        if len(targets) == 0:
-            return FM.c_get_surface(self.points, radii, probe, n_sphere_point, threshold)
-        else:
-            return FM.c_get_surface(self.points[targets], radii, probe, n_sphere_point, threshold)
-
-    def get_surface(self, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
-        '''
-        compute the accessible surface area using the Shrake-Rupley algorithm ("rolling ball method")
-
-        :param targets: indices to be used for surface estimation. By default, all indices are kept into account.
-        :param probe: radius of the "rolling ball"
-        :param n_sphere_point: number of mesh points per atom
-        :param threshold: fraction of points in sphere, above which structure points are considered as exposed
-        :returns: accessible surface area in A^2
-        :returns: mesh numpy array containing the found points forming the accessible surface mesh
-        :returns: IDs of surface points
-        '''
-
-        if len(targets) == 0:
-            targets = xrange(0, len(self.points), 1)
-
-        # getting radii associated to every atom
-        radii = self.properties['radius']
-        if not (isinstance(radii, list) or type(radii).__module__ == 'numpy'):
-            radii = np.ones(len(self.points)) * self.properties['radius']
-
-        if len(radii) != len(self.points):
-            raise Exception("ERROR: length vdw radii (%s) and points quantity (%s) mismatch!" %(len(radii), len(self.points)))
-
-        if threshold < 0.0 or threshold > 1.0:
-            raise Exception("ERROR: threshold should be a floating point between 0 and 1!")
-
-        # create unit sphere points cloud (using golden spiral)
-        pts = []
-        inc = np.pi * (3 - np.sqrt(5))
-        offset = 2 / float(n_sphere_point)
-        for k in range(int(n_sphere_point)):
-            y = k * offset - 1 + (offset / 2)
-            r = np.sqrt(1 - y * y)
-            phi = k * inc
-            pts.append([np.cos(phi) * r, y, np.sin(phi) * r])
-
-        sphere_points = np.array(pts)
-        const = 4.0 * np.pi / len(sphere_points)
-
-        contact_map = I.distance_matrix(self.points, self.points)
-
-        asa = 0.0
-        surface_atoms = []
-        mesh_pts = []
-        # compute accessible surface for every atom
-        for i in targets:
-
-            # place mesh points around atom of choice
-            mesh = sphere_points * (radii[i] + probe) + self.points[i]
-
-            # compute distance matrix between mesh points and neighboring atoms
-            test = np.where(contact_map[i, :] < radii.max() + probe * 2)[0]
-            neigh = self.points[test]
-            dist = I.distance_matrix(neigh, mesh) - radii[test][:, np.newaxis]
-
-            # lines=atoms, columns=mesh points. Count columns containing values greater than probe*2
-            # i.e. allowing sufficient space for a probe to fit completely
-            cnt = 0
-            for m in range(dist.shape[1]):
-                if not np.any(dist[:, m] < probe):
-                    cnt += 1
-                    mesh_pts.append(mesh[m])
-
-            # calculate asa for current atom, if a sufficient amount of mesh
-            # points is exposed (NOTE: to verify)
-            if cnt > n_sphere_point * threshold:
-                surface_atoms.append(i)
-                asa += const * cnt * (radii[i] + probe)**2
-
-        return asa, np.array(mesh_pts), np.array(surface_atoms)
 
     def get_density(self, step=1.0, sigma=1.0, kernel_half_width=5, buff=3):
         '''
@@ -767,8 +455,6 @@ class Structure(object):
         D.properties['format'] = 'dx'
         D.properties['filename'] = ''
         D.properties["sigma"] = np.std(b)
-
-        # D.place_points()
 
         return D
 
@@ -1029,13 +715,3 @@ class Structure(object):
             return np.array(rmsd)
         else:
             return rmsd
-
-
-def random_string(length=32):
-    '''
-    generate a random string of arbitrary characters. Useful to generate temporary file names.
-
-    :param length: length of random string
-    '''
-    return ''.join([random.choice(string.ascii_letters)
-                    for n in xrange(length)])

@@ -62,3 +62,6 @@ doc/_templates/
 
 # logfiles
 *.log
+
+# files generated during testing
+test/params

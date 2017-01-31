@@ -31,9 +31,7 @@ class InstallCommand(build_ext):
         except Exception, ex:
             print "files already exist, skipping..."
 
-        shutil.rmtree("build")
-
-
+        shutil.rmtree("build")
 os.chdir("lib")
 
 # small hack to get around a problem in older cython versions, i.e.
@@ -45,9 +43,9 @@ if os.path.exists("__init__.py"):
 setup(
     include_dirs=[np.get_include()],
     ext_modules=cythonize(
-                        "*.pyx",
-                        include_path=[np.get_include()],
-                        compiler_directives={'boundscheck': False, 'wraparound': False}),
+        "*.pyx",
+        include_path=[np.get_include()],
+            compiler_directives={'boundscheck': False, 'wraparound': False}),
     cmdclass={'install': InstallCommand}
 )
 
