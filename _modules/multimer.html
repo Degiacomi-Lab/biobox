@@ -61,70 +61,46 @@
 <span class="c">#</span>
 <span class="c"># Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com</span>
 
-<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-<span class="kn">from</span> <span class="nn">biobox.classes.structure</span> <span class="k">import</span> <span class="n">Structure</span><span class="p">,</span> <span class="n">random_string</span>
 <span class="kn">from</span> <span class="nn">biobox.classes.polyhedron</span> <span class="k">import</span> <span class="n">Polyhedron</span>
 <span class="kn">from</span> <span class="nn">biobox.classes.molecule</span> <span class="k">import</span> <span class="n">Molecule</span>
 
 
 <div class="viewcode-block" id="Multimer"><a class="viewcode-back" href="../assembly.html#multimer.Multimer">[docs]</a><span class="k">class</span> <span class="nc">Multimer</span><span class="p">(</span><span class="n">Polyhedron</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">    Construct and manipulate a protein assembly composed of several :func:`Molecule &lt;molecule.Molecule&gt;` instances.</span>
-
-<span class="sd">    subclass of :func:`Polyhedron &lt;polyhedron.Polyhedron&gt;`.</span>
+<span class="sd">    Construct and manipulate a protein assembly composed of several :func:`Molecule &lt;molecule.Molecule&gt;` instances. Subclass of :func:`Polyhedron &lt;polyhedron.Polyhedron&gt;`.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 
-<div class="viewcode-block" id="Multimer.ccs"><a class="viewcode-back" href="../assembly.html#multimer.Multimer.ccs">[docs]</a>    <span class="k">def</span> <span class="nf">ccs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_lib</span><span class="o">=</span><span class="k">True</span><span class="p">,</span> <span class="n">impact_path</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">impact_options</span><span class="o">=</span><span class="s">&quot;-Octree -nRuns 32 -cMode sem -convergence 0.01 -rProbe 1.0&quot;</span><span class="p">,</span> <span class="n">outname</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="k">False</span><span class="p">,</span> <span class="n">proberad</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<div class="viewcode-block" id="Multimer.query"><a class="viewcode-back" href="../assembly.html#multimer.Multimer.query">[docs]</a>    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query_text</span><span class="p">,</span> <span class="n">get_index</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        Override superclass method to compute CCS method. Here, atomic CCS radii are kept into account</span>
+<span class="sd">        ## select specific atoms in a multimer un the basis of a text query.</span>
 
-<span class="sd">        :param use_lib: if true, impact library will be used, if false a system call to impact executable will be performed instead</span>
-<span class="sd">        :param impact_path: location of impact executable</span>
-<span class="sd">        :param impact_options: flags to be passes to impact executable</span>
-<span class="sd">        :param outname: name of temporary output file to be generate for CCS calculation. If none is provided, a random name is picked.</span>
-<span class="sd">        :param scale: if True, CCS value calculated with PA method is scaled to better match trajectory method.</span>
-<span class="sd">        :returns: CCS: value in A^2. Error return: -1 = input filename not found, -2 = unknown code for CCS calculation, -3 CCS calculator failed, -4 = parsing of CCS calculation results failed</span>
+<span class="sd">        :param query_text: string selecting atoms of interest. Uses the pandas query syntax, can access all columns in the dataframe self.data.</span>
+<span class="sd">        :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)</span>
+<span class="sd">        :returns: coordinates of the selected points (in a unique array) and, if get_index is set to true, a list of their indices in subunits&#39; self.points array.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
-        <span class="k">if</span> <span class="n">use_lib</span><span class="p">:</span>
-            <span class="n">MM</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_molecule</span><span class="p">()</span>
-            <span class="n">MM</span><span class="o">.</span><span class="n">get_atoms_ccs</span><span class="p">()</span>
-            <span class="k">return</span> <span class="n">MM</span><span class="o">.</span><span class="n">ccs</span><span class="p">(</span><span class="n">use_lib</span><span class="o">=</span><span class="n">use_lib</span><span class="p">,</span> <span class="n">impact_path</span><span class="o">=</span><span class="n">impact_path</span><span class="p">,</span> <span class="n">impact_options</span><span class="o">=</span><span class="n">impact_options</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">,</span> <span class="n">proberad</span><span class="o">=</span><span class="n">proberad</span><span class="p">)</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">query_text</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span>
 
-        <span class="c"># if impact has to be called via system call, a random filename will be</span>
-        <span class="c"># generated (if none is given)</span>
-        <span class="k">if</span> <span class="n">outname</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
-            <span class="n">outname</span> <span class="o">=</span> <span class="s">&quot;%s.pdb&quot;</span> <span class="o">%</span> <span class="n">random_string</span><span class="p">()</span>
-            <span class="k">while</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">outname</span><span class="p">):</span>
-                <span class="n">outname</span> <span class="o">=</span> <span class="s">&quot;%s.pdb&quot;</span> <span class="o">%</span> <span class="n">random_string</span><span class="p">()</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="c">#this is a new sliced dataframe</span>
+        <span class="n">targets</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">ix</span><span class="p">[:,</span> <span class="p">[</span><span class="s">&quot;unit&quot;</span><span class="p">,</span> <span class="s">&quot;unit_index&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
 
-        <span class="c"># output a file for ccs calculation</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">write_pdb</span><span class="p">(</span><span class="n">outname</span><span class="p">)</span>
-        <span class="n">S</span> <span class="o">=</span> <span class="n">Structure</span><span class="p">()</span>  <span class="c"># instance created just to be able to access to the ccs calculation method</span>
+        <span class="c"># append the coordinates of every unit within the query</span>
+        <span class="n">pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">targets</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]):</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="n">targets</span><span class="p">[</span><span class="n">targets</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">u</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">this_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit_labels</span><span class="p">[</span><span class="n">u</span><span class="p">]</span>
+            <span class="n">pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">pts</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">this_unit</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">pos</span><span class="p">]))</span>
 
-        <span class="c"># very big PDB files may not be completely written before ccs</span>
-        <span class="c"># calculation is invoked. This is therefore tried several times before</span>
-        <span class="c"># renouncing.</span>
-        <span class="n">cnt</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">ccs</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">while</span> <span class="n">ccs</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">cnt</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
-            <span class="n">cnt</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">ccs</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">ccs</span><span class="p">(</span><span class="n">use_lib</span><span class="o">=</span><span class="n">use_lib</span><span class="p">,</span> <span class="n">impact_path</span><span class="o">=</span><span class="n">impact_path</span><span class="p">,</span> <span class="n">impact_options</span><span class="o">=</span><span class="n">impact_options</span><span class="p">,</span> <span class="n">pdbname</span><span class="o">=</span><span class="n">outname</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">,</span> <span class="n">proberad</span><span class="o">=</span><span class="n">proberad</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
-                <span class="n">ccs</span> <span class="o">=</span> <span class="mi">0</span>
-                <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">get_index</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">pts</span><span class="p">,</span> <span class="n">idx</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pts</span></div>
 
-        <span class="k">if</span> <span class="n">ccs</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">cnt</span> <span class="o">==</span> <span class="mi">10</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: CCS could not be calculated! You&#39;re possibly trying to write a too big PDB file.&quot;</span><span class="p">)</span>
 
-        <span class="c"># clear temporary file</span>
-        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">outname</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">ccs</span></div>
-
-<div class="viewcode-block" id="Multimer.atomselect"><a class="viewcode-back" href="../assembly.html#multimer.Multimer.atomselect">[docs]</a>    <span class="k">def</span> <span class="nf">atomselect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">chain</span><span class="p">,</span> <span class="n">resid</span><span class="p">,</span> <span class="n">atom</span><span class="p">,</span> <span class="n">get_index</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
+<div class="viewcode-block" id="Multimer.atomselect"><a class="viewcode-back" href="../assembly.html#multimer.Multimer.atomselect">[docs]</a>    <span class="k">def</span> <span class="nf">atomselect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">chain</span><span class="p">,</span> <span class="n">resid</span><span class="p">,</span> <span class="n">atom</span><span class="p">,</span> <span class="n">get_index</span><span class="o">=</span><span class="k">False</span><span class="p">,</span> <span class="n">use_resname</span><span class="o">=</span><span class="k">True</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        ## select specific atoms in a multimer providing unit, chain, residue ID and atom name.</span>
 
@@ -132,7 +108,8 @@
 <span class="sd">        :param chain: selection of a specific chain name (accepts &#39;*&#39; as wildcard). Can also be a list or numpy array of strings.</span>
 <span class="sd">        :param resid: residue ID of desired atoms (accepts &#39;*&#39; as wildcard). Can also be a list or numpy array of of int.</span>
 <span class="sd">        :param atom: name of desired atom (accepts &#39;*&#39; as wildcard). Can also be a list or numpy array of strings.</span>
-<span class="sd">        :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.properties[&#39;data&#39;])</span>
+<span class="sd">        :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)</span>
+<span class="sd">        :param use_resname: if set to True, consider information in &quot;res&quot; variable as resnames, and not resids</span>
 <span class="sd">        :returns: coordinates of the selected points (in a unique array) and, if get_index is set to true, a list of their indices in subunits&#39; self.points array.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
@@ -161,7 +138,7 @@
         <span class="n">pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">unit_id</span><span class="p">:</span>
-                <span class="p">[</span><span class="n">pts_tmp</span><span class="p">,</span> <span class="n">index_tmp</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">atomselect</span><span class="p">(</span><span class="n">chain</span><span class="p">,</span> <span class="n">resid</span><span class="p">,</span> <span class="n">atom</span><span class="p">,</span> <span class="k">True</span><span class="p">)</span>
+                <span class="p">[</span><span class="n">pts_tmp</span><span class="p">,</span> <span class="n">index_tmp</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">atomselect</span><span class="p">(</span><span class="n">chain</span><span class="p">,</span> <span class="n">resid</span><span class="p">,</span> <span class="n">atom</span><span class="p">,</span> <span class="k">True</span><span class="p">,</span> <span class="n">use_resname</span><span class="o">=</span><span class="n">use_resname</span><span class="p">)</span>
                 <span class="n">pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">pts</span><span class="p">,</span> <span class="n">pts_tmp</span><span class="p">))</span>
                 <span class="n">indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">index_tmp</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
@@ -189,42 +166,48 @@
         <span class="n">c</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">skipcharge</span> <span class="o">=</span> <span class="k">False</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="n">data_tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">]</span>
-            <span class="c">#data_tmp[:, 8] = data_tmp[:, 4]</span>
+            <span class="n">data_tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[[</span>
+                <span class="s">&quot;atom&quot;</span><span class="p">,</span> <span class="s">&quot;index&quot;</span><span class="p">,</span> <span class="s">&quot;name&quot;</span><span class="p">,</span> <span class="s">&quot;resname&quot;</span><span class="p">,</span> <span class="s">&quot;chain&quot;</span><span class="p">,</span>
+                <span class="s">&quot;resid&quot;</span><span class="p">,</span> <span class="s">&quot;beta&quot;</span><span class="p">,</span> <span class="s">&quot;occupancy&quot;</span><span class="p">,</span> <span class="s">&quot;atomtype&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span>
+
             <span class="n">data_tmp</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain_names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">data</span><span class="p">,</span> <span class="n">data_tmp</span><span class="p">))</span>
 
-            <span class="c"># merge knowledge about CCS aquired by different molecules</span>
+            <span class="c"># merge knowledge about CCS acquired by different molecules</span>
             <span class="n">atom_ccs</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">knowledge</span><span class="p">[</span><span class="s">&#39;atom_ccs&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">atom_ccs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">knowledge</span><span class="p">[</span><span class="s">&#39;atom_ccs&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span>
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span>
+                <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">r</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]))</span>
+                <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">r</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]))</span>
 
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;charge&#39;</span><span class="p">]</span>
+                    <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;charge&#39;</span><span class="p">]</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">c</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;charge&#39;</span><span class="p">]))</span>
+                    <span class="n">c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">c</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;charge&#39;</span><span class="p">]))</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
                 <span class="n">skipcharge</span> <span class="o">=</span> <span class="k">True</span>
                 <span class="k">continue</span>
 
         <span class="n">data</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;atom&quot;</span><span class="p">,</span> <span class="s">&quot;index&quot;</span><span class="p">,</span> <span class="s">&quot;name&quot;</span><span class="p">,</span> <span class="s">&quot;resname&quot;</span><span class="p">,</span> <span class="s">&quot;chain&quot;</span><span class="p">,</span> <span class="s">&quot;resid&quot;</span><span class="p">,</span> <span class="s">&quot;beta&quot;</span><span class="p">,</span> <span class="s">&quot;occupancy&quot;</span><span class="p">,</span> <span class="s">&quot;atomtype&quot;</span><span class="p">]</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
 
         <span class="c"># create molecule, and push created data information</span>
         <span class="n">M</span> <span class="o">=</span> <span class="n">Molecule</span><span class="p">()</span>
         <span class="n">M</span><span class="o">.</span><span class="n">add_xyz</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_all_xyz</span><span class="p">())</span>
-        <span class="n">M</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
-        <span class="n">M</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span>
+        <span class="n">M</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">cols</span><span class="p">)</span>
         <span class="n">M</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;center&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">get_center</span><span class="p">()</span>
         <span class="n">M</span><span class="o">.</span><span class="n">knowledge</span><span class="p">[</span><span class="s">&#39;atom_ccs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">atom_ccs</span>
+        <span class="n">M</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">skipcharge</span><span class="p">:</span>
-            <span class="n">M</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;charge&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span>
+            <span class="n">M</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;charge&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span>
+
+
 
         <span class="k">return</span> <span class="n">M</span></div>
 

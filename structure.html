@@ -66,18 +66,15 @@ For comfort, the current conformation is accessible in the <strong>points</stron
 <div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">]</span>
 </pre></div>
 </div>
-<p>Points properties are stored in a <strong>properties</strong> dictionary. These can be:</p>
-<ul class="simple">
-<li>global properties (e.g. self.properties[&#8220;center&#8221;], keeping track of the point center of geometry)</li>
-<li>point-specific properties (e.g. self.properties[&#8220;radius&#8221;], that can store an Nx1 array of points radii).</li>
-</ul>
+<p>Points attributes are stored in a pandas <strong>dataframe</strong>. For instance, self.data[&#8220;radius&#8221;] contains each point&#8217;s radius.
+A property of the whole point cloud can be stored in a properties dictionary (e.g. self.properties[&#8220;center&#8221;]).</p>
 <p>Several <a class="reference internal" href="#structure.Structure" title="structure.Structure"><code class="xref py py-func docutils literal"><span class="pre">Structure</span></code></a> subclasses are available (<a class="reference internal" href="#molecule.Molecule" title="molecule.Molecule"><code class="xref py py-func docutils literal"><span class="pre">Molecule</span></code></a>, <a class="reference internal" href="#convex.Ellipsoid" title="convex.Ellipsoid"><code class="xref py py-func docutils literal"><span class="pre">Ellipsoid</span></code></a>, <a class="reference internal" href="#convex.Cylinder" title="convex.Cylinder"><code class="xref py py-func docutils literal"><span class="pre">Cylinder</span></code></a>, <a class="reference internal" href="#convex.Cone" title="convex.Cone"><code class="xref py py-func docutils literal"><span class="pre">Cone</span></code></a>, <a class="reference internal" href="#convex.Sphere" title="convex.Sphere"><code class="xref py py-func docutils literal"><span class="pre">Sphere</span></code></a>, <a class="reference internal" href="#convex.Prism" title="convex.Prism"><code class="xref py py-func docutils literal"><span class="pre">Prism</span></code></a>, <a class="reference internal" href="#density.Density" title="density.Density"><code class="xref py py-func docutils literal"><span class="pre">Density</span></code></a>, see below).</p>
 <div class="section" id="module-structure">
 <span id="structure"></span><h2>Structure<a class="headerlink" href="#module-structure" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="structure.Structure">
-<em class="property">class </em><code class="descname">Structure</code><span class="sig-paren">(</span><em>p=array([]</em>, <em>shape=(2L</em>, <em>0L)</em>, <em>dtype=float64)</em>, <em>r=1.9</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/structure.html#Structure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#structure.Structure" title="Permalink to this definition">¶</a></dt>
-<dd><p>A Structure consists of an ensemble of points in 3D space and some associated properties.</p>
+<em class="property">class </em><code class="descname">Structure</code><span class="sig-paren">(</span><em>p=array([]</em>, <em>shape=(2L</em>, <em>0L)</em>, <em>dtype=float64)</em>, <em>r=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/structure.html#Structure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#structure.Structure" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Structure consists of an ensemble of points in 3D space, and metadata associated to each of them.</p>
 <p>Point coordinates and properties data structures are first initialized.
 properties is a dictionary initially containing an entry for &#8216;center&#8217; (center of geometry) and &#8216;radius&#8217; (average radius of points).</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -92,24 +89,6 @@ properties is a dictionary initially containing an entry for &#8216;center&#8217
 </tr>
 </tbody>
 </table>
-<dl class="method">
-<dt id="structure.Structure.add_property">
-<code class="descname">add_property</code><span class="sig-paren">(</span><em>name</em>, <em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/structure.html#Structure.add_property"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#structure.Structure.add_property" title="Permalink to this definition">¶</a></dt>
-<dd><p>create a new property.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>name</strong> &#8211; name of the new property to add.</li>
-<li><strong>value</strong> &#8211; value of the new property. Can be any data structure.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
 <dl class="method">
 <dt id="structure.Structure.add_xyz">
 <code class="descname">add_xyz</code><span class="sig-paren">(</span><em>coords</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/structure.html#Structure.add_xyz"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#structure.Structure.add_xyz" title="Permalink to this definition">¶</a></dt>
@@ -146,33 +125,6 @@ properties is a dictionary initially containing an entry for &#8216;center&#8217
 </dd></dl>
 
 <dl class="method">
-<dt id="structure.Structure.ccs">
-<code class="descname">ccs</code><span class="sig-paren">(</span><em>use_lib=True</em>, <em>impact_path=''</em>, <em>impact_options='-Octree -nRuns 32 -cMode sem -convergence 0.01'</em>, <em>pdbname=''</em>, <em>scale=False</em>, <em>proberad=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/structure.html#Structure.ccs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#structure.Structure.ccs" title="Permalink to this definition">¶</a></dt>
-<dd><p>compute CCS calling either impact.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>use_lib</strong> &#8211; if true, impact library will be used, if false a system call to impact executable will be performed instead</li>
-<li><strong>impact_path</strong> &#8211; by default, the environment variable IMPACTPATH is sought. This allows redirecting to a specific impact root folder.</li>
-<li><strong>impact_options</strong> &#8211; flags to be passes to impact executable</li>
-<li><strong>pdbname</strong> &#8211; if a file has been already written, impact can be asked to analyze it</li>
-<li><strong>scale</strong> &#8211; if True, CCS value calculated with PA method is scaled to better match trajectory method.</li>
-<li><strong>proberad</strong> &#8211; radius of probe. Do find out if your impact library already adds this value by default or not (old ones do)!</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><p>CCS value in A^2. Error return: -1 = input filename not found, -2 = unknown code for CCS calculation</p>
-<p>-3 CCS calculator failed, -4 = parsing of CCS calculation results failed</p>
-</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
 <dt id="structure.Structure.center_to_origin">
 <code class="descname">center_to_origin</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/structure.html#Structure.center_to_origin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#structure.Structure.center_to_origin" title="Permalink to this definition">¶</a></dt>
 <dd><p>move the structure so that its center of geometry is at the origin.</p>
@@ -181,7 +133,7 @@ properties is a dictionary initially containing an entry for &#8216;center&#8217
 <dl class="method">
 <dt id="structure.Structure.clear">
 <code class="descname">clear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/structure.html#Structure.clear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#structure.Structure.clear" title="Permalink to this definition">¶</a></dt>
-<dd><p>remove all the coordinates.</p>
+<dd><p>remove all the coordinates and empty metadata</p>
 </dd></dl>
 
 <dl class="method">
@@ -214,6 +166,12 @@ properties is a dictionary initially containing an entry for &#8216;center&#8217
 <dd><p>index of currently selected conformation</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="structure.Structure.data">
+<code class="descname">data</code><em class="property"> = None</em><a class="headerlink" href="#structure.Structure.data" title="Permalink to this definition">¶</a></dt>
+<dd><p>metadata about each atom (pandas Dataframe)</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="structure.Structure.delete_xyz">
 <code class="descname">delete_xyz</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/structure.html#Structure.delete_xyz"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#structure.Structure.delete_xyz" title="Permalink to this definition">¶</a></dt>
@@ -230,25 +188,9 @@ properties is a dictionary initially containing an entry for &#8216;center&#8217
 </dd></dl>
 
 <dl class="method">
-<dt id="structure.Structure.get">
-<code class="descname">get</code><span class="sig-paren">(</span><em>prop</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/structure.html#Structure.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#structure.Structure.get" title="Permalink to this definition">¶</a></dt>
-<dd><p>return property from properties array</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>prop</strong> &#8211; desired property to extract from property dictionary</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">or nan if failed</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
 <dt id="structure.Structure.get_center">
 <code class="descname">get_center</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/structure.html#Structure.get_center"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#structure.Structure.get_center" title="Permalink to this definition">¶</a></dt>
-<dd><p>compute protein center of geometry (also assigns it to self.center variable).</p>
+<dd><p>compute protein center of geometry (also assigns it to self.properties[&#8220;center&#8221;] key).</p>
 </dd></dl>
 
 <dl class="method">
@@ -292,64 +234,6 @@ properties is a dictionary initially containing an entry for &#8216;center&#8217
 <dt id="structure.Structure.get_size">
 <code class="descname">get_size</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/structure.html#Structure.get_size"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#structure.Structure.get_size" title="Permalink to this definition">¶</a></dt>
 <dd><p>compute the dimensions of the object along x, y and z.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="structure.Structure.get_surface">
-<code class="descname">get_surface</code><span class="sig-paren">(</span><em>targets=[]</em>, <em>probe=1.4</em>, <em>n_sphere_point=960</em>, <em>threshold=0.05</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/structure.html#Structure.get_surface"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#structure.Structure.get_surface" title="Permalink to this definition">¶</a></dt>
-<dd><p>compute the accessible surface area using the Shrake-Rupley algorithm (&#8220;rolling ball method&#8221;)</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>targets</strong> &#8211; indices to be used for surface estimation. By default, all indices are kept into account.</li>
-<li><strong>probe</strong> &#8211; radius of the &#8220;rolling ball&#8221;</li>
-<li><strong>n_sphere_point</strong> &#8211; number of mesh points per atom</li>
-<li><strong>threshold</strong> &#8211; fraction of points in sphere, above which structure points are considered as exposed</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">accessible surface area in A^2</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">mesh numpy array containing the found points forming the accessible surface mesh</p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">IDs of surface points</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="structure.Structure.get_surface_c">
-<code class="descname">get_surface_c</code><span class="sig-paren">(</span><em>targets=[]</em>, <em>probe=1.4</em>, <em>n_sphere_point=960</em>, <em>threshold=0.05</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/structure.html#Structure.get_surface_c"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#structure.Structure.get_surface_c" title="Permalink to this definition">¶</a></dt>
-<dd><p>compute the accessible surface area using the Shrake-Rupley algorithm (&#8220;rolling ball method&#8221;)</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>targets</strong> &#8211; indices to be used for surface estimation. By default, all indices are kept into account.</li>
-<li><strong>probe</strong> &#8211; radius of the &#8220;rolling ball&#8221;</li>
-<li><strong>n_sphere_point</strong> &#8211; number of mesh points per atom</li>
-<li><strong>threshold</strong> &#8211; fraction of points in sphere, above which structure points are considered as exposed</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">accessible surface area in A^2</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">mesh numpy array containing the found points forming the accessible surface mesh</p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">IDs of surface points</p>
-</td>
-</tr>
-</tbody>
-</table>
 </dd></dl>
 
 <dl class="method">
@@ -407,12 +291,6 @@ properties is a dictionary initially containing an entry for &#8216;center&#8217
 <dt id="structure.Structure.properties">
 <code class="descname">properties</code><em class="property"> = None</em><a class="headerlink" href="#structure.Structure.properties" title="Permalink to this definition">¶</a></dt>
 <dd><p>collection of properties. By default, &#8216;center&#8217; (geometric center of the Structure) is defined</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="structure.Structure.rgyr">
-<code class="descname">rgyr</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/structure.html#Structure.rgyr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#structure.Structure.rgyr" title="Permalink to this definition">¶</a></dt>
-<dd><p>compute radius of gyration.</p>
 </dd></dl>
 
 <dl class="method">
@@ -547,28 +425,6 @@ rotating an object being not centered requires to first translate the ellipsoid 
 </dd></dl>
 
 <dl class="method">
-<dt id="structure.Structure.saxs">
-<code class="descname">saxs</code><span class="sig-paren">(</span><em>crysol_path=''</em>, <em>crysol_options='-lm 20 -ns 500'</em>, <em>pdbname=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/structure.html#Structure.saxs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#structure.Structure.saxs" title="Permalink to this definition">¶</a></dt>
-<dd><p>compute SAXS curve using crysol (from ATSAS suite)</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>crysol_path</strong> &#8211; path to crysol executable. By default, the environment variable ATSASPATH is sought. This allows redirecting to a specific impact root folder.</li>
-<li><strong>crysol_options</strong> &#8211; flags to be passes to impact executable</li>
-<li><strong>pdbname</strong> &#8211; if a file has been already written, crysol can be asked to analyze it</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">SAXS curve (nx2 numpy array)</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
 <dt id="structure.Structure.set_current">
 <code class="descname">set_current</code><span class="sig-paren">(</span><em>pos</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/structure.html#Structure.set_current"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#structure.Structure.set_current" title="Permalink to this definition">¶</a></dt>
 <dd><p>select current frame (place frame pointer at desired position)</p>
@@ -635,30 +491,17 @@ rotating an object being not centered requires to first translate the ellipsoid 
 
 </dd></dl>
 
-<dl class="function">
-<dt id="structure.random_string">
-<code class="descname">random_string</code><span class="sig-paren">(</span><em>length=32</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/structure.html#random_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#structure.random_string" title="Permalink to this definition">¶</a></dt>
-<dd><p>generate a random string of arbitrary characters. Useful to generate temporary file names.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>length</strong> &#8211; length of random string</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
 </div>
 <div class="section" id="module-molecule">
 <span id="molecule"></span><h2>Molecule<a class="headerlink" href="#module-molecule" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="molecule.Molecule">
 <em class="property">class </em><code class="descname">Molecule</code><a class="reference internal" href="_modules/molecule.html#Molecule"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#molecule.Molecule" title="Permalink to this definition">¶</a></dt>
-<dd><p>Subclass of <a class="reference internal" href="#structure.Structure" title="structure.Structure"><code class="xref py py-func docutils literal"><span class="pre">Structure</span></code></a>, allows reading, manipulating and analyzing molecular structures.</p>
-<p>At instantiation, properties associated to every individual atoms are stored as an array under the key &#8220;data&#8221; in the properties dictionary.
-The columns of the &#8220;data&#8221; array contain the following information (as string):</p>
-<p>[atom/hetatm, index, atomname, resname, chain name, residue ID, beta factor, occupancy, atomtype].</p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">biobox.classes.structure.Structure</span></code></p>
+<p>Subclass of <a class="reference internal" href="#structure.Structure" title="structure.Structure"><code class="xref py py-func docutils literal"><span class="pre">Structure</span></code></a>, allows reading, manipulating and analyzing molecular structures.</p>
+<p>At instantiation, properties associated to every individual atoms are stored in a pandas Dataframe self.data.
+The columns of the self.data have the following names:
+atom, index, name, resname, chain, resid, beta, occupancy, atomtype, radius, charge.</p>
 <p>self.knowledge contains a knowledge base about atoms and residues properties. Default values are:</p>
 <ul class="simple">
 <li>&#8216;residue_mass&#8217; property stores the average mass for most common aminoacids (values from Expasy website)</li>
@@ -697,7 +540,7 @@ The columns of the &#8220;data&#8221; array contain the following information (a
 <dl class="method">
 <dt id="molecule.Molecule.assign_atomtype">
 <code class="descname">assign_atomtype</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/molecule.html#Molecule.assign_atomtype"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#molecule.Molecule.assign_atomtype" title="Permalink to this definition">¶</a></dt>
-<dd><p>guess atomtype from atomnames</p>
+<dd><p>guess atomtype from atom names</p>
 </dd></dl>
 
 <dl class="method">
@@ -761,31 +604,6 @@ Useful to remove from a molecule atoms unwanted for further analysis, alternativ
 <li><strong>indices</strong> &#8211; indices of atoms of interest. If not set all atoms will be considered.</li>
 <li><strong>step</strong> &#8211; timestep between two conformations (useful when using conformations extracted from molecular dynamics)</li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="molecule.Molecule.ccs">
-<code class="descname">ccs</code><span class="sig-paren">(</span><em>use_lib=True</em>, <em>impact_path=''</em>, <em>impact_options='-Octree -nRuns 32 -cMode sem -convergence 0.01'</em>, <em>scale=True</em>, <em>proberad=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/molecule.html#Molecule.ccs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#molecule.Molecule.ccs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate molecule CCS</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>use_lib</strong> &#8211; if true, impact library will be used, if false a system call to impact executable will be performed instead</li>
-<li><strong>impact_path</strong> &#8211; location of impact executable</li>
-<li><strong>impact_options</strong> &#8211; flags to be passes to impact executable</li>
-<li><strong>scale</strong> &#8211; if True, CCS value calculated with PA method is scaled to better match trajectory method.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><p>CCS value in A^2. Error return: -1 = input filename not found, -2 = unknown code for CCS calculation</p>
-<p>-3 CCS calculator failed, -4 = parsing of CCS calculation results failed</p>
-</p>
 </td>
 </tr>
 </tbody>
@@ -901,7 +719,7 @@ The knowledge base can be expanded or edited by adding entries to the molecule&#
 <dd><p>aggregate data and point coordinates, and return in a unique data structure</p>
 <p>Returned data is a list containing strings for points data and floats for point coordinates
 in the same order as a pdb file, i.e.
-ATOM/HETATM, index, atomname, resname, chain name, residue ID, x, y, z, occupancy, beta factor, atomtype.</p>
+ATOM/HETATM, index, name, resname, chain name, residue ID, x, y, z, occupancy, beta factor, atomtype.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1047,6 +865,27 @@ After loading, the first model (M.current_model=0) will be set as active.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="molecule.Molecule.query">
+<code class="descname">query</code><span class="sig-paren">(</span><em>query_text</em>, <em>get_index=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/molecule.html#Molecule.query"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#molecule.Molecule.query" title="Permalink to this definition">¶</a></dt>
+<dd><p>## select specific atoms in a multimer un the basis of a text query.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>query_text</strong> &#8211; string selecting atoms of interest. Uses the pandas query syntax, can access all columns in the dataframe self.data.</li>
+<li><strong>get_index</strong> &#8211; if set to True, returns the indices of selected atoms in self.points array (and self.data)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">coordinates of the selected points (in a unique array) and, if get_index is set to true, a list of their indices in subunits&#8217; self.points array.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="molecule.Molecule.rmsf_from_beta_factor">
 <code class="descname">rmsf_from_beta_factor</code><span class="sig-paren">(</span><em>indices=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/molecule.html#Molecule.rmsf_from_beta_factor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#molecule.Molecule.rmsf_from_beta_factor" title="Permalink to this definition">¶</a></dt>
 <dd><p>calculate RMSF from atoms beta factors.</p>
@@ -1174,7 +1013,8 @@ All these classes are subclass of <a class="reference internal" href="#structure
 <span class="target" id="module-convex"></span><dl class="class">
 <dt id="convex.Cone">
 <em class="property">class </em><code class="descname">Cone</code><span class="sig-paren">(</span><em>r</em>, <em>h</em>, <em>skew=0</em>, <em>radius=1.1</em>, <em>pts_density_r=0.09817477042468103</em>, <em>pts_density_h=0.2</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/convex.html#Cone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#convex.Cone" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create an ensemble of points arranged as a cone.</p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">biobox.classes.structure.Structure</span></code></p>
+<p>Create an ensemble of points arranged as a cone.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1238,7 +1078,8 @@ All these classes are subclass of <a class="reference internal" href="#structure
 <dl class="class">
 <dt id="convex.Cylinder">
 <em class="property">class </em><code class="descname">Cylinder</code><span class="sig-paren">(</span><em>r</em>, <em>h</em>, <em>squeeze=1.0</em>, <em>skew=0.0</em>, <em>radius=1.1</em>, <em>pts_density_u=0.09817477042468103</em>, <em>pts_density_h=0.2</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/convex.html#Cylinder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#convex.Cylinder" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create an ensemble of points arranged as an elliptical cylinder.</p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">biobox.classes.structure.Structure</span></code></p>
+<p>Create an ensemble of points arranged as an elliptical cylinder.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1305,7 +1146,8 @@ All these classes are subclass of <a class="reference internal" href="#structure
 <dl class="class">
 <dt id="convex.Ellipsoid">
 <em class="property">class </em><code class="descname">Ellipsoid</code><span class="sig-paren">(</span><em>a</em>, <em>b</em>, <em>c</em>, <em>radius=1.9</em>, <em>pts_density_u=0.08726646259971647</em>, <em>pts_density_v=0.08726646259971647</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/convex.html#Ellipsoid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#convex.Ellipsoid" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create an ensemble of points arranged as an ellipsoid.</p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">biobox.classes.structure.Structure</span></code></p>
+<p>Create an ensemble of points arranged as an ellipsoid.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1402,7 +1244,8 @@ All these classes are subclass of <a class="reference internal" href="#structure
 <dl class="class">
 <dt id="convex.Prism">
 <em class="property">class </em><code class="descname">Prism</code><span class="sig-paren">(</span><em>r</em>, <em>h</em>, <em>n</em>, <em>skew=0.0</em>, <em>radius=1.1</em>, <em>pts_density_u=0.09817477042468103</em>, <em>pts_density_h=0.2</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/convex.html#Prism"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#convex.Prism" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create an ensemble of points arranged as a prism (polygonal bottom and top, rectangular sides).</p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">biobox.classes.structure.Structure</span></code></p>
+<p>Create an ensemble of points arranged as a prism (polygonal bottom and top, rectangular sides).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1467,7 +1310,8 @@ All these classes are subclass of <a class="reference internal" href="#structure
 <dl class="class">
 <dt id="convex.Sphere">
 <em class="property">class </em><code class="descname">Sphere</code><span class="sig-paren">(</span><em>r</em>, <em>radius=1.9</em>, <em>n_sphere_point=960</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/convex.html#Sphere"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#convex.Sphere" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create an ensemble of points arranged as a sphere.</p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">biobox.classes.structure.Structure</span></code></p>
+<p>Create an ensemble of points arranged as a sphere.</p>
 <p>using golden spiral to approximate an even distribution</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1577,7 +1421,8 @@ All these classes are subclass of <a class="reference internal" href="#structure
 <dl class="class">
 <dt id="density.Density">
 <em class="property">class </em><code class="descname">Density</code><a class="reference internal" href="_modules/density.html#Density"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#density.Density" title="Permalink to this definition">¶</a></dt>
-<dd><p>Subclass of <a class="reference internal" href="#structure.Structure" title="structure.Structure"><code class="xref py py-func docutils literal"><span class="pre">Structure</span></code></a>, allows importing density map, and transform them in a PDB file containing a collection of spheres placed on the map&#8217;s high density regions.</p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">biobox.classes.structure.Structure</span></code></p>
+<p>Subclass of <a class="reference internal" href="#structure.Structure" title="structure.Structure"><code class="xref py py-func docutils literal"><span class="pre">Structure</span></code></a>, allows importing density map, and transform them in a PDB file containing a collection of spheres placed on the map&#8217;s high density regions.</p>
 <p>A density map is fully described by the following attributes, stored in the self.properties dictionary:</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1682,13 +1527,17 @@ All these classes are subclass of <a class="reference internal" href="#structure
 
 <dl class="method">
 <dt id="density.Density.find_data_from_sigma">
-<code class="descname">find_data_from_sigma</code><span class="sig-paren">(</span><em>sigma</em>, <em>exact=True</em>, <em>append=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/density.html#Density.find_data_from_sigma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#density.Density.find_data_from_sigma" title="Permalink to this definition">¶</a></dt>
+<code class="descname">find_data_from_sigma</code><span class="sig-paren">(</span><em>sigma</em>, <em>exact=True</em>, <em>append=False</em>, <em>noise_filter=0.01</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/density.html#Density.find_data_from_sigma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#density.Density.find_data_from_sigma" title="Permalink to this definition">¶</a></dt>
 <dd><p>map experimental data to given threshold</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sigma</strong> &#8211; density threshold</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>sigma</strong> &#8211; density threshold</li>
+<li><strong>noise_filter</strong> &#8211; launch DBSCAN clustering algorithm to detect connected regions in density map. Regions representing less than noise_filter of the total will be removed. This is a ratio, value should be between 0 and 1.</li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>
@@ -1864,7 +1713,7 @@ All these classes are subclass of <a class="reference internal" href="#structure
 
 <dl class="method">
 <dt id="density.Density.threshold_vol_ccs">
-<code class="descname">threshold_vol_ccs</code><span class="sig-paren">(</span><em>low=''</em>, <em>high=''</em>, <em>sampling_points=1000</em>, <em>append=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/density.html#Density.threshold_vol_ccs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#density.Density.threshold_vol_ccs" title="Permalink to this definition">¶</a></dt>
+<code class="descname">threshold_vol_ccs</code><span class="sig-paren">(</span><em>low=''</em>, <em>high=''</em>, <em>sampling_points=1000</em>, <em>append=False</em>, <em>noise_filter=0.01</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/density.html#Density.threshold_vol_ccs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#density.Density.threshold_vol_ccs" title="Permalink to this definition">¶</a></dt>
 <dd><p>return the volume to threshold to CCS relationship</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />

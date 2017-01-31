@@ -64,7 +64,8 @@
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">deepcopy</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">biobox.classes.structure</span> <span class="k">import</span> <span class="n">Structure</span><span class="p">,</span> <span class="n">random_string</span>
+<span class="kn">from</span> <span class="nn">biobox.classes.structure</span> <span class="k">import</span> <span class="n">Structure</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 
 <div class="viewcode-block" id="Assembly"><a class="viewcode-back" href="../assembly.html#assembly.Assembly">[docs]</a><span class="k">class</span> <span class="nc">Assembly</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -94,6 +95,10 @@
         <span class="c"># current conformation selected from conformational database</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 
+        <span class="c">#metadata associated to every point</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="p">[],</span> <span class="n">columns</span><span class="o">=</span><span class="p">[])</span>
+
+
 <div class="viewcode-block" id="Assembly.clear"><a class="viewcode-back" href="../assembly.html#assembly.Assembly.clear">[docs]</a>    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        remove all elements loaded in the assembly.</span>
@@ -109,11 +114,21 @@
 <span class="sd">        :param n: number of units</span>
 <span class="sd">        :param struct: object of class Structure (or subclasses)</span>
 <span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">dfs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">+</span> <span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
             <span class="n">e</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">struct</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">unit_labels</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">i</span>
 
+            <span class="c">#add labeling to structures tables, prior concatenation</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;unit&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;unit_index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span>
+            <span class="n">dfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="c">#create dataframe collecting information from all structures</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">dfs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+        
         <span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">=</span> <span class="mi">0</span></div>
 
 <div class="viewcode-block" id="Assembly.merge"><a class="viewcode-back" href="../assembly.html#assembly.Assembly.merge">[docs]</a>    <span class="k">def</span> <span class="nf">merge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">assembly</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
@@ -146,6 +161,13 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">structure</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: label %s already existing in multimer!&quot;</span> <span class="o">%</span><span class="n">label</span><span class="p">)</span>
+
+
+        <span class="c">#append structure to dataframe</span>
+        <span class="n">structure</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;unit&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">label</span>
+        <span class="n">structure</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;unit_index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">structure</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">structure</span><span class="o">.</span><span class="n">data</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">label</span></div>
 
@@ -192,18 +214,32 @@
                     <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: label %s already exists!&quot;</span> <span class="o">%</span> <span class="n">l</span><span class="p">)</span>
 
         <span class="c"># append new structures to old ones</span>
+        <span class="n">dfs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">struct_list</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
             <span class="c"># create dictionary with neighbors</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">struct_list</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">struct_list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">unit_labels</span><span class="p">[</span><span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">i</span>
+                <span class="n">lbl</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">unit_labels</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">i</span></div>
+                <span class="n">lbl</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">unit_labels</span><span class="p">[</span><span class="n">lbl</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+
+            <span class="c">#add labeling to structures tables, prior concatenation</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;unit&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lbl</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;unit_index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span>
+            <span class="n">dfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="c">#create dataframe collecting information from all structures</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">dfs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">))</span></div>
+
 
 <div class="viewcode-block" id="Assembly.make_structure"><a class="viewcode-back" href="../assembly.html#assembly.Assembly.make_structure">[docs]</a>    <span class="k">def</span> <span class="nf">make_structure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        returns a :func:`Structure &lt;structure.Structure&gt;` object containing all the points of the assembly</span>
+<span class="sd">        returns a :func:`Structure &lt;structure.Structure&gt;` object containing all the points of the assembly.</span>
 
 <span class="sd">        :returns: :func:`Structure &lt;structure.Structure&gt;` object</span>
 <span class="sd">        &#39;&#39;&#39;</span>
@@ -215,8 +251,8 @@
 
 <span class="sd">        :param angle: chain curvature</span>
 <span class="sd">        :param dist: distance between centers of mass</span>
-<span class="sd">        :param groups: if set, a chain is formed by considering groups of loaded structures as unique objects.\n</span>
-<span class="sd">        If unset, every object is independently moved.</span>
+<span class="sd">        :param groups: if set, a chain is formed by considering groups of loaded structures as unique objects.</span>
+<span class="sd">                       If unset, every object is independently moved.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="c"># if no group has been selected, every subunit forms a group by itself</span>
@@ -467,83 +503,6 @@
         <span class="n">contacts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">u1</span><span class="p">]</span><span class="o">.</span><span class="n">check_inclusion</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">u2</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">contacts</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Assembly.distance"><a class="viewcode-back" href="../assembly.html#assembly.Assembly.distance">[docs]</a>    <span class="k">def</span> <span class="nf">distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atom1</span><span class="p">,</span> <span class="n">atom2</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        measure shortest euclidean distance within two ensembles of points</span>
-<span class="sd">        &#39;&#39;&#39;</span>
-        <span class="n">d</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">atom1</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="n">d</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">atom2</span> <span class="o">-</span> <span class="n">atom1</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)))</span>
-
-        <span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="Assembly.get_surface"><a class="viewcode-back" href="../assembly.html#assembly.Assembly.get_surface">[docs]</a>    <span class="k">def</span> <span class="nf">get_surface</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        compute accessible surface area.</span>
-
-<span class="sd">        :returns: accessible_surface area in A^2</span>
-<span class="sd">        &#39;&#39;&#39;</span>
-        <span class="n">points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_xyz</span><span class="p">()</span>
-        <span class="n">S</span> <span class="o">=</span> <span class="n">Structure</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">S</span><span class="o">.</span><span class="n">get_surface</span><span class="p">()</span></div>
-
-<div class="viewcode-block" id="Assembly.ccs"><a class="viewcode-back" href="../assembly.html#assembly.Assembly.ccs">[docs]</a>    <span class="k">def</span> <span class="nf">ccs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_lib</span><span class="o">=</span><span class="k">True</span><span class="p">,</span> <span class="n">impact_path</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span>
-            <span class="n">impact_options</span><span class="o">=</span><span class="s">&quot;-Octree -nRuns 32 -cMode sem -convergence 0.01 -rProbe 1.0&quot;</span><span class="p">,</span> <span class="n">outname</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        compute assembly CCS.</span>
-
-<span class="sd">        :param use_lib: if true, impact library will be used, if false a system call to impact executable will be performed instead</span>
-<span class="sd">        :param impact_path: location of impact executable</span>
-<span class="sd">        :param impact_options: flags to be passes to impact executable</span>
-<span class="sd">        :param scale: if True, CCS value calculated with PA method is scaled to better match trajectory method.</span>
-<span class="sd">        :param outname: name of temporary output file to be generate for CCS calculation. If none is provided, a random name is picked.</span>
-<span class="sd">        :returns: CCS value in A^2. Returns 0 if CCS calculation failed.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
-        <span class="n">M</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_structure</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">M</span><span class="o">.</span><span class="n">ccs</span><span class="p">(</span><span class="n">use_lib</span><span class="o">=</span><span class="n">use_lib</span><span class="p">,</span> <span class="n">impact_path</span><span class="o">=</span><span class="n">impact_path</span><span class="p">,</span> <span class="n">impact_options</span><span class="o">=</span><span class="n">impact_options</span><span class="p">,</span> <span class="n">pdbname</span><span class="o">=</span><span class="n">outname</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="Assembly.saxs"><a class="viewcode-back" href="../assembly.html#assembly.Assembly.saxs">[docs]</a>    <span class="k">def</span> <span class="nf">saxs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">crysol_path</span><span class="o">=</span><span class="s">&#39;~/atsas-2.5.2-1/bin/&#39;</span><span class="p">,</span>
-             <span class="n">crysol_options</span><span class="o">=</span><span class="s">&quot;-lm 18 -ns 500&quot;</span><span class="p">,</span> <span class="n">outname</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        compute SAXS curve using crysol (from ATSAS suite)</span>
-
-<span class="sd">        :param crysol_path: location of impact executable</span>
-<span class="sd">        :param crysol_options: flags to be passes to impact executable</span>
-<span class="sd">        :param outname: if a file has been already written, impact can be asked to analyze it</span>
-<span class="sd">        :returns: SAXS curve (nx2 numpy array). returns -1 if failed.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
-
-        <span class="c"># if a filename is not provided for output, generate a random name</span>
-        <span class="c"># (make sure it does not exist yet)</span>
-        <span class="k">if</span> <span class="n">outname</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
-            <span class="n">outname</span> <span class="o">=</span> <span class="s">&quot;%s.pdb&quot;</span> <span class="o">%</span> <span class="n">random_string</span><span class="p">()</span>
-            <span class="k">while</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">outname</span><span class="p">):</span>
-                <span class="n">outname</span> <span class="o">=</span> <span class="s">&quot;%s.pdb&quot;</span> <span class="o">%</span> <span class="n">random_string</span><span class="p">()</span>
-
-        <span class="c"># output a file for saxs calculation</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">write_pdb</span><span class="p">(</span><span class="n">outname</span><span class="p">)</span>
-        <span class="n">S</span> <span class="o">=</span> <span class="n">Structure</span><span class="p">()</span>  <span class="c"># instance created just to be able to access to the saxs calculation method</span>
-
-        <span class="c"># very big PDB files may not be completely written before saxs</span>
-        <span class="c"># calculation is invoked. This is therefore tried several times before</span>
-        <span class="c"># renouncing.</span>
-        <span class="n">cnt</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">saxs</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">saxs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">cnt</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
-            <span class="n">cnt</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">saxs</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">saxs</span><span class="p">(</span><span class="n">crysol_path</span><span class="o">=</span><span class="n">crysol_path</span><span class="p">,</span> <span class="n">crysol_options</span><span class="o">=</span><span class="n">crysol_options</span><span class="p">,</span> <span class="n">pdbname</span><span class="o">=</span><span class="n">outname</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
-                <span class="n">saxs</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="k">continue</span>
-
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">saxs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">cnt</span> <span class="o">==</span> <span class="mi">10</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">write_pdb</span><span class="p">(</span><span class="s">&quot;%s.pdb&quot;</span> <span class="o">%</span> <span class="n">outname</span><span class="p">)</span>
-            <span class="nb">print</span> <span class="s">&quot;WARNING: SAXS could not be calculated! You&#39;re possibly trying to write a too big PDB file.&quot;</span>
-
-        <span class="k">return</span> <span class="n">saxs</span></div>
-
 <div class="viewcode-block" id="Assembly.get_buried"><a class="viewcode-back" href="../assembly.html#assembly.Assembly.get_buried">[docs]</a>    <span class="k">def</span> <span class="nf">get_buried</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        compute buried surface (assembly sum of components asa minus assembly asa).</span>
@@ -551,13 +510,15 @@
 <span class="sd">        :returns: buried_surface in A^2</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
+        <span class="kn">from</span> <span class="nn">biobox.measures.calculators</span> <span class="k">import</span> <span class="n">sasa</span>
+        
         <span class="c"># sum asa of individual components</span>
         <span class="n">asa</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="n">asa</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_surface</span><span class="p">()</span>
+            <span class="n">asa</span> <span class="o">+=</span> <span class="n">sasa</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
 
         <span class="c"># subtract assembly asa</span>
-        <span class="n">asa</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_surface</span><span class="p">()</span>
+        <span class="n">asa</span> <span class="o">-=</span> <span class="n">sasa</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">asa</span></div>
 
 <div class="viewcode-block" id="Assembly.write_pdb"><a class="viewcode-back" href="../assembly.html#assembly.Assembly.write_pdb">[docs]</a>    <span class="k">def</span> <span class="nf">write_pdb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
@@ -567,7 +528,6 @@
 <span class="sd">        :param filename: name of pdb file to be produced</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
-        <span class="n">radius</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span>
         <span class="n">fout</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
@@ -575,7 +535,7 @@
             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
                 <span class="n">l</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">*</span> <span class="n">j</span><span class="p">,</span> <span class="s">&quot;SPH&quot;</span><span class="p">,</span> <span class="s">&quot;SPH&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain_names</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
                      <span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
-                     <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">radius</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s">&quot;C&quot;</span><span class="p">)</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;radius&quot;</span><span class="p">][</span><span class="n">j</span><span class="p">],</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s">&quot;C&quot;</span><span class="p">)</span>
                 <span class="n">L</span> <span class="o">=</span> <span class="s">&#39;ATOM  %5i  %-4s%-4s%1s%4i    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">l</span>
                 <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
 

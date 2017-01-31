@@ -1,0 +1,654 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>shutil &#8212; biobox 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">biobox 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for shutil</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Utility functions for copying and archiving files and directory trees.</span>
+
+<span class="sd">XXX The functions here don&#39;t copy the resource fork or other metadata on Mac.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">stat</span>
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="k">import</span> <span class="n">abspath</span>
+<span class="kn">import</span> <span class="nn">fnmatch</span>
+<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">errno</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">pwd</span> <span class="k">import</span> <span class="n">getpwnam</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">getpwnam</span> <span class="o">=</span> <span class="k">None</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">grp</span> <span class="k">import</span> <span class="n">getgrnam</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">getgrnam</span> <span class="o">=</span> <span class="k">None</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;copyfileobj&quot;</span><span class="p">,</span> <span class="s">&quot;copyfile&quot;</span><span class="p">,</span> <span class="s">&quot;copymode&quot;</span><span class="p">,</span> <span class="s">&quot;copystat&quot;</span><span class="p">,</span> <span class="s">&quot;copy&quot;</span><span class="p">,</span> <span class="s">&quot;copy2&quot;</span><span class="p">,</span>
+           <span class="s">&quot;copytree&quot;</span><span class="p">,</span> <span class="s">&quot;move&quot;</span><span class="p">,</span> <span class="s">&quot;rmtree&quot;</span><span class="p">,</span> <span class="s">&quot;Error&quot;</span><span class="p">,</span> <span class="s">&quot;SpecialFileError&quot;</span><span class="p">,</span>
+           <span class="s">&quot;ExecError&quot;</span><span class="p">,</span> <span class="s">&quot;make_archive&quot;</span><span class="p">,</span> <span class="s">&quot;get_archive_formats&quot;</span><span class="p">,</span>
+           <span class="s">&quot;register_archive_format&quot;</span><span class="p">,</span> <span class="s">&quot;unregister_archive_format&quot;</span><span class="p">,</span>
+           <span class="s">&quot;ignore_patterns&quot;</span><span class="p">]</span>
+
+<span class="k">class</span> <span class="nc">Error</span><span class="p">(</span><span class="ne">EnvironmentError</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">SpecialFileError</span><span class="p">(</span><span class="ne">EnvironmentError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Raised when trying to do a kind of operation (e.g. copying) which is</span>
+<span class="sd">    not supported on a special file (e.g. a named pipe)&quot;&quot;&quot;</span>
+
+<span class="k">class</span> <span class="nc">ExecError</span><span class="p">(</span><span class="ne">EnvironmentError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Raised when a command could not be executed&quot;&quot;&quot;</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="ne">WindowsError</span>
+<span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
+    <span class="ne">WindowsError</span> <span class="o">=</span> <span class="k">None</span>
+
+<span class="k">def</span> <span class="nf">copyfileobj</span><span class="p">(</span><span class="n">fsrc</span><span class="p">,</span> <span class="n">fdst</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="mi">16</span><span class="o">*</span><span class="mi">1024</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;copy data from file-like object fsrc to file-like object fdst&quot;&quot;&quot;</span>
+    <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="n">fsrc</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">length</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">buf</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">fdst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_samefile</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">):</span>
+    <span class="c"># Macintosh, Unix.</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s">&#39;samefile&#39;</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">samefile</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">False</span>
+
+    <span class="c"># All other platforms: check for same pathname.</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normcase</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">src</span><span class="p">))</span> <span class="o">==</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normcase</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">dst</span><span class="p">)))</span>
+
+<span class="k">def</span> <span class="nf">copyfile</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Copy data from src to dst&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">_samefile</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">Error</span><span class="p">(</span><span class="s">&quot;`%s` and `%s` are the same file&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="p">[</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">]:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">st</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="c"># File most likely does not exist</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># XXX What about other special files? (sockets, devices...)</span>
+            <span class="k">if</span> <span class="n">stat</span><span class="o">.</span><span class="n">S_ISFIFO</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">st_mode</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">SpecialFileError</span><span class="p">(</span><span class="s">&quot;`%s` is a named pipe&quot;</span> <span class="o">%</span> <span class="n">fn</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="s">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fsrc</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fdst</span><span class="p">:</span>
+            <span class="n">copyfileobj</span><span class="p">(</span><span class="n">fsrc</span><span class="p">,</span> <span class="n">fdst</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">copymode</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Copy mode bits from src to dst&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">os</span><span class="p">,</span> <span class="s">&#39;chmod&#39;</span><span class="p">):</span>
+        <span class="n">st</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">src</span><span class="p">)</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="n">stat</span><span class="o">.</span><span class="n">S_IMODE</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">st_mode</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">copystat</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Copy all stat info (mode bits, atime, mtime, flags) from src to dst&quot;&quot;&quot;</span>
+    <span class="n">st</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">src</span><span class="p">)</span>
+    <span class="n">mode</span> <span class="o">=</span> <span class="n">stat</span><span class="o">.</span><span class="n">S_IMODE</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">st_mode</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">os</span><span class="p">,</span> <span class="s">&#39;utime&#39;</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">utime</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">st_atime</span><span class="p">,</span> <span class="n">st</span><span class="o">.</span><span class="n">st_mtime</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">os</span><span class="p">,</span> <span class="s">&#39;chmod&#39;</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">os</span><span class="p">,</span> <span class="s">&#39;chflags&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="s">&#39;st_flags&#39;</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">chflags</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">st</span><span class="o">.</span><span class="n">st_flags</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">,</span> <span class="n">why</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">err</span> <span class="ow">in</span> <span class="s">&#39;EOPNOTSUPP&#39;</span><span class="p">,</span> <span class="s">&#39;ENOTSUP&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">errno</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span> <span class="ow">and</span> <span class="n">why</span><span class="o">.</span><span class="n">errno</span> <span class="o">==</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">errno</span><span class="p">,</span> <span class="n">err</span><span class="p">):</span>
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span>
+
+<span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Copy data and mode bits (&quot;cp src dst&quot;).</span>
+
+<span class="sd">    The destination may be a directory.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">dst</span><span class="p">):</span>
+        <span class="n">dst</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">src</span><span class="p">))</span>
+    <span class="n">copyfile</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">)</span>
+    <span class="n">copymode</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">copy2</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Copy data and all stat info (&quot;cp -p src dst&quot;).</span>
+
+<span class="sd">    The destination may be a directory.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">dst</span><span class="p">):</span>
+        <span class="n">dst</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">src</span><span class="p">))</span>
+    <span class="n">copyfile</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">)</span>
+    <span class="n">copystat</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">ignore_patterns</span><span class="p">(</span><span class="o">*</span><span class="n">patterns</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Function that can be used as copytree() ignore parameter.</span>
+
+<span class="sd">    Patterns is a sequence of glob-style patterns</span>
+<span class="sd">    that are used to exclude files&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">_ignore_patterns</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">names</span><span class="p">):</span>
+        <span class="n">ignored_names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">patterns</span><span class="p">:</span>
+            <span class="n">ignored_names</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">pattern</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="n">ignored_names</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_ignore_patterns</span>
+
+<span class="k">def</span> <span class="nf">copytree</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">symlinks</span><span class="o">=</span><span class="k">False</span><span class="p">,</span> <span class="n">ignore</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Recursively copy a directory tree using copy2().</span>
+
+<span class="sd">    The destination directory must not already exist.</span>
+<span class="sd">    If exception(s) occur, an Error is raised with a list of reasons.</span>
+
+<span class="sd">    If the optional symlinks flag is true, symbolic links in the</span>
+<span class="sd">    source tree result in symbolic links in the destination tree; if</span>
+<span class="sd">    it is false, the contents of the files pointed to by symbolic</span>
+<span class="sd">    links are copied.</span>
+
+<span class="sd">    The optional ignore argument is a callable. If given, it</span>
+<span class="sd">    is called with the `src` parameter, which is the directory</span>
+<span class="sd">    being visited by copytree(), and `names` which is the list of</span>
+<span class="sd">    `src` contents, as returned by os.listdir():</span>
+
+<span class="sd">        callable(src, names) -&gt; ignored_names</span>
+
+<span class="sd">    Since copytree() is called recursively, the callable will be</span>
+<span class="sd">    called once for each directory that is copied. It returns a</span>
+<span class="sd">    list of names relative to the `src` directory that should</span>
+<span class="sd">    not be copied.</span>
+
+<span class="sd">    XXX Consider this example code rather than the ultimate tool.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">src</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ignore</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+        <span class="n">ignored_names</span> <span class="o">=</span> <span class="n">ignore</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">names</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ignored_names</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">dst</span><span class="p">)</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">ignored_names</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">srcname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="n">dstname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">symlinks</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">islink</span><span class="p">(</span><span class="n">srcname</span><span class="p">):</span>
+                <span class="n">linkto</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">readlink</span><span class="p">(</span><span class="n">srcname</span><span class="p">)</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">symlink</span><span class="p">(</span><span class="n">linkto</span><span class="p">,</span> <span class="n">dstname</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">srcname</span><span class="p">):</span>
+                <span class="n">copytree</span><span class="p">(</span><span class="n">srcname</span><span class="p">,</span> <span class="n">dstname</span><span class="p">,</span> <span class="n">symlinks</span><span class="p">,</span> <span class="n">ignore</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># Will raise a SpecialFileError for unsupported file types</span>
+                <span class="n">copy2</span><span class="p">(</span><span class="n">srcname</span><span class="p">,</span> <span class="n">dstname</span><span class="p">)</span>
+        <span class="c"># catch the Error from the recursive copytree so that we can</span>
+        <span class="c"># continue with other files</span>
+        <span class="k">except</span> <span class="n">Error</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+            <span class="n">errors</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">err</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">except</span> <span class="ne">EnvironmentError</span><span class="p">,</span> <span class="n">why</span><span class="p">:</span>
+            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">srcname</span><span class="p">,</span> <span class="n">dstname</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">why</span><span class="p">)))</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">copystat</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">OSError</span><span class="p">,</span> <span class="n">why</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ne">WindowsError</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">why</span><span class="p">,</span> <span class="ne">WindowsError</span><span class="p">):</span>
+            <span class="c"># Copying file access times may fail on Windows</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">why</span><span class="p">)))</span>
+    <span class="k">if</span> <span class="n">errors</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">Error</span><span class="p">,</span> <span class="n">errors</span>
+
+<span class="k">def</span> <span class="nf">rmtree</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">ignore_errors</span><span class="o">=</span><span class="k">False</span><span class="p">,</span> <span class="n">onerror</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Recursively delete a directory tree.</span>
+
+<span class="sd">    If ignore_errors is set, errors are ignored; otherwise, if onerror</span>
+<span class="sd">    is set, it is called to handle the error with arguments (func,</span>
+<span class="sd">    path, exc_info) where func is os.listdir, os.remove, or os.rmdir;</span>
+<span class="sd">    path is the argument to that function that caused it to fail; and</span>
+<span class="sd">    exc_info is a tuple returned by sys.exc_info().  If ignore_errors</span>
+<span class="sd">    is false and onerror is None, an exception is raised.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">ignore_errors</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">onerror</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+            <span class="k">pass</span>
+    <span class="k">elif</span> <span class="n">onerror</span> <span class="ow">is</span> <span class="k">None</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">onerror</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+            <span class="k">raise</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">islink</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="c"># symlinks to directories are forbidden, see bug #1669</span>
+            <span class="k">raise</span> <span class="ne">OSError</span><span class="p">(</span><span class="s">&quot;Cannot call rmtree on a symbolic link&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+        <span class="n">onerror</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">islink</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">())</span>
+        <span class="c"># can&#39;t continue even if onerror hook returns</span>
+        <span class="k">return</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">os</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+        <span class="n">onerror</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">())</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+        <span class="n">fullname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">mode</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">lstat</span><span class="p">(</span><span class="n">fullname</span><span class="p">)</span><span class="o">.</span><span class="n">st_mode</span>
+        <span class="k">except</span> <span class="n">os</span><span class="o">.</span><span class="n">error</span><span class="p">:</span>
+            <span class="n">mode</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">stat</span><span class="o">.</span><span class="n">S_ISDIR</span><span class="p">(</span><span class="n">mode</span><span class="p">):</span>
+            <span class="n">rmtree</span><span class="p">(</span><span class="n">fullname</span><span class="p">,</span> <span class="n">ignore_errors</span><span class="p">,</span> <span class="n">onerror</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">fullname</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">os</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+                <span class="n">onerror</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">,</span> <span class="n">fullname</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">())</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">rmdir</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">os</span><span class="o">.</span><span class="n">error</span><span class="p">:</span>
+        <span class="n">onerror</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">rmdir</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">())</span>
+
+
+<span class="k">def</span> <span class="nf">_basename</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="c"># A basename() variant which first strips the trailing slash, if present.</span>
+    <span class="c"># Thus we always get the last component of the path, even for directories.</span>
+    <span class="n">sep</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">altsep</span> <span class="ow">or</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="n">sep</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">move</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Recursively move a file or directory to another location. This is</span>
+<span class="sd">    similar to the Unix &quot;mv&quot; command.</span>
+
+<span class="sd">    If the destination is a directory or a symlink to a directory, the source</span>
+<span class="sd">    is moved inside the directory. The destination path must not already</span>
+<span class="sd">    exist.</span>
+
+<span class="sd">    If the destination already exists but is not a directory, it may be</span>
+<span class="sd">    overwritten depending on os.rename() semantics.</span>
+
+<span class="sd">    If the destination is on our current filesystem, then rename() is used.</span>
+<span class="sd">    Otherwise, src is copied to the destination and then removed.</span>
+<span class="sd">    A lot more could be done here...  A look at a mv.c shows a lot of</span>
+<span class="sd">    the issues this implementation glosses over.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">real_dst</span> <span class="o">=</span> <span class="n">dst</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">dst</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">_samefile</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">):</span>
+            <span class="c"># We might be on a case insensitive filesystem,</span>
+            <span class="c"># perform the rename anyway.</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="n">real_dst</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">_basename</span><span class="p">(</span><span class="n">src</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">real_dst</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">Error</span><span class="p">,</span> <span class="s">&quot;Destination path &#39;%s&#39; already exists&quot;</span> <span class="o">%</span> <span class="n">real_dst</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">real_dst</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">src</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">_destinsrc</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">Error</span><span class="p">,</span> <span class="s">&quot;Cannot move a directory &#39;%s&#39; into itself &#39;%s&#39;.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">)</span>
+            <span class="n">copytree</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">real_dst</span><span class="p">,</span> <span class="n">symlinks</span><span class="o">=</span><span class="k">True</span><span class="p">)</span>
+            <span class="n">rmtree</span><span class="p">(</span><span class="n">src</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">copy2</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">real_dst</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">src</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_destinsrc</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">):</span>
+    <span class="n">src</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span><span class="n">src</span><span class="p">)</span>
+    <span class="n">dst</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span><span class="n">dst</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">src</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span><span class="p">):</span>
+        <span class="n">src</span> <span class="o">+=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">dst</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span><span class="p">):</span>
+        <span class="n">dst</span> <span class="o">+=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span>
+    <span class="k">return</span> <span class="n">dst</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">src</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_get_gid</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns a gid, given a group name.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">getgrnam</span> <span class="ow">is</span> <span class="k">None</span> <span class="ow">or</span> <span class="n">name</span> <span class="ow">is</span> <span class="k">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="k">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">getgrnam</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="k">None</span>
+    <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">result</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">return</span> <span class="k">None</span>
+
+<span class="k">def</span> <span class="nf">_get_uid</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns an uid, given a user name.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">getpwnam</span> <span class="ow">is</span> <span class="k">None</span> <span class="ow">or</span> <span class="n">name</span> <span class="ow">is</span> <span class="k">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="k">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">getpwnam</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="k">None</span>
+    <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">result</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">return</span> <span class="k">None</span>
+
+<span class="k">def</span> <span class="nf">_make_tarball</span><span class="p">(</span><span class="n">base_name</span><span class="p">,</span> <span class="n">base_dir</span><span class="p">,</span> <span class="n">compress</span><span class="o">=</span><span class="s">&quot;gzip&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                  <span class="n">owner</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create a (possibly compressed) tar file from all the files under</span>
+<span class="sd">    &#39;base_dir&#39;.</span>
+
+<span class="sd">    &#39;compress&#39; must be &quot;gzip&quot; (the default), &quot;bzip2&quot;, or None.</span>
+
+<span class="sd">    &#39;owner&#39; and &#39;group&#39; can be used to define an owner and a group for the</span>
+<span class="sd">    archive that is being built. If not provided, the current owner and group</span>
+<span class="sd">    will be used.</span>
+
+<span class="sd">    The output tar file will be named &#39;base_name&#39; +  &quot;.tar&quot;, possibly plus</span>
+<span class="sd">    the appropriate compression extension (&quot;.gz&quot;, or &quot;.bz2&quot;).</span>
+
+<span class="sd">    Returns the output filename.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tar_compression</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;gzip&#39;</span><span class="p">:</span> <span class="s">&#39;gz&#39;</span><span class="p">,</span> <span class="s">&#39;bzip2&#39;</span><span class="p">:</span> <span class="s">&#39;bz2&#39;</span><span class="p">,</span> <span class="k">None</span><span class="p">:</span> <span class="s">&#39;&#39;</span><span class="p">}</span>
+    <span class="n">compress_ext</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;gzip&#39;</span><span class="p">:</span> <span class="s">&#39;.gz&#39;</span><span class="p">,</span> <span class="s">&#39;bzip2&#39;</span><span class="p">:</span> <span class="s">&#39;.bz2&#39;</span><span class="p">}</span>
+
+    <span class="c"># flags for compression program, each element of list will be an argument</span>
+    <span class="k">if</span> <span class="n">compress</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span> <span class="ow">and</span> <span class="n">compress</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">compress_ext</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> \
+              <span class="p">(</span><span class="s">&quot;bad value for &#39;compress&#39;: must be None, &#39;gzip&#39; or &#39;bzip2&#39;&quot;</span><span class="p">)</span>
+
+    <span class="n">archive_name</span> <span class="o">=</span> <span class="n">base_name</span> <span class="o">+</span> <span class="s">&#39;.tar&#39;</span> <span class="o">+</span> <span class="n">compress_ext</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">compress</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">archive_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">archive_name</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">archive_dir</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">archive_dir</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">logger</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;creating %s&quot;</span><span class="p">,</span> <span class="n">archive_dir</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">archive_dir</span><span class="p">)</span>
+
+
+    <span class="c"># creating the tarball</span>
+    <span class="kn">import</span> <span class="nn">tarfile</span>  <span class="c"># late import so Python build itself doesn&#39;t break</span>
+
+    <span class="k">if</span> <span class="n">logger</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Creating tar archive&#39;</span><span class="p">)</span>
+
+    <span class="n">uid</span> <span class="o">=</span> <span class="n">_get_uid</span><span class="p">(</span><span class="n">owner</span><span class="p">)</span>
+    <span class="n">gid</span> <span class="o">=</span> <span class="n">_get_gid</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_set_uid_gid</span><span class="p">(</span><span class="n">tarinfo</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">gid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+            <span class="n">tarinfo</span><span class="o">.</span><span class="n">gid</span> <span class="o">=</span> <span class="n">gid</span>
+            <span class="n">tarinfo</span><span class="o">.</span><span class="n">gname</span> <span class="o">=</span> <span class="n">group</span>
+        <span class="k">if</span> <span class="n">uid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+            <span class="n">tarinfo</span><span class="o">.</span><span class="n">uid</span> <span class="o">=</span> <span class="n">uid</span>
+            <span class="n">tarinfo</span><span class="o">.</span><span class="n">uname</span> <span class="o">=</span> <span class="n">owner</span>
+        <span class="k">return</span> <span class="n">tarinfo</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
+        <span class="n">tar</span> <span class="o">=</span> <span class="n">tarfile</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">archive_name</span><span class="p">,</span> <span class="s">&#39;w|%s&#39;</span> <span class="o">%</span> <span class="n">tar_compression</span><span class="p">[</span><span class="n">compress</span><span class="p">])</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tar</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="n">_set_uid_gid</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">tar</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">archive_name</span>
+
+<span class="k">def</span> <span class="nf">_call_external_zip</span><span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="n">zip_filename</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="k">False</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
+    <span class="c"># XXX see if we want to keep an external call here</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="n">zipoptions</span> <span class="o">=</span> <span class="s">&quot;-r&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">zipoptions</span> <span class="o">=</span> <span class="s">&quot;-rq&quot;</span>
+    <span class="kn">from</span> <span class="nn">distutils.errors</span> <span class="k">import</span> <span class="n">DistutilsExecError</span>
+    <span class="kn">from</span> <span class="nn">distutils.spawn</span> <span class="k">import</span> <span class="n">spawn</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">spawn</span><span class="p">([</span><span class="s">&quot;zip&quot;</span><span class="p">,</span> <span class="n">zipoptions</span><span class="p">,</span> <span class="n">zip_filename</span><span class="p">,</span> <span class="n">base_dir</span><span class="p">],</span> <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">DistutilsExecError</span><span class="p">:</span>
+        <span class="c"># XXX really should distinguish between &quot;couldn&#39;t find</span>
+        <span class="c"># external &#39;zip&#39; command&quot; and &quot;zip failed&quot;.</span>
+        <span class="k">raise</span> <span class="n">ExecError</span><span class="p">,</span> \
+            <span class="p">(</span><span class="s">&quot;unable to create zip file &#39;%s&#39;: &quot;</span>
+            <span class="s">&quot;could neither import the &#39;zipfile&#39; module nor &quot;</span>
+            <span class="s">&quot;find a standalone zip utility&quot;</span><span class="p">)</span> <span class="o">%</span> <span class="n">zip_filename</span>
+
+<span class="k">def</span> <span class="nf">_make_zipfile</span><span class="p">(</span><span class="n">base_name</span><span class="p">,</span> <span class="n">base_dir</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create a zip file from all the files under &#39;base_dir&#39;.</span>
+
+<span class="sd">    The output zip file will be named &#39;base_name&#39; + &quot;.zip&quot;.  Uses either the</span>
+<span class="sd">    &quot;zipfile&quot; Python module (if available) or the InfoZIP &quot;zip&quot; utility</span>
+<span class="sd">    (if installed and found on the default search path).  If neither tool is</span>
+<span class="sd">    available, raises ExecError.  Returns the name of the output zip</span>
+<span class="sd">    file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">zip_filename</span> <span class="o">=</span> <span class="n">base_name</span> <span class="o">+</span> <span class="s">&quot;.zip&quot;</span>
+    <span class="n">archive_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">base_name</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">archive_dir</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">archive_dir</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">logger</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;creating %s&quot;</span><span class="p">,</span> <span class="n">archive_dir</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">archive_dir</span><span class="p">)</span>
+
+    <span class="c"># If zipfile module is not available, try spawning an external &#39;zip&#39;</span>
+    <span class="c"># command.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">zipfile</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="n">zipfile</span> <span class="o">=</span> <span class="k">None</span>
+
+    <span class="k">if</span> <span class="n">zipfile</span> <span class="ow">is</span> <span class="k">None</span><span class="p">:</span>
+        <span class="n">_call_external_zip</span><span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="n">zip_filename</span><span class="p">,</span> <span class="n">verbose</span><span class="p">,</span> <span class="n">dry_run</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">logger</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;creating &#39;%s&#39; and adding &#39;%s&#39; to it&quot;</span><span class="p">,</span>
+                        <span class="n">zip_filename</span><span class="p">,</span> <span class="n">base_dir</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">zip_filename</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">,</span>
+                                 <span class="n">compression</span><span class="o">=</span><span class="n">zipfile</span><span class="o">.</span><span class="n">ZIP_DEFLATED</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
+                <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">base_dir</span><span class="p">)</span>
+                <span class="n">zf</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">logger</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;adding &#39;%s&#39;&quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">dirpath</span><span class="p">,</span> <span class="n">dirnames</span><span class="p">,</span> <span class="n">filenames</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">base_dir</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">dirnames</span><span class="p">):</span>
+                        <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirpath</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+                        <span class="n">zf</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">logger</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;adding &#39;%s&#39;&quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">:</span>
+                        <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirpath</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+                        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+                            <span class="n">zf</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">logger</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+                                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;adding &#39;%s&#39;&quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">zip_filename</span>
+
+<span class="n">_ARCHIVE_FORMATS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;gztar&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">_make_tarball</span><span class="p">,</span> <span class="p">[(</span><span class="s">&#39;compress&#39;</span><span class="p">,</span> <span class="s">&#39;gzip&#39;</span><span class="p">)],</span> <span class="s">&quot;gzip&#39;ed tar-file&quot;</span><span class="p">),</span>
+    <span class="s">&#39;bztar&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">_make_tarball</span><span class="p">,</span> <span class="p">[(</span><span class="s">&#39;compress&#39;</span><span class="p">,</span> <span class="s">&#39;bzip2&#39;</span><span class="p">)],</span> <span class="s">&quot;bzip2&#39;ed tar-file&quot;</span><span class="p">),</span>
+    <span class="s">&#39;tar&#39;</span><span class="p">:</span>   <span class="p">(</span><span class="n">_make_tarball</span><span class="p">,</span> <span class="p">[(</span><span class="s">&#39;compress&#39;</span><span class="p">,</span> <span class="k">None</span><span class="p">)],</span> <span class="s">&quot;uncompressed tar file&quot;</span><span class="p">),</span>
+    <span class="s">&#39;zip&#39;</span><span class="p">:</span>   <span class="p">(</span><span class="n">_make_zipfile</span><span class="p">,</span> <span class="p">[],</span><span class="s">&quot;ZIP file&quot;</span><span class="p">)</span>
+    <span class="p">}</span>
+
+<span class="k">def</span> <span class="nf">get_archive_formats</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Returns a list of supported formats for archiving and unarchiving.</span>
+
+<span class="sd">    Each element of the returned sequence is a tuple (name, description)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">formats</span> <span class="o">=</span> <span class="p">[(</span><span class="n">name</span><span class="p">,</span> <span class="n">registry</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">registry</span> <span class="ow">in</span>
+               <span class="n">_ARCHIVE_FORMATS</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+    <span class="n">formats</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">formats</span>
+
+<span class="k">def</span> <span class="nf">register_archive_format</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">function</span><span class="p">,</span> <span class="n">extra_args</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Registers an archive format.</span>
+
+<span class="sd">    name is the name of the format. function is the callable that will be</span>
+<span class="sd">    used to create archives. If provided, extra_args is a sequence of</span>
+<span class="sd">    (name, value) tuples that will be passed as arguments to the callable.</span>
+<span class="sd">    description can be provided to describe the format, and will be returned</span>
+<span class="sd">    by the get_archive_formats() function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">extra_args</span> <span class="ow">is</span> <span class="k">None</span><span class="p">:</span>
+        <span class="n">extra_args</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">function</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">Callable</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;The %s object is not callable&#39;</span> <span class="o">%</span> <span class="n">function</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">extra_args</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;extra_args needs to be a sequence&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">extra_args</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">))</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">element</span><span class="p">)</span> <span class="o">!=</span><span class="mi">2</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;extra_args elements are : (arg_name, value)&#39;</span><span class="p">)</span>
+
+    <span class="n">_ARCHIVE_FORMATS</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">function</span><span class="p">,</span> <span class="n">extra_args</span><span class="p">,</span> <span class="n">description</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">unregister_archive_format</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="k">del</span> <span class="n">_ARCHIVE_FORMATS</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">make_archive</span><span class="p">(</span><span class="n">base_name</span><span class="p">,</span> <span class="nb">format</span><span class="p">,</span> <span class="n">root_dir</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">base_dir</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">dry_run</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">owner</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create an archive file (eg. zip or tar).</span>
+
+<span class="sd">    &#39;base_name&#39; is the name of the file to create, minus any format-specific</span>
+<span class="sd">    extension; &#39;format&#39; is the archive format: one of &quot;zip&quot;, &quot;tar&quot;, &quot;bztar&quot;</span>
+<span class="sd">    or &quot;gztar&quot;.</span>
+
+<span class="sd">    &#39;root_dir&#39; is a directory that will be the root directory of the</span>
+<span class="sd">    archive; ie. we typically chdir into &#39;root_dir&#39; before creating the</span>
+<span class="sd">    archive.  &#39;base_dir&#39; is the directory where we start archiving from;</span>
+<span class="sd">    ie. &#39;base_dir&#39; will be the common prefix of all files and</span>
+<span class="sd">    directories in the archive.  &#39;root_dir&#39; and &#39;base_dir&#39; both default</span>
+<span class="sd">    to the current directory.  Returns the name of the archive file.</span>
+
+<span class="sd">    &#39;owner&#39; and &#39;group&#39; are used when creating a tar archive. By default,</span>
+<span class="sd">    uses the current owner and group.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">save_cwd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">root_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">logger</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;changing into &#39;%s&#39;&quot;</span><span class="p">,</span> <span class="n">root_dir</span><span class="p">)</span>
+        <span class="n">base_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">base_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">root_dir</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">base_dir</span> <span class="ow">is</span> <span class="k">None</span><span class="p">:</span>
+        <span class="n">base_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">curdir</span>
+
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;dry_run&#39;</span><span class="p">:</span> <span class="n">dry_run</span><span class="p">,</span> <span class="s">&#39;logger&#39;</span><span class="p">:</span> <span class="n">logger</span><span class="p">}</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">format_info</span> <span class="o">=</span> <span class="n">_ARCHIVE_FORMATS</span><span class="p">[</span><span class="nb">format</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s">&quot;unknown archive format &#39;%s&#39;&quot;</span> <span class="o">%</span> <span class="nb">format</span>
+
+    <span class="n">func</span> <span class="o">=</span> <span class="n">format_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">arg</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">format_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+
+    <span class="k">if</span> <span class="nb">format</span> <span class="o">!=</span> <span class="s">&#39;zip&#39;</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;owner&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">owner</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;group&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">group</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">base_name</span><span class="p">,</span> <span class="n">base_dir</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">root_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">logger</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;changing back to &#39;%s&#39;&quot;</span><span class="p">,</span> <span class="n">save_cwd</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">save_cwd</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">filename</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">biobox 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Matteo Degiacomi.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+    </div>
+  </body>
+</html>

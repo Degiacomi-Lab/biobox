@@ -32,7 +32,7 @@ allowed operations on structures include:
 
    structure
    assembly
-   pairwise   
+   measures   
    examples
 
 * :ref:`genindex`

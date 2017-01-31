@@ -65,10 +65,9 @@
 <span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">deepcopy</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">scipy.signal</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="kn">from</span> <span class="nn">biobox.classes.structure</span> <span class="k">import</span> <span class="n">Structure</span>
-<span class="kn">import</span> <span class="nn">biobox.lib.interaction</span> <span class="k">as</span> <span class="nn">I</span>
-
 
 <div class="viewcode-block" id="Molecule"><a class="viewcode-back" href="../structure.html#molecule.Molecule">[docs]</a><span class="k">class</span> <span class="nc">Molecule</span><span class="p">(</span><span class="n">Structure</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;</span>
@@ -82,10 +81,9 @@
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        At instantiation, properties associated to every individual atoms are stored as an array under the key &quot;data&quot; in the properties dictionary.</span>
-<span class="sd">        The columns of the &quot;data&quot; array contain the following information (as string):</span>
-
-<span class="sd">        [atom/hetatm, index, atomname, resname, chain name, residue ID, beta factor, occupancy, atomtype].</span>
+<span class="sd">        At instantiation, properties associated to every individual atoms are stored in a pandas Dataframe self.data.</span>
+<span class="sd">        The columns of the self.data have the following names:</span>
+<span class="sd">        atom, index, name, resname, chain, resid, beta, occupancy, atomtype, radius, charge.</span>
 
 <span class="sd">        self.knowledge contains a knowledge base about atoms and residues properties. Default values are:</span>
 
@@ -97,11 +95,6 @@
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">Molecule</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">r</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]))</span>
-
-        <span class="c"># pdb data information. for every atom store (in order): ATOM/HETATM,</span>
-        <span class="c"># index, atomname, resname, chain name, residue ID, occupancy, beta</span>
-        <span class="c"># factor, atomtype</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
 
         <span class="c"># knowledge base about atoms and residues properties (entry keys:</span>
         <span class="c"># &#39;residue_mass&#39;, &#39;atom_vdw&#39;, &#39;atom_, mass&#39; can be edited)</span>
@@ -135,7 +128,6 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">prop</span><span class="p">)]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;entry %s not found in knowledge base!&quot;</span> <span class="o">%</span> <span class="n">prop</span><span class="p">)</span></div>
-            <span class="c"># return float(&#39;nan&#39;)</span>
 
 <div class="viewcode-block" id="Molecule.import_pdb"><a class="viewcode-back" href="../structure.html#molecule.Molecule.import_pdb">[docs]</a>    <span class="k">def</span> <span class="nf">import_pdb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pdb</span><span class="p">,</span> <span class="n">include_hetatm</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
@@ -155,7 +147,7 @@
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;ERROR: file %s not found!&#39;</span> <span class="o">%</span> <span class="n">pdb</span><span class="p">)</span>
 
         <span class="c"># store filename</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">add_property</span><span class="p">(</span><span class="s">&quot;filename&quot;</span><span class="p">,</span> <span class="n">pdb</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&quot;filename&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pdb</span>
 
         <span class="n">data_in</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">p</span> <span class="o">=</span> <span class="p">[]</span>
@@ -182,29 +174,32 @@
                     <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: symmetry matrix format seems corrupted&quot;</span><span class="p">)</span>
 
             <span class="c"># if a complete model was parsed store all the saved data into</span>
-            <span class="c"># self.properties entries (if needed) and temporary alternative</span>
+            <span class="c"># self.data entries (if needed) and temporary alternative</span>
             <span class="c"># coordinates list</span>
             <span class="k">if</span> <span class="n">record</span> <span class="o">==</span> <span class="s">&quot;ENDMDL&quot;</span> <span class="ow">or</span> <span class="n">record</span> <span class="o">==</span> <span class="s">&quot;END&quot;</span><span class="p">:</span>
 
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">alternative</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
 
-                    <span class="c"># load all the parsed data in superclass properties[&#39;data&#39;]</span>
+                    <span class="c"># load all the parsed data in superclass data (Dataframe)</span>
                     <span class="c"># and points data structures</span>
                     <span class="k">try</span><span class="p">:</span>
-                        <span class="c"># ATOM/HETATM, index, atomname, resname, chain name,</span>
-                        <span class="c"># residue ID, beta factor, occupancy, atomtype</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data_in</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+                        <span class="c">#building dataframe</span>
+                        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data_in</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+                        <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;atom&quot;</span><span class="p">,</span> <span class="s">&quot;index&quot;</span><span class="p">,</span> <span class="s">&quot;name&quot;</span><span class="p">,</span> <span class="s">&quot;resname&quot;</span><span class="p">,</span> <span class="s">&quot;chain&quot;</span><span class="p">,</span> <span class="s">&quot;resid&quot;</span><span class="p">,</span> <span class="s">&quot;beta&quot;</span><span class="p">,</span> <span class="s">&quot;occupancy&quot;</span><span class="p">,</span> <span class="s">&quot;atomtype&quot;</span><span class="p">]</span>
+                        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">cols</span><span class="p">)</span>
+
                     <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
                         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;ERROR: something went wrong when loading the structure %s!</span><span class="se">\n</span><span class="s">ERROR: are all the columns separated?&#39;</span> <span class="o">%</span><span class="n">pdb</span><span class="p">)</span>
 
                     <span class="c"># saving vdw radii</span>
                     <span class="k">try</span><span class="p">:</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
                     <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
                         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;ERROR: something went wrong when loading the structure %s!</span><span class="se">\n</span><span class="s">ERROR: are all the columns separated?&#39;</span> <span class="o">%</span><span class="n">pdb</span><span class="p">)</span>
 
                     <span class="c"># save default charge state</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;charge&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;charge&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 
                 <span class="c"># save 3D coordinates of every atom and restart the accumulator</span>
                 <span class="k">try</span><span class="p">:</span>
@@ -275,14 +270,17 @@
                 <span class="c"># load all the parsed data in superclass properties[&#39;data&#39;] and</span>
                 <span class="c"># points data structures</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="c"># ATOM/HETATM, index, atomname, resname, chain name,</span>
-                    <span class="c"># residue ID, beta factor, occupancy, atomtype</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data_in</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+                    <span class="c">#building dataframe</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data_in</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+                    <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;atom&quot;</span><span class="p">,</span> <span class="s">&quot;index&quot;</span><span class="p">,</span> <span class="s">&quot;name&quot;</span><span class="p">,</span> <span class="s">&quot;resname&quot;</span><span class="p">,</span> <span class="s">&quot;chain&quot;</span><span class="p">,</span> <span class="s">&quot;resid&quot;</span><span class="p">,</span> <span class="s">&quot;beta&quot;</span><span class="p">,</span> <span class="s">&quot;occupancy&quot;</span><span class="p">,</span> <span class="s">&quot;atomtype&quot;</span><span class="p">]</span>
+                    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">cols</span><span class="p">)</span>
+
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;ERROR: something went wrong when saving data in %s!</span><span class="se">\n</span><span class="s">ERROR: are all the columns separated?&#39;</span> <span class="o">%</span><span class="n">pdb</span><span class="p">)</span>
 
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;ERROR: something went wrong when saving van der Waals radii in %s!</span><span class="se">\n</span><span class="s">ERROR: are all the columns separated?&#39;</span> <span class="o">%</span> <span class="n">pdb</span><span class="p">)</span>
 
@@ -318,10 +316,10 @@
             <span class="c"># test whether there are enough lines to create biomatrix</span>
             <span class="c"># statements</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">biomt</span><span class="p">),</span> <span class="mi">3</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;ERROR: found %s BIOMT entries. A multiple of 3 is expected&#39;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">biomt</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;ERROR: found %s BIOMT entries. A multiple of 3 is expected&#39;</span><span class="o">%</span><span class="nb">len</span><span class="p">(</span><span class="n">biomt</span><span class="p">))</span>
 
             <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">biomt</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">biomt</span><span class="p">)</span> <span class="o">/</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">add_property</span><span class="p">(</span><span class="s">&quot;biomatrix&quot;</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&quot;biomatrix&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">b</span>
 
         <span class="c"># if symmetry information is provided, create entry in properties</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">symm</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -329,10 +327,17 @@
             <span class="c"># test whether there are enough lines to create biomatrix</span>
             <span class="c"># statements</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">symm</span><span class="p">),</span> <span class="mi">3</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;ERROR: found %s SMTRY entries. A multiple of 3 is exptecte&#39;</span> <span class="o">%</span><span class="nb">len</span><span class="p">(</span><span class="n">symm</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;ERROR: found %s SMTRY entries. A multiple of 3 is expected&#39;</span><span class="o">%</span><span class="nb">len</span><span class="p">(</span><span class="n">symm</span><span class="p">))</span>
 
             <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">symm</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">symm</span><span class="p">)</span> <span class="o">/</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">add_property</span><span class="p">(</span><span class="s">&quot;symmetry&quot;</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&quot;symmetry&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">b</span>
+
+        <span class="c">#correctly set types of columns requiring other than string</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;resid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;resid&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;index&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;occupancy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;occupancy&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;beta&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;beta&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="Molecule.import_pqr"><a class="viewcode-back" href="../structure.html#molecule.Molecule.import_pqr">[docs]</a>    <span class="k">def</span> <span class="nf">import_pqr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pqr</span><span class="p">,</span> <span class="n">include_hetatm</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
@@ -352,7 +357,7 @@
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;ERROR: file %s not found!&#39;</span> <span class="o">%</span> <span class="n">pqr</span><span class="p">)</span>
 
         <span class="c"># store filename</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">add_property</span><span class="p">(</span><span class="s">&quot;filename&quot;</span><span class="p">,</span> <span class="n">pqr</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&quot;filename&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pqr</span>
 
         <span class="n">data_in</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">p</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c"># collects coordinates for every model</span>
@@ -369,21 +374,24 @@
                     <span class="c"># load all the parsed data in superclass properties[&#39;data&#39;]</span>
                     <span class="c"># and points data structures</span>
                     <span class="k">try</span><span class="p">:</span>
-                        <span class="c"># ATOM/HETATM, index, atomname, resname, chain name,</span>
-                        <span class="c"># residue ID, beta factor, occupancy, atomtype</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data_in</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+                        <span class="c">#building dataframe</span>
+                        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data_in</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+                        <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;atom&quot;</span><span class="p">,</span> <span class="s">&quot;index&quot;</span><span class="p">,</span> <span class="s">&quot;name&quot;</span><span class="p">,</span> <span class="s">&quot;resname&quot;</span><span class="p">,</span> <span class="s">&quot;chain&quot;</span><span class="p">,</span> <span class="s">&quot;resid&quot;</span><span class="p">,</span> <span class="s">&quot;beta&quot;</span><span class="p">,</span> <span class="s">&quot;occupancy&quot;</span><span class="p">,</span> <span class="s">&quot;atomtype&quot;</span><span class="p">]</span>
+                        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">cols</span><span class="p">)</span>
+
                     <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
                         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;ERROR: something went wrong when loading the structure %s!</span><span class="se">\n</span><span class="s">ERROR: are all the columns separated?&#39;</span> <span class="o">%</span><span class="n">pqr</span><span class="p">)</span>
 
                     <span class="c"># saving vdw radii</span>
                     <span class="k">try</span><span class="p">:</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
                     <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
                         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;ERROR: something went wrong when loading the structure %s!</span><span class="se">\n</span><span class="s">ERROR: are all the columns separated?&#39;</span> <span class="o">%</span><span class="n">pqr</span><span class="p">)</span>
 
                     <span class="c"># saving electrostatics</span>
                     <span class="k">try</span><span class="p">:</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;charge&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;charge&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
                     <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
                         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;ERROR: something went wrong when loading the structure %s!</span><span class="se">\n</span><span class="s">ERROR: are all the columns separated?&#39;</span> <span class="o">%</span> <span class="n">pqr</span><span class="p">)</span>
 
@@ -455,14 +463,17 @@
                 <span class="c"># load all the parsed data in superclass properties[&#39;data&#39;] and</span>
                 <span class="c"># points data structures</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="c"># ATOM/HETATM, index, atomname, resname, chain name,</span>
-                    <span class="c"># residue ID, beta factor, occupancy, atomtype</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data_in</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+                    <span class="c">#building dataframe</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data_in</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+                    <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;atom&quot;</span><span class="p">,</span> <span class="s">&quot;index&quot;</span><span class="p">,</span> <span class="s">&quot;name&quot;</span><span class="p">,</span> <span class="s">&quot;resname&quot;</span><span class="p">,</span> <span class="s">&quot;chain&quot;</span><span class="p">,</span> <span class="s">&quot;resid&quot;</span><span class="p">,</span> <span class="s">&quot;beta&quot;</span><span class="p">,</span> <span class="s">&quot;occupancy&quot;</span><span class="p">,</span> <span class="s">&quot;atomtype&quot;</span><span class="p">]</span>
+                    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">cols</span><span class="p">)</span>
+
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;ERROR: something went wrong when saving data in %s!</span><span class="se">\n</span><span class="s">ERROR: are all the columns separated?&#39;</span> <span class="o">%</span> <span class="n">pqr</span><span class="p">)</span>
 
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;ERROR: something went wrong when saving van der Waals radii in %s!</span><span class="se">\n</span><span class="s">ERROR: are all the columns separated?&#39;</span> <span class="o">%</span><span class="n">pqr</span><span class="p">)</span>
 
@@ -487,24 +498,28 @@
 
             <span class="bp">self</span><span class="o">.</span><span class="n">add_xyz</span><span class="p">(</span><span class="n">alternative_xyz</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;ERROR: something went wrong when saving alternative coordinates in %s!</span><span class="se">\n</span><span class="s">ERROR: no model was loaded... are ENDMDL statements there?&#39;</span> <span class="o">%</span> <span class="n">pqr</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;ERROR: something went wrong when saving alternative coordinates in %s!</span><span class="se">\n</span><span class="s">ERROR: no model was loaded... are ENDMDL statements there?&#39;</span> <span class="o">%</span> <span class="n">pqr</span><span class="p">)</span>
+
+        <span class="c">#correctly set types of columns requiring other than string</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;resid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;resid&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;index&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;occupancy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;occupancy&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;beta&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;beta&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Molecule.assign_atomtype"><a class="viewcode-back" href="../structure.html#molecule.Molecule.assign_atomtype">[docs]</a>    <span class="k">def</span> <span class="nf">assign_atomtype</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        guess atomtype from atomnames</span>
+<span class="sd">        guess atomtype from atom names</span>
 <span class="sd">        &#39;&#39;&#39;</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&quot;data&quot;</span><span class="p">][:,</span> <span class="mi">8</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">):</span>
-            <span class="k">return</span>
-
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&quot;data&quot;</span><span class="p">]),</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="n">atom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&quot;data&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+        
+        <span class="n">a_type</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">atom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;name&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">atomtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge</span><span class="p">[</span><span class="s">&quot;atomtype&quot;</span><span class="p">][</span><span class="n">atom</span><span class="p">]</span>
+                <span class="n">a_type</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">knowledge</span><span class="p">[</span><span class="s">&quot;atomtype&quot;</span><span class="p">][</span><span class="n">atom</span><span class="p">])</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
-                <span class="n">atomtype</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+                <span class="n">a_type</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">)</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&quot;data&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="mi">8</span><span class="p">]</span> <span class="o">=</span> <span class="n">atomtype</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">a_type</span></div>
 
 <div class="viewcode-block" id="Molecule.get_vdw_density"><a class="viewcode-back" href="../structure.html#molecule.Molecule.get_vdw_density">[docs]</a>    <span class="k">def</span> <span class="nf">get_vdw_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buff</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">kernel_half_width</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
@@ -573,7 +588,7 @@
 
         <span class="k">try</span><span class="p">:</span>
             <span class="c"># numpy array of charges [c1, c2, c3, ...]</span>
-            <span class="n">charges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;charge&#39;</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
+            <span class="n">charges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;charge&#39;</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;ERROR: No charges associated with %s&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="p">)</span>
 
@@ -696,9 +711,14 @@
             <span class="n">xyz2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">xyz2</span><span class="p">,</span> <span class="n">m</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">])</span>  <span class="c"># rotate</span>
             <span class="n">xyzall</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">xyz2</span><span class="p">)</span>  <span class="c"># merge</span>
 
-            <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&quot;data&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-            <span class="n">d</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain_names</span><span class="p">[</span><span class="n">cnt</span><span class="p">]</span>
-            <span class="n">data</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+            <span class="c">#assign a specific name to the new chain</span>
+            <span class="n">newdata</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">newdata</span><span class="p">[</span><span class="s">&quot;chain&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain_names</span><span class="p">[</span><span class="n">cnt</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">cnt</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">newdata</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newdata</span><span class="p">)</span>
 
             <span class="n">cnt</span> <span class="o">+=</span> <span class="mi">1</span>
 
@@ -713,8 +733,7 @@
 
         <span class="n">newdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">newdata</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">newdata</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
-        <span class="n">newdata</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">vhex</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
-        <span class="n">M2</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&quot;data&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">newdata</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vhex</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">M2</span>
 
@@ -786,28 +805,21 @@
             <span class="n">line</span> <span class="o">=</span> <span class="n">fin</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>  <span class="c"># attempt to get header of next frame</span>
 
         <span class="c"># store data information and box size for every frame</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">d_data</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;box&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span> <span class="o">*</span> <span class="mi">10</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">d_data</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">know</span><span class="p">(</span><span class="s">&#39;atom_vdw&#39;</span><span class="p">)[</span><span class="s">&#39;.&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;charge&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">d_data</span><span class="p">))</span>
+
+
+        <span class="c">#building dataframe</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">d_data</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+        <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;atom&quot;</span><span class="p">,</span> <span class="s">&quot;index&quot;</span><span class="p">,</span> <span class="s">&quot;name&quot;</span><span class="p">,</span> <span class="s">&quot;resname&quot;</span><span class="p">,</span> <span class="s">&quot;chain&quot;</span><span class="p">,</span> <span class="s">&quot;resid&quot;</span><span class="p">,</span> <span class="s">&quot;beta&quot;</span><span class="p">,</span> <span class="s">&quot;occupancy&quot;</span><span class="p">,</span> <span class="s">&quot;atomtype&quot;</span><span class="p">]</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">cols</span><span class="p">)</span>
+
+        <span class="c">#add additional information about van der waals radius and atoms charge</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">d_data</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">know</span><span class="p">(</span><span class="s">&#39;atom_vdw&#39;</span><span class="p">)[</span><span class="s">&#39;.&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;charge&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">d_data</span><span class="p">))</span>
 
         <span class="n">fin</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="Molecule.ccs"><a class="viewcode-back" href="../structure.html#molecule.Molecule.ccs">[docs]</a>    <span class="k">def</span> <span class="nf">ccs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_lib</span><span class="o">=</span><span class="k">True</span><span class="p">,</span> <span class="n">impact_path</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">impact_options</span><span class="o">=</span><span class="s">&quot;-Octree -nRuns 32 -cMode sem -convergence 0.01&quot;</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="k">True</span><span class="p">,</span> <span class="n">proberad</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        Calculate molecule CCS</span>
-
-<span class="sd">        :param use_lib: if true, impact library will be used, if false a system call to impact executable will be performed instead</span>
-<span class="sd">        :param impact_path: location of impact executable</span>
-<span class="sd">        :param impact_options: flags to be passes to impact executable</span>
-<span class="sd">        :param scale: if True, CCS value calculated with PA method is scaled to better match trajectory method.</span>
-<span class="sd">        :returns: CCS value in A^2. Error return: -1 = input filename not found, -2 = unknown code for CCS calculation\n</span>
-<span class="sd">                  -3 CCS calculator failed, -4 = parsing of CCS calculation results failed</span>
-<span class="sd">        &#39;&#39;&#39;</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">assign_atomtype</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">get_atoms_ccs</span><span class="p">()</span>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">Molecule</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">ccs</span><span class="p">(</span><span class="n">use_lib</span><span class="o">=</span><span class="n">use_lib</span><span class="p">,</span> <span class="n">impact_path</span><span class="o">=</span><span class="n">impact_path</span><span class="p">,</span> <span class="n">impact_options</span><span class="o">=</span><span class="n">impact_options</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">,</span> <span class="n">proberad</span><span class="o">=</span><span class="n">proberad</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Molecule.get_atoms_ccs"><a class="viewcode-back" href="../structure.html#molecule.Molecule.get_atoms_ccs">[docs]</a>    <span class="k">def</span> <span class="nf">get_atoms_ccs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
@@ -816,17 +828,35 @@
 <span class="sd">        :returns: CCS in Angstrom^2</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
-        <span class="k">if</span> <span class="s">&quot;atom_ccs&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&quot;atom_ccs&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s">&quot;atom_ccs&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;atom_ccs&quot;</span><span class="p">]</span>
 
         <span class="n">ccs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">know</span><span class="p">(</span><span class="s">&quot;atom_ccs&quot;</span><span class="p">)[</span><span class="s">&quot;.&quot;</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">know</span><span class="p">(</span><span class="s">&quot;atom_ccs&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="k">if</span> <span class="s">&quot;e&quot;</span> <span class="o">!=</span> <span class="s">&quot;.&quot;</span><span class="p">:</span>
-                <span class="n">ccs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&quot;data&quot;</span><span class="p">][:,</span> <span class="mi">8</span><span class="p">]</span> <span class="o">==</span> <span class="n">e</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge</span><span class="p">[</span><span class="s">&quot;atom_ccs&quot;</span><span class="p">][</span><span class="n">e</span><span class="p">]</span>
+                <span class="n">ccs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;atomtype&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">e</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge</span><span class="p">[</span><span class="s">&quot;atom_ccs&quot;</span><span class="p">][</span><span class="n">e</span><span class="p">]</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&quot;atom_ccs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ccs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;atom_ccs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ccs</span>
 
         <span class="k">return</span> <span class="n">ccs</span></div>
+
+    
+<div class="viewcode-block" id="Molecule.query"><a class="viewcode-back" href="../structure.html#molecule.Molecule.query">[docs]</a>    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query_text</span><span class="p">,</span> <span class="n">get_index</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        ## select specific atoms in a multimer un the basis of a text query.</span>
+
+<span class="sd">        :param query_text: string selecting atoms of interest. Uses the pandas query syntax, can access all columns in the dataframe self.data.</span>
+<span class="sd">        :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)</span>
+<span class="sd">        :returns: coordinates of the selected points (in a unique array) and, if get_index is set to true, a list of their indices in subunits&#39; self.points array.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">query_text</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span>
+
+        <span class="k">if</span> <span class="n">get_index</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">idx</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span></div>
+
 
 <div class="viewcode-block" id="Molecule.atomselect"><a class="viewcode-back" href="../structure.html#molecule.Molecule.atomselect">[docs]</a>    <span class="k">def</span> <span class="nf">atomselect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chain</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">atom</span><span class="p">,</span> <span class="n">get_index</span><span class="o">=</span><span class="k">False</span><span class="p">,</span> <span class="n">use_resname</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
@@ -845,33 +875,41 @@
             <span class="k">if</span> <span class="n">chain</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span><span class="p">:</span>
                 <span class="n">chain_query</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="k">True</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">chain_query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][:,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="n">chain</span>
-
+                <span class="n">chain_query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;chain&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">chain</span>
+                
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chain</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">chain</span><span class="p">)</span><span class="o">.</span><span class="n">__module__</span> <span class="o">==</span> <span class="s">&#39;numpy&#39;</span><span class="p">:</span>
-            <span class="n">chain_query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][:,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="n">chain</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">chain_query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;chain&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">chain</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">chain</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
-                <span class="n">chain_query</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span><span class="n">chain_query</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][:,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="n">chain</span><span class="p">[</span><span class="n">c</span><span class="p">])</span>
+                <span class="n">chain_query</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span><span class="n">chain_query</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;chain&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">chain</span><span class="p">[</span><span class="n">c</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: wrong type for chain selection. Should be str, list, or numpy&quot;</span><span class="p">)</span>
-
-        <span class="c"># resid boolean selector</span>
-        <span class="c"># pick appropriate column for boolean selection</span>
-        <span class="k">if</span> <span class="n">use_resname</span><span class="p">:</span>
-            <span class="n">refcolumn</span> <span class="o">=</span> <span class="mi">3</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">refcolumn</span> <span class="o">=</span> <span class="mi">5</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">res</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span><span class="p">:</span>
                 <span class="n">res_query</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="k">True</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">use_resname</span><span class="p">:</span>
+                <span class="n">res_query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;resname&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">res</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">res_query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][:,</span> <span class="n">refcolumn</span><span class="p">]</span> <span class="o">==</span> <span class="n">res</span>
+                <span class="n">res_query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;resid&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">res</span>
+
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">res_query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][:,</span> <span class="n">refcolumn</span><span class="p">]</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">use_resname</span><span class="p">:</span>
+                <span class="n">res_query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;resname&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">res_query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;resid&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">res</span>
+
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">res</span><span class="p">)</span><span class="o">.</span><span class="n">__module__</span> <span class="o">==</span> <span class="s">&#39;numpy&#39;</span><span class="p">:</span>
-            <span class="n">res_query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][:,</span> <span class="n">refcolumn</span><span class="p">]</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">use_resname</span><span class="p">:</span>
+                <span class="n">res_query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;resname&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">res_query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;resid&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
             <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
-                <span class="n">res_query</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span><span class="n">res_query</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][:,</span> <span class="n">refcolumn</span><span class="p">]</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="n">r</span><span class="p">]))</span>
+                <span class="k">if</span> <span class="n">use_resname</span><span class="p">:</span>
+                    <span class="n">res_query</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span><span class="n">res_query</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;resname&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="n">r</span><span class="p">]))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">res_query</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span><span class="n">res_query</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;resid&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">res</span><span class="p">[</span><span class="n">r</span><span class="p">])</span>
+
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: wrong type for resid selection. Should be int, list, or numpy&quot;</span><span class="p">)</span>
 
@@ -880,16 +918,17 @@
             <span class="k">if</span> <span class="n">atom</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span><span class="p">:</span>
                 <span class="n">atom_query</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="k">True</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">atom_query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">atom</span>
+                <span class="n">atom_query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;name&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">atom</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">atom</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">atom</span><span class="p">)</span><span class="o">.</span><span class="n">__module__</span> <span class="o">==</span> <span class="s">&#39;numpy&#39;</span><span class="p">:</span>
-            <span class="n">atom_query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">atom</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">atom_query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;name&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">atom</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">atom</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
-                <span class="n">atom_query</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span><span class="n">atom_query</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">atom</span><span class="p">[</span><span class="n">a</span><span class="p">])</span>
+                <span class="n">atom_query</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span><span class="n">atom_query</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;name&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">atom</span><span class="p">[</span><span class="n">a</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: wrong type for atom selection. Should be str, list, or numpy&quot;</span><span class="p">)</span>
 
         <span class="c"># slice data array and return result (colums 5 to 7 contain xyz coords)</span>
         <span class="n">query</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">chain_query</span><span class="p">,</span> <span class="n">res_query</span><span class="p">),</span> <span class="n">atom_query</span><span class="p">)</span>
+
 
         <span class="k">if</span> <span class="n">get_index</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">query</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">query</span> <span class="o">==</span> <span class="k">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span>
@@ -908,21 +947,20 @@
 <span class="sd">        :param use_resname: if set to True, consider information in &quot;res&quot; variable as resnames, and not resids</span>
 <span class="sd">        :returns: coordinates of the selected points not matching the query, if get_index is set to true, their indices in self.points array.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
-        
+
         <span class="c">#extract indices of atoms matching the query</span>
         <span class="n">idxs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atomselect</span><span class="p">(</span><span class="n">chain</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">atom</span><span class="p">,</span> <span class="n">get_index</span><span class="o">=</span><span class="k">True</span><span class="p">,</span> <span class="n">use_resname</span><span class="o">=</span><span class="n">use_resname</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
-        
+
         <span class="c">#invert the selection</span>
         <span class="n">idxs2</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">)):</span>
             <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">idxs</span><span class="p">:</span>
                 <span class="n">idxs2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-        
+
         <span class="k">if</span> <span class="n">get_index</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">idxs2</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">idxs2</span><span class="p">)]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">idxs2</span><span class="p">]</span></div>
-
 
 <div class="viewcode-block" id="Molecule.same_residue"><a class="viewcode-back" href="../structure.html#molecule.Molecule.same_residue">[docs]</a>    <span class="k">def</span> <span class="nf">same_residue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">get_index</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
@@ -933,7 +971,7 @@
 <span class="sd">        :returns: coordinates of the selected points and, if get_index is set to true, their indices in self.points array.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
-        <span class="n">D</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">]</span>
+        <span class="n">D</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span>
         <span class="n">l</span> <span class="o">=</span> <span class="n">D</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -967,7 +1005,7 @@
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">idlist</span> <span class="o">=</span> <span class="p">[</span><span class="n">index</span><span class="p">]</span>
 
-        <span class="n">D</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">]</span>
+        <span class="n">D</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span>
         <span class="n">pts</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">idxs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">idlist</span><span class="p">:</span>
@@ -1041,9 +1079,7 @@
         <span class="n">M</span> <span class="o">=</span> <span class="n">Molecule</span><span class="p">()</span>
         <span class="n">postmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[:,</span> <span class="n">idxs</span><span class="p">]</span>
         <span class="n">M</span><span class="o">.</span><span class="n">coordinates</span> <span class="o">=</span> <span class="n">postmp</span><span class="p">[</span><span class="n">frames</span><span class="p">]</span>
-        <span class="n">M</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][</span><span class="n">idxs</span><span class="p">]</span>
-        <span class="n">M</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">][</span><span class="n">idxs</span><span class="p">]</span>
-        <span class="n">M</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;charge&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;charge&#39;</span><span class="p">][</span><span class="n">idxs</span><span class="p">]</span>
+        <span class="n">M</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">idxs</span><span class="p">]</span>
 
         <span class="n">M</span><span class="o">.</span><span class="n">current</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">M</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="n">M</span><span class="o">.</span><span class="n">current</span><span class="p">]</span>
@@ -1051,7 +1087,6 @@
         <span class="n">M</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;center&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">get_center</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="n">M</span></div>
-
 
 <div class="viewcode-block" id="Molecule.guess_chain_split"><a class="viewcode-back" href="../structure.html#molecule.Molecule.guess_chain_split">[docs]</a>    <span class="k">def</span> <span class="nf">guess_chain_split</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">distance</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">use_backbone</span><span class="o">=</span><span class="k">True</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
@@ -1063,7 +1098,7 @@
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="c"># wipe current chain assignment</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&quot;data&quot;</span><span class="p">][:,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;chain&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
 
         <span class="c"># identify different chains</span>
         <span class="n">intervals</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -1082,13 +1117,13 @@
                 <span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">posC</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">posN</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="n">posC</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">posN</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]))</span>
                 <span class="k">if</span> <span class="n">dist</span> <span class="o">&gt;</span> <span class="n">distance</span><span class="p">:</span>
                     <span class="n">intervals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idxN</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
-        
+
         <span class="n">intervals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
 
         <span class="c"># separate chains</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">intervals</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
             <span class="n">thepos</span> <span class="o">=</span> <span class="n">i</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chain_names</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&quot;data&quot;</span><span class="p">][</span><span class="n">intervals</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span><span class="n">intervals</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain_names</span><span class="p">[</span><span class="n">thepos</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">intervals</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span><span class="n">intervals</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain_names</span><span class="p">[</span><span class="n">thepos</span><span class="p">]</span>
 
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">intervals</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span></div>
 
@@ -1098,7 +1133,7 @@
 
 <span class="sd">        Returned data is a list containing strings for points data and floats for point coordinates</span>
 <span class="sd">        in the same order as a pdb file, i.e.</span>
-<span class="sd">        ATOM/HETATM, index, atomname, resname, chain name, residue ID, x, y, z, occupancy, beta factor, atomtype.</span>
+<span class="sd">        ATOM/HETATM, index, name, resname, chain name, residue ID, x, y, z, occupancy, beta factor, atomtype.</span>
 
 <span class="sd">        :returns: list aggregated data and coordinates for every point, as string.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
@@ -1109,18 +1144,18 @@
         <span class="c"># coordinates and properties)</span>
         <span class="n">d</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">index</span><span class="p">:</span>
-            <span class="n">d</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
-                      <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
-                      <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
-                      <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
-                      <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>
-                      <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>
+            <span class="n">d</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;atom&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;index&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;name&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;resname&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;chain&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;resid&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
                       <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
                       <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
                       <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
-                      <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span>
-                      <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span>
-                      <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="mi">8</span><span class="p">]])</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;beta&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;occupancy&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;atomtype&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]])</span>
 
         <span class="k">return</span> <span class="n">d</span></div>
 
@@ -1200,7 +1235,7 @@
             <span class="c"># list</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 
-            <span class="c"># ATOM/HETATM, index, atomname, resname, chain name, residue ID, x,</span>
+            <span class="c"># ATOM/HETATM, index, atom name, resname, chain name, residue ID, x,</span>
             <span class="c"># y, z, beta factor, occupancy, atomtype</span>
             <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_pdb_data</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
@@ -1209,7 +1244,7 @@
                 <span class="n">f_out</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="s">&quot;box&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">:</span>
-                <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;box&quot;</span><span class="p">)[</span><span class="n">f</span><span class="p">]</span> <span class="o">/</span> <span class="mf">10.0</span>
+                <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&quot;box&quot;</span><span class="p">][</span><span class="n">f</span><span class="p">]</span> <span class="o">/</span> <span class="mf">10.0</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">minpos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="mf">10.0</span>
                 <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="n">minpos</span> <span class="o">/</span> <span class="mf">10.0</span>
@@ -1243,9 +1278,9 @@
 
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&quot;data&quot;</span><span class="p">][:,</span> <span class="mi">7</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+                <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;beta&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&quot;data&quot;</span><span class="p">][</span><span class="n">indices</span><span class="p">,</span> <span class="mi">7</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+                <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;beta&quot;</span><span class="p">][</span><span class="n">indices</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
 
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">b</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">/</span> <span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span>
 
@@ -1265,11 +1300,11 @@
         <span class="c">#@todo mass of N and C termini to add for every chain</span>
 
         <span class="n">mass</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">chains</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][:,</span> <span class="mi">4</span><span class="p">])</span>
+        <span class="n">chains</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;chain&quot;</span><span class="p">])</span>
         <span class="k">for</span> <span class="n">chainname</span> <span class="ow">in</span> <span class="n">chains</span><span class="p">:</span>
             <span class="c"># for every chain, get a list of all its (unique) resids</span>
             <span class="n">indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atomselect</span><span class="p">(</span><span class="n">chainname</span><span class="p">,</span> <span class="s">&quot;*&quot;</span><span class="p">,</span> <span class="s">&quot;*&quot;</span><span class="p">,</span> <span class="k">True</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
-            <span class="n">resids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][</span><span class="n">indices</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>
+            <span class="n">resids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;resid&#39;</span><span class="p">][</span><span class="n">indices</span><span class="p">])</span>
 
             <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">resids</span><span class="p">:</span>
                 <span class="c"># for every residue in the chain, get the index of its first</span>
@@ -1299,9 +1334,9 @@
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="n">mass</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">]),</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="n">resname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
-            <span class="n">atomtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="mi">8</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">resname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;resname&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">atomtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;atomtype&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
 
             <span class="k">if</span> <span class="n">resname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">skip_resname</span><span class="p">:</span>
                 <span class="k">try</span><span class="p">:</span>
@@ -1325,11 +1360,18 @@
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="n">Nidx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atomselect</span><span class="p">(</span><span class="s">&quot;*&quot;</span><span class="p">,</span> <span class="s">&quot;*&quot;</span><span class="p">,</span> <span class="n">atomname1</span><span class="p">,</span> <span class="n">get_index</span><span class="o">=</span><span class="k">True</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="c"># ouch, get a simulation with H!!!</span>
         <span class="n">Hidx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atomselect</span><span class="p">(</span><span class="s">&quot;*&quot;</span><span class="p">,</span> <span class="s">&quot;*&quot;</span><span class="p">,</span> <span class="n">atomname2</span><span class="p">,</span> <span class="n">get_index</span><span class="o">=</span><span class="k">True</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
 
-        <span class="n">Ndata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][</span><span class="n">Nidx</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span>
-        <span class="n">Hdata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">][</span><span class="n">Hidx</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">Nidx</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: no atom name %s found!&quot;</span><span class="o">%</span><span class="n">atomname1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">Hidx</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: no atom name %s found!&quot;</span><span class="o">%</span><span class="n">atomname2</span><span class="p">)</span>
+
+        <span class="n">Ndata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">Nidx</span><span class="p">,</span> <span class="p">[</span><span class="s">&quot;chain&quot;</span><span class="p">,</span> <span class="s">&quot;resid&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">Hdata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">Hidx</span><span class="p">,</span> <span class="p">[</span><span class="s">&quot;chain&quot;</span><span class="p">,</span> <span class="s">&quot;resid&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span>
+
+        <span class="nb">print</span> <span class="n">Ndata</span>
 
         <span class="n">a1</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">a2</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1392,6 +1434,8 @@
 <span class="sd">        :param cutoff: minimal distance to consider a couple as linkable.</span>
 <span class="sd">        :returns: nx3 numpy array containing, for every valid connection, id of first atom, id of second atom and distance between the two.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="kn">import</span> <span class="nn">biobox.measures.interaction</span> <span class="k">as</span> <span class="nn">I</span>
 
         <span class="n">points1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_xyz</span><span class="p">()[</span><span class="n">idx</span><span class="p">]</span>
 

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>biobox.lib.interaction &#8212; biobox 1.0 documentation</title>
+    <title>biobox.measures.interaction &#8212; biobox 1.0 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -47,7 +47,7 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <h1>Source code for biobox.lib.interaction</h1><div class="highlight"><pre>
+  <h1>Source code for biobox.measures.interaction</h1><div class="highlight"><pre>
 <span class="c"># Copyright (c) 2014 Matteo Degiacomi</span>
 <span class="c">#</span>
 <span class="c"># SBT is free software ;</span>
@@ -69,7 +69,7 @@
 <span class="kn">import</span> <span class="nn">scipy.spatial.distance</span> <span class="k">as</span> <span class="nn">S</span>
 
 
-<div class="viewcode-block" id="distance_matrix"><a class="viewcode-back" href="../../../measures.html#biobox.lib.interaction.distance_matrix">[docs]</a><span class="k">def</span> <span class="nf">distance_matrix</span><span class="p">(</span><span class="n">points1</span><span class="p">,</span> <span class="n">points2</span><span class="p">):</span>
+<div class="viewcode-block" id="distance_matrix"><a class="viewcode-back" href="../../../measures.html#biobox.measures.interaction.distance_matrix">[docs]</a><span class="k">def</span> <span class="nf">distance_matrix</span><span class="p">(</span><span class="n">points1</span><span class="p">,</span> <span class="n">points2</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    compute full distance matrix between two points clouds</span>
 
@@ -79,7 +79,7 @@
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">return</span> <span class="n">S</span><span class="o">.</span><span class="n">cdist</span><span class="p">(</span><span class="n">points1</span><span class="p">,</span> <span class="n">points2</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="get_neighbors"><a class="viewcode-back" href="../../../measures.html#biobox.lib.interaction.get_neighbors">[docs]</a><span class="k">def</span> <span class="nf">get_neighbors</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">):</span>
+<div class="viewcode-block" id="get_neighbors"><a class="viewcode-back" href="../../../measures.html#biobox.measures.interaction.get_neighbors">[docs]</a><span class="k">def</span> <span class="nf">get_neighbors</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    detect interfacing points (couples at less than a certain cutoff distance)</span>
 
@@ -89,7 +89,7 @@
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">dist</span> <span class="o">&lt;</span> <span class="n">cutoff</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="lennard_jones"><a class="viewcode-back" href="../../../measures.html#biobox.lib.interaction.lennard_jones">[docs]</a><span class="k">def</span> <span class="nf">lennard_jones</span><span class="p">(</span><span class="n">points1</span><span class="p">,</span> <span class="n">points2</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">2.7</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="mf">12.0</span><span class="p">,</span> <span class="n">coeff1</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span> <span class="n">coeff2</span><span class="o">=</span><span class="mi">6</span><span class="p">):</span>
+<div class="viewcode-block" id="lennard_jones"><a class="viewcode-back" href="../../../measures.html#biobox.measures.interaction.lennard_jones">[docs]</a><span class="k">def</span> <span class="nf">lennard_jones</span><span class="p">(</span><span class="n">points1</span><span class="p">,</span> <span class="n">points2</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">2.7</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="mf">12.0</span><span class="p">,</span> <span class="n">coeff1</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span> <span class="n">coeff2</span><span class="o">=</span><span class="mi">6</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Compute m-n lennard-jones potential between two ensembles of points.</span>
 

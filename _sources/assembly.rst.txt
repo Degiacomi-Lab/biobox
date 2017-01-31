@@ -18,10 +18,11 @@ Polyhedron
 
 .. automodule:: polyhedron
    :members:
-
+   :show-inheritance:
 
 Multimer
 --------
 
 .. automodule:: multimer
    :members:
+   :show-inheritance:

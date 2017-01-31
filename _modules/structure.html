@@ -61,25 +61,17 @@
 <span class="c">#</span>
 <span class="c"># Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com</span>
 
-<span class="kn">import</span> <span class="nn">subprocess</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">import</span> <span class="nn">random</span>
-<span class="kn">import</span> <span class="nn">string</span>
 <span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">deepcopy</span>
-
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">scipy.signal</span>
-
-<span class="kn">import</span> <span class="nn">biobox.lib.fastmath</span> <span class="k">as</span> <span class="nn">FM</span>  <span class="c"># cython routines</span>
-<span class="kn">import</span> <span class="nn">biobox.lib.interaction</span> <span class="k">as</span> <span class="nn">I</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <div class="viewcode-block" id="Structure"><a class="viewcode-back" href="../structure.html#structure.Structure">[docs]</a><span class="k">class</span> <span class="nc">Structure</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">    A Structure consists of an ensemble of points in 3D space and some associated properties.</span>
+<span class="sd">    A Structure consists of an ensemble of points in 3D space, and metadata associated to each of them.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[],</span> <span class="p">[]]),</span> <span class="n">r</span><span class="o">=</span><span class="mf">1.9</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[],</span> <span class="p">[]]),</span> <span class="n">r</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Point coordinates and properties data structures are first initialized.</span>
 <span class="sd">        properties is a dictionary initially containing an entry for &#39;center&#39; (center of geometry) and &#39;radius&#39; (average radius of points).</span>
@@ -106,20 +98,16 @@
         <span class="sd">&#39;&#39;&#39;collection of properties. By default, &#39;center&#39; (geometric center of the Structure) is defined&#39;&#39;&#39;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;center&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_center</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span>  <span class="c"># average radius of every point</span>
+       
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">r</span><span class="p">)</span><span class="o">.</span><span class="n">__module__</span> <span class="o">==</span> <span class="s">&#39;numpy&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">rad</span> <span class="o">=</span> <span class="n">r</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">))</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">))</span>
 
-<div class="viewcode-block" id="Structure.get"><a class="viewcode-back" href="../structure.html#structure.Structure.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prop</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        return property from properties array</span>
-
-<span class="sd">        :param prop: desired property to extract from property dictionary</span>
-<span class="sd">        :returns: or nan if failed</span>
-<span class="sd">        &#39;&#39;&#39;</span>
-        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">prop</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">prop</span><span class="p">)]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">rad</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s">&quot;radius&quot;</span><span class="p">])</span>
+                <span class="sd">&#39;&#39;&#39; metadata about each atom (pandas Dataframe)&#39;&#39;&#39;</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="c"># print &quot;property %s not found!&quot;%prop</span>
-            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="p">[],</span> <span class="n">columns</span><span class="o">=</span><span class="p">[])</span>
 
 <div class="viewcode-block" id="Structure.set_current"><a class="viewcode-back" href="../structure.html#structure.Structure.set_current">[docs]</a>    <span class="k">def</span> <span class="nf">set_current</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
@@ -133,15 +121,6 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;center&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_center</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: position %s requested, but only %s conformations available&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span></div>
-
-<div class="viewcode-block" id="Structure.add_property"><a class="viewcode-back" href="../structure.html#structure.Structure.add_property">[docs]</a>    <span class="k">def</span> <span class="nf">add_property</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        create a new property.</span>
-
-<span class="sd">        :param name: name of the new property to add.</span>
-<span class="sd">        :param value: value of the new property. Can be any data structure.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span></div>
 
 <div class="viewcode-block" id="Structure.get_xyz"><a class="viewcode-back" href="../structure.html#structure.Structure.get_xyz">[docs]</a>    <span class="k">def</span> <span class="nf">get_xyz</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="p">[]):</span>
         <span class="sd">&#39;&#39;&#39;</span>
@@ -210,10 +189,11 @@
 
 <div class="viewcode-block" id="Structure.clear"><a class="viewcode-back" href="../structure.html#structure.Structure.clear">[docs]</a>    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        remove all the coordinates.</span>
+<span class="sd">        remove all the coordinates and empty metadata</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[[],</span> <span class="p">[]],</span> <span class="p">[[],</span> <span class="p">[]]])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="p">[],</span> <span class="n">columns</span><span class="o">=</span><span class="p">[])</span></div>
 
 <div class="viewcode-block" id="Structure.translate"><a class="viewcode-back" href="../structure.html#structure.Structure.translate">[docs]</a>    <span class="k">def</span> <span class="nf">translate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
@@ -279,7 +259,7 @@
 
 <div class="viewcode-block" id="Structure.get_center"><a class="viewcode-back" href="../structure.html#structure.Structure.get_center">[docs]</a>    <span class="k">def</span> <span class="nf">get_center</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        compute protein center of geometry (also assigns it to self.center variable).</span>
+<span class="sd">        compute protein center of geometry (also assigns it to self.properties[&quot;center&quot;] key).</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;center&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -294,14 +274,6 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_center</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="o">-</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="n">c</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="n">c</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span></div>
-
-<div class="viewcode-block" id="Structure.rgyr"><a class="viewcode-back" href="../structure.html#structure.Structure.rgyr">[docs]</a>    <span class="k">def</span> <span class="nf">rgyr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        compute radius of gyration.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
-        <span class="n">d_square</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_center</span><span class="p">())</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">d_square</span><span class="p">)</span> <span class="o">/</span> <span class="n">d_square</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div>
-
 
 <div class="viewcode-block" id="Structure.get_size"><a class="viewcode-back" href="../structure.html#structure.Structure.get_size">[docs]</a>    <span class="k">def</span> <span class="nf">get_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
@@ -446,7 +418,7 @@
                      <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="n">f</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
                      <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="n">f</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
                      <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[</span><span class="n">f</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
-                     <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">],</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
                      <span class="mf">1.0</span><span class="p">,</span> <span class="s">&quot;Z&quot;</span><span class="p">)</span>
                 <span class="n">L</span> <span class="o">=</span> <span class="s">&#39;ATOM  %5s  %-4s%-4s%1s%4i    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">l</span>
                 <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
@@ -454,188 +426,6 @@
             <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;END</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
 
         <span class="n">fout</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
-
-<div class="viewcode-block" id="Structure.ccs"><a class="viewcode-back" href="../structure.html#structure.Structure.ccs">[docs]</a>    <span class="k">def</span> <span class="nf">ccs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_lib</span><span class="o">=</span><span class="k">True</span><span class="p">,</span> <span class="n">impact_path</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">impact_options</span><span class="o">=</span><span class="s">&quot;-Octree -nRuns 32 -cMode sem -convergence 0.01&quot;</span><span class="p">,</span> <span class="n">pdbname</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="k">False</span><span class="p">,</span> <span class="n">proberad</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        compute CCS calling either impact.</span>
-
-<span class="sd">        :param use_lib: if true, impact library will be used, if false a system call to impact executable will be performed instead</span>
-<span class="sd">        :param impact_path: by default, the environment variable IMPACTPATH is sought. This allows redirecting to a specific impact root folder. </span>
-<span class="sd">        :param impact_options: flags to be passes to impact executable</span>
-<span class="sd">        :param pdbname: if a file has been already written, impact can be asked to analyze it</span>
-<span class="sd">        :param scale: if True, CCS value calculated with PA method is scaled to better match trajectory method.</span>
-<span class="sd">        :param proberad: radius of probe. Do find out if your impact library already adds this value by default or not (old ones do)!</span>
-<span class="sd">        :returns: CCS value in A^2. Error return: -1 = input filename not found, -2 = unknown code for CCS calculation\n</span>
-<span class="sd">                  -3 CCS calculator failed, -4 = parsing of CCS calculation results failed</span>
-<span class="sd">        &#39;&#39;&#39;</span>
-
-        <span class="k">if</span> <span class="n">use_lib</span> <span class="ow">and</span> <span class="n">pdbname</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
-
-            <span class="c">#if True:</span>
-            <span class="kn">from</span> <span class="nn">biobox.classes.ccs</span> <span class="k">import</span> <span class="n">CCS</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">impact_path</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
-
-                    <span class="k">try</span><span class="p">:</span>
-                        <span class="n">impact_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;IMPACTPATH&#39;</span><span class="p">],</span> <span class="s">&quot;lib&quot;</span><span class="p">)</span>
-                    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;IMPACTPATH environment variable undefined&quot;</span><span class="p">)</span>
-
-                <span class="k">if</span> <span class="s">&quot;win&quot;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="p">:</span>
-                    <span class="n">libfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">impact_path</span><span class="p">,</span> <span class="s">&quot;libimpact.dll&quot;</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">libfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">impact_path</span><span class="p">,</span> <span class="s">&quot;libimpact.so&quot;</span><span class="p">)</span>
-
-                <span class="n">C</span> <span class="o">=</span> <span class="n">CCS</span><span class="p">(</span><span class="n">libfile</span><span class="o">=</span><span class="n">libfile</span><span class="p">)</span>
-
-            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
-
-            <span class="k">if</span> <span class="s">&quot;atom_ccs&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="n">radii</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;atom_ccs&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">proberad</span>
-
-            <span class="k">elif</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">],</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">__module__</span> <span class="o">==</span> <span class="s">&#39;numpy&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">():</span>
-                <span class="n">radii</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">proberad</span>
-
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">radii</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">proberad</span>
-
-            <span class="k">if</span> <span class="n">scale</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">C</span><span class="o">.</span><span class="n">get_ccs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="n">radii</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">C</span><span class="o">.</span><span class="n">get_ccs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="n">radii</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-
-        <span class="c"># generate random file name to capture CCS software terminal output</span>
-        <span class="n">tmp_outfile</span> <span class="o">=</span> <span class="n">random_string</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
-        <span class="k">while</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">tmp_outfile</span><span class="p">):</span>
-            <span class="n">tmp_outfile</span> <span class="o">=</span> <span class="s">&quot;%s.pdb&quot;</span> <span class="o">%</span> <span class="n">random_string</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">pdbname</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
-            <span class="c"># write temporary pdb file of current structure on which to launch</span>
-            <span class="c"># CCS calculation</span>
-            <span class="n">filename</span> <span class="o">=</span> <span class="s">&quot;%s.pdb&quot;</span> <span class="o">%</span> <span class="n">random_string</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
-            <span class="k">while</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
-                <span class="n">filename</span> <span class="o">=</span> <span class="s">&quot;%s.pdb&quot;</span> <span class="o">%</span> <span class="n">random_string</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">write_pdb</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">])</span>
-
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">filename</span> <span class="o">=</span> <span class="n">pdbname</span>
-            <span class="c"># if file was already provided, verify its existence first!</span>
-            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">pdbname</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: %s not found!&quot;</span> <span class="o">%</span> <span class="n">pdbname</span><span class="p">)</span>
-
-        <span class="k">try</span><span class="p">:</span>
-
-            <span class="k">if</span> <span class="n">impact_path</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
-                    <span class="k">try</span><span class="p">:</span>
-                        <span class="n">impact_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;IMPACTPATH&#39;</span><span class="p">],</span> <span class="s">&quot;bin&quot;</span><span class="p">)</span>
-                    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;IMPACTPATH environment variable undefined&quot;</span><span class="p">)</span>
-
-            <span class="c"># if using impact, create parameterization file containing a</span>
-            <span class="c"># description for Z atoms (pseudoatom name used in this code)</span>
-            <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;params&#39;</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="s">&#39;radius&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">],</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">],</span> <span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">):</span>
-                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;[ defaults ]</span><span class="se">\n</span><span class="s"> H 2.2</span><span class="se">\n</span><span class="s"> C 2.91</span><span class="se">\n</span><span class="s"> N 2.91</span><span class="se">\n</span><span class="s"> O 2.91</span><span class="se">\n</span><span class="s"> P 2.91</span><span class="se">\n</span><span class="s"> S 2.91</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
-                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;Z %s&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">])</span>
-                    <span class="n">impact_options</span> <span class="o">+=</span> <span class="s">&quot; -param params&quot;</span>
-
-            <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-
-            <span class="k">if</span> <span class="s">&quot;win&quot;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="p">:</span>
-                <span class="n">impact_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">impact_path</span><span class="p">,</span> <span class="s">&quot;impact.exe&quot;</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">impact_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">impact_path</span><span class="p">,</span> <span class="s">&quot;impact&quot;</span><span class="p">)</span>
-
-            <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="s">&#39;%s  %s -rProbe %s %s &gt; %s&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">impact_name</span><span class="p">,</span> <span class="n">impact_options</span><span class="p">,</span> <span class="n">proberad</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">tmp_outfile</span><span class="p">),</span> <span class="n">shell</span><span class="o">=</span><span class="k">True</span><span class="p">)</span>
-
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
-
-        <span class="c">#parse output generated by IMPACT and written into a file</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">tmp_outfile</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
-                <span class="n">w</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;CCS&quot;</span><span class="p">:</span>
-
-                    <span class="k">if</span> <span class="n">scale</span><span class="p">:</span>
-                        <span class="n">v</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">v</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
-
-                    <span class="k">break</span>
-
-            <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-
-            <span class="c"># clean temp files if needed</span>
-            <span class="c">#(if a filename is provided, don&#39;t delete it!)</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">tmp_outfile</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">pdbname</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-
-            <span class="k">return</span> <span class="n">v</span>
-
-        <span class="k">except</span><span class="p">:</span>
-            <span class="c"># clean temp files</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">tmp_outfile</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">pdbname</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-
-            <span class="k">return</span> <span class="o">-</span><span class="mi">4</span></div>
-
-<div class="viewcode-block" id="Structure.saxs"><a class="viewcode-back" href="../structure.html#structure.Structure.saxs">[docs]</a>    <span class="k">def</span> <span class="nf">saxs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">crysol_path</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">crysol_options</span><span class="o">=</span><span class="s">&quot;-lm 20 -ns 500&quot;</span><span class="p">,</span> <span class="n">pdbname</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        compute SAXS curve using crysol (from ATSAS suite)</span>
-
-<span class="sd">        :param crysol_path: path to crysol executable. By default, the environment variable ATSASPATH is sought. This allows redirecting to a specific impact root folder.</span>
-<span class="sd">        :param crysol_options: flags to be passes to impact executable</span>
-<span class="sd">        :param pdbname: if a file has been already written, crysol can be asked to analyze it</span>
-<span class="sd">        :returns: SAXS curve (nx2 numpy array)</span>
-<span class="sd">        &#39;&#39;&#39;</span>
-
-        <span class="k">if</span> <span class="n">crysol_path</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">crysol_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;ATSASPATH&#39;</span><span class="p">]</span>
-            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ATSASPATH environment variable undefined&quot;</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">pdbname</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
-            <span class="c"># write temporary pdb file of current structure on which to launch</span>
-            <span class="c"># SAXS calculation</span>
-            <span class="n">pdbname</span> <span class="o">=</span> <span class="s">&quot;%s.pdb&quot;</span> <span class="o">%</span> <span class="n">random_string</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
-            <span class="k">while</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">pdbname</span><span class="p">):</span>
-                <span class="n">pdbname</span> <span class="o">=</span> <span class="s">&quot;%s.pdb&quot;</span> <span class="o">%</span> <span class="n">random_string</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">write_pdb</span><span class="p">(</span><span class="n">pdbname</span><span class="p">,</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">])</span>
-
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c"># if file was already provided, verify its existence first!</span>
-            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">pdbname</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: %s not found!&quot;</span> <span class="o">%</span> <span class="n">pdbname</span><span class="p">)</span>
-
-        <span class="c"># get basename for output</span>
-        <span class="n">outfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">pdbname</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-
-        <span class="n">call_line</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">crysol_path</span><span class="p">,</span><span class="s">&quot;crysol&quot;</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="s">&#39;%s %s %s &gt;&amp; /dev/null&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">call_line</span><span class="p">,</span> <span class="n">crysol_options</span><span class="p">,</span> <span class="n">pdbname</span><span class="p">),</span> <span class="n">shell</span><span class="o">=</span><span class="k">True</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: crysol calculation failed!&quot;</span><span class="p">)</span>
-
-        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s">&quot;%s00.int&quot;</span> <span class="o">%</span> <span class="n">outfile</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s">&quot;%s00.alm&quot;</span> <span class="o">%</span> <span class="n">outfile</span><span class="p">)</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s">&quot;%s00.int&quot;</span> <span class="o">%</span> <span class="n">outfile</span><span class="p">)</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s">&quot;%s00.log&quot;</span> <span class="o">%</span> <span class="n">outfile</span><span class="p">)</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s">&quot;%s.pdb&quot;</span> <span class="o">%</span> <span class="n">outfile</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
-            <span class="k">pass</span>
-
-        <span class="k">return</span> <span class="n">data</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span></div>
 
 <div class="viewcode-block" id="Structure.convex_hull"><a class="viewcode-back" href="../structure.html#structure.Structure.convex_hull">[docs]</a>    <span class="k">def</span> <span class="nf">convex_hull</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
@@ -652,108 +442,6 @@
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Quick Hull algorithm available in scipy &gt;=0.12!&quot;</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="Structure.get_surface_c"><a class="viewcode-back" href="../structure.html#structure.Structure.get_surface_c">[docs]</a>    <span class="k">def</span> <span class="nf">get_surface_c</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targets</span><span class="o">=</span><span class="p">[],</span> <span class="n">probe</span><span class="o">=</span><span class="mf">1.4</span><span class="p">,</span>
-                      <span class="n">n_sphere_point</span><span class="o">=</span><span class="mi">960</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.05</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        compute the accessible surface area using the Shrake-Rupley algorithm (&quot;rolling ball method&quot;)</span>
-
-<span class="sd">        :param targets: indices to be used for surface estimation. By default, all indices are kept into account.</span>
-<span class="sd">        :param probe: radius of the &quot;rolling ball&quot;</span>
-<span class="sd">        :param n_sphere_point: number of mesh points per atom</span>
-<span class="sd">        :param threshold: fraction of points in sphere, above which structure points are considered as exposed</span>
-<span class="sd">        :returns: accessible surface area in A^2</span>
-<span class="sd">        :returns: mesh numpy array containing the found points forming the accessible surface mesh</span>
-<span class="sd">        :returns: IDs of surface points</span>
-<span class="sd">        &#39;&#39;&#39;</span>
-
-        <span class="c"># getting radii associated to every atom</span>
-        <span class="n">radii</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">radii</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">radii</span><span class="p">)</span><span class="o">.</span><span class="n">__module__</span> <span class="o">==</span> <span class="s">&#39;numpy&#39;</span><span class="p">):</span>
-            <span class="n">radii</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">radii</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: length vdw radii (%s) and points quantity (%s) mismatch!&quot;</span> <span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">radii</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">)))</span>
-
-        <span class="k">if</span> <span class="n">threshold</span> <span class="o">&lt;</span> <span class="mf">0.0</span> <span class="ow">or</span> <span class="n">threshold</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: threshold should be a floating point between 0 and 1!&quot;</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">FM</span><span class="o">.</span><span class="n">c_get_surface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="n">radii</span><span class="p">,</span> <span class="n">probe</span><span class="p">,</span> <span class="n">n_sphere_point</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">FM</span><span class="o">.</span><span class="n">c_get_surface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">targets</span><span class="p">],</span> <span class="n">radii</span><span class="p">,</span> <span class="n">probe</span><span class="p">,</span> <span class="n">n_sphere_point</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="Structure.get_surface"><a class="viewcode-back" href="../structure.html#structure.Structure.get_surface">[docs]</a>    <span class="k">def</span> <span class="nf">get_surface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targets</span><span class="o">=</span><span class="p">[],</span> <span class="n">probe</span><span class="o">=</span><span class="mf">1.4</span><span class="p">,</span> <span class="n">n_sphere_point</span><span class="o">=</span><span class="mi">960</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.05</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        compute the accessible surface area using the Shrake-Rupley algorithm (&quot;rolling ball method&quot;)</span>
-
-<span class="sd">        :param targets: indices to be used for surface estimation. By default, all indices are kept into account.</span>
-<span class="sd">        :param probe: radius of the &quot;rolling ball&quot;</span>
-<span class="sd">        :param n_sphere_point: number of mesh points per atom</span>
-<span class="sd">        :param threshold: fraction of points in sphere, above which structure points are considered as exposed</span>
-<span class="sd">        :returns: accessible surface area in A^2</span>
-<span class="sd">        :returns: mesh numpy array containing the found points forming the accessible surface mesh</span>
-<span class="sd">        :returns: IDs of surface points</span>
-<span class="sd">        &#39;&#39;&#39;</span>
-
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">targets</span> <span class="o">=</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
-
-        <span class="c"># getting radii associated to every atom</span>
-        <span class="n">radii</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">radii</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">radii</span><span class="p">)</span><span class="o">.</span><span class="n">__module__</span> <span class="o">==</span> <span class="s">&#39;numpy&#39;</span><span class="p">):</span>
-            <span class="n">radii</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;radius&#39;</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">radii</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: length vdw radii (%s) and points quantity (%s) mismatch!&quot;</span> <span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">radii</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">)))</span>
-
-        <span class="k">if</span> <span class="n">threshold</span> <span class="o">&lt;</span> <span class="mf">0.0</span> <span class="ow">or</span> <span class="n">threshold</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: threshold should be a floating point between 0 and 1!&quot;</span><span class="p">)</span>
-
-        <span class="c"># create unit sphere points cloud (using golden spiral)</span>
-        <span class="n">pts</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">inc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
-        <span class="n">offset</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">n_sphere_point</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">n_sphere_point</span><span class="p">)):</span>
-            <span class="n">y</span> <span class="o">=</span> <span class="n">k</span> <span class="o">*</span> <span class="n">offset</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="n">offset</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-            <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">y</span> <span class="o">*</span> <span class="n">y</span><span class="p">)</span>
-            <span class="n">phi</span> <span class="o">=</span> <span class="n">k</span> <span class="o">*</span> <span class="n">inc</span>
-            <span class="n">pts</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">*</span> <span class="n">r</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">*</span> <span class="n">r</span><span class="p">])</span>
-
-        <span class="n">sphere_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pts</span><span class="p">)</span>
-        <span class="n">const</span> <span class="o">=</span> <span class="mf">4.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">sphere_points</span><span class="p">)</span>
-
-        <span class="n">contact_map</span> <span class="o">=</span> <span class="n">I</span><span class="o">.</span><span class="n">distance_matrix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">)</span>
-
-        <span class="n">asa</span> <span class="o">=</span> <span class="mf">0.0</span>
-        <span class="n">surface_atoms</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">mesh_pts</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="c"># compute accessible surface for every atom</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">targets</span><span class="p">:</span>
-
-            <span class="c"># place mesh points around atom of choice</span>
-            <span class="n">mesh</span> <span class="o">=</span> <span class="n">sphere_points</span> <span class="o">*</span> <span class="p">(</span><span class="n">radii</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">probe</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-
-            <span class="c"># compute distance matrix between mesh points and neighboring atoms</span>
-            <span class="n">test</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">contact_map</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">&lt;</span> <span class="n">radii</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="n">probe</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">neigh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">test</span><span class="p">]</span>
-            <span class="n">dist</span> <span class="o">=</span> <span class="n">I</span><span class="o">.</span><span class="n">distance_matrix</span><span class="p">(</span><span class="n">neigh</span><span class="p">,</span> <span class="n">mesh</span><span class="p">)</span> <span class="o">-</span> <span class="n">radii</span><span class="p">[</span><span class="n">test</span><span class="p">][:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
-
-            <span class="c"># lines=atoms, columns=mesh points. Count columns containing values greater than probe*2</span>
-            <span class="c"># i.e. allowing sufficient space for a probe to fit completely</span>
-            <span class="n">cnt</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">dist</span><span class="p">[:,</span> <span class="n">m</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">probe</span><span class="p">):</span>
-                    <span class="n">cnt</span> <span class="o">+=</span> <span class="mi">1</span>
-                    <span class="n">mesh_pts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mesh</span><span class="p">[</span><span class="n">m</span><span class="p">])</span>
-
-            <span class="c"># calculate asa for current atom, if a sufficient amount of mesh</span>
-            <span class="c"># points is exposed (NOTE: to verify)</span>
-            <span class="k">if</span> <span class="n">cnt</span> <span class="o">&gt;</span> <span class="n">n_sphere_point</span> <span class="o">*</span> <span class="n">threshold</span><span class="p">:</span>
-                <span class="n">surface_atoms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-                <span class="n">asa</span> <span class="o">+=</span> <span class="n">const</span> <span class="o">*</span> <span class="n">cnt</span> <span class="o">*</span> <span class="p">(</span><span class="n">radii</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">probe</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
-
-        <span class="k">return</span> <span class="n">asa</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mesh_pts</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">surface_atoms</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Structure.get_density"><a class="viewcode-back" href="../structure.html#structure.Structure.get_density">[docs]</a>    <span class="k">def</span> <span class="nf">get_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">kernel_half_width</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">buff</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
@@ -817,8 +505,6 @@
         <span class="n">D</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;format&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;dx&#39;</span>
         <span class="n">D</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;filename&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
         <span class="n">D</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s">&quot;sigma&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
-
-        <span class="c"># D.place_points()</span>
 
         <span class="k">return</span> <span class="n">D</span></div>
 
@@ -1079,16 +765,6 @@
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rmsd</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">rmsd</span></div></div>
-
-
-<div class="viewcode-block" id="random_string"><a class="viewcode-back" href="../structure.html#structure.random_string">[docs]</a><span class="k">def</span> <span class="nf">random_string</span><span class="p">(</span><span class="n">length</span><span class="o">=</span><span class="mi">32</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">    generate a random string of arbitrary characters. Useful to generate temporary file names.</span>
-
-<span class="sd">    :param length: length of random string</span>
-<span class="sd">    &#39;&#39;&#39;</span>
-    <span class="k">return</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">string</span><span class="o">.</span><span class="n">ascii_letters</span><span class="p">)</span>
-                    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">length</span><span class="p">)])</span></div>
 </pre></div>
 
           </div>

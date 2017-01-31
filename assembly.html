@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Pairwise interactions" href="pairwise.html" />
+    <link rel="next" title="Measures" href="measures.html" />
     <link rel="prev" title="Single Structures" href="structure.html" /> 
   </head>
   <body role="document">
@@ -40,7 +40,7 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="pairwise.html" title="Pairwise interactions"
+          <a href="measures.html" title="Measures"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="structure.html" title="Single Structures"
@@ -103,30 +103,6 @@ User-friendly names for these unites are stored in the self.unit_labels list. If
 </dd></dl>
 
 <dl class="method">
-<dt id="assembly.Assembly.ccs">
-<code class="descname">ccs</code><span class="sig-paren">(</span><em>use_lib=True</em>, <em>impact_path=''</em>, <em>impact_options='-Octree -nRuns 32 -cMode sem -convergence 0.01 -rProbe 1.0'</em>, <em>outname=''</em>, <em>scale=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/assembly.html#Assembly.ccs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#assembly.Assembly.ccs" title="Permalink to this definition">¶</a></dt>
-<dd><p>compute assembly CCS.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>use_lib</strong> &#8211; if true, impact library will be used, if false a system call to impact executable will be performed instead</li>
-<li><strong>impact_path</strong> &#8211; location of impact executable</li>
-<li><strong>impact_options</strong> &#8211; flags to be passes to impact executable</li>
-<li><strong>scale</strong> &#8211; if True, CCS value calculated with PA method is scaled to better match trajectory method.</li>
-<li><strong>outname</strong> &#8211; name of temporary output file to be generate for CCS calculation. If none is provided, a random name is picked.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">CCS value in A^2. Returns 0 if CCS calculation failed.</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
 <dt id="assembly.Assembly.center_assembly">
 <code class="descname">center_assembly</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/assembly.html#Assembly.center_assembly"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#assembly.Assembly.center_assembly" title="Permalink to this definition">¶</a></dt>
 <dd><p>center whole assembly to origin.</p>
@@ -167,12 +143,6 @@ User-friendly names for these unites are stored in the self.unit_labels list. If
 </dd></dl>
 
 <dl class="method">
-<dt id="assembly.Assembly.distance">
-<code class="descname">distance</code><span class="sig-paren">(</span><em>atom1</em>, <em>atom2</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/assembly.html#Assembly.distance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#assembly.Assembly.distance" title="Permalink to this definition">¶</a></dt>
-<dd><p>measure shortest euclidean distance within two ensembles of points</p>
-</dd></dl>
-
-<dl class="method">
 <dt id="assembly.Assembly.get_all_xyz">
 <code class="descname">get_all_xyz</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/assembly.html#Assembly.get_all_xyz"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#assembly.Assembly.get_all_xyz" title="Permalink to this definition">¶</a></dt>
 <dd><p>extract all structures coordinates in a unique array.</p>
@@ -208,20 +178,6 @@ User-friendly names for these unites are stored in the self.unit_labels list. If
 <p class="first admonition-title">Note</p>
 <p class="last">points VdW radii are not kept into account</p>
 </div>
-</dd></dl>
-
-<dl class="method">
-<dt id="assembly.Assembly.get_surface">
-<code class="descname">get_surface</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/assembly.html#Assembly.get_surface"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#assembly.Assembly.get_surface" title="Permalink to this definition">¶</a></dt>
-<dd><p>compute accessible surface area.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">accessible_surface area in A^2</td>
-</tr>
-</tbody>
-</table>
 </dd></dl>
 
 <dl class="method">
@@ -304,13 +260,13 @@ Supposes that all units are centered at the origin and oriented in the same way.
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>angle</strong> &#8211; chain curvature</li>
 <li><strong>dist</strong> &#8211; distance between centers of mass</li>
-<li><strong>groups</strong> &#8211; if set, a chain is formed by considering groups of loaded structures as unique objects.</li>
+<li><strong>groups</strong> &#8211; if set, a chain is formed by considering groups of loaded structures as unique objects.
+If unset, every object is independently moved.</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
-<p>If unset, every object is independently moved.</p>
 </dd></dl>
 
 <dl class="method">
@@ -357,7 +313,7 @@ Supposes that all units are centered at the origin and oriented in the same way.
 <dl class="method">
 <dt id="assembly.Assembly.make_structure">
 <code class="descname">make_structure</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/assembly.html#Assembly.make_structure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#assembly.Assembly.make_structure" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns a <a class="reference internal" href="structure.html#structure.Structure" title="structure.Structure"><code class="xref py py-func docutils literal"><span class="pre">Structure</span></code></a> object containing all the points of the assembly</p>
+<dd><p>returns a <a class="reference internal" href="structure.html#structure.Structure" title="structure.Structure"><code class="xref py py-func docutils literal"><span class="pre">Structure</span></code></a> object containing all the points of the assembly.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -407,28 +363,6 @@ Supposes that all units are centered at the origin and oriented in the same way.
 </dd></dl>
 
 <dl class="method">
-<dt id="assembly.Assembly.saxs">
-<code class="descname">saxs</code><span class="sig-paren">(</span><em>crysol_path='~/atsas-2.5.2-1/bin/'</em>, <em>crysol_options='-lm 18 -ns 500'</em>, <em>outname=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/assembly.html#Assembly.saxs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#assembly.Assembly.saxs" title="Permalink to this definition">¶</a></dt>
-<dd><p>compute SAXS curve using crysol (from ATSAS suite)</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>crysol_path</strong> &#8211; location of impact executable</li>
-<li><strong>crysol_options</strong> &#8211; flags to be passes to impact executable</li>
-<li><strong>outname</strong> &#8211; if a file has been already written, impact can be asked to analyze it</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">SAXS curve (nx2 numpy array). returns -1 if failed.</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
 <dt id="assembly.Assembly.translate">
 <code class="descname">translate</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>z</em>, <em>unit=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/assembly.html#Assembly.translate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#assembly.Assembly.translate" title="Permalink to this definition">¶</a></dt>
 <dd><p>translate desired units in the assembly.</p>
@@ -470,7 +404,8 @@ Supposes that all units are centered at the origin and oriented in the same way.
 <dl class="class">
 <dt id="polyhedron.Polyhedron">
 <em class="property">class </em><code class="descname">Polyhedron</code><a class="reference internal" href="_modules/polyhedron.html#Polyhedron"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polyhedron.Polyhedron" title="Permalink to this definition">¶</a></dt>
-<dd><p>Subclass of <a class="reference internal" href="#assembly.Assembly" title="assembly.Assembly"><code class="xref py py-func docutils literal"><span class="pre">Assembly</span></code></a>, allowing the assembly of polyhedral symmetries.
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">biobox.classes.assembly.Assembly</span></code></p>
+<p>Subclass of <a class="reference internal" href="#assembly.Assembly" title="assembly.Assembly"><code class="xref py py-func docutils literal"><span class="pre">Assembly</span></code></a>, allowing the assembly of polyhedral symmetries.
 After instantiation, the first method to be called is <a class="reference internal" href="#polyhedron.Polyhedron.setup_polyhedron" title="polyhedron.Polyhedron.setup_polyhedron"><code class="xref py py-func docutils literal"><span class="pre">setup_polyhedron</span></code></a></p>
 <p>An Assembly is composed of several building blocks (instances of Structure class) referred to as &#8220;unit&#8221;, and stored in the self.unit list.
 User-friendly names for these unites are stored in the self.unit_labels list. If no name is provided, a number will be assigned (as a string, starting from 0).</p>
@@ -648,13 +583,13 @@ database contains this information: [polymer_name number_of_vertices numbe_of_ed
 <dl class="class">
 <dt id="multimer.Multimer">
 <em class="property">class </em><code class="descname">Multimer</code><a class="reference internal" href="_modules/multimer.html#Multimer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#multimer.Multimer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Construct and manipulate a protein assembly composed of several <a class="reference internal" href="structure.html#molecule.Molecule" title="molecule.Molecule"><code class="xref py py-func docutils literal"><span class="pre">Molecule</span></code></a> instances.</p>
-<p>subclass of <a class="reference internal" href="#polyhedron.Polyhedron" title="polyhedron.Polyhedron"><code class="xref py py-func docutils literal"><span class="pre">Polyhedron</span></code></a>.</p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">biobox.classes.polyhedron.Polyhedron</span></code></p>
+<p>Construct and manipulate a protein assembly composed of several <a class="reference internal" href="structure.html#molecule.Molecule" title="molecule.Molecule"><code class="xref py py-func docutils literal"><span class="pre">Molecule</span></code></a> instances. Subclass of <a class="reference internal" href="#polyhedron.Polyhedron" title="polyhedron.Polyhedron"><code class="xref py py-func docutils literal"><span class="pre">Polyhedron</span></code></a>.</p>
 <p>An Assembly is composed of several building blocks (instances of Structure class) referred to as &#8220;unit&#8221;, and stored in the self.unit list.
 User-friendly names for these unites are stored in the self.unit_labels list. If no name is provided, a number will be assigned (as a string, starting from 0).</p>
 <dl class="method">
 <dt id="multimer.Multimer.atomselect">
-<code class="descname">atomselect</code><span class="sig-paren">(</span><em>u</em>, <em>chain</em>, <em>resid</em>, <em>atom</em>, <em>get_index=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/multimer.html#Multimer.atomselect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#multimer.Multimer.atomselect" title="Permalink to this definition">¶</a></dt>
+<code class="descname">atomselect</code><span class="sig-paren">(</span><em>u</em>, <em>chain</em>, <em>resid</em>, <em>atom</em>, <em>get_index=False</em>, <em>use_resname=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/multimer.html#Multimer.atomselect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#multimer.Multimer.atomselect" title="Permalink to this definition">¶</a></dt>
 <dd><p>## select specific atoms in a multimer providing unit, chain, residue ID and atom name.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -665,35 +600,12 @@ User-friendly names for these unites are stored in the self.unit_labels list. If
 <li><strong>chain</strong> &#8211; selection of a specific chain name (accepts &#8216;*&#8217; as wildcard). Can also be a list or numpy array of strings.</li>
 <li><strong>resid</strong> &#8211; residue ID of desired atoms (accepts &#8216;*&#8217; as wildcard). Can also be a list or numpy array of of int.</li>
 <li><strong>atom</strong> &#8211; name of desired atom (accepts &#8216;*&#8217; as wildcard). Can also be a list or numpy array of strings.</li>
-<li><strong>get_index</strong> &#8211; if set to True, returns the indices of selected atoms in self.points array (and self.properties[&#8216;data&#8217;])</li>
+<li><strong>get_index</strong> &#8211; if set to True, returns the indices of selected atoms in self.points array (and self.data)</li>
+<li><strong>use_resname</strong> &#8211; if set to True, consider information in &#8220;res&#8221; variable as resnames, and not resids</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">coordinates of the selected points (in a unique array) and, if get_index is set to true, a list of their indices in subunits&#8217; self.points array.</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="multimer.Multimer.ccs">
-<code class="descname">ccs</code><span class="sig-paren">(</span><em>use_lib=True</em>, <em>impact_path=''</em>, <em>impact_options='-Octree -nRuns 32 -cMode sem -convergence 0.01 -rProbe 1.0'</em>, <em>outname=''</em>, <em>scale=False</em>, <em>proberad=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/multimer.html#Multimer.ccs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#multimer.Multimer.ccs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Override superclass method to compute CCS method. Here, atomic CCS radii are kept into account</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>use_lib</strong> &#8211; if true, impact library will be used, if false a system call to impact executable will be performed instead</li>
-<li><strong>impact_path</strong> &#8211; location of impact executable</li>
-<li><strong>impact_options</strong> &#8211; flags to be passes to impact executable</li>
-<li><strong>outname</strong> &#8211; name of temporary output file to be generate for CCS calculation. If none is provided, a random name is picked.</li>
-<li><strong>scale</strong> &#8211; if True, CCS value calculated with PA method is scaled to better match trajectory method.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">CCS: value in A^2. Error return: -1 = input filename not found, -2 = unknown code for CCS calculation, -3 CCS calculator failed, -4 = parsing of CCS calculation results failed</p>
 </td>
 </tr>
 </tbody>
@@ -709,6 +621,27 @@ User-friendly names for these unites are stored in the self.unit_labels list. If
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><a class="reference internal" href="structure.html#molecule.Molecule" title="molecule.Molecule"><code class="xref py py-func docutils literal"><span class="pre">Molecule</span></code></a> object</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="multimer.Multimer.query">
+<code class="descname">query</code><span class="sig-paren">(</span><em>query_text</em>, <em>get_index=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/multimer.html#Multimer.query"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#multimer.Multimer.query" title="Permalink to this definition">¶</a></dt>
+<dd><p>## select specific atoms in a multimer un the basis of a text query.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>query_text</strong> &#8211; string selecting atoms of interest. Uses the pandas query syntax, can access all columns in the dataframe self.data.</li>
+<li><strong>get_index</strong> &#8211; if set to True, returns the indices of selected atoms in self.points array (and self.data)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">coordinates of the selected points (in a unique array) and, if get_index is set to true, a list of their indices in subunits&#8217; self.points array.</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -753,8 +686,8 @@ User-friendly names for these unites are stored in the self.unit_labels list. If
   <p class="topless"><a href="structure.html"
                         title="previous chapter">Single Structures</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="pairwise.html"
-                        title="next chapter">Pairwise interactions</a></p>
+  <p class="topless"><a href="measures.html"
+                        title="next chapter">Measures</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -786,7 +719,7 @@ User-friendly names for these unites are stored in the self.unit_labels list. If
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="pairwise.html" title="Pairwise interactions"
+          <a href="measures.html" title="Measures"
              >next</a> |</li>
         <li class="right" >
           <a href="structure.html" title="Single Structures"

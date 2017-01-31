@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Pairwise interactions" href="pairwise.html" /> 
+    <link rel="prev" title="Measures" href="measures.html" /> 
   </head>
   <body role="document">
     <div class="related" role="navigation" aria-label="related navigation">
@@ -39,7 +39,7 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="pairwise.html" title="Pairwise interactions"
+          <a href="measures.html" title="Measures"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">biobox 1.0 documentation</a> &#187;</li> 
       </ul>
@@ -55,15 +55,19 @@
 <div class="section" id="selecting-atoms-from-a-multi-pdb">
 <h2>Selecting atoms from a (multi)PDB<a class="headerlink" href="#selecting-atoms-from-a-multi-pdb" title="Permalink to this headline">¶</a></h2>
 <p>Let&#8217;s load a molecule, and identify only the backbone atoms of chain A.</p>
-<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">biobox</span> <span class="k">import</span> <span class="n">Molecule</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">Molecule</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">biobox</span><span class="o">.</span><span class="n">Molecule</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">import_pdb</span><span class="p">(</span><span class="s">&quot;protein.pdb&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">pos</span><span class="p">,</span> <span class="n">idx</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">atomselect</span><span class="p">(</span><span class="s">&quot;A&quot;</span><span class="p">,</span> <span class="s">&quot;*&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s">&quot;CA&quot;</span><span class="p">,</span><span class="s">&quot;C&quot;</span><span class="p">,</span><span class="s">&quot;N&quot;</span><span class="p">,</span><span class="s">&quot;O&quot;</span><span class="p">],</span> <span class="n">get_index</span><span class="o">=</span><span class="k">True</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><a class="reference internal" href="structure.html#molecule.Molecule.atomselect" title="molecule.Molecule.atomselect"><code class="xref py py-func docutils literal"><span class="pre">atomselect</span></code></a> accepts as parameters single strings, lists or &#8220;*&#8221; as wildcard.
 After this call, pos contains the coordinates of all selected atoms, and idx their indices.
-The latter can be used to save a subset of the initial pdb in a new one, or to create a new <a class="reference internal" href="structure.html#molecule.Molecule" title="molecule.Molecule"><code class="xref py py-func docutils literal"><span class="pre">Molecule</span></code></a> object containing only them.</p>
+Another way to select atoms, is to use the <a class="reference internal" href="structure.html#molecule.Molecule.query" title="molecule.Molecule.query"><code class="xref py py-func docutils literal"><span class="pre">atomselect</span></code></a> method. The following call will yield the same result as the atomselect above.</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pos</span><span class="p">,</span> <span class="n">idx</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s">&#39;chain == &quot;A&quot; and name == [&quot;CA&quot;,&quot;C&quot;,&quot;N&quot;,&quot;O&quot;]&#39;</span><span class="p">,</span> <span class="n">get_index</span><span class="o">=</span><span class="k">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The query methods follows the pandas query syntax, and allows to be more expressive. Any column stored in M.data (call M.data.columns) can be addressed.
+Now that we have identified indices of interest, we can save a subset of the initial pdb in a new one, or to create a new <a class="reference internal" href="structure.html#molecule.Molecule" title="molecule.Molecule"><code class="xref py py-func docutils literal"><span class="pre">Molecule</span></code></a> object containing only them.</p>
 <div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">write_pdb</span><span class="p">(</span><span class="s">&quot;chainA.pdb&quot;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">idx</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">M2</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">get_subset</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
 </pre></div>
@@ -86,10 +90,9 @@ Unless otherwise specified, <a class="reference internal" href="structure.html#m
 <h2>protein conformations clustering<a class="headerlink" href="#protein-conformations-clustering" title="Permalink to this headline">¶</a></h2>
 <p>Suppose you have several PDB files of the same protein (same number of atoms), and you want to cluster them according to a hierarchical clustering.
 We can for example add the coordinates of all pdb files to the same <a class="reference internal" href="structure.html#molecule.Molecule" title="molecule.Molecule"><code class="xref py py-func docutils literal"><span class="pre">Molecule</span></code></a> instance (supposing that they all have the same amount of atoms):</p>
-<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">biobox</span> <span class="k">import</span> <span class="n">Molecule</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">glob</span>
+<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s">&quot;*pdb&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">Molecule</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">biobox</span><span class="o">.</span><span class="n">Molecule</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">import_pdb</span><span class="p">(</span><span class="n">files</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">files</span><span class="p">)):</span>
 <span class="gp">&gt;&gt;&gt; </span>    <span class="n">M2</span> <span class="o">=</span> <span class="n">Molecule</span><span class="p">()</span>
@@ -112,15 +115,14 @@ In this example, we will aggregate all structures having and RMSD smaller than 2
 <h2>protein polyhedral assemblies<a class="headerlink" href="#protein-polyhedral-assemblies" title="Permalink to this headline">¶</a></h2>
 <p>We want to produce several protein tetrahedral assemblies, and compare them to each other.
 First, let&#8217;s load our protein building block:</p>
-<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">biobox</span> <span class="k">import</span> <span class="n">Molecule</span><span class="p">,</span> <span class="n">Multimer</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">Molecule</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">biobox</span><span class="o">.</span><span class="n">Molecule</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">import_pdb</span><span class="p">(</span><span class="s">&quot;protein.pdb&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Now, let&#8217;s create a <a class="reference internal" href="assembly.html#multimer.Multimer" title="multimer.Multimer"><code class="xref py py-func docutils literal"><span class="pre">Multimer</span></code></a> arranged according to a tetrahedral symmetry.
 To do so, we have to load information about the tetrahedral scaffold BiobOx will exploit to align six monomers.
 By default this information is stored in the file classes/polyhedron_database.dat, though the user can import his own database.</p>
-<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">P</span> <span class="o">=</span> <span class="n">Multimer</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">P</span> <span class="o">=</span> <span class="n">biobox</span><span class="o">.</span><span class="n">Multimer</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">P</span><span class="o">.</span><span class="n">setup_polyhedron</span><span class="p">(</span><span class="s">&#39;Tetrahedron&#39;</span><span class="p">,</span> <span class="n">M</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">P</span><span class="o">.</span><span class="n">generate_polyhedron</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">180</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
@@ -143,6 +145,14 @@ With add_conformation=False (default) the previous subunits arrangements gets ov
 <p>Now, we want to calculate the RMSD between the created multimers&#8217; alpha carbons. With these lines, dist_mat will contain the RMSD distance matrix between the multimers:</p>
 <div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">idxs</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">atomselect</span><span class="p">(</span><span class="s">&quot;*&quot;</span><span class="p">,</span> <span class="s">&quot;*&quot;</span> <span class="p">,</span><span class="s">&quot;*&quot;</span><span class="p">,</span> <span class="s">&quot;CA&quot;</span><span class="p">,</span> <span class="n">get_index</span><span class="o">=</span><span class="k">True</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">dist_mat</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">rmsd_distance_matrix</span><span class="p">(</span><span class="n">points_indices</span><span class="o">=</span><span class="n">idxs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that, as for the case of <a class="reference internal" href="structure.html#molecule.Molecule" title="molecule.Molecule"><code class="xref py py-func docutils literal"><span class="pre">atomselect</span></code></a> objects, a <code class="xref py py-func docutils literal"><span class="pre">query</span></code> method is also available. The same selection as the command above can be obtained with:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">idx</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s">&#39;name == &quot;CA&quot;&#39;</span><span class="p">,</span> <span class="n">get_index</span><span class="o">=</span><span class="k">True</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>To select atoms from some specific units, the following command can be issued:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">idx</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s">&#39;unit == [&quot;0&quot;, &quot;3&quot;, &quot;5&quot;] and name == &quot;CA&quot;&#39;</span><span class="p">,</span> <span class="n">get_index</span><span class="o">=</span><span class="k">True</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>Subunits can also be grouped, and different groups can be rotated differently.
@@ -180,15 +190,14 @@ To do so, we have first to create a single collection of points arranged like a 
 Unless otherwise specified (using the optional keyword radius), every point composing the cylinder (and any other convex point cloud) will have a radius of 1.4 Angstrom.
 To simulate a smooth surface, one can either increase the points radius, or their density.
 Here, we will use default values, and the resulting cylinder will then be rotated by 45 degrees along the x axis.</p>
-<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">biobox</span> <span class="k">import</span> <span class="n">Cylinder</span><span class="p">,</span> <span class="n">Assembly</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">cylinder_length</span> <span class="o">=</span> <span class="mi">20</span>
+<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">cylinder_length</span> <span class="o">=</span> <span class="mi">20</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cylinder_radius</span> <span class="o">=</span> <span class="mi">10</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span> <span class="o">=</span> <span class="n">Cylinder</span><span class="p">(</span><span class="n">cylinder_length</span><span class="p">,</span> <span class="n">cylinder_radius</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span> <span class="o">=</span> <span class="n">biobox</span><span class="o">.</span><span class="n">Cylinder</span><span class="p">(</span><span class="n">cylinder_length</span><span class="p">,</span> <span class="n">cylinder_radius</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">C</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="mi">45</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>We will now create an assembly loading ten copies of our template cylinder, arrange them in a 30 Angstrom-wide circle, and save the resulting structure into a PDB file.</p>
-<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">A</span> <span class="o">=</span> <span class="n">Assembly</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">A</span> <span class="o">=</span> <span class="n">biobox</span><span class="o">.</span><span class="n">Assembly</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">A</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">A</span><span class="o">.</span><span class="n">make_circular_symmetry</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">A</span><span class="o">.</span><span class="n">write_pdb</span><span class="p">(</span><span class="s">&quot;assembly.pdb&quot;</span><span class="p">)</span>
@@ -209,13 +218,12 @@ Here we collapse the Assembly&#8217;s units coordinates in a single <a class="re
 </div>
 <p>In case not all the subunits of the assembly are the same, a list of subunits can be loaded.
 In this case, we will load a <a class="reference internal" href="structure.html#convex.Sphere" title="convex.Sphere"><code class="xref py py-func docutils literal"><span class="pre">Sphere</span></code></a> (and call it &#8220;S&#8221;) as well as two identical cylinders (called &#8220;C1&#8221; and &#8220;C2&#8221;).</p>
-<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">biobox</span> <span class="k">import</span> <span class="n">Sphere</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">sphere_radius</span> <span class="o">=</span> <span class="mi">20</span>
+<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sphere_radius</span> <span class="o">=</span> <span class="mi">20</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cylinder_radius</span> <span class="o">=</span> <span class="mi">5</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cylinder_length</span> <span class="o">=</span> <span class="mi">50</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">S</span> <span class="o">=</span> <span class="n">Sphere</span><span class="p">(</span><span class="n">sphere_radius</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span> <span class="o">=</span> <span class="n">Cylinder</span><span class="p">(</span><span class="n">cylinder_radius</span><span class="p">,</span> <span class="n">cylinder_length</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">A2</span> <span class="o">=</span> <span class="n">Assembly</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">S</span> <span class="o">=</span> <span class="n">biobox</span><span class="o">.</span><span class="n">Sphere</span><span class="p">(</span><span class="n">sphere_radius</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">C</span> <span class="o">=</span> <span class="n">biobox</span><span class="o">.</span><span class="n">Cylinder</span><span class="p">(</span><span class="n">cylinder_radius</span><span class="p">,</span> <span class="n">cylinder_length</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">A2</span> <span class="o">=</span> <span class="n">biobox</span><span class="o">.</span><span class="n">Assembly</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">A2</span><span class="o">.</span><span class="n">load_list</span><span class="p">([</span><span class="n">S</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">C</span><span class="p">],</span> <span class="p">[</span><span class="s">&quot;S&quot;</span><span class="p">,</span> <span class="s">&quot;C1&quot;</span><span class="p">,</span> <span class="s">&quot;C2&quot;</span><span class="p">])</span>
 </pre></div>
 </div>
@@ -240,8 +248,7 @@ In this case, we kept the sphere fixed, and only translated the cylinders, and t
 <p>Ion Mobility (IM) experiments report on a molecule&#8217;s collision cross section (CCS).
 Here we show how to relate IM data with a electron density 3D reconstruction obtained by Electron Microscopy (EM).</p>
 <p>We first import a GroEL density map EMD-1457.mrc.</p>
-<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">biobox</span> <span class="k">import</span> <span class="n">Density</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">D</span> <span class="o">=</span> <span class="n">Density</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">D</span> <span class="o">=</span> <span class="n">biobox</span><span class="o">.</span><span class="n">Density</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">D</span><span class="o">.</span><span class="n">import_map</span><span class="p">(</span><span class="s">&quot;EMD-1457.mrc&quot;</span><span class="p">,</span> <span class="s">&quot;mrc&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -278,9 +285,8 @@ We can use fitted_mass_thresh to create a bead model, that can then be saved int
 where do lipids spend most of their time?</p>
 <p>Given an MD simulation, in a preprocessing step, align all frames around the protein, and save the resulting trajectory in a multi-PDB file.
 First, we identify the position of every phosphorus atom (P):</p>
-<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">biobox</span> <span class="k">import</span> <span class="n">Molecule</span><span class="p">,</span> <span class="n">Structure</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">Molecule</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">biobox</span><span class="o">.</span><span class="n">Molecule</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">import_pdb</span><span class="p">(</span><span class="s">&quot;trajectory.pdb&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">idx</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">atomselect</span><span class="p">(</span><span class="s">&quot;*&quot;</span><span class="p">,</span> <span class="s">&quot;*&quot;</span><span class="p">,</span> <span class="s">&quot;P&quot;</span><span class="p">,</span> <span class="n">get_index</span><span class="o">=</span><span class="k">True</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
 </pre></div>
@@ -291,7 +297,7 @@ First, we identify the position of every phosphorus atom (P):</p>
 </pre></div>
 </div>
 <p>We finally generate a density map of the resulting collection of points, and save it in a DX file.</p>
-<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">S</span> <span class="o">=</span> <span class="n">Structure</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">S</span> <span class="o">=</span> <span class="n">biobox</span><span class="o">.</span><span class="n">Structure</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">D</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">get_density</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">D</span><span class="o">.</span><span class="n">write_dx</span><span class="p">(</span><span class="s">&quot;density.dx&quot;</span><span class="p">)</span>
 </pre></div>
@@ -306,8 +312,7 @@ First, we identify the position of every phosphorus atom (P):</p>
 <p>Cross-linking experiments report on the distance between the side chain of specific amino-acids.
 This distance, measured by a cross-linker molecule, is however not a straight line, but a &#8220;shortest solvent accessible path&#8221;.</p>
 <p>To identify in a structure which lysines may be cross-linked, we start loading it and identifying the location of all lysines&#8217; NZ atoms:</p>
-<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">biobox</span> <span class="k">import</span> <span class="n">Molecule</span><span class="p">,</span> <span class="n">Xlink</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">Molecule</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">biobox</span><span class="o">.</span><span class="n">Molecule</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">import_pdb</span><span class="p">(</span><span class="s">&quot;protein.pdb&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">idx</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">atomselect</span><span class="p">(</span><span class="s">&quot;*&quot;</span><span class="p">,</span> <span class="s">&quot;LYS&quot;</span><span class="p">,</span> <span class="s">&quot;NZ&quot;</span><span class="p">,</span> <span class="n">use_resname</span><span class="o">=</span><span class="k">True</span><span class="p">,</span> <span class="n">get_index</span><span class="o">=</span><span class="k">True</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
 </pre></div>
@@ -315,7 +320,7 @@ This distance, measured by a cross-linker molecule, is however not a straight li
 <p>To calculate the path distance between all these atoms, we must first define which protein atoms should be used for clash detection.
 Here, we select all backbone atoms as well as beta carbon ones. Furthermore, atoms buried in the protein core are also added (with densify=True).
 This makes the protein core more &#8220;dense&#8221;, reducing the likelihood that a path will find its way through the protein, instead of around it.</p>
-<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">XL</span> <span class="o">=</span> <span class="n">Xlink</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">XL</span> <span class="o">=</span> <span class="n">biobox</span><span class="o">.</span><span class="n">Xlink</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">XL</span><span class="o">.</span><span class="n">set_clashing_atoms</span><span class="p">(</span><span class="n">atoms</span><span class="o">=</span><span class="p">[</span><span class="s">&quot;CA&quot;</span><span class="p">,</span> <span class="s">&quot;C&quot;</span><span class="p">,</span> <span class="s">&quot;N&quot;</span><span class="p">,</span> <span class="s">&quot;O&quot;</span><span class="p">,</span> <span class="s">&quot;CB&quot;</span><span class="p">],</span> <span class="n">densify</span><span class="o">=</span><span class="k">True</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -357,8 +362,8 @@ It will contain -1 for lysine&#8217;s linking atoms too far to be encompassed by
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="pairwise.html"
-                        title="previous chapter">Pairwise interactions</a></p>
+  <p class="topless"><a href="measures.html"
+                        title="previous chapter">Measures</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -390,7 +395,7 @@ It will contain -1 for lysine&#8217;s linking atoms too far to be encompassed by
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="pairwise.html" title="Pairwise interactions"
+          <a href="measures.html" title="Measures"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">biobox 1.0 documentation</a> &#187;</li> 
       </ul>

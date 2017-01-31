@@ -63,6 +63,7 @@
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
  | <a href="#P"><strong>P</strong></a>
+ | <a href="#Q"><strong>Q</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
@@ -73,13 +74,11 @@
 <h2 id="A">A</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="pairwise.html#path.Path.a_star">a_star() (Path method)</a>
+      <li><a href="measures.html#biobox.measures.path.Path.a_star">a_star() (Path method)</a>
 </li>
       <li><a href="assembly.html#assembly.Assembly.add_conformation">add_conformation() (Assembly method)</a>
 </li>
       <li><a href="assembly.html#polyhedron.Polyhedron.add_deformation">add_deformation() (Polyhedron method)</a>
-</li>
-      <li><a href="structure.html#structure.Structure.add_property">add_property() (Structure method)</a>
 </li>
       <li><a href="structure.html#structure.Structure.add_xyz">add_xyz() (Structure method)</a>
 </li>
@@ -119,9 +118,13 @@
 </li>
       <li><a href="structure.html#molecule.Molecule.beta_factor_from_rmsf">beta_factor_from_rmsf() (Molecule method)</a>
 </li>
+      <li><a href="measures.html#module-biobox.measures.calculators">biobox.measures.calculators (module)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="pairwise.html#module-biobox.lib.interaction">biobox.lib.interaction (module)</a>
+      <li><a href="measures.html#module-biobox.measures.interaction">biobox.measures.interaction (module)</a>
+</li>
+      <li><a href="measures.html#module-biobox.measures.path">biobox.measures.path (module)</a>
 </li>
       <li><a href="structure.html#density.Density.blur">blur() (Density method)</a>
 </li>
@@ -131,32 +134,24 @@
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="assembly.html#assembly.Assembly.ccs">ccs() (Assembly method)</a>
+      <li><a href="structure.html#convex.Cone.ccs">ccs() (Cone method)</a>
 
       <ul>
-        <li><a href="structure.html#convex.Cone.ccs">(Cone method)</a>
-</li>
         <li><a href="structure.html#convex.Cylinder.ccs">(Cylinder method)</a>
 </li>
         <li><a href="structure.html#convex.Ellipsoid.ccs">(Ellipsoid method)</a>
-</li>
-        <li><a href="structure.html#molecule.Molecule.ccs">(Molecule method)</a>
-</li>
-        <li><a href="assembly.html#multimer.Multimer.ccs">(Multimer method)</a>
 </li>
         <li><a href="structure.html#convex.Prism.ccs">(Prism method)</a>
 </li>
         <li><a href="structure.html#convex.Sphere.ccs">(Sphere method)</a>
 </li>
-        <li><a href="structure.html#structure.Structure.ccs">(Structure method)</a>
+        <li><a href="measures.html#biobox.measures.calculators.ccs">(in module biobox.measures.calculators)</a>
 </li>
       </ul></li>
       <li><a href="assembly.html#assembly.Assembly.center_assembly">center_assembly() (Assembly method)</a>
 </li>
       <li><a href="assembly.html#assembly.Assembly.center_subunit">center_subunit() (Assembly method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="structure.html#structure.Structure.center_to_origin">center_to_origin() (Structure method)</a>
 </li>
       <li><a href="structure.html#convex.Ellipsoid.check_inclusion">check_inclusion() (Ellipsoid method)</a>
@@ -165,6 +160,8 @@
         <li><a href="structure.html#convex.Sphere.check_inclusion">(Sphere method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="assembly.html#assembly.Assembly.clear">clear() (Assembly method)</a>
 
       <ul>
@@ -191,24 +188,24 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="structure.html#structure.Structure.data">data (Structure attribute)</a>
+</li>
       <li><a href="assembly.html#polyhedron.Polyhedron.delete_xyz">delete_xyz() (Polyhedron method)</a>
 
       <ul>
         <li><a href="structure.html#structure.Structure.delete_xyz">(Structure method)</a>
 </li>
       </ul></li>
-      <li><a href="structure.html#density.Density">Density (class in density)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="structure.html#density.Density">Density (class in density)</a>
+</li>
       <li><a href="structure.html#module-density">density (module)</a>
 </li>
-      <li><a href="assembly.html#assembly.Assembly.distance">distance() (Assembly method)</a>
-</li>
-      <li><a href="pairwise.html#biobox.lib.interaction.distance_matrix">distance_matrix() (in module biobox.lib.interaction)</a>
+      <li><a href="measures.html#biobox.measures.interaction.distance_matrix">distance_matrix() (in module biobox.measures.interaction)</a>
 
       <ul>
-        <li><a href="pairwise.html#path.Xlink.distance_matrix">(Xlink method)</a>
+        <li><a href="measures.html#biobox.measures.path.Xlink.distance_matrix">(Xlink method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -221,8 +218,6 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="pairwise.html#path.PriorityQueue.empty">empty() (PriorityQueue method)</a>
-</li>
       <li><a href="structure.html#density.Density.export_as_pdb">export_as_pdb() (Density method)</a>
 </li>
   </ul></td>
@@ -247,12 +242,6 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="assembly.html#polyhedron.Polyhedron.generate_polyhedron">generate_polyhedron() (Polyhedron method)</a>
 </li>
-      <li><a href="pairwise.html#path.PriorityQueue.get">get() (PriorityQueue method)</a>
-
-      <ul>
-        <li><a href="structure.html#structure.Structure.get">(Structure method)</a>
-</li>
-      </ul></li>
       <li><a href="assembly.html#assembly.Assembly.get_all_xyz">get_all_xyz() (Assembly method)</a>
 </li>
       <li><a href="structure.html#molecule.Molecule.get_atoms_ccs">get_atoms_ccs() (Molecule method)</a>
@@ -271,7 +260,7 @@
 </li>
       <li><a href="structure.html#molecule.Molecule.get_mass_by_residue">get_mass_by_residue() (Molecule method)</a>
 </li>
-      <li><a href="pairwise.html#biobox.lib.interaction.get_neighbors">get_neighbors() (in module biobox.lib.interaction)</a>
+      <li><a href="measures.html#biobox.measures.interaction.get_neighbors">get_neighbors() (in module biobox.measures.interaction)</a>
 
       <ul>
         <li><a href="assembly.html#polyhedron.Polyhedron.get_neighbors">(Polyhedron method)</a>
@@ -303,11 +292,9 @@
       </ul></li>
       <li><a href="structure.html#molecule.Molecule.get_subset">get_subset() (Molecule method)</a>
 </li>
-      <li><a href="assembly.html#assembly.Assembly.get_surface">get_surface() (Assembly method)</a>
+      <li><a href="structure.html#convex.Cone.get_surface">get_surface() (Cone method)</a>
 
       <ul>
-        <li><a href="structure.html#convex.Cone.get_surface">(Cone method)</a>
-</li>
         <li><a href="structure.html#convex.Cylinder.get_surface">(Cylinder method)</a>
 </li>
         <li><a href="structure.html#convex.Ellipsoid.get_surface">(Ellipsoid method)</a>
@@ -316,11 +303,7 @@
 </li>
         <li><a href="structure.html#convex.Sphere.get_surface">(Sphere method)</a>
 </li>
-        <li><a href="structure.html#structure.Structure.get_surface">(Structure method)</a>
-</li>
       </ul></li>
-      <li><a href="structure.html#structure.Structure.get_surface_c">get_surface_c() (Structure method)</a>
-</li>
       <li><a href="structure.html#density.Density.get_thresh_from_sigma">get_thresh_from_sigma() (Density method)</a>
 </li>
       <li><a href="assembly.html#assembly.Assembly.get_uxyz">get_uxyz() (Assembly method)</a>
@@ -377,9 +360,9 @@
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="pairwise.html#path.Path.lazy_theta_star">lazy_theta_star() (Path method)</a>
+      <li><a href="measures.html#biobox.measures.path.Path.lazy_theta_star">lazy_theta_star() (Path method)</a>
 </li>
-      <li><a href="pairwise.html#biobox.lib.interaction.lennard_jones">lennard_jones() (in module biobox.lib.interaction)</a>
+      <li><a href="measures.html#biobox.measures.interaction.lennard_jones">lennard_jones() (in module biobox.measures.interaction)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -423,9 +406,7 @@
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="pairwise.html#path.Path">Path (class in path)</a>
-</li>
-      <li><a href="pairwise.html#module-path">path (module)</a>
+      <li><a href="measures.html#biobox.measures.path.Path">Path (class in biobox.measures.path)</a>
 </li>
       <li><a href="structure.html#structure.Structure.pca">pca() (Structure method)</a>
 </li>
@@ -439,25 +420,31 @@
 </li>
       <li><a href="assembly.html#module-polyhedron">polyhedron (module)</a>
 </li>
-      <li><a href="pairwise.html#path.PriorityQueue">PriorityQueue (class in path)</a>
-</li>
       <li><a href="structure.html#convex.Prism">Prism (class in convex)</a>
 </li>
       <li><a href="structure.html#structure.Structure.properties">properties (Structure attribute)</a>
 </li>
-      <li><a href="pairwise.html#path.PriorityQueue.put">put() (PriorityQueue method)</a>
+  </ul></td>
+</tr></table>
+
+<h2 id="Q">Q</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="structure.html#molecule.Molecule.query">query() (Molecule method)</a>
+
+      <ul>
+        <li><a href="assembly.html#multimer.Multimer.query">(Multimer method)</a>
 </li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="structure.html#structure.random_string">random_string() (in module structure)</a>
-</li>
       <li><a href="structure.html#density.Density.return_density_map">return_density_map() (Density method)</a>
 </li>
-      <li><a href="structure.html#structure.Structure.rgyr">rgyr() (Structure method)</a>
+      <li><a href="measures.html#biobox.measures.calculators.rgyr">rgyr() (in module biobox.measures.calculators)</a>
 </li>
       <li><a href="structure.html#structure.Structure.rmsd">rmsd() (Structure method)</a>
 </li>
@@ -495,17 +482,15 @@
 </li>
       <li><a href="structure.html#molecule.Molecule.same_residue_unique">same_residue_unique() (Molecule method)</a>
 </li>
-      <li><a href="assembly.html#assembly.Assembly.saxs">saxs() (Assembly method)</a>
-
-      <ul>
-        <li><a href="structure.html#structure.Structure.saxs">(Structure method)</a>
+      <li><a href="measures.html#biobox.measures.calculators.sasa">sasa() (in module biobox.measures.calculators)</a>
 </li>
-      </ul></li>
+      <li><a href="measures.html#biobox.measures.calculators.saxs">saxs() (in module biobox.measures.calculators)</a>
+</li>
       <li><a href="structure.html#density.Density.scan_threshold">scan_threshold() (Density method)</a>
 </li>
-      <li><a href="pairwise.html#path.Path.search_path">search_path() (Path method)</a>
+      <li><a href="measures.html#biobox.measures.path.Path.search_path">search_path() (Path method)</a>
 </li>
-      <li><a href="pairwise.html#path.Xlink.set_clashing_atoms">set_clashing_atoms() (Xlink method)</a>
+      <li><a href="measures.html#biobox.measures.path.Xlink.set_clashing_atoms">set_clashing_atoms() (Xlink method)</a>
 </li>
       <li><a href="assembly.html#polyhedron.Polyhedron.set_current">set_current() (Polyhedron method)</a>
 
@@ -517,21 +502,21 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="structure.html#structure.Structure.set_xyz">set_xyz() (Structure method)</a>
 </li>
-      <li><a href="pairwise.html#path.Path.setup_global_search">setup_global_search() (Path method)</a>
+      <li><a href="measures.html#biobox.measures.path.Path.setup_global_search">setup_global_search() (Path method)</a>
 
       <ul>
-        <li><a href="pairwise.html#path.Xlink.setup_global_search">(Xlink method)</a>
+        <li><a href="measures.html#biobox.measures.path.Xlink.setup_global_search">(Xlink method)</a>
 </li>
       </ul></li>
-      <li><a href="pairwise.html#path.Path.setup_local_search">setup_local_search() (Path method)</a>
+      <li><a href="measures.html#biobox.measures.path.Path.setup_local_search">setup_local_search() (Path method)</a>
 
       <ul>
-        <li><a href="pairwise.html#path.Xlink.setup_local_search">(Xlink method)</a>
+        <li><a href="measures.html#biobox.measures.path.Xlink.setup_local_search">(Xlink method)</a>
 </li>
       </ul></li>
       <li><a href="assembly.html#polyhedron.Polyhedron.setup_polyhedron">setup_polyhedron() (Polyhedron method)</a>
 </li>
-      <li><a href="pairwise.html#path.Path.smooth">smooth() (Path method)</a>
+      <li><a href="measures.html#biobox.measures.path.Path.smooth">smooth() (Path method)</a>
 </li>
       <li><a href="structure.html#convex.Sphere">Sphere (class in convex)</a>
 </li>
@@ -547,7 +532,7 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="pairwise.html#path.Path.theta_star">theta_star() (Path method)</a>
+      <li><a href="measures.html#biobox.measures.path.Path.theta_star">theta_star() (Path method)</a>
 </li>
       <li><a href="structure.html#density.Density.threshold_vol_ccs">threshold_vol_ccs() (Density method)</a>
 </li>
@@ -567,7 +552,7 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="structure.html#density.Density.write_dx">write_dx() (Density method)</a>
 </li>
-      <li><a href="pairwise.html#path.Path.write_grid">write_grid() (Path method)</a>
+      <li><a href="measures.html#biobox.measures.path.Path.write_grid">write_grid() (Path method)</a>
 </li>
       <li><a href="structure.html#molecule.Molecule.write_gro">write_gro() (Molecule method)</a>
 </li>
@@ -585,7 +570,7 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="assembly.html#polyhedron.Polyhedron.write_poly_architecture">write_poly_architecture() (Polyhedron method)</a>
 </li>
-      <li><a href="pairwise.html#path.Xlink.write_protein_points">write_protein_points() (Xlink method)</a>
+      <li><a href="measures.html#biobox.measures.path.Xlink.write_protein_points">write_protein_points() (Xlink method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -593,7 +578,7 @@
 <h2 id="X">X</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="pairwise.html#path.Xlink">Xlink (class in path)</a>
+      <li><a href="measures.html#biobox.measures.path.Xlink">Xlink (class in biobox.measures.path)</a>
 </li>
   </ul></td>
 </tr></table>
