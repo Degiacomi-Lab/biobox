@@ -15,7 +15,9 @@ Allowed operations on structures incude:
 * density map simulation
 
 See full documentation and examples here[https://degiacom.github.io/biobox/].
-author: Matteo T. Degiacomi (matteo.degiacomi[at]gmail.com)
+
+Author: Matteo T. Degiacomi (matteo.degiacomi[at]gmail.com).
+
 License: GPL3
 
 ## INSTALLATION AND REQUIREMENTS

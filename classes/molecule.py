@@ -826,8 +826,8 @@ class Molecule(Structure):
             if chain == '*':
                 chain_query = np.array([True] * len(self.points))
             else:
-                chain_query = self.data["chain"] == chain
-
+                chain_query = self.data["chain"].values == chain
+                
         elif isinstance(chain, list) or type(chain).__module__ == 'numpy':
             chain_query = self.data["chain"].values == chain[0]
             for c in xrange(1, len(chain), 1):
@@ -839,27 +839,27 @@ class Molecule(Structure):
             if res == '*':
                 res_query = np.array([True] * len(self.points))
             elif use_resname:
-                res_query = self.data["resname"] == res
+                res_query = self.data["resname"].values == res
             else:
-                res_query = self.data["resid"] == res
+                res_query = self.data["resid"].values == res
 
         elif isinstance(res, int):
             if use_resname:
-                res_query = self.data["resname"] == str(res)
+                res_query = self.data["resname"].values == str(res)
             else:
-                res_query = self.data["resid"] == res
+                res_query = self.data["resid"].values == res
 
         elif isinstance(res, list) or type(res).__module__ == 'numpy':
             if use_resname:
-                res_query = self.data["resname"] == str(res[0])
+                res_query = self.data["resname"].values == str(res[0])
             else:
-                res_query = self.data["resid"] == res[0]
+                res_query = self.data["resid"].values == res[0]
 
             for r in xrange(1, len(res), 1):
                 if use_resname:
-                    res_query = np.logical_or(res_query, self.data["resname"] == str(res[r]))
+                    res_query = np.logical_or(res_query, self.data["resname"].values == str(res[r]))
                 else:
-                    res_query = np.logical_or(res_query, self.data["resid"] == res[r])
+                    res_query = np.logical_or(res_query, self.data["resid"].values == res[r])
 
         else:
             raise Exception("ERROR: wrong type for resid selection. Should be int, list, or numpy")
@@ -878,10 +878,7 @@ class Molecule(Structure):
             raise Exception("ERROR: wrong type for atom selection. Should be str, list, or numpy")
 
         # slice data array and return result (colums 5 to 7 contain xyz coords)
-        try:
-            query = np.logical_and(np.logical_and(chain_query, res_query), atom_query).values
-        except:
-            query = np.zeros(len(self.points)).astype(bool)
+        query = np.logical_and(np.logical_and(chain_query, res_query), atom_query)
 
 
         if get_index:
@@ -1316,8 +1313,16 @@ class Molecule(Structure):
         Nidx = self.atomselect("*", "*", atomname1, get_index=True)[1]
         Hidx = self.atomselect("*", "*", atomname2, get_index=True)[1]
 
-        Ndata = self.data[Nidx, ["chain", "resid"]]
-        Hdata = self.data[Hidx, ["chain", "resid"]]
+        if len(Nidx) == 0:
+            raise Exception("ERROR: no atom name %s found!"%atomname1)
+
+        if len(Hidx) == 0:
+            raise Exception("ERROR: no atom name %s found!"%atomname2)
+
+        Ndata = self.data.ix[Nidx, ["chain", "resid"]].values
+        Hdata = self.data.ix[Hidx, ["chain", "resid"]].values
+
+        print Ndata
 
         a1 = []
         a2 = []
