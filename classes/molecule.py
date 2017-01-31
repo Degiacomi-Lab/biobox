@@ -226,7 +226,7 @@ class Molecule(Structure):
                     cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
                     idx = np.arange(len(data))
                     self.data = pd.DataFrame(data, index=idx, columns=cols)
-                    
+
                 except Exception, ex:
                     raise Exception('ERROR: something went wrong when saving data in %s!\nERROR: are all the columns separated?' %pdb)
 
@@ -267,10 +267,10 @@ class Molecule(Structure):
             # test whether there are enough lines to create biomatrix
             # statements
             if np.mod(len(biomt), 3):
-                raise Exception('ERROR: found %s BIOMT entries. A multiple of 3 is expected' % len(biomt))
+                raise Exception('ERROR: found %s BIOMT entries. A multiple of 3 is expected'%len(biomt))
 
             b = np.array(biomt).astype(float).reshape((len(biomt) / 3, 3, 4))
-            self.add_property("biomatrix", b)
+            self.properties["biomatrix"] = b
 
         # if symmetry information is provided, create entry in properties
         if len(symm) > 0:
@@ -278,10 +278,10 @@ class Molecule(Structure):
             # test whether there are enough lines to create biomatrix
             # statements
             if np.mod(len(symm), 3):
-                raise Exception('ERROR: found %s SMTRY entries. A multiple of 3 is exptecte' %len(symm))
+                raise Exception('ERROR: found %s SMTRY entries. A multiple of 3 is expected'%len(symm))
 
             b = np.array(symm).astype(float).reshape((len(symm) / 3, 3, 4))
-            self.add_property("symmetry", b)
+            self.properties["symmetry"] = b
 
         #correctly set types of columns requiring other than string
         self.data["resid"] = self.data["resid"].astype(int)
@@ -308,7 +308,7 @@ class Molecule(Structure):
             raise Exception('ERROR: file %s not found!' % pqr)
 
         # store filename
-        self.add_property("filename", pqr)
+        self.properties["filename"] = pqr
 
         data_in = []
         p = []  # collects coordinates for every model
@@ -330,7 +330,7 @@ class Molecule(Structure):
                         cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
                         idx = np.arange(len(data))
                         self.data = pd.DataFrame(data, index=idx, columns=cols)
-                        
+
                     except Exception, ex:
                         raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' %pqr)
 
@@ -665,12 +665,11 @@ class Molecule(Structure):
             #assign a specific name to the new chain
             newdata = deepcopy(self.data)
             newdata["chain"] = self.chain_names[cnt]
-            
+
             if cnt == 0:
                 data = [newdata]
             else:
                 data.append(newdata)
-
 
             cnt += 1
 
@@ -808,8 +807,8 @@ class Molecule(Structure):
             return [self.points[idx], idx]
         else:
             return self.points[idx]
-    
-    
+
+
     def atomselect(self, chain, res, atom, get_index=False, use_resname=False):
         '''
         Select specific atoms in the protein providing chain, residue ID and atom name.
@@ -836,7 +835,6 @@ class Molecule(Structure):
         else:
             raise Exception("ERROR: wrong type for chain selection. Should be str, list, or numpy")
 
-
         if isinstance(res, str):
             if res == '*':
                 res_query = np.array([True] * len(self.points))
@@ -844,13 +842,13 @@ class Molecule(Structure):
                 res_query = self.data["resname"] == res
             else:
                 res_query = self.data["resid"] == res
-                
+
         elif isinstance(res, int):
             if use_resname:
                 res_query = self.data["resname"] == str(res)
             else:
                 res_query = self.data["resid"] == res
-            
+
         elif isinstance(res, list) or type(res).__module__ == 'numpy':
             if use_resname:
                 res_query = self.data["resname"] == str(res[0])
@@ -862,7 +860,7 @@ class Molecule(Structure):
                     res_query = np.logical_or(res_query, self.data["resname"] == str(res[r]))
                 else:
                     res_query = np.logical_or(res_query, self.data["resid"] == res[r])
-           
+
         else:
             raise Exception("ERROR: wrong type for resid selection. Should be int, list, or numpy")
 
@@ -881,7 +879,7 @@ class Molecule(Structure):
 
         # slice data array and return result (colums 5 to 7 contain xyz coords)
         query = np.logical_and(np.logical_and(chain_query, res_query), atom_query).values
-        
+
         if get_index:
             return [self.points[query], np.where(query == True)[0]]
         else:
@@ -899,21 +897,21 @@ class Molecule(Structure):
         :param use_resname: if set to True, consider information in "res" variable as resnames, and not resids
         :returns: coordinates of the selected points not matching the query, if get_index is set to true, their indices in self.points array.
         '''
-        
+
         #extract indices of atoms matching the query
         idxs = self.atomselect(chain, res, atom, get_index=True, use_resname=use_resname)[1]
-        
+
         #invert the selection
         idxs2 = []
         for i in xrange(len(self.points)):
             if i not in idxs:
                 idxs2.append(i)
-        
+
         if get_index:
             return [self.points[idxs2], np.array(idxs2)]
         else:
             return self.points[idxs2]
-        
+
     def same_residue(self, index, get_index=False):
         '''
         Select atoms having the same residue and chain as a given atom (or list of atoms)
@@ -1069,7 +1067,7 @@ class Molecule(Structure):
                 dist = np.sqrt(np.dot(posC[i] - posN[i+1], posC[i] - posN[i+1]))
                 if dist > distance:
                     intervals.append(idxN[i+1])
-        
+
         intervals.append(len(self.coordinates[0]))
 
         # separate chains
@@ -1196,7 +1194,7 @@ class Molecule(Structure):
                 f_out.write(L)
 
             if "box" in self.properties:
-                b = self.get("box")[f] / 10.0
+                b = self.properties["box"][f] / 10.0
             else:
                 minpos = np.min(self.points, axis=0) / 10.0
                 b = np.max(self.points, axis=0) - minpos / 10.0

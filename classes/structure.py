@@ -49,7 +49,7 @@ class Structure(object):
 
         self.properties['center'] = self.get_center()
        
-        if isinstance(r, list) or type(r).__module__ == 'numpy': 
+        if isinstance(r, list) or type(r).__module__ == 'numpy':
             if len(r) > 0:
                 rad = r*np.ones(len(self.points))
                 idx = np.arange(len(self.points))
@@ -209,7 +209,7 @@ class Structure(object):
 
     def get_center(self):
         '''
-        compute protein center of geometry (also assigns it to self.center variable).
+        compute protein center of geometry (also assigns it to self.properties["center"] key).
         '''
         if len(self.points) > 0:
             self.properties['center'] = np.mean(self.points, axis=0)

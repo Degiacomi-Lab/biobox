@@ -31,7 +31,7 @@ class Polyhedron(Assembly):
         It loads the desired :func:`Structure <structure.Structure>` to be used as building block (it automatically centers and alignes it).
         it also loads and geometric information about the desired polyhedron from database.
         database contains this information: [polymer_name number_of_vertices numbe_of_edges vertices_coordinates vertices_connectivity connectivity_type]
-        
+
         * Vertices_coordinates contains a list of 3D positions, formatted as x1 y1 z1 x2 y2 z2,...
         * Connectivity lists couples of vertices ID being connected, formatted as conn1_1 conn1_2 conn2_1 conn2_2...
         * conn_type allows to group edges, so that rotation angles can be applied to subgroups of those. This is a list of numbers, that should include zero as lowest number.

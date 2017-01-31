@@ -27,11 +27,11 @@ from ctypes import cdll, c_int, c_float, byref
 import biobox.lib.fastmath as FM  # cython routines
 
 
-def sasa_c(M, targets=[], probe=1.4,
-                  n_sphere_point=960, threshold=0.05):
+def sasa_c(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
     '''
     compute the accessible surface area using the Shrake-Rupley algorithm ("rolling ball method")
 
+    :param M: any biobox object
     :param targets: indices to be used for surface estimation. By default, all indices are kept into account.
     :param probe: radius of the "rolling ball"
     :param n_sphere_point: number of mesh points per atom
@@ -64,6 +64,7 @@ def sasa(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
     '''
     compute the accessible surface area using the Shrake-Rupley algorithm ("rolling ball method")
 
+    :param M: any biobox object
     :param targets: indices to be used for surface estimation. By default, all indices are kept into account.
     :param probe: radius of the "rolling ball"
     :param n_sphere_point: number of mesh points per atom
@@ -137,11 +138,22 @@ def sasa(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
 
     return asa, np.array(mesh_pts), np.array(surface_atoms)
 
-
 def rgyr(M):
     '''
     compute radius of gyration.
+    
+    :param M: any biobox object
+    :returns: radius of gyration
     '''
+
+    #make sure that everything is collected as a Structure object, and radii are available
+    this_inst = type(M).__name__
+    if this_inst == "Multimer":
+        M = M.make_molecule()
+
+    elif this_inst in ["Assembly", "Polyhedra"]:
+        M = M.make_structure()
+    
     d_square = np.sum((M.points - M.get_center())**2, axis=1)
     return np.sqrt(np.sum(d_square) / d_square.shape[0])
 
@@ -150,6 +162,7 @@ def saxs(M, crysol_path='', crysol_options="-lm 20 -ns 500", pdbname=""):
     '''
     compute SAXS curve using crysol (from ATSAS suite)
 
+    :param M: any biobox object
     :param crysol_path: path to crysol executable. By default, the environment variable ATSASPATH is sought. This allows redirecting to a specific impact root folder.
     :param crysol_options: flags to be passes to impact executable
     :param pdbname: if a file has been already written, crysol can be asked to analyze it
@@ -179,7 +192,7 @@ def saxs(M, crysol_path='', crysol_options="-lm 20 -ns 500", pdbname=""):
     # get basename for output
     outfile = os.path.basename(pdbname).split('.')[0]
 
-    call_line = os.path.join(crysol_path,"crysol")
+    call_line = os.path.join(crysol_path, "crysol")
     try:
         subprocess.check_call('%s %s %s >& /dev/null' %(call_line, crysol_options, pdbname), shell=True)
     except Exception as e:
@@ -201,6 +214,7 @@ def ccs(M, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMod
     '''
     compute CCS calling either impact.
 
+    :param M: any biobox object
     :param use_lib: if true, impact library will be used, if false a system call to impact executable will be performed instead
     :param impact_path: by default, the environment variable IMPACTPATH is sought. This allows redirecting to a specific impact root folder. 
     :param impact_options: flags to be passes to impact executable
@@ -224,7 +238,7 @@ def ccs(M, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMod
     elif this_inst == "Molecule" and "atoms_ccs" not in M.data.columns:
         M.assign_atomtype()
         M.get_atoms_ccs()
-        
+
     if use_lib and pdbname == "":
 
         #if True:
@@ -398,37 +412,3 @@ def random_string(length=32):
     '''
     return ''.join([random.choice(string.ascii_letters)
                     for n in xrange(length)])
-
-
-if __name__ == "__main__":
-
-    import sys
-    from biobox import Molecule, Multimer  # , Density
-
-    filename = sys.argv[1]
-
-    # load molecule
-    M = Molecule()
-    M.import_pdb(filename)
-    M.get_atoms_ccs()
-
-    # EXAMPLE 1: using the library called through BiobOx
-    print "lib through BiobOx: %s A2" % M.ccs()
-
-    # EXAMPLE 2: calling the library directly
-    # extract atomic radii, and add probe to atom radius.
-    # note: in BiobOx, radii are based on atomtype.
-    radii = M.get_atoms_ccs() + 1.0
-    C = CCS()
-    ccs, sem, niter = C.get_ccs(M.points, radii)
-    print "lib called directly: %s A2" % ccs
-
-    # EXAMPLE 3: without library:
-    # temporary PDB is written, and submitted to impact executable.
-    print "exe through BiobOx: %s" % M.ccs(use_lib=False)
-
-    # EXAMPLE 4: CCS of a protein assembly
-    A = Multimer()
-    A.load(M, 3)
-    A.make_circular_symmetry(30)
-    print "assembly CCS: %s" % A.ccs()

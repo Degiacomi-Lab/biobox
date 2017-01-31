@@ -15,7 +15,6 @@ import os
 from copy import deepcopy
 import numpy as np
 from biobox.classes.structure import Structure
-from biobox.measures.calculators import random_string
 import pandas as pd
 
 
@@ -115,8 +114,8 @@ class Assembly(object):
 
 
         #append structure to dataframe
-        structure.data["unit"]=label
-        structure.data["unit_index"]=structure.data.index
+        structure.data["unit"] = label
+        structure.data["unit_index"] = structure.data.index
         self.data = pd.concat([self.data, structure.data])
         self.data.index = np.arange(len(self.data))
 

@@ -35,12 +35,12 @@ class Multimer(Polyhedron):
         idx = self.data.query(query_text).index.values
 
         res = self.data.iloc[idx] #this is a new sliced dataframe
-        targets = np.array(res.ix[:,["unit","unit_index"]].values)
+        targets = np.array(res.ix[:, ["unit", "unit_index"]].values)
 
-        # append the coordinates of every unit within the query 
-        pts = np.empty([0, 3])        
-        for u in np.unique(targets[:,0]):
-            pos = targets[targets[:,0] == u, 1].astype(int)
+        # append the coordinates of every unit within the query
+        pts = np.empty([0, 3])
+        for u in np.unique(targets[:, 0]):
+            pos = targets[targets[:, 0] == u, 1].astype(int)
             this_unit = self.unit_labels[u]
             pts = np.concatenate((pts, self.unit[this_unit].points[pos]))
 
@@ -50,7 +50,7 @@ class Multimer(Polyhedron):
             return pts
 
 
-    def atomselect(self, u, chain, resid, atom, get_index=False, use_resname = True):
+    def atomselect(self, u, chain, resid, atom, get_index=False, use_resname=True):
         '''
         ## select specific atoms in a multimer providing unit, chain, residue ID and atom name.
 
@@ -117,8 +117,8 @@ class Multimer(Polyhedron):
         skipcharge = False
         for i in xrange(0, len(self.unit), 1):
             data_tmp = self.unit[i].data[[
-                        "atom", "index", "name", "resname", "chain",
-                        "resid", "beta", "occupancy", "atomtype"]].values
+                "atom", "index", "name", "resname", "chain",
+                "resid", "beta", "occupancy", "atomtype"]].values
 
             data_tmp[:, 4] = self.chain_names[i]
             data = np.concatenate((data, data_tmp))

@@ -1,9 +1,34 @@
 import unittest
 
 import biobox as bb
-import os
 
-class test_biobox(unittest.TestCase):
+
+class test_density(unittest.TestCase):
+
+    def setUp(self):
+        self.D = bb.Density()
+        self.D.import_map("EMD-1080.mrc", "mrc")
+
+    def test_density_points(self):
+
+        print "\n> density: placing points"
+ 
+        try:       
+            self.D.place_points(5)            
+        except Exception, ex:
+            assert False
+
+    def test_density_CCS(self):
+
+        print "\n> density: CCS calculation"
+ 
+        try:          
+            self.D.threshold_vol_ccs(sampling_points=1, append=False, noise_filter=0)
+        except Exception, ex:
+            assert False
+
+
+class test_structures(unittest.TestCase):
     
     def setUp(self):
         self.M = bb.Molecule()
@@ -29,26 +54,7 @@ class test_biobox(unittest.TestCase):
 
         except Exception, ex:
             assert False
- 
-
-    def test_density(self):
-
-        print "\n> testing EM map handling"
- 
-        try:       
-            D = bb.Density()
-            D.import_map("EMD-1080.mrc", "mrc")
-            D.place_points(5)
-            
-        except Exception, ex:
-            assert False
- 
-        try:          
-            D.threshold_vol_ccs(sampling_points=1, append=False, noise_filter=0)
-        except Exception, ex:
-            assert False
-        
-       
+             
 
     def test_SASA(self):
 
@@ -166,27 +172,27 @@ class test_biobox(unittest.TestCase):
     #create all convex shapes
     def test_shapes(self):
 
-        #print "\n> testing convex shapes
+        print "\n> testing convex shapes"
         try:
             C1 = bb.Prism(10, 20, 5)
-            s1 = C1.get_surface()
-            v1 = C1.get_volume()
+            C1.get_surface()
+            C1.get_volume()
             
             C2 = bb.Cylinder(10, 50)
-            s2 = C1.get_surface()
-            v2 = C1.get_volume()
+            C1.get_surface()
+            C1.get_volume()
     
             C3 = bb.Cone(10, 30)
-            s3 = C1.get_surface()
-            v3 = C1.get_volume()
+            C1.get_surface()
+            C1.get_volume()
     
             C4 = bb.Ellipsoid(10, 20, 30)
-            s4 = C4.get_surface()
-            v4 = C4.get_volume()
+            C4.get_surface()
+            C4.get_volume()
     
             C5 = bb.Sphere(10)
-            s5 = C5.get_surface()
-            v5 = C5.get_volume()
+            C5.get_surface()
+            C5.get_volume()
         
         except Exception, ex:
             assert False

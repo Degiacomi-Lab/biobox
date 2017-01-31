@@ -22,8 +22,6 @@ import os.path
 #import Matrix
 from functools import reduce
 import numpy as np
-from biobox.classes.structure import Structure
-#from numpy import float32
 
 # -----------------------------------------------------------------------------
 # Maintain a cache of data objects using a limited amount of memory.
@@ -467,7 +465,7 @@ class MRC_Data:
         if (v['type'] == 'mrc2000' and
                 (v['zorigin'] != 0 or v['xorigin'] != 0 or v['yorigin'] != 0)):
             #
-            # This is a new MRC 2000 format file.    The xyz origin header parameters
+            # This is a new MRC 2000 format file. The xyz origin header parameters
             # are used instead of using ncstart, nrstart nsstart for new style files,
             # provided the xyz origin specified is not zero.    It turns out the
             # xorigin, yorigin, zorigin values are zero in alot of new files while
@@ -494,6 +492,7 @@ class MRC_Data:
             if lbl.startswith('Chimera rotation: '):
                 ax, ay, az, angle = map(float, lbl.rstrip('\0').split()[2:])
 
+                from biobox.classes.structure import Structure
                 S = Structure()
                 r = S.rotation_matrix([ax, ay, az], angle)
                 #r = Matrix.rotation_from_axis_angle((ax, ay, az), angle)

@@ -261,7 +261,7 @@ class Path(object):
 
             if test[i + 1] == 1:  # if point is visible
 
-                for j in xrange(len(waypoints) - 2, i + 1, -1): 
+                for j in xrange(len(waypoints) - 2, i + 1, -1):
                     # test from end to second neighbor
                     if test[j + 1] == 1:
                         v = waypoints[i].copy()
@@ -322,7 +322,7 @@ class Path(object):
     # return np.dot(b1-a1, b1-a1) #manhattan!
 
     def a_star(self, start, goal):
-        ''' 
+        '''
         A* algorithm, find path connecting two points in the graph.
 
         :param start: starting point (flattened coordinate of a graph grid point).
@@ -739,8 +739,8 @@ class Xlink(Path):
                 if i == j:
                     continue
 
-                # extract atom's residue information, in case verbosity is
-                # requested              
+                # extract atom's residue information, in case
+                # verbosity is requested             
                 if verbose:
                     l1 = self.molecule.data[indices[i], ["resname", "chain", "resid"]].values
                     l2 = self.molecule.data[indices[j], ["resname", "chain", "resid"]].values
