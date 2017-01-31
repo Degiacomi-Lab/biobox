@@ -878,7 +878,11 @@ class Molecule(Structure):
             raise Exception("ERROR: wrong type for atom selection. Should be str, list, or numpy")
 
         # slice data array and return result (colums 5 to 7 contain xyz coords)
-        query = np.logical_and(np.logical_and(chain_query, res_query), atom_query).values
+        try:
+            query = np.logical_and(np.logical_and(chain_query, res_query), atom_query).values
+        except:
+            query = np.zeros(len(self.points)).astype(bool)
+
 
         if get_index:
             return [self.points[query], np.where(query == True)[0]]
