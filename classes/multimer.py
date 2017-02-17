@@ -184,6 +184,17 @@ class Multimer(Polyhedron):
     #    indices = self.atomselect(u, chain, resid, atom, get_index=True)[1]
     #    return super(Multimer, self).rmsd(ref_index, points_indices=indices, align=align)
 
+    def get_data(self, indices, columns):
+        '''
+        Return information about atom of interest (i.e., slice the data DataFrame)
+
+        :param indices: list of indices
+        :param columns: list of columns (e.g. ["resname", "resid", "chain"])
+        :returns: slice of molecule's data DataFrame
+        '''
+
+        return self.data.ix[indices, columns].values
+
     def write_pdb(self, outname):
         '''
         Write a pdb of the multimeric assembly.

@@ -242,8 +242,8 @@ static CYTHON_INLINE float __PYX_NAN() {
   #endif
 #endif
 
-#define __PYX_HAVE__graph
-#define __PYX_HAVE_API__graph
+#define __PYX_HAVE__biobox__lib__graph
+#define __PYX_HAVE_API__biobox__lib__graph
 #include "string.h"
 #include "stdio.h"
 #include "stdlib.h"
@@ -479,7 +479,7 @@ static const char *__pyx_filename;
 
 
 static const char *__pyx_f[] = {
-  "graph.pyx",
+  "biobox\\lib\\graph.pyx",
   "__init__.pxd",
   "type.pxd",
   "bool.pxd",
@@ -731,7 +731,7 @@ typedef npy_longdouble __pyx_t_5numpy_longdouble_t;
 
 
 /*--- Type declarations ---*/
-struct __pyx_obj_5graph_Graph;
+struct __pyx_obj_6biobox_3lib_5graph_Graph;
 
 /* "..\..\..\..\..\Anaconda\lib\site-packages\Cython\Includes\numpy\__init__.pxd":764
  * ctypedef npy_longdouble longdouble_t
@@ -768,19 +768,19 @@ typedef npy_clongdouble __pyx_t_5numpy_clongdouble_t;
  * cdef inline object PyArray_MultiIterNew1(a):
  */
 typedef npy_cdouble __pyx_t_5numpy_complex_t;
-struct __pyx_opt_args_5graph_5Graph_make_grid;
-struct __pyx_opt_args_5graph_5Graph_make_global_grid;
-struct __pyx_opt_args_5graph_5Graph_place_local_grid;
-struct __pyx_opt_args_5graph_5Graph__make_3d_gaussian;
+struct __pyx_opt_args_6biobox_3lib_5graph_5Graph_make_grid;
+struct __pyx_opt_args_6biobox_3lib_5graph_5Graph_make_global_grid;
+struct __pyx_opt_args_6biobox_3lib_5graph_5Graph_place_local_grid;
+struct __pyx_opt_args_6biobox_3lib_5graph_5Graph__make_3d_gaussian;
 
-/* "graph.pyx":49
+/* "biobox\lib\graph.pyx":49
  *         #@param maxdist maximal grid size. If equal to -1, a grid around the whole points ensemble is built
  *         #@param boundaries build a grid within the desired box boundaries (if defined, maxdist parameter is ignored)
  *         cpdef make_grid(self, float step=1.0, float maxdist=-1, np.ndarray boundaries=np.array([]), int degree=5, int sigma=2, np.ndarray params=np.array([])):             # <<<<<<<<<<<<<<
  * 
  *             self.g=self._make_3d_gaussian(degree, sigma)
  */
-struct __pyx_opt_args_5graph_5Graph_make_grid {
+struct __pyx_opt_args_6biobox_3lib_5graph_5Graph_make_grid {
   int __pyx_n;
   float step;
   float maxdist;
@@ -790,14 +790,14 @@ struct __pyx_opt_args_5graph_5Graph_make_grid {
   PyArrayObject *params;
 };
 
-/* "graph.pyx":94
+/* "biobox\lib\graph.pyx":94
  *         #@param boundaries build a grid within the desired box boundaries (if defined, maxdist parameter is ignored)
  *         #@param cloud build a grid using a points cloud as extrema for the construction of the box. If defined, maxdist and boundaries parameters are ignored.
  *         cpdef make_global_grid(self, float step=1.0, bool use_hull=False, np.ndarray boundaries=np.array([]), np.ndarray cloud=np.array([]), params=np.array([])):             # <<<<<<<<<<<<<<
  * 
  *             #if cloud is provided, use that as reference for grid building
  */
-struct __pyx_opt_args_5graph_5Graph_make_global_grid {
+struct __pyx_opt_args_6biobox_3lib_5graph_5Graph_make_global_grid {
   int __pyx_n;
   float step;
   PyBoolObject *use_hull;
@@ -806,41 +806,41 @@ struct __pyx_opt_args_5graph_5Graph_make_global_grid {
   PyObject *params;
 };
 
-/* "graph.pyx":187
+/* "biobox\lib\graph.pyx":187
  *         #@param end coordinates of the second point to link
  *         #@param stds number of standard deviations for electron density boundaries definition
  *         cpdef place_local_grid(self, np.ndarray start, np.ndarray end, float stds=3.0):             # <<<<<<<<<<<<<<
  * 
  *                 cdef np.ndarray grid
  */
-struct __pyx_opt_args_5graph_5Graph_place_local_grid {
+struct __pyx_opt_args_6biobox_3lib_5graph_5Graph_place_local_grid {
   int __pyx_n;
   float stds;
 };
 
-/* "graph.pyx":421
+/* "biobox\lib\graph.pyx":421
  *         # @param gaussian standard deviation
  *         # @retval 3d grid containing a binned gaussian density
  *         cdef _make_3d_gaussian(self, int degree=5, float sigma=0.5):             # <<<<<<<<<<<<<<
  * 
  *                 cdef int window=degree*2+1
  */
-struct __pyx_opt_args_5graph_5Graph__make_3d_gaussian {
+struct __pyx_opt_args_6biobox_3lib_5graph_5Graph__make_3d_gaussian {
   int __pyx_n;
   int degree;
   float sigma;
 };
 
-/* "graph.pyx":25
+/* "biobox\lib\graph.pyx":25
  * 
  * 
  * cdef class Graph(object):             # <<<<<<<<<<<<<<
  * 
  *         cdef np.ndarray xax
  */
-struct __pyx_obj_5graph_Graph {
+struct __pyx_obj_6biobox_3lib_5graph_Graph {
   PyObject_HEAD
-  struct __pyx_vtabstruct_5graph_Graph *__pyx_vtab;
+  struct __pyx_vtabstruct_6biobox_3lib_5graph_Graph *__pyx_vtab;
   PyArrayObject *xax;
   PyArrayObject *yax;
   PyArrayObject *zax;
@@ -857,21 +857,21 @@ struct __pyx_obj_5graph_Graph {
 
 
 
-struct __pyx_vtabstruct_5graph_Graph {
-  PyObject *(*make_grid)(struct __pyx_obj_5graph_Graph *, int __pyx_skip_dispatch, struct __pyx_opt_args_5graph_5Graph_make_grid *__pyx_optional_args);
-  PyObject *(*make_global_grid)(struct __pyx_obj_5graph_Graph *, int __pyx_skip_dispatch, struct __pyx_opt_args_5graph_5Graph_make_global_grid *__pyx_optional_args);
-  PyObject *(*place_local_grid)(struct __pyx_obj_5graph_Graph *, PyArrayObject *, PyArrayObject *, int __pyx_skip_dispatch, struct __pyx_opt_args_5graph_5Graph_place_local_grid *__pyx_optional_args);
-  PyArrayObject *(*get_points_from_idx_flat)(struct __pyx_obj_5graph_Graph *, int, int __pyx_skip_dispatch);
-  PyArrayObject *(*get_points_from_idx)(struct __pyx_obj_5graph_Graph *, PyArrayObject *, int __pyx_skip_dispatch);
-  PyObject *(*get_closest_nodes)(struct __pyx_obj_5graph_Graph *, PyArrayObject *, int __pyx_skip_dispatch);
-  PyArrayObject *(*neighbors)(struct __pyx_obj_5graph_Graph *, int, PyBoolObject *, int __pyx_skip_dispatch);
-  PyObject *(*get_flat_index)(struct __pyx_obj_5graph_Graph *, PyArrayObject *, int __pyx_skip_dispatch);
-  PyObject *(*get_3d_index)(struct __pyx_obj_5graph_Graph *, int, int __pyx_skip_dispatch);
-  PyObject *(*heuristic)(struct __pyx_obj_5graph_Graph *, PyObject *, PyObject *, int __pyx_skip_dispatch);
-  int (*cost)(struct __pyx_obj_5graph_Graph *, int, int, int __pyx_skip_dispatch);
-  PyObject *(*_make_3d_gaussian)(struct __pyx_obj_5graph_Graph *, struct __pyx_opt_args_5graph_5Graph__make_3d_gaussian *__pyx_optional_args);
+struct __pyx_vtabstruct_6biobox_3lib_5graph_Graph {
+  PyObject *(*make_grid)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, int __pyx_skip_dispatch, struct __pyx_opt_args_6biobox_3lib_5graph_5Graph_make_grid *__pyx_optional_args);
+  PyObject *(*make_global_grid)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, int __pyx_skip_dispatch, struct __pyx_opt_args_6biobox_3lib_5graph_5Graph_make_global_grid *__pyx_optional_args);
+  PyObject *(*place_local_grid)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, PyArrayObject *, PyArrayObject *, int __pyx_skip_dispatch, struct __pyx_opt_args_6biobox_3lib_5graph_5Graph_place_local_grid *__pyx_optional_args);
+  PyArrayObject *(*get_points_from_idx_flat)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, int, int __pyx_skip_dispatch);
+  PyArrayObject *(*get_points_from_idx)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, PyArrayObject *, int __pyx_skip_dispatch);
+  PyObject *(*get_closest_nodes)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, PyArrayObject *, int __pyx_skip_dispatch);
+  PyArrayObject *(*neighbors)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, int, PyBoolObject *, int __pyx_skip_dispatch);
+  PyObject *(*get_flat_index)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, PyArrayObject *, int __pyx_skip_dispatch);
+  PyObject *(*get_3d_index)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, int, int __pyx_skip_dispatch);
+  PyObject *(*heuristic)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, PyObject *, PyObject *, int __pyx_skip_dispatch);
+  int (*cost)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, int, int, int __pyx_skip_dispatch);
+  PyObject *(*_make_3d_gaussian)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, struct __pyx_opt_args_6biobox_3lib_5graph_5Graph__make_3d_gaussian *__pyx_optional_args);
 };
-static struct __pyx_vtabstruct_5graph_Graph *__pyx_vtabptr_5graph_Graph;
+static struct __pyx_vtabstruct_6biobox_3lib_5graph_Graph *__pyx_vtabptr_6biobox_3lib_5graph_Graph;
 
 /* --- Runtime support code (head) --- */
 #ifndef CYTHON_REFNANNY
@@ -1290,18 +1290,18 @@ static PyTypeObject *__Pyx_ImportType(const char *module_name, const char *class
 
 static int __Pyx_InitStrings(__Pyx_StringTabEntry *t);
 
-static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *__pyx_v_self, int __pyx_skip_dispatch, struct __pyx_opt_args_5graph_5Graph_make_grid *__pyx_optional_args); /* proto*/
-static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_Graph *__pyx_v_self, int __pyx_skip_dispatch, struct __pyx_opt_args_5graph_5Graph_make_global_grid *__pyx_optional_args); /* proto*/
-static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_start, PyArrayObject *__pyx_v_end, int __pyx_skip_dispatch, struct __pyx_opt_args_5graph_5Graph_place_local_grid *__pyx_optional_args); /* proto*/
-static PyArrayObject *__pyx_f_5graph_5Graph_get_points_from_idx_flat(struct __pyx_obj_5graph_Graph *__pyx_v_self, int __pyx_v_idx2, int __pyx_skip_dispatch); /* proto*/
-static PyArrayObject *__pyx_f_5graph_5Graph_get_points_from_idx(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_idx, int __pyx_skip_dispatch); /* proto*/
-static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_target, int __pyx_skip_dispatch); /* proto*/
-static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Graph *__pyx_v_self, int __pyx_v_idx, PyBoolObject *__pyx_v_flattened, int __pyx_skip_dispatch); /* proto*/
-static PyObject *__pyx_f_5graph_5Graph_get_flat_index(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_thepos, int __pyx_skip_dispatch); /* proto*/
-static PyObject *__pyx_f_5graph_5Graph_get_3d_index(struct __pyx_obj_5graph_Graph *__pyx_v_self, int __pyx_v_idx, int __pyx_skip_dispatch); /* proto*/
-static PyObject *__pyx_f_5graph_5Graph_heuristic(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_a, PyObject *__pyx_v_b, int __pyx_skip_dispatch); /* proto*/
-static int __pyx_f_5graph_5Graph_cost(struct __pyx_obj_5graph_Graph *__pyx_v_self, int __pyx_v_a, int __pyx_v_b, int __pyx_skip_dispatch); /* proto*/
-static PyObject *__pyx_f_5graph_5Graph__make_3d_gaussian(CYTHON_UNUSED struct __pyx_obj_5graph_Graph *__pyx_v_self, struct __pyx_opt_args_5graph_5Graph__make_3d_gaussian *__pyx_optional_args); /* proto*/
+static PyObject *__pyx_f_6biobox_3lib_5graph_5Graph_make_grid(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, int __pyx_skip_dispatch, struct __pyx_opt_args_6biobox_3lib_5graph_5Graph_make_grid *__pyx_optional_args); /* proto*/
+static PyObject *__pyx_f_6biobox_3lib_5graph_5Graph_make_global_grid(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, int __pyx_skip_dispatch, struct __pyx_opt_args_6biobox_3lib_5graph_5Graph_make_global_grid *__pyx_optional_args); /* proto*/
+static PyObject *__pyx_f_6biobox_3lib_5graph_5Graph_place_local_grid(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_start, PyArrayObject *__pyx_v_end, int __pyx_skip_dispatch, struct __pyx_opt_args_6biobox_3lib_5graph_5Graph_place_local_grid *__pyx_optional_args); /* proto*/
+static PyArrayObject *__pyx_f_6biobox_3lib_5graph_5Graph_get_points_from_idx_flat(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, int __pyx_v_idx2, int __pyx_skip_dispatch); /* proto*/
+static PyArrayObject *__pyx_f_6biobox_3lib_5graph_5Graph_get_points_from_idx(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_idx, int __pyx_skip_dispatch); /* proto*/
+static PyObject *__pyx_f_6biobox_3lib_5graph_5Graph_get_closest_nodes(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_target, int __pyx_skip_dispatch); /* proto*/
+static PyArrayObject *__pyx_f_6biobox_3lib_5graph_5Graph_neighbors(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, int __pyx_v_idx, PyBoolObject *__pyx_v_flattened, int __pyx_skip_dispatch); /* proto*/
+static PyObject *__pyx_f_6biobox_3lib_5graph_5Graph_get_flat_index(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_thepos, int __pyx_skip_dispatch); /* proto*/
+static PyObject *__pyx_f_6biobox_3lib_5graph_5Graph_get_3d_index(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, int __pyx_v_idx, int __pyx_skip_dispatch); /* proto*/
+static PyObject *__pyx_f_6biobox_3lib_5graph_5Graph_heuristic(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_a, PyObject *__pyx_v_b, int __pyx_skip_dispatch); /* proto*/
+static int __pyx_f_6biobox_3lib_5graph_5Graph_cost(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, int __pyx_v_a, int __pyx_v_b, int __pyx_skip_dispatch); /* proto*/
+static PyObject *__pyx_f_6biobox_3lib_5graph_5Graph__make_3d_gaussian(CYTHON_UNUSED struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, struct __pyx_opt_args_6biobox_3lib_5graph_5Graph__make_3d_gaussian *__pyx_optional_args); /* proto*/
 
 /* Module declarations from 'cpython.buffer' */
 
@@ -1398,13 +1398,13 @@ static PyTypeObject *__pyx_ptype_5numpy_ndarray = 0;
 static PyTypeObject *__pyx_ptype_5numpy_ufunc = 0;
 static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *, char *, char *, int *); /*proto*/
 
-/* Module declarations from 'graph' */
-static PyTypeObject *__pyx_ptype_5graph_Graph = 0;
+/* Module declarations from 'biobox.lib.graph' */
+static PyTypeObject *__pyx_ptype_6biobox_3lib_5graph_Graph = 0;
 static __Pyx_TypeInfo __Pyx_TypeInfo_double = { "double", NULL, sizeof(double), { 0 }, 0, 'R', 0, 0 };
-#define __Pyx_MODULE_NAME "graph"
-int __pyx_module_is_main_graph = 0;
+#define __Pyx_MODULE_NAME "biobox.lib.graph"
+int __pyx_module_is_main_biobox__lib__graph = 0;
 
-/* Implementation of 'graph' */
+/* Implementation of 'biobox.lib.graph' */
 static PyObject *__pyx_builtin_Exception;
 static PyObject *__pyx_builtin_xrange;
 static PyObject *__pyx_builtin_ValueError;
@@ -1588,38 +1588,38 @@ static PyObject *__pyx_n_s_use_hull;
 static PyObject *__pyx_n_s_where;
 static PyObject *__pyx_n_s_xrange;
 static PyObject *__pyx_n_s_zeros;
-static int __pyx_pf_5graph_5Graph___init__(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_prot_points); /* proto */
-static PyObject *__pyx_pf_5graph_5Graph_2make_grid(struct __pyx_obj_5graph_Graph *__pyx_v_self, float __pyx_v_step, float __pyx_v_maxdist, PyArrayObject *__pyx_v_boundaries, int __pyx_v_degree, int __pyx_v_sigma, PyArrayObject *__pyx_v_params); /* proto */
-static PyObject *__pyx_pf_5graph_5Graph_4make_global_grid(struct __pyx_obj_5graph_Graph *__pyx_v_self, float __pyx_v_step, PyBoolObject *__pyx_v_use_hull, PyArrayObject *__pyx_v_boundaries, PyArrayObject *__pyx_v_cloud, PyObject *__pyx_v_params); /* proto */
-static PyObject *__pyx_pf_5graph_5Graph_6place_local_grid(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_start, PyArrayObject *__pyx_v_end, float __pyx_v_stds); /* proto */
-static PyObject *__pyx_pf_5graph_5Graph_8get_points_from_idx_flat(struct __pyx_obj_5graph_Graph *__pyx_v_self, int __pyx_v_idx2); /* proto */
-static PyObject *__pyx_pf_5graph_5Graph_10get_points_from_idx(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_idx); /* proto */
-static PyObject *__pyx_pf_5graph_5Graph_12get_closest_nodes(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_target); /* proto */
-static PyObject *__pyx_pf_5graph_5Graph_14neighbors(struct __pyx_obj_5graph_Graph *__pyx_v_self, int __pyx_v_idx, PyBoolObject *__pyx_v_flattened); /* proto */
-static PyObject *__pyx_pf_5graph_5Graph_16get_flat_index(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_thepos); /* proto */
-static PyObject *__pyx_pf_5graph_5Graph_18get_3d_index(struct __pyx_obj_5graph_Graph *__pyx_v_self, int __pyx_v_idx); /* proto */
-static PyObject *__pyx_pf_5graph_5Graph_20heuristic(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_a, PyObject *__pyx_v_b); /* proto */
-static PyObject *__pyx_pf_5graph_5Graph_22cost(struct __pyx_obj_5graph_Graph *__pyx_v_self, int __pyx_v_a, int __pyx_v_b); /* proto */
-static PyObject *__pyx_pf_5graph_5Graph_6center___get__(struct __pyx_obj_5graph_Graph *__pyx_v_self); /* proto */
-static int __pyx_pf_5graph_5Graph_6center_2__set__(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
-static int __pyx_pf_5graph_5Graph_6center_4__del__(struct __pyx_obj_5graph_Graph *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_5graph_5Graph_4step___get__(struct __pyx_obj_5graph_Graph *__pyx_v_self); /* proto */
-static int __pyx_pf_5graph_5Graph_4step_2__set__(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
-static PyObject *__pyx_pf_5graph_5Graph_11prot_points___get__(struct __pyx_obj_5graph_Graph *__pyx_v_self); /* proto */
-static int __pyx_pf_5graph_5Graph_11prot_points_2__set__(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
-static int __pyx_pf_5graph_5Graph_11prot_points_4__del__(struct __pyx_obj_5graph_Graph *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_5graph_5Graph_6params___get__(struct __pyx_obj_5graph_Graph *__pyx_v_self); /* proto */
-static int __pyx_pf_5graph_5Graph_6params_2__set__(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
-static int __pyx_pf_5graph_5Graph_6params_4__del__(struct __pyx_obj_5graph_Graph *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_5graph_5Graph_11access_grid___get__(struct __pyx_obj_5graph_Graph *__pyx_v_self); /* proto */
-static int __pyx_pf_5graph_5Graph_11access_grid_2__set__(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
-static int __pyx_pf_5graph_5Graph_11access_grid_4__del__(struct __pyx_obj_5graph_Graph *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_5graph_5Graph_17access_grid_shape___get__(struct __pyx_obj_5graph_Graph *__pyx_v_self); /* proto */
-static int __pyx_pf_5graph_5Graph_17access_grid_shape_2__set__(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
-static int __pyx_pf_5graph_5Graph_17access_grid_shape_4__del__(struct __pyx_obj_5graph_Graph *__pyx_v_self); /* proto */
+static int __pyx_pf_6biobox_3lib_5graph_5Graph___init__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_prot_points); /* proto */
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_2make_grid(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, float __pyx_v_step, float __pyx_v_maxdist, PyArrayObject *__pyx_v_boundaries, int __pyx_v_degree, int __pyx_v_sigma, PyArrayObject *__pyx_v_params); /* proto */
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_4make_global_grid(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, float __pyx_v_step, PyBoolObject *__pyx_v_use_hull, PyArrayObject *__pyx_v_boundaries, PyArrayObject *__pyx_v_cloud, PyObject *__pyx_v_params); /* proto */
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_6place_local_grid(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_start, PyArrayObject *__pyx_v_end, float __pyx_v_stds); /* proto */
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_8get_points_from_idx_flat(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, int __pyx_v_idx2); /* proto */
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_10get_points_from_idx(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_idx); /* proto */
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_12get_closest_nodes(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_target); /* proto */
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_14neighbors(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, int __pyx_v_idx, PyBoolObject *__pyx_v_flattened); /* proto */
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_16get_flat_index(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_thepos); /* proto */
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_18get_3d_index(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, int __pyx_v_idx); /* proto */
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_20heuristic(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_a, PyObject *__pyx_v_b); /* proto */
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_22cost(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, int __pyx_v_a, int __pyx_v_b); /* proto */
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_6center___get__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self); /* proto */
+static int __pyx_pf_6biobox_3lib_5graph_5Graph_6center_2__set__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
+static int __pyx_pf_6biobox_3lib_5graph_5Graph_6center_4__del__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_4step___get__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self); /* proto */
+static int __pyx_pf_6biobox_3lib_5graph_5Graph_4step_2__set__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_11prot_points___get__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self); /* proto */
+static int __pyx_pf_6biobox_3lib_5graph_5Graph_11prot_points_2__set__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
+static int __pyx_pf_6biobox_3lib_5graph_5Graph_11prot_points_4__del__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_6params___get__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self); /* proto */
+static int __pyx_pf_6biobox_3lib_5graph_5Graph_6params_2__set__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
+static int __pyx_pf_6biobox_3lib_5graph_5Graph_6params_4__del__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_11access_grid___get__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self); /* proto */
+static int __pyx_pf_6biobox_3lib_5graph_5Graph_11access_grid_2__set__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
+static int __pyx_pf_6biobox_3lib_5graph_5Graph_11access_grid_4__del__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_17access_grid_shape___get__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self); /* proto */
+static int __pyx_pf_6biobox_3lib_5graph_5Graph_17access_grid_shape_2__set__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
+static int __pyx_pf_6biobox_3lib_5graph_5Graph_17access_grid_shape_4__del__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self); /* proto */
 static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, Py_buffer *__pyx_v_info, int __pyx_v_flags); /* proto */
 static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_self, Py_buffer *__pyx_v_info); /* proto */
-static PyObject *__pyx_tp_new_5graph_Graph(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
+static PyObject *__pyx_tp_new_6biobox_3lib_5graph_Graph(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static PyObject *__pyx_float_1_;
 static PyObject *__pyx_float_2_;
 static PyObject *__pyx_float_0_0;
@@ -1657,7 +1657,7 @@ static PyObject *__pyx_tuple__22;
 static PyObject *__pyx_tuple__23;
 static PyObject *__pyx_tuple__24;
 
-/* "graph.pyx":42
+/* "biobox\lib\graph.pyx":42
  *         ## Load protein and make an accessibility grid out of it.
  *         #@param prot_points atoms to consider for clash detection
  *         def __init__(self, prot_points):             # <<<<<<<<<<<<<<
@@ -1666,8 +1666,8 @@ static PyObject *__pyx_tuple__24;
  */
 
 /* Python wrapper */
-static int __pyx_pw_5graph_5Graph_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static int __pyx_pw_5graph_5Graph_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_prot_points = 0;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
@@ -1706,18 +1706,18 @@ static int __pyx_pw_5graph_5Graph_1__init__(PyObject *__pyx_v_self, PyObject *__
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("__init__", 1, 1, 1, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 42; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
-  __Pyx_AddTraceback("graph.Graph.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return -1;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_5graph_5Graph___init__(((struct __pyx_obj_5graph_Graph *)__pyx_v_self), __pyx_v_prot_points);
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph___init__(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self), __pyx_v_prot_points);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_5graph_5Graph___init__(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_prot_points) {
+static int __pyx_pf_6biobox_3lib_5graph_5Graph___init__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_prot_points) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1726,7 +1726,7 @@ static int __pyx_pf_5graph_5Graph___init__(struct __pyx_obj_5graph_Graph *__pyx_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "graph.pyx":43
+  /* "biobox\lib\graph.pyx":43
  *         #@param prot_points atoms to consider for clash detection
  *         def __init__(self, prot_points):
  *             self.prot_points=prot_points             # <<<<<<<<<<<<<<
@@ -1742,7 +1742,7 @@ static int __pyx_pf_5graph_5Graph___init__(struct __pyx_obj_5graph_Graph *__pyx_
   __pyx_v_self->prot_points = ((PyArrayObject *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "graph.pyx":42
+  /* "biobox\lib\graph.pyx":42
  *         ## Load protein and make an accessibility grid out of it.
  *         #@param prot_points atoms to consider for clash detection
  *         def __init__(self, prot_points):             # <<<<<<<<<<<<<<
@@ -1755,14 +1755,14 @@ static int __pyx_pf_5graph_5Graph___init__(struct __pyx_obj_5graph_Graph *__pyx_
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("graph.Graph.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "graph.pyx":49
+/* "biobox\lib\graph.pyx":49
  *         #@param maxdist maximal grid size. If equal to -1, a grid around the whole points ensemble is built
  *         #@param boundaries build a grid within the desired box boundaries (if defined, maxdist parameter is ignored)
  *         cpdef make_grid(self, float step=1.0, float maxdist=-1, np.ndarray boundaries=np.array([]), int degree=5, int sigma=2, np.ndarray params=np.array([])):             # <<<<<<<<<<<<<<
@@ -1770,8 +1770,8 @@ static int __pyx_pf_5graph_5Graph___init__(struct __pyx_obj_5graph_Graph *__pyx_
  *             self.g=self._make_3d_gaussian(degree, sigma)
  */
 
-static PyObject *__pyx_pw_5graph_5Graph_3make_grid(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *__pyx_v_self, int __pyx_skip_dispatch, struct __pyx_opt_args_5graph_5Graph_make_grid *__pyx_optional_args) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_3make_grid(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_f_6biobox_3lib_5graph_5Graph_make_grid(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, int __pyx_skip_dispatch, struct __pyx_opt_args_6biobox_3lib_5graph_5Graph_make_grid *__pyx_optional_args) {
   float __pyx_v_step = ((float)1.0);
   float __pyx_v_maxdist = ((float)-1.0);
   PyArrayObject *__pyx_v_boundaries = __pyx_k_;
@@ -1791,7 +1791,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
   PyObject *__pyx_t_8 = NULL;
   Py_ssize_t __pyx_t_9;
   PyObject *__pyx_t_10 = NULL;
-  struct __pyx_opt_args_5graph_5Graph__make_3d_gaussian __pyx_t_11;
+  struct __pyx_opt_args_6biobox_3lib_5graph_5Graph__make_3d_gaussian __pyx_t_11;
   int __pyx_t_12;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
@@ -1823,7 +1823,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
     __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_make_grid); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_5graph_5Graph_3make_grid)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_6biobox_3lib_5graph_5Graph_3make_grid)) {
       __Pyx_XDECREF(__pyx_r);
       __pyx_t_3 = PyFloat_FromDouble(__pyx_v_step); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_3);
@@ -1881,7 +1881,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "graph.pyx":51
+  /* "biobox\lib\graph.pyx":51
  *         cpdef make_grid(self, float step=1.0, float maxdist=-1, np.ndarray boundaries=np.array([]), int degree=5, int sigma=2, np.ndarray params=np.array([])):
  * 
  *             self.g=self._make_3d_gaussian(degree, sigma)             # <<<<<<<<<<<<<<
@@ -1891,7 +1891,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
   __pyx_t_11.__pyx_n = 2;
   __pyx_t_11.degree = __pyx_v_degree;
   __pyx_t_11.sigma = __pyx_v_sigma;
-  __pyx_t_1 = ((struct __pyx_vtabstruct_5graph_Graph *)__pyx_v_self->__pyx_vtab)->_make_3d_gaussian(__pyx_v_self, &__pyx_t_11); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 51; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = ((struct __pyx_vtabstruct_6biobox_3lib_5graph_Graph *)__pyx_v_self->__pyx_vtab)->_make_3d_gaussian(__pyx_v_self, &__pyx_t_11); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 51; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_5numpy_ndarray))))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 51; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GIVEREF(__pyx_t_1);
@@ -1900,7 +1900,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
   __pyx_v_self->g = ((PyArrayObject *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "graph.pyx":53
+  /* "biobox\lib\graph.pyx":53
  *             self.g=self._make_3d_gaussian(degree, sigma)
  * 
  *             self.step=step             # <<<<<<<<<<<<<<
@@ -1909,7 +1909,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
  */
   __pyx_v_self->step = __pyx_v_step;
 
-  /* "graph.pyx":54
+  /* "biobox\lib\graph.pyx":54
  * 
  *             self.step=step
  *             self.params=params             # <<<<<<<<<<<<<<
@@ -1922,7 +1922,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
   __Pyx_DECREF(((PyObject *)__pyx_v_self->params));
   __pyx_v_self->params = __pyx_v_params;
 
-  /* "graph.pyx":57
+  /* "biobox\lib\graph.pyx":57
  * 
  *             #define box according to desired boundaries
  *             if len(boundaries)==3:             # <<<<<<<<<<<<<<
@@ -1933,7 +1933,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
   __pyx_t_12 = ((__pyx_t_9 == 3) != 0);
   if (__pyx_t_12) {
 
-    /* "graph.pyx":58
+    /* "biobox\lib\graph.pyx":58
  *             #define box according to desired boundaries
  *             if len(boundaries)==3:
  *                 if np.any(boundaries[:,0]>=boundaries[:,1]):             # <<<<<<<<<<<<<<
@@ -1982,7 +1982,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     if (__pyx_t_12) {
 
-      /* "graph.pyx":59
+      /* "biobox\lib\graph.pyx":59
  *             if len(boundaries)==3:
  *                 if np.any(boundaries[:,0]>=boundaries[:,1]):
  *                     raise Exception("upper grid boundary is greater than a lower boundary!")             # <<<<<<<<<<<<<<
@@ -1995,7 +1995,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       {__pyx_filename = __pyx_f[0]; __pyx_lineno = 59; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-      /* "graph.pyx":58
+      /* "biobox\lib\graph.pyx":58
  *             #define box according to desired boundaries
  *             if len(boundaries)==3:
  *                 if np.any(boundaries[:,0]>=boundaries[:,1]):             # <<<<<<<<<<<<<<
@@ -2004,7 +2004,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
  */
     }
 
-    /* "graph.pyx":61
+    /* "biobox\lib\graph.pyx":61
  *                     raise Exception("upper grid boundary is greater than a lower boundary!")
  * 
  *                 self.xax=np.arange(boundaries[0][0],boundaries[0][1]+step,step)             # <<<<<<<<<<<<<<
@@ -2071,7 +2071,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
     __pyx_v_self->xax = ((PyArrayObject *)__pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "graph.pyx":62
+    /* "biobox\lib\graph.pyx":62
  * 
  *                 self.xax=np.arange(boundaries[0][0],boundaries[0][1]+step,step)
  *                 self.yax=np.arange(boundaries[1][0],boundaries[1][1]+step,step)             # <<<<<<<<<<<<<<
@@ -2138,7 +2138,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
     __pyx_v_self->yax = ((PyArrayObject *)__pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "graph.pyx":63
+    /* "biobox\lib\graph.pyx":63
  *                 self.xax=np.arange(boundaries[0][0],boundaries[0][1]+step,step)
  *                 self.yax=np.arange(boundaries[1][0],boundaries[1][1]+step,step)
  *                 self.zax=np.arange(boundaries[2][0],boundaries[2][1]+step,step)             # <<<<<<<<<<<<<<
@@ -2205,7 +2205,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
     __pyx_v_self->zax = ((PyArrayObject *)__pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "graph.pyx":66
+    /* "biobox\lib\graph.pyx":66
  *                 #grid=np.array(np.meshgrid(s1,s2,s3))
  *                 #self.center=np.mean(self.prot_points, axis=0)
  *                 self.center=np.array([(boundaries[0][0]+boundaries[0][1])/2.0,\             # <<<<<<<<<<<<<<
@@ -2235,7 +2235,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
 
-    /* "graph.pyx":67
+    /* "biobox\lib\graph.pyx":67
  *                 #self.center=np.mean(self.prot_points, axis=0)
  *                 self.center=np.array([(boundaries[0][0]+boundaries[0][1])/2.0,\
  *                                       (boundaries[1][0]+boundaries[1][1])/2.0,\             # <<<<<<<<<<<<<<
@@ -2260,7 +2260,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
 
-    /* "graph.pyx":68
+    /* "biobox\lib\graph.pyx":68
  *                 self.center=np.array([(boundaries[0][0]+boundaries[0][1])/2.0,\
  *                                       (boundaries[1][0]+boundaries[1][1])/2.0,\
  *                                       (boundaries[2][0]+boundaries[2][1])/2.0])             # <<<<<<<<<<<<<<
@@ -2285,7 +2285,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
 
-    /* "graph.pyx":66
+    /* "biobox\lib\graph.pyx":66
  *                 #grid=np.array(np.meshgrid(s1,s2,s3))
  *                 #self.center=np.mean(self.prot_points, axis=0)
  *                 self.center=np.array([(boundaries[0][0]+boundaries[0][1])/2.0,\             # <<<<<<<<<<<<<<
@@ -2336,7 +2336,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
     __pyx_v_self->center = ((PyArrayObject *)__pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "graph.pyx":57
+    /* "biobox\lib\graph.pyx":57
  * 
  *             #define box according to desired boundaries
  *             if len(boundaries)==3:             # <<<<<<<<<<<<<<
@@ -2346,7 +2346,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
     goto __pyx_L3;
   }
 
-  /* "graph.pyx":71
+  /* "biobox\lib\graph.pyx":71
  * 
  *             #define box vertices to make a generic cube
  *             elif maxdist != -1:             # <<<<<<<<<<<<<<
@@ -2356,7 +2356,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
   __pyx_t_12 = ((__pyx_v_maxdist != -1.0) != 0);
   if (__pyx_t_12) {
 
-    /* "graph.pyx":72
+    /* "biobox\lib\graph.pyx":72
  *             #define box vertices to make a generic cube
  *             elif maxdist != -1:
  *                 self.xax=np.arange(-maxdist/2.0,maxdist/2.0+step,step)             # <<<<<<<<<<<<<<
@@ -2411,7 +2411,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
     __pyx_v_self->xax = ((PyArrayObject *)__pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "graph.pyx":73
+    /* "biobox\lib\graph.pyx":73
  *             elif maxdist != -1:
  *                 self.xax=np.arange(-maxdist/2.0,maxdist/2.0+step,step)
  *                 self.yax=np.arange(-maxdist/2.0,maxdist/2.0+step,step)             # <<<<<<<<<<<<<<
@@ -2466,7 +2466,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
     __pyx_v_self->yax = ((PyArrayObject *)__pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "graph.pyx":74
+    /* "biobox\lib\graph.pyx":74
  *                 self.xax=np.arange(-maxdist/2.0,maxdist/2.0+step,step)
  *                 self.yax=np.arange(-maxdist/2.0,maxdist/2.0+step,step)
  *                 self.zax=np.arange(-maxdist/2.0,maxdist/2.0+step,step)             # <<<<<<<<<<<<<<
@@ -2521,7 +2521,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
     __pyx_v_self->zax = ((PyArrayObject *)__pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "graph.pyx":76
+    /* "biobox\lib\graph.pyx":76
  *                 self.zax=np.arange(-maxdist/2.0,maxdist/2.0+step,step)
  *                 #grid=np.array(np.meshgrid(s,s,s))
  *                 self.center=np.array([0.0,0.0,0.0])             # <<<<<<<<<<<<<<
@@ -2577,7 +2577,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
     __pyx_v_self->center = ((PyArrayObject *)__pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "graph.pyx":71
+    /* "biobox\lib\graph.pyx":71
  * 
  *             #define box vertices to make a generic cube
  *             elif maxdist != -1:             # <<<<<<<<<<<<<<
@@ -2587,7 +2587,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
     goto __pyx_L3;
   }
 
-  /* "graph.pyx":82
+  /* "biobox\lib\graph.pyx":82
  *             #define box vertices and create grid around points ensemble
  *             else:
  *                 s=(np.max(self.prot_points, axis=0)-np.min(self.prot_points, axis=0))/2.0+step             # <<<<<<<<<<<<<<
@@ -2647,7 +2647,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
     __pyx_v_s = __pyx_t_7;
     __pyx_t_7 = 0;
 
-    /* "graph.pyx":83
+    /* "biobox\lib\graph.pyx":83
  *             else:
  *                 s=(np.max(self.prot_points, axis=0)-np.min(self.prot_points, axis=0))/2.0+step
  *                 self.xax=np.arange(-s[0],s[0]+step,step)             # <<<<<<<<<<<<<<
@@ -2711,7 +2711,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
     __pyx_v_self->xax = ((PyArrayObject *)__pyx_t_7);
     __pyx_t_7 = 0;
 
-    /* "graph.pyx":84
+    /* "biobox\lib\graph.pyx":84
  *                 s=(np.max(self.prot_points, axis=0)-np.min(self.prot_points, axis=0))/2.0+step
  *                 self.xax=np.arange(-s[0],s[0]+step,step)
  *                 self.yax=np.arange(-s[1],s[1]+step,step)             # <<<<<<<<<<<<<<
@@ -2775,7 +2775,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
     __pyx_v_self->yax = ((PyArrayObject *)__pyx_t_7);
     __pyx_t_7 = 0;
 
-    /* "graph.pyx":85
+    /* "biobox\lib\graph.pyx":85
  *                 self.xax=np.arange(-s[0],s[0]+step,step)
  *                 self.yax=np.arange(-s[1],s[1]+step,step)
  *                 self.zax=np.arange(-s[2],s[2]+step,step)             # <<<<<<<<<<<<<<
@@ -2839,7 +2839,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
     __pyx_v_self->zax = ((PyArrayObject *)__pyx_t_7);
     __pyx_t_7 = 0;
 
-    /* "graph.pyx":87
+    /* "biobox\lib\graph.pyx":87
  *                 self.zax=np.arange(-s[2],s[2]+step,step)
  *                 #grid=np.array(np.meshgrid(s1,s2,s3))
  *                 self.center=np.mean(self.prot_points, axis=0)             # <<<<<<<<<<<<<<
@@ -2873,7 +2873,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
   }
   __pyx_L3:;
 
-  /* "graph.pyx":49
+  /* "biobox\lib\graph.pyx":49
  *         #@param maxdist maximal grid size. If equal to -1, a grid around the whole points ensemble is built
  *         #@param boundaries build a grid within the desired box boundaries (if defined, maxdist parameter is ignored)
  *         cpdef make_grid(self, float step=1.0, float maxdist=-1, np.ndarray boundaries=np.array([]), int degree=5, int sigma=2, np.ndarray params=np.array([])):             # <<<<<<<<<<<<<<
@@ -2894,7 +2894,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
   __Pyx_XDECREF(__pyx_t_7);
   __Pyx_XDECREF(__pyx_t_8);
   __Pyx_XDECREF(__pyx_t_10);
-  __Pyx_AddTraceback("graph.Graph.make_grid", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.make_grid", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_s);
@@ -2904,8 +2904,8 @@ static PyObject *__pyx_f_5graph_5Graph_make_grid(struct __pyx_obj_5graph_Graph *
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5graph_5Graph_3make_grid(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_pw_5graph_5Graph_3make_grid(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_3make_grid(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_3make_grid(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   float __pyx_v_step;
   float __pyx_v_maxdist;
   PyArrayObject *__pyx_v_boundaries = 0;
@@ -3011,13 +3011,13 @@ static PyObject *__pyx_pw_5graph_5Graph_3make_grid(PyObject *__pyx_v_self, PyObj
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("make_grid", 0, 0, 6, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
-  __Pyx_AddTraceback("graph.Graph.make_grid", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.make_grid", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_boundaries), __pyx_ptype_5numpy_ndarray, 1, "boundaries", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_params), __pyx_ptype_5numpy_ndarray, 1, "params", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_5graph_5Graph_2make_grid(((struct __pyx_obj_5graph_Graph *)__pyx_v_self), __pyx_v_step, __pyx_v_maxdist, __pyx_v_boundaries, __pyx_v_degree, __pyx_v_sigma, __pyx_v_params);
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_2make_grid(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self), __pyx_v_step, __pyx_v_maxdist, __pyx_v_boundaries, __pyx_v_degree, __pyx_v_sigma, __pyx_v_params);
 
   /* function exit code */
   goto __pyx_L0;
@@ -3028,11 +3028,11 @@ static PyObject *__pyx_pw_5graph_5Graph_3make_grid(PyObject *__pyx_v_self, PyObj
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5graph_5Graph_2make_grid(struct __pyx_obj_5graph_Graph *__pyx_v_self, float __pyx_v_step, float __pyx_v_maxdist, PyArrayObject *__pyx_v_boundaries, int __pyx_v_degree, int __pyx_v_sigma, PyArrayObject *__pyx_v_params) {
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_2make_grid(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, float __pyx_v_step, float __pyx_v_maxdist, PyArrayObject *__pyx_v_boundaries, int __pyx_v_degree, int __pyx_v_sigma, PyArrayObject *__pyx_v_params) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
-  struct __pyx_opt_args_5graph_5Graph_make_grid __pyx_t_2;
+  struct __pyx_opt_args_6biobox_3lib_5graph_5Graph_make_grid __pyx_t_2;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -3045,7 +3045,7 @@ static PyObject *__pyx_pf_5graph_5Graph_2make_grid(struct __pyx_obj_5graph_Graph
   __pyx_t_2.degree = __pyx_v_degree;
   __pyx_t_2.sigma = __pyx_v_sigma;
   __pyx_t_2.params = __pyx_v_params;
-  __pyx_t_1 = __pyx_vtabptr_5graph_Graph->make_grid(__pyx_v_self, 1, &__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_vtabptr_6biobox_3lib_5graph_Graph->make_grid(__pyx_v_self, 1, &__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3054,7 +3054,7 @@ static PyObject *__pyx_pf_5graph_5Graph_2make_grid(struct __pyx_obj_5graph_Graph
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("graph.Graph.make_grid", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.make_grid", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -3062,7 +3062,7 @@ static PyObject *__pyx_pf_5graph_5Graph_2make_grid(struct __pyx_obj_5graph_Graph
   return __pyx_r;
 }
 
-/* "graph.pyx":94
+/* "biobox\lib\graph.pyx":94
  *         #@param boundaries build a grid within the desired box boundaries (if defined, maxdist parameter is ignored)
  *         #@param cloud build a grid using a points cloud as extrema for the construction of the box. If defined, maxdist and boundaries parameters are ignored.
  *         cpdef make_global_grid(self, float step=1.0, bool use_hull=False, np.ndarray boundaries=np.array([]), np.ndarray cloud=np.array([]), params=np.array([])):             # <<<<<<<<<<<<<<
@@ -3070,8 +3070,8 @@ static PyObject *__pyx_pf_5graph_5Graph_2make_grid(struct __pyx_obj_5graph_Graph
  *             #if cloud is provided, use that as reference for grid building
  */
 
-static PyObject *__pyx_pw_5graph_5Graph_5make_global_grid(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_Graph *__pyx_v_self, int __pyx_skip_dispatch, struct __pyx_opt_args_5graph_5Graph_make_global_grid *__pyx_optional_args) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_5make_global_grid(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_f_6biobox_3lib_5graph_5Graph_make_global_grid(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, int __pyx_skip_dispatch, struct __pyx_opt_args_6biobox_3lib_5graph_5Graph_make_global_grid *__pyx_optional_args) {
   float __pyx_v_step = ((float)1.0);
   PyBoolObject *__pyx_v_use_hull = ((PyBoolObject *)Py_False);
   PyArrayObject *__pyx_v_boundaries = __pyx_k__8;
@@ -3114,7 +3114,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
   PyObject *__pyx_t_11 = NULL;
   Py_ssize_t __pyx_t_12;
   float __pyx_t_13;
-  struct __pyx_opt_args_5graph_5Graph__make_3d_gaussian __pyx_t_14;
+  struct __pyx_opt_args_6biobox_3lib_5graph_5Graph__make_3d_gaussian __pyx_t_14;
   PyObject *(*__pyx_t_15)(PyObject *);
   PyObject *__pyx_t_16 = NULL;
   int __pyx_lineno = 0;
@@ -3144,7 +3144,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
     __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_make_global_grid); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_5graph_5Graph_5make_global_grid)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_6biobox_3lib_5graph_5Graph_5make_global_grid)) {
       __Pyx_XDECREF(__pyx_r);
       __pyx_t_3 = PyFloat_FromDouble(__pyx_v_step); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_3);
@@ -3193,7 +3193,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "graph.pyx":97
+  /* "biobox\lib\graph.pyx":97
  * 
  *             #if cloud is provided, use that as reference for grid building
  *             if len(cloud)>0:             # <<<<<<<<<<<<<<
@@ -3204,7 +3204,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
   __pyx_t_8 = ((__pyx_t_6 > 0) != 0);
   if (__pyx_t_8) {
 
-    /* "graph.pyx":98
+    /* "biobox\lib\graph.pyx":98
  *             #if cloud is provided, use that as reference for grid building
  *             if len(cloud)>0:
  *                 smax=np.max(cloud, axis=0)+step             # <<<<<<<<<<<<<<
@@ -3238,7 +3238,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
     __pyx_v_smax = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "graph.pyx":99
+    /* "biobox\lib\graph.pyx":99
  *             if len(cloud)>0:
  *                 smax=np.max(cloud, axis=0)+step
  *                 smin=np.min(cloud, axis=0)-step             # <<<<<<<<<<<<<<
@@ -3272,7 +3272,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
     __pyx_v_smin = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "graph.pyx":100
+    /* "biobox\lib\graph.pyx":100
  *                 smax=np.max(cloud, axis=0)+step
  *                 smin=np.min(cloud, axis=0)-step
  *                 s=np.array([smin,smax]).T             # <<<<<<<<<<<<<<
@@ -3324,7 +3324,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
     __pyx_v_s = __pyx_t_2;
     __pyx_t_2 = 0;
 
-    /* "graph.pyx":101
+    /* "biobox\lib\graph.pyx":101
  *                 smin=np.min(cloud, axis=0)-step
  *                 s=np.array([smin,smax]).T
  *                 self.make_grid(step=step, boundaries=s, params=params)             # <<<<<<<<<<<<<<
@@ -3347,7 +3347,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-    /* "graph.pyx":97
+    /* "biobox\lib\graph.pyx":97
  * 
  *             #if cloud is provided, use that as reference for grid building
  *             if len(cloud)>0:             # <<<<<<<<<<<<<<
@@ -3357,7 +3357,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
     goto __pyx_L3;
   }
 
-  /* "graph.pyx":104
+  /* "biobox\lib\graph.pyx":104
  * 
  *             else:
  *                 self.make_grid(step=step, boundaries=boundaries, params=params)             # <<<<<<<<<<<<<<
@@ -3383,7 +3383,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
   }
   __pyx_L3:;
 
-  /* "graph.pyx":106
+  /* "biobox\lib\graph.pyx":106
  *                 self.make_grid(step=step, boundaries=boundaries, params=params)
  * 
  *             if len(self.params)==0:             # <<<<<<<<<<<<<<
@@ -3397,7 +3397,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
   __pyx_t_8 = ((__pyx_t_6 == 0) != 0);
   if (__pyx_t_8) {
 
-    /* "graph.pyx":109
+    /* "biobox\lib\graph.pyx":109
  * 
  *                 #prepare mesh grid, and place, Kronecker deltas
  *                 grid=np.zeros((len(self.xax),len(self.yax),len(self.zax)))             # <<<<<<<<<<<<<<
@@ -3467,7 +3467,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
     __pyx_v_grid = __pyx_t_2;
     __pyx_t_2 = 0;
 
-    /* "graph.pyx":110
+    /* "biobox\lib\graph.pyx":110
  *                 #prepare mesh grid, and place, Kronecker deltas
  *                 grid=np.zeros((len(self.xax),len(self.yax),len(self.zax)))
  *                 for p in self.prot_points:             # <<<<<<<<<<<<<<
@@ -3516,7 +3516,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
       __Pyx_XDECREF_SET(__pyx_v_p, __pyx_t_3);
       __pyx_t_3 = 0;
 
-      /* "graph.pyx":111
+      /* "biobox\lib\graph.pyx":111
  *                 grid=np.zeros((len(self.xax),len(self.yax),len(self.zax)))
  *                 for p in self.prot_points:
  *                     xpos=np.argmin(np.abs(self.xax+self.center[0]-p[0]))             # <<<<<<<<<<<<<<
@@ -3599,7 +3599,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
       __Pyx_XDECREF_SET(__pyx_v_xpos, __pyx_t_3);
       __pyx_t_3 = 0;
 
-      /* "graph.pyx":112
+      /* "biobox\lib\graph.pyx":112
  *                 for p in self.prot_points:
  *                     xpos=np.argmin(np.abs(self.xax+self.center[0]-p[0]))
  *                     ypos=np.argmin(np.abs(self.yax+self.center[1]-p[1]))             # <<<<<<<<<<<<<<
@@ -3682,7 +3682,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
       __Pyx_XDECREF_SET(__pyx_v_ypos, __pyx_t_3);
       __pyx_t_3 = 0;
 
-      /* "graph.pyx":113
+      /* "biobox\lib\graph.pyx":113
  *                     xpos=np.argmin(np.abs(self.xax+self.center[0]-p[0]))
  *                     ypos=np.argmin(np.abs(self.yax+self.center[1]-p[1]))
  *                     zpos=np.argmin(np.abs(self.zax+self.center[2]-p[2]))             # <<<<<<<<<<<<<<
@@ -3765,7 +3765,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
       __Pyx_XDECREF_SET(__pyx_v_zpos, __pyx_t_3);
       __pyx_t_3 = 0;
 
-      /* "graph.pyx":114
+      /* "biobox\lib\graph.pyx":114
  *                     ypos=np.argmin(np.abs(self.yax+self.center[1]-p[1]))
  *                     zpos=np.argmin(np.abs(self.zax+self.center[2]-p[2]))
  *                     grid[xpos,ypos,zpos]=1             # <<<<<<<<<<<<<<
@@ -3786,7 +3786,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
       if (unlikely(PyObject_SetItem(__pyx_v_grid, __pyx_t_3, __pyx_int_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 114; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-      /* "graph.pyx":110
+      /* "biobox\lib\graph.pyx":110
  *                 #prepare mesh grid, and place, Kronecker deltas
  *                 grid=np.zeros((len(self.xax),len(self.yax),len(self.zax)))
  *                 for p in self.prot_points:             # <<<<<<<<<<<<<<
@@ -3796,7 +3796,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
     }
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "graph.pyx":116
+    /* "biobox\lib\graph.pyx":116
  *                     grid[xpos,ypos,zpos]=1
  * 
  *                 b=scipy.signal.fftconvolve(grid, self.g, mode='same')             # <<<<<<<<<<<<<<
@@ -3830,7 +3830,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
     __pyx_v_b = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "graph.pyx":119
+    /* "biobox\lib\graph.pyx":119
  * 
  *                 #accept points where density is under threshold (i.e., region is accessible)
  *                 self.access_grid=b<np.max(b)-np.std(b)*3             # <<<<<<<<<<<<<<
@@ -3913,7 +3913,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
     __pyx_v_self->access_grid = ((PyArrayObject *)__pyx_t_11);
     __pyx_t_11 = 0;
 
-    /* "graph.pyx":106
+    /* "biobox\lib\graph.pyx":106
  *                 self.make_grid(step=step, boundaries=boundaries, params=params)
  * 
  *             if len(self.params)==0:             # <<<<<<<<<<<<<<
@@ -3923,7 +3923,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
     goto __pyx_L4;
   }
 
-  /* "graph.pyx":122
+  /* "biobox\lib\graph.pyx":122
  * 
  *             else:
  *                 b=[]             # <<<<<<<<<<<<<<
@@ -3936,7 +3936,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
     __pyx_v_b = __pyx_t_11;
     __pyx_t_11 = 0;
 
-    /* "graph.pyx":123
+    /* "biobox\lib\graph.pyx":123
  *             else:
  *                 b=[]
  *                 for a in np.unique(self.params[:,0]):             # <<<<<<<<<<<<<<
@@ -4019,7 +4019,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
       __Pyx_XDECREF_SET(__pyx_v_a, __pyx_t_11);
       __pyx_t_11 = 0;
 
-      /* "graph.pyx":125
+      /* "biobox\lib\graph.pyx":125
  *                 for a in np.unique(self.params[:,0]):
  * 
  *                     grid=np.zeros((len(self.xax),len(self.yax),len(self.zax)))             # <<<<<<<<<<<<<<
@@ -4089,7 +4089,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
       __Pyx_XDECREF_SET(__pyx_v_grid, __pyx_t_11);
       __pyx_t_11 = 0;
 
-      /* "graph.pyx":127
+      /* "biobox\lib\graph.pyx":127
  *                     grid=np.zeros((len(self.xax),len(self.yax),len(self.zax)))
  * 
  *                     test=np.where(self.params[:,0]==a)[0]             # <<<<<<<<<<<<<<
@@ -4137,7 +4137,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
       __Pyx_XDECREF_SET(__pyx_v_test, __pyx_t_10);
       __pyx_t_10 = 0;
 
-      /* "graph.pyx":128
+      /* "biobox\lib\graph.pyx":128
  * 
  *                     test=np.where(self.params[:,0]==a)[0]
  *                     points=self.prot_points[test]             # <<<<<<<<<<<<<<
@@ -4149,7 +4149,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
       __Pyx_XDECREF_SET(__pyx_v_points, __pyx_t_10);
       __pyx_t_10 = 0;
 
-      /* "graph.pyx":130
+      /* "biobox\lib\graph.pyx":130
  *                     points=self.prot_points[test]
  * 
  *                     sigma=self.params[test,1][0]             # <<<<<<<<<<<<<<
@@ -4173,7 +4173,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
       __Pyx_XDECREF_SET(__pyx_v_sigma, __pyx_t_10);
       __pyx_t_10 = 0;
 
-      /* "graph.pyx":131
+      /* "biobox\lib\graph.pyx":131
  * 
  *                     sigma=self.params[test,1][0]
  *                     ampl=self.params[test,2][0]             # <<<<<<<<<<<<<<
@@ -4197,7 +4197,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
       __Pyx_XDECREF_SET(__pyx_v_ampl, __pyx_t_10);
       __pyx_t_10 = 0;
 
-      /* "graph.pyx":132
+      /* "biobox\lib\graph.pyx":132
  *                     sigma=self.params[test,1][0]
  *                     ampl=self.params[test,2][0]
  *                     self.g=self._make_3d_gaussian(5, sigma*1.5)             # <<<<<<<<<<<<<<
@@ -4211,7 +4211,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
       __pyx_t_14.__pyx_n = 2;
       __pyx_t_14.degree = 5;
       __pyx_t_14.sigma = __pyx_t_13;
-      __pyx_t_10 = ((struct __pyx_vtabstruct_5graph_Graph *)__pyx_v_self->__pyx_vtab)->_make_3d_gaussian(__pyx_v_self, &__pyx_t_14); if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 132; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_10 = ((struct __pyx_vtabstruct_6biobox_3lib_5graph_Graph *)__pyx_v_self->__pyx_vtab)->_make_3d_gaussian(__pyx_v_self, &__pyx_t_14); if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 132; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_10);
       if (!(likely(((__pyx_t_10) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_10, __pyx_ptype_5numpy_ndarray))))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 132; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GIVEREF(__pyx_t_10);
@@ -4220,7 +4220,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
       __pyx_v_self->g = ((PyArrayObject *)__pyx_t_10);
       __pyx_t_10 = 0;
 
-      /* "graph.pyx":136
+      /* "biobox\lib\graph.pyx":136
  * 
  *                     #prepare mesh grid, and place, Kronecker deltas
  *                     grid=np.zeros((len(self.xax),len(self.yax),len(self.zax)))             # <<<<<<<<<<<<<<
@@ -4290,7 +4290,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
       __Pyx_DECREF_SET(__pyx_v_grid, __pyx_t_10);
       __pyx_t_10 = 0;
 
-      /* "graph.pyx":137
+      /* "biobox\lib\graph.pyx":137
  *                     #prepare mesh grid, and place, Kronecker deltas
  *                     grid=np.zeros((len(self.xax),len(self.yax),len(self.zax)))
  *                     for p in points:#self.prot_points:             # <<<<<<<<<<<<<<
@@ -4339,7 +4339,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
         __Pyx_XDECREF_SET(__pyx_v_p, __pyx_t_1);
         __pyx_t_1 = 0;
 
-        /* "graph.pyx":138
+        /* "biobox\lib\graph.pyx":138
  *                     grid=np.zeros((len(self.xax),len(self.yax),len(self.zax)))
  *                     for p in points:#self.prot_points:
  *                         xpos=np.argmin(np.abs(self.xax+self.center[0]-p[0]))             # <<<<<<<<<<<<<<
@@ -4422,7 +4422,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
         __Pyx_XDECREF_SET(__pyx_v_xpos, __pyx_t_1);
         __pyx_t_1 = 0;
 
-        /* "graph.pyx":139
+        /* "biobox\lib\graph.pyx":139
  *                     for p in points:#self.prot_points:
  *                         xpos=np.argmin(np.abs(self.xax+self.center[0]-p[0]))
  *                         ypos=np.argmin(np.abs(self.yax+self.center[1]-p[1]))             # <<<<<<<<<<<<<<
@@ -4505,7 +4505,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
         __Pyx_XDECREF_SET(__pyx_v_ypos, __pyx_t_1);
         __pyx_t_1 = 0;
 
-        /* "graph.pyx":140
+        /* "biobox\lib\graph.pyx":140
  *                         xpos=np.argmin(np.abs(self.xax+self.center[0]-p[0]))
  *                         ypos=np.argmin(np.abs(self.yax+self.center[1]-p[1]))
  *                         zpos=np.argmin(np.abs(self.zax+self.center[2]-p[2]))             # <<<<<<<<<<<<<<
@@ -4588,7 +4588,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
         __Pyx_XDECREF_SET(__pyx_v_zpos, __pyx_t_1);
         __pyx_t_1 = 0;
 
-        /* "graph.pyx":141
+        /* "biobox\lib\graph.pyx":141
  *                         ypos=np.argmin(np.abs(self.yax+self.center[1]-p[1]))
  *                         zpos=np.argmin(np.abs(self.zax+self.center[2]-p[2]))
  *                         grid[xpos,ypos,zpos]=1             # <<<<<<<<<<<<<<
@@ -4609,7 +4609,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
         if (unlikely(PyObject_SetItem(__pyx_v_grid, __pyx_t_1, __pyx_int_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 141; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-        /* "graph.pyx":137
+        /* "biobox\lib\graph.pyx":137
  *                     #prepare mesh grid, and place, Kronecker deltas
  *                     grid=np.zeros((len(self.xax),len(self.yax),len(self.zax)))
  *                     for p in points:#self.prot_points:             # <<<<<<<<<<<<<<
@@ -4619,7 +4619,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
       }
       __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
 
-      /* "graph.pyx":143
+      /* "biobox\lib\graph.pyx":143
  *                         grid[xpos,ypos,zpos]=1
  * 
  *                     if len(b)==0:             # <<<<<<<<<<<<<<
@@ -4630,7 +4630,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
       __pyx_t_8 = ((__pyx_t_12 == 0) != 0);
       if (__pyx_t_8) {
 
-        /* "graph.pyx":144
+        /* "biobox\lib\graph.pyx":144
  * 
  *                     if len(b)==0:
  *                         b=scipy.signal.fftconvolve(grid, self.g, mode='same')             # <<<<<<<<<<<<<<
@@ -4664,7 +4664,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
         __Pyx_DECREF_SET(__pyx_v_b, __pyx_t_3);
         __pyx_t_3 = 0;
 
-        /* "graph.pyx":145
+        /* "biobox\lib\graph.pyx":145
  *                     if len(b)==0:
  *                         b=scipy.signal.fftconvolve(grid, self.g, mode='same')
  *                         b/=np.max(b)             # <<<<<<<<<<<<<<
@@ -4707,7 +4707,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
         __Pyx_DECREF_SET(__pyx_v_b, __pyx_t_1);
         __pyx_t_1 = 0;
 
-        /* "graph.pyx":146
+        /* "biobox\lib\graph.pyx":146
  *                         b=scipy.signal.fftconvolve(grid, self.g, mode='same')
  *                         b/=np.max(b)
  *                         b/=ampl             # <<<<<<<<<<<<<<
@@ -4719,7 +4719,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
         __Pyx_DECREF_SET(__pyx_v_b, __pyx_t_1);
         __pyx_t_1 = 0;
 
-        /* "graph.pyx":143
+        /* "biobox\lib\graph.pyx":143
  *                         grid[xpos,ypos,zpos]=1
  * 
  *                     if len(b)==0:             # <<<<<<<<<<<<<<
@@ -4729,7 +4729,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
         goto __pyx_L11;
       }
 
-      /* "graph.pyx":148
+      /* "biobox\lib\graph.pyx":148
  *                         b/=ampl
  *                     else:
  *                         b_tmp=scipy.signal.fftconvolve(grid, self.g, mode='same')             # <<<<<<<<<<<<<<
@@ -4764,7 +4764,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
         __Pyx_XDECREF_SET(__pyx_v_b_tmp, __pyx_t_16);
         __pyx_t_16 = 0;
 
-        /* "graph.pyx":149
+        /* "biobox\lib\graph.pyx":149
  *                     else:
  *                         b_tmp=scipy.signal.fftconvolve(grid, self.g, mode='same')
  *                         b_tmp/=np.max(b_tmp)             # <<<<<<<<<<<<<<
@@ -4807,7 +4807,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
         __Pyx_DECREF_SET(__pyx_v_b_tmp, __pyx_t_3);
         __pyx_t_3 = 0;
 
-        /* "graph.pyx":150
+        /* "biobox\lib\graph.pyx":150
  *                         b_tmp=scipy.signal.fftconvolve(grid, self.g, mode='same')
  *                         b_tmp/=np.max(b_tmp)
  *                         b_tmp/=ampl             # <<<<<<<<<<<<<<
@@ -4819,7 +4819,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
         __Pyx_DECREF_SET(__pyx_v_b_tmp, __pyx_t_3);
         __pyx_t_3 = 0;
 
-        /* "graph.pyx":151
+        /* "biobox\lib\graph.pyx":151
  *                         b_tmp/=np.max(b_tmp)
  *                         b_tmp/=ampl
  *                         b+=b_tmp             # <<<<<<<<<<<<<<
@@ -4833,7 +4833,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
       }
       __pyx_L11:;
 
-      /* "graph.pyx":123
+      /* "biobox\lib\graph.pyx":123
  *             else:
  *                 b=[]
  *                 for a in np.unique(self.params[:,0]):             # <<<<<<<<<<<<<<
@@ -4843,7 +4843,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
     }
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "graph.pyx":154
+    /* "biobox\lib\graph.pyx":154
  * 
  *                 #accept points where density is under threshold (i.e., region is accessible)
  *                 self.access_grid=b<1.0             # <<<<<<<<<<<<<<
@@ -4860,7 +4860,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
   }
   __pyx_L4:;
 
-  /* "graph.pyx":157
+  /* "biobox\lib\graph.pyx":157
  * 
  * 
  *             self.access_grid_shape=np.array(b.shape)             # <<<<<<<<<<<<<<
@@ -4907,7 +4907,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
   __pyx_v_self->access_grid_shape = ((PyArrayObject *)__pyx_t_4);
   __pyx_t_4 = 0;
 
-  /* "graph.pyx":160
+  /* "biobox\lib\graph.pyx":160
  * 
  *             # if true, accept only access grid points inside of the point cloud convex hull
  *             if use_hull:             # <<<<<<<<<<<<<<
@@ -4917,7 +4917,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
   __pyx_t_8 = __Pyx_PyObject_IsTrue(((PyObject *)__pyx_v_use_hull)); if (unlikely(__pyx_t_8 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 160; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__pyx_t_8) {
 
-    /* "graph.pyx":163
+    /* "biobox\lib\graph.pyx":163
  * 
  *                 #scaling factor artificially "swelling the protein", to allow the convex hull to wrap around the points cloud)
  *                 minbox=np.min(np.array(self.access_grid_shape)*self.step).astype(float)             # <<<<<<<<<<<<<<
@@ -5022,7 +5022,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
     __pyx_v_minbox = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "graph.pyx":164
+    /* "biobox\lib\graph.pyx":164
  *                 #scaling factor artificially "swelling the protein", to allow the convex hull to wrap around the points cloud)
  *                 minbox=np.min(np.array(self.access_grid_shape)*self.step).astype(float)
  *                 scaling=(minbox+self.step*10)/minbox             # <<<<<<<<<<<<<<
@@ -5040,7 +5040,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
     __pyx_v_scaling = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "graph.pyx":167
+    /* "biobox\lib\graph.pyx":167
  * 
  *                 #compute Delaunay triangulation
  *                 if len(cloud)==0:             # <<<<<<<<<<<<<<
@@ -5051,7 +5051,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
     __pyx_t_8 = ((__pyx_t_6 == 0) != 0);
     if (__pyx_t_8) {
 
-      /* "graph.pyx":168
+      /* "biobox\lib\graph.pyx":168
  *                 #compute Delaunay triangulation
  *                 if len(cloud)==0:
  *                     hull=Delaunay(self.prot_points*scaling)             # <<<<<<<<<<<<<<
@@ -5091,7 +5091,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
       __pyx_v_hull = __pyx_t_4;
       __pyx_t_4 = 0;
 
-      /* "graph.pyx":167
+      /* "biobox\lib\graph.pyx":167
  * 
  *                 #compute Delaunay triangulation
  *                 if len(cloud)==0:             # <<<<<<<<<<<<<<
@@ -5101,7 +5101,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
       goto __pyx_L13;
     }
 
-    /* "graph.pyx":170
+    /* "biobox\lib\graph.pyx":170
  *                     hull=Delaunay(self.prot_points*scaling)
  *                 else:
  *                     hull=Delaunay(cloud*scaling)             # <<<<<<<<<<<<<<
@@ -5144,7 +5144,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
     }
     __pyx_L13:;
 
-    /* "graph.pyx":173
+    /* "biobox\lib\graph.pyx":173
  * 
  *                 #extract accessible gridpoints coordinates
  *                 w=np.array(np.where(self.access_grid)).T.astype(float)             # <<<<<<<<<<<<<<
@@ -5246,7 +5246,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
     __pyx_v_w = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "graph.pyx":174
+    /* "biobox\lib\graph.pyx":174
  *                 #extract accessible gridpoints coordinates
  *                 w=np.array(np.where(self.access_grid)).T.astype(float)
  *                 gridpoints=self.get_points_from_idx(w)             # <<<<<<<<<<<<<<
@@ -5254,12 +5254,12 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
  *                 #disable gridpoints laying outside the convex hull
  */
     if (!(likely(((__pyx_v_w) == Py_None) || likely(__Pyx_TypeTest(__pyx_v_w, __pyx_ptype_5numpy_ndarray))))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 174; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __pyx_t_4 = ((PyObject *)((struct __pyx_vtabstruct_5graph_Graph *)__pyx_v_self->__pyx_vtab)->get_points_from_idx(__pyx_v_self, ((PyArrayObject *)__pyx_v_w), 0)); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 174; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_4 = ((PyObject *)((struct __pyx_vtabstruct_6biobox_3lib_5graph_Graph *)__pyx_v_self->__pyx_vtab)->get_points_from_idx(__pyx_v_self, ((PyArrayObject *)__pyx_v_w), 0)); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 174; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_v_gridpoints = ((PyArrayObject *)__pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "graph.pyx":177
+    /* "biobox\lib\graph.pyx":177
  * 
  *                 #disable gridpoints laying outside the convex hull
  *                 hullscore=hull.find_simplex(gridpoints)             # <<<<<<<<<<<<<<
@@ -5296,7 +5296,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
     __pyx_v_hullscore = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "graph.pyx":178
+    /* "biobox\lib\graph.pyx":178
  *                 #disable gridpoints laying outside the convex hull
  *                 hullscore=hull.find_simplex(gridpoints)
  *                 bad_idx=w[hullscore==-1].astype(int)             # <<<<<<<<<<<<<<
@@ -5339,7 +5339,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
     __pyx_v_bad_idx = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "graph.pyx":179
+    /* "biobox\lib\graph.pyx":179
  *                 hullscore=hull.find_simplex(gridpoints)
  *                 bad_idx=w[hullscore==-1].astype(int)
  *                 self.access_grid[tuple(bad_idx.T)]=False             # <<<<<<<<<<<<<<
@@ -5354,7 +5354,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
     if (unlikely(PyObject_SetItem(((PyObject *)__pyx_v_self->access_grid), __pyx_t_3, Py_False) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 179; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-    /* "graph.pyx":160
+    /* "biobox\lib\graph.pyx":160
  * 
  *             # if true, accept only access grid points inside of the point cloud convex hull
  *             if use_hull:             # <<<<<<<<<<<<<<
@@ -5363,7 +5363,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
  */
   }
 
-  /* "graph.pyx":94
+  /* "biobox\lib\graph.pyx":94
  *         #@param boundaries build a grid within the desired box boundaries (if defined, maxdist parameter is ignored)
  *         #@param cloud build a grid using a points cloud as extrema for the construction of the box. If defined, maxdist and boundaries parameters are ignored.
  *         cpdef make_global_grid(self, float step=1.0, bool use_hull=False, np.ndarray boundaries=np.array([]), np.ndarray cloud=np.array([]), params=np.array([])):             # <<<<<<<<<<<<<<
@@ -5384,7 +5384,7 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
   __Pyx_XDECREF(__pyx_t_10);
   __Pyx_XDECREF(__pyx_t_11);
   __Pyx_XDECREF(__pyx_t_16);
-  __Pyx_AddTraceback("graph.Graph.make_global_grid", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.make_global_grid", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_smax);
@@ -5415,8 +5415,8 @@ static PyObject *__pyx_f_5graph_5Graph_make_global_grid(struct __pyx_obj_5graph_
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5graph_5Graph_5make_global_grid(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_pw_5graph_5Graph_5make_global_grid(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_5make_global_grid(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_5make_global_grid(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   float __pyx_v_step;
   PyBoolObject *__pyx_v_use_hull = 0;
   PyArrayObject *__pyx_v_boundaries = 0;
@@ -5503,14 +5503,14 @@ static PyObject *__pyx_pw_5graph_5Graph_5make_global_grid(PyObject *__pyx_v_self
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("make_global_grid", 0, 0, 5, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
-  __Pyx_AddTraceback("graph.Graph.make_global_grid", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.make_global_grid", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_use_hull), __pyx_ptype_7cpython_4bool_bool, 1, "use_hull", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_boundaries), __pyx_ptype_5numpy_ndarray, 1, "boundaries", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_cloud), __pyx_ptype_5numpy_ndarray, 1, "cloud", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_5graph_5Graph_4make_global_grid(((struct __pyx_obj_5graph_Graph *)__pyx_v_self), __pyx_v_step, __pyx_v_use_hull, __pyx_v_boundaries, __pyx_v_cloud, __pyx_v_params);
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_4make_global_grid(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self), __pyx_v_step, __pyx_v_use_hull, __pyx_v_boundaries, __pyx_v_cloud, __pyx_v_params);
 
   /* function exit code */
   goto __pyx_L0;
@@ -5521,11 +5521,11 @@ static PyObject *__pyx_pw_5graph_5Graph_5make_global_grid(PyObject *__pyx_v_self
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5graph_5Graph_4make_global_grid(struct __pyx_obj_5graph_Graph *__pyx_v_self, float __pyx_v_step, PyBoolObject *__pyx_v_use_hull, PyArrayObject *__pyx_v_boundaries, PyArrayObject *__pyx_v_cloud, PyObject *__pyx_v_params) {
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_4make_global_grid(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, float __pyx_v_step, PyBoolObject *__pyx_v_use_hull, PyArrayObject *__pyx_v_boundaries, PyArrayObject *__pyx_v_cloud, PyObject *__pyx_v_params) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
-  struct __pyx_opt_args_5graph_5Graph_make_global_grid __pyx_t_2;
+  struct __pyx_opt_args_6biobox_3lib_5graph_5Graph_make_global_grid __pyx_t_2;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -5537,7 +5537,7 @@ static PyObject *__pyx_pf_5graph_5Graph_4make_global_grid(struct __pyx_obj_5grap
   __pyx_t_2.boundaries = __pyx_v_boundaries;
   __pyx_t_2.cloud = __pyx_v_cloud;
   __pyx_t_2.params = __pyx_v_params;
-  __pyx_t_1 = __pyx_vtabptr_5graph_Graph->make_global_grid(__pyx_v_self, 1, &__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_vtabptr_6biobox_3lib_5graph_Graph->make_global_grid(__pyx_v_self, 1, &__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -5546,7 +5546,7 @@ static PyObject *__pyx_pf_5graph_5Graph_4make_global_grid(struct __pyx_obj_5grap
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("graph.Graph.make_global_grid", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.make_global_grid", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -5554,7 +5554,7 @@ static PyObject *__pyx_pf_5graph_5Graph_4make_global_grid(struct __pyx_obj_5grap
   return __pyx_r;
 }
 
-/* "graph.pyx":187
+/* "biobox\lib\graph.pyx":187
  *         #@param end coordinates of the second point to link
  *         #@param stds number of standard deviations for electron density boundaries definition
  *         cpdef place_local_grid(self, np.ndarray start, np.ndarray end, float stds=3.0):             # <<<<<<<<<<<<<<
@@ -5562,8 +5562,8 @@ static PyObject *__pyx_pf_5graph_5Graph_4make_global_grid(struct __pyx_obj_5grap
  *                 cdef np.ndarray grid
  */
 
-static PyObject *__pyx_pw_5graph_5Graph_7place_local_grid(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_start, PyArrayObject *__pyx_v_end, int __pyx_skip_dispatch, struct __pyx_opt_args_5graph_5Graph_place_local_grid *__pyx_optional_args) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_7place_local_grid(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_f_6biobox_3lib_5graph_5Graph_place_local_grid(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_start, PyArrayObject *__pyx_v_end, int __pyx_skip_dispatch, struct __pyx_opt_args_6biobox_3lib_5graph_5Graph_place_local_grid *__pyx_optional_args) {
   float __pyx_v_stds = ((float)3.0);
   PyArrayObject *__pyx_v_grid = 0;
   int __pyx_v_xpos;
@@ -5595,7 +5595,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
   int __pyx_t_13;
   Py_ssize_t __pyx_t_14;
   float __pyx_t_15;
-  struct __pyx_opt_args_5graph_5Graph__make_3d_gaussian __pyx_t_16;
+  struct __pyx_opt_args_6biobox_3lib_5graph_5Graph__make_3d_gaussian __pyx_t_16;
   PyObject *(*__pyx_t_17)(PyObject *);
   PyObject *__pyx_t_18 = NULL;
   int __pyx_lineno = 0;
@@ -5613,7 +5613,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
     __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_place_local_grid); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 187; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_5graph_5Graph_7place_local_grid)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_6biobox_3lib_5graph_5Graph_7place_local_grid)) {
       __Pyx_XDECREF(__pyx_r);
       __pyx_t_3 = PyFloat_FromDouble(__pyx_v_stds); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 187; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_3);
@@ -5656,7 +5656,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "graph.pyx":193
+  /* "biobox\lib\graph.pyx":193
  *                 cdef int ypos
  *                 cdef int zpos
  *                 cdef np.ndarray avgpos=(start+end)/2.0             # <<<<<<<<<<<<<<
@@ -5672,7 +5672,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
   __pyx_v_avgpos = ((PyArrayObject *)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "graph.pyx":196
+  /* "biobox\lib\graph.pyx":196
  * 
  *                 #if the same position as current position is requested, skip process
  *                 if not np.any(avgpos!=self.center):             # <<<<<<<<<<<<<<
@@ -5716,7 +5716,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
   __pyx_t_9 = ((!__pyx_t_8) != 0);
   if (__pyx_t_9) {
 
-    /* "graph.pyx":197
+    /* "biobox\lib\graph.pyx":197
  *                 #if the same position as current position is requested, skip process
  *                 if not np.any(avgpos!=self.center):
  *                     return             # <<<<<<<<<<<<<<
@@ -5727,7 +5727,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "graph.pyx":196
+    /* "biobox\lib\graph.pyx":196
  * 
  *                 #if the same position as current position is requested, skip process
  *                 if not np.any(avgpos!=self.center):             # <<<<<<<<<<<<<<
@@ -5736,7 +5736,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
  */
   }
 
-  /* "graph.pyx":200
+  /* "biobox\lib\graph.pyx":200
  * 
  *                 #self.points+=(avgpos-self.center)
  *                 self.center=avgpos             # <<<<<<<<<<<<<<
@@ -5749,7 +5749,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
   __Pyx_DECREF(((PyObject *)__pyx_v_self->center));
   __pyx_v_self->center = __pyx_v_avgpos;
 
-  /* "graph.pyx":202
+  /* "biobox\lib\graph.pyx":202
  *                 self.center=avgpos
  * 
  *                 if len(self.params)==0:             # <<<<<<<<<<<<<<
@@ -5763,7 +5763,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
   __pyx_t_9 = ((__pyx_t_6 == 0) != 0);
   if (__pyx_t_9) {
 
-    /* "graph.pyx":204
+    /* "biobox\lib\graph.pyx":204
  *                 if len(self.params)==0:
  *                     #prepare mesh grid, and place, Kronecker deltas
  *                     grid=np.zeros((len(self.xax),len(self.yax),len(self.zax)))             # <<<<<<<<<<<<<<
@@ -5834,7 +5834,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
     __pyx_v_grid = ((PyArrayObject *)__pyx_t_2);
     __pyx_t_2 = 0;
 
-    /* "graph.pyx":207
+    /* "biobox\lib\graph.pyx":207
  * 
  *                     #if protein point in region of interest, place a Kroneker delta
  *                     for p in self.prot_points:             # <<<<<<<<<<<<<<
@@ -5883,7 +5883,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
       __Pyx_XDECREF_SET(__pyx_v_p, __pyx_t_3);
       __pyx_t_3 = 0;
 
-      /* "graph.pyx":208
+      /* "biobox\lib\graph.pyx":208
  *                     #if protein point in region of interest, place a Kroneker delta
  *                     for p in self.prot_points:
  *                         if p[0]>self.xax[0]+self.center[0] and p[0]<-self.xax[0]+self.center[0]:             # <<<<<<<<<<<<<<
@@ -5932,7 +5932,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
       __pyx_L8_bool_binop_done:;
       if (__pyx_t_9) {
 
-        /* "graph.pyx":209
+        /* "biobox\lib\graph.pyx":209
  *                     for p in self.prot_points:
  *                         if p[0]>self.xax[0]+self.center[0] and p[0]<-self.xax[0]+self.center[0]:
  *                             if p[1]>self.yax[0]+self.center[1] and p[1]<-self.yax[0]+self.center[1]:             # <<<<<<<<<<<<<<
@@ -5981,7 +5981,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
         __pyx_L11_bool_binop_done:;
         if (__pyx_t_9) {
 
-          /* "graph.pyx":210
+          /* "biobox\lib\graph.pyx":210
  *                         if p[0]>self.xax[0]+self.center[0] and p[0]<-self.xax[0]+self.center[0]:
  *                             if p[1]>self.yax[0]+self.center[1] and p[1]<-self.yax[0]+self.center[1]:
  *                                 if p[2]>self.zax[0]+self.center[2] and p[2]<-self.zax[0]+self.center[2]:             # <<<<<<<<<<<<<<
@@ -6030,7 +6030,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
           __pyx_L14_bool_binop_done:;
           if (__pyx_t_9) {
 
-            /* "graph.pyx":211
+            /* "biobox\lib\graph.pyx":211
  *                             if p[1]>self.yax[0]+self.center[1] and p[1]<-self.yax[0]+self.center[1]:
  *                                 if p[2]>self.zax[0]+self.center[2] and p[2]<-self.zax[0]+self.center[2]:
  *                                     xpos=np.argmin(np.abs(self.xax+self.center[0]-p[0]))             # <<<<<<<<<<<<<<
@@ -6114,7 +6114,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
             __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
             __pyx_v_xpos = __pyx_t_13;
 
-            /* "graph.pyx":212
+            /* "biobox\lib\graph.pyx":212
  *                                 if p[2]>self.zax[0]+self.center[2] and p[2]<-self.zax[0]+self.center[2]:
  *                                     xpos=np.argmin(np.abs(self.xax+self.center[0]-p[0]))
  *                                     ypos=np.argmin(np.abs(self.yax+self.center[1]-p[1]))             # <<<<<<<<<<<<<<
@@ -6198,7 +6198,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
             __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
             __pyx_v_ypos = __pyx_t_13;
 
-            /* "graph.pyx":213
+            /* "biobox\lib\graph.pyx":213
  *                                     xpos=np.argmin(np.abs(self.xax+self.center[0]-p[0]))
  *                                     ypos=np.argmin(np.abs(self.yax+self.center[1]-p[1]))
  *                                     zpos=np.argmin(np.abs(self.zax+self.center[2]-p[2]))             # <<<<<<<<<<<<<<
@@ -6282,7 +6282,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
             __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
             __pyx_v_zpos = __pyx_t_13;
 
-            /* "graph.pyx":214
+            /* "biobox\lib\graph.pyx":214
  *                                     ypos=np.argmin(np.abs(self.yax+self.center[1]-p[1]))
  *                                     zpos=np.argmin(np.abs(self.zax+self.center[2]-p[2]))
  *                                     grid[xpos,ypos,zpos]=1             # <<<<<<<<<<<<<<
@@ -6309,7 +6309,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
             if (unlikely(PyObject_SetItem(((PyObject *)__pyx_v_grid), __pyx_t_11, __pyx_int_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 214; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
             __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
 
-            /* "graph.pyx":210
+            /* "biobox\lib\graph.pyx":210
  *                         if p[0]>self.xax[0]+self.center[0] and p[0]<-self.xax[0]+self.center[0]:
  *                             if p[1]>self.yax[0]+self.center[1] and p[1]<-self.yax[0]+self.center[1]:
  *                                 if p[2]>self.zax[0]+self.center[2] and p[2]<-self.zax[0]+self.center[2]:             # <<<<<<<<<<<<<<
@@ -6318,7 +6318,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
  */
           }
 
-          /* "graph.pyx":209
+          /* "biobox\lib\graph.pyx":209
  *                     for p in self.prot_points:
  *                         if p[0]>self.xax[0]+self.center[0] and p[0]<-self.xax[0]+self.center[0]:
  *                             if p[1]>self.yax[0]+self.center[1] and p[1]<-self.yax[0]+self.center[1]:             # <<<<<<<<<<<<<<
@@ -6327,7 +6327,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
  */
         }
 
-        /* "graph.pyx":208
+        /* "biobox\lib\graph.pyx":208
  *                     #if protein point in region of interest, place a Kroneker delta
  *                     for p in self.prot_points:
  *                         if p[0]>self.xax[0]+self.center[0] and p[0]<-self.xax[0]+self.center[0]:             # <<<<<<<<<<<<<<
@@ -6336,7 +6336,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
  */
       }
 
-      /* "graph.pyx":207
+      /* "biobox\lib\graph.pyx":207
  * 
  *                     #if protein point in region of interest, place a Kroneker delta
  *                     for p in self.prot_points:             # <<<<<<<<<<<<<<
@@ -6346,7 +6346,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
     }
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "graph.pyx":216
+    /* "biobox\lib\graph.pyx":216
  *                                     grid[xpos,ypos,zpos]=1
  * 
  *                     b=scipy.signal.fftconvolve(grid, self.g, mode='same')             # <<<<<<<<<<<<<<
@@ -6380,7 +6380,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
     __pyx_v_b = __pyx_t_12;
     __pyx_t_12 = 0;
 
-    /* "graph.pyx":219
+    /* "biobox\lib\graph.pyx":219
  * 
  *                     #accept points where density is under threshold (i.e., region is accessible)
  *                     self.access_grid=b<np.max(b)-np.std(b)*stds             # <<<<<<<<<<<<<<
@@ -6466,7 +6466,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
     __pyx_v_self->access_grid = ((PyArrayObject *)__pyx_t_7);
     __pyx_t_7 = 0;
 
-    /* "graph.pyx":202
+    /* "biobox\lib\graph.pyx":202
  *                 self.center=avgpos
  * 
  *                 if len(self.params)==0:             # <<<<<<<<<<<<<<
@@ -6476,7 +6476,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
     goto __pyx_L4;
   }
 
-  /* "graph.pyx":222
+  /* "biobox\lib\graph.pyx":222
  * 
  *                 else:
  *                     b=[]             # <<<<<<<<<<<<<<
@@ -6489,7 +6489,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
     __pyx_v_b = __pyx_t_7;
     __pyx_t_7 = 0;
 
-    /* "graph.pyx":223
+    /* "biobox\lib\graph.pyx":223
  *                 else:
  *                     b=[]
  *                     for a in np.unique(self.params[:,0]):             # <<<<<<<<<<<<<<
@@ -6572,7 +6572,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
       __Pyx_XDECREF_SET(__pyx_v_a, __pyx_t_7);
       __pyx_t_7 = 0;
 
-      /* "graph.pyx":225
+      /* "biobox\lib\graph.pyx":225
  *                     for a in np.unique(self.params[:,0]):
  * 
  *                         grid=np.zeros((len(self.xax),len(self.yax),len(self.zax)))             # <<<<<<<<<<<<<<
@@ -6643,7 +6643,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
       __Pyx_XDECREF_SET(__pyx_v_grid, ((PyArrayObject *)__pyx_t_7));
       __pyx_t_7 = 0;
 
-      /* "graph.pyx":227
+      /* "biobox\lib\graph.pyx":227
  *                         grid=np.zeros((len(self.xax),len(self.yax),len(self.zax)))
  * 
  *                         test=np.where(self.params[:,0]==a)[0]             # <<<<<<<<<<<<<<
@@ -6691,7 +6691,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
       __Pyx_XDECREF_SET(__pyx_v_test, __pyx_t_11);
       __pyx_t_11 = 0;
 
-      /* "graph.pyx":228
+      /* "biobox\lib\graph.pyx":228
  * 
  *                         test=np.where(self.params[:,0]==a)[0]
  *                         points=self.prot_points[test]             # <<<<<<<<<<<<<<
@@ -6703,7 +6703,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
       __Pyx_XDECREF_SET(__pyx_v_points, __pyx_t_11);
       __pyx_t_11 = 0;
 
-      /* "graph.pyx":230
+      /* "biobox\lib\graph.pyx":230
  *                         points=self.prot_points[test]
  * 
  *                         sigma=self.params[test,1][0]             # <<<<<<<<<<<<<<
@@ -6727,7 +6727,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
       __Pyx_XDECREF_SET(__pyx_v_sigma, __pyx_t_11);
       __pyx_t_11 = 0;
 
-      /* "graph.pyx":231
+      /* "biobox\lib\graph.pyx":231
  * 
  *                         sigma=self.params[test,1][0]
  *                         ampl=self.params[test,2][0]             # <<<<<<<<<<<<<<
@@ -6751,7 +6751,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
       __Pyx_XDECREF_SET(__pyx_v_ampl, __pyx_t_11);
       __pyx_t_11 = 0;
 
-      /* "graph.pyx":232
+      /* "biobox\lib\graph.pyx":232
  *                         sigma=self.params[test,1][0]
  *                         ampl=self.params[test,2][0]
  *                         self.g=self._make_3d_gaussian(5, sigma*2.0)             # <<<<<<<<<<<<<<
@@ -6765,7 +6765,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
       __pyx_t_16.__pyx_n = 2;
       __pyx_t_16.degree = 5;
       __pyx_t_16.sigma = __pyx_t_15;
-      __pyx_t_11 = ((struct __pyx_vtabstruct_5graph_Graph *)__pyx_v_self->__pyx_vtab)->_make_3d_gaussian(__pyx_v_self, &__pyx_t_16); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 232; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_11 = ((struct __pyx_vtabstruct_6biobox_3lib_5graph_Graph *)__pyx_v_self->__pyx_vtab)->_make_3d_gaussian(__pyx_v_self, &__pyx_t_16); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 232; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_11);
       if (!(likely(((__pyx_t_11) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_11, __pyx_ptype_5numpy_ndarray))))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 232; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GIVEREF(__pyx_t_11);
@@ -6774,7 +6774,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
       __pyx_v_self->g = ((PyArrayObject *)__pyx_t_11);
       __pyx_t_11 = 0;
 
-      /* "graph.pyx":235
+      /* "biobox\lib\graph.pyx":235
  * 
  *                         #if protein point in region of interest, place a Kroneker delta
  *                         for p in points: #self.prot_points:             # <<<<<<<<<<<<<<
@@ -6823,7 +6823,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
         __Pyx_XDECREF_SET(__pyx_v_p, __pyx_t_7);
         __pyx_t_7 = 0;
 
-        /* "graph.pyx":236
+        /* "biobox\lib\graph.pyx":236
  *                         #if protein point in region of interest, place a Kroneker delta
  *                         for p in points: #self.prot_points:
  *                             if p[0]>self.xax[0]+self.center[0] and p[0]<-self.xax[0]+self.center[0]:             # <<<<<<<<<<<<<<
@@ -6872,7 +6872,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
         __pyx_L21_bool_binop_done:;
         if (__pyx_t_9) {
 
-          /* "graph.pyx":237
+          /* "biobox\lib\graph.pyx":237
  *                         for p in points: #self.prot_points:
  *                             if p[0]>self.xax[0]+self.center[0] and p[0]<-self.xax[0]+self.center[0]:
  *                                 if p[1]>self.yax[0]+self.center[1] and p[1]<-self.yax[0]+self.center[1]:             # <<<<<<<<<<<<<<
@@ -6921,7 +6921,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
           __pyx_L24_bool_binop_done:;
           if (__pyx_t_9) {
 
-            /* "graph.pyx":238
+            /* "biobox\lib\graph.pyx":238
  *                             if p[0]>self.xax[0]+self.center[0] and p[0]<-self.xax[0]+self.center[0]:
  *                                 if p[1]>self.yax[0]+self.center[1] and p[1]<-self.yax[0]+self.center[1]:
  *                                     if p[2]>self.zax[0]+self.center[2] and p[2]<-self.zax[0]+self.center[2]:             # <<<<<<<<<<<<<<
@@ -6970,7 +6970,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
             __pyx_L27_bool_binop_done:;
             if (__pyx_t_9) {
 
-              /* "graph.pyx":239
+              /* "biobox\lib\graph.pyx":239
  *                                 if p[1]>self.yax[0]+self.center[1] and p[1]<-self.yax[0]+self.center[1]:
  *                                     if p[2]>self.zax[0]+self.center[2] and p[2]<-self.zax[0]+self.center[2]:
  *                                         xpos=np.argmin(np.abs(self.xax+self.center[0]-p[0]))             # <<<<<<<<<<<<<<
@@ -7054,7 +7054,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
               __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
               __pyx_v_xpos = __pyx_t_13;
 
-              /* "graph.pyx":240
+              /* "biobox\lib\graph.pyx":240
  *                                     if p[2]>self.zax[0]+self.center[2] and p[2]<-self.zax[0]+self.center[2]:
  *                                         xpos=np.argmin(np.abs(self.xax+self.center[0]-p[0]))
  *                                         ypos=np.argmin(np.abs(self.yax+self.center[1]-p[1]))             # <<<<<<<<<<<<<<
@@ -7138,7 +7138,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
               __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
               __pyx_v_ypos = __pyx_t_13;
 
-              /* "graph.pyx":241
+              /* "biobox\lib\graph.pyx":241
  *                                         xpos=np.argmin(np.abs(self.xax+self.center[0]-p[0]))
  *                                         ypos=np.argmin(np.abs(self.yax+self.center[1]-p[1]))
  *                                         zpos=np.argmin(np.abs(self.zax+self.center[2]-p[2]))             # <<<<<<<<<<<<<<
@@ -7222,7 +7222,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
               __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
               __pyx_v_zpos = __pyx_t_13;
 
-              /* "graph.pyx":242
+              /* "biobox\lib\graph.pyx":242
  *                                         ypos=np.argmin(np.abs(self.yax+self.center[1]-p[1]))
  *                                         zpos=np.argmin(np.abs(self.zax+self.center[2]-p[2]))
  *                                         grid[xpos,ypos,zpos]=1             # <<<<<<<<<<<<<<
@@ -7249,7 +7249,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
               if (unlikely(PyObject_SetItem(((PyObject *)__pyx_v_grid), __pyx_t_5, __pyx_int_1) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 242; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
               __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-              /* "graph.pyx":238
+              /* "biobox\lib\graph.pyx":238
  *                             if p[0]>self.xax[0]+self.center[0] and p[0]<-self.xax[0]+self.center[0]:
  *                                 if p[1]>self.yax[0]+self.center[1] and p[1]<-self.yax[0]+self.center[1]:
  *                                     if p[2]>self.zax[0]+self.center[2] and p[2]<-self.zax[0]+self.center[2]:             # <<<<<<<<<<<<<<
@@ -7258,7 +7258,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
  */
             }
 
-            /* "graph.pyx":237
+            /* "biobox\lib\graph.pyx":237
  *                         for p in points: #self.prot_points:
  *                             if p[0]>self.xax[0]+self.center[0] and p[0]<-self.xax[0]+self.center[0]:
  *                                 if p[1]>self.yax[0]+self.center[1] and p[1]<-self.yax[0]+self.center[1]:             # <<<<<<<<<<<<<<
@@ -7267,7 +7267,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
  */
           }
 
-          /* "graph.pyx":236
+          /* "biobox\lib\graph.pyx":236
  *                         #if protein point in region of interest, place a Kroneker delta
  *                         for p in points: #self.prot_points:
  *                             if p[0]>self.xax[0]+self.center[0] and p[0]<-self.xax[0]+self.center[0]:             # <<<<<<<<<<<<<<
@@ -7276,7 +7276,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
  */
         }
 
-        /* "graph.pyx":235
+        /* "biobox\lib\graph.pyx":235
  * 
  *                         #if protein point in region of interest, place a Kroneker delta
  *                         for p in points: #self.prot_points:             # <<<<<<<<<<<<<<
@@ -7286,7 +7286,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
       }
       __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
 
-      /* "graph.pyx":244
+      /* "biobox\lib\graph.pyx":244
  *                                         grid[xpos,ypos,zpos]=1
  * 
  *                         if len(b)==0:             # <<<<<<<<<<<<<<
@@ -7297,7 +7297,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
       __pyx_t_9 = ((__pyx_t_14 == 0) != 0);
       if (__pyx_t_9) {
 
-        /* "graph.pyx":245
+        /* "biobox\lib\graph.pyx":245
  * 
  *                         if len(b)==0:
  *                             b=scipy.signal.fftconvolve(grid, self.g, mode='same')             # <<<<<<<<<<<<<<
@@ -7331,7 +7331,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
         __Pyx_DECREF_SET(__pyx_v_b, __pyx_t_18);
         __pyx_t_18 = 0;
 
-        /* "graph.pyx":246
+        /* "biobox\lib\graph.pyx":246
  *                         if len(b)==0:
  *                             b=scipy.signal.fftconvolve(grid, self.g, mode='same')
  *                             b/=np.max(b)             # <<<<<<<<<<<<<<
@@ -7374,7 +7374,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
         __Pyx_DECREF_SET(__pyx_v_b, __pyx_t_5);
         __pyx_t_5 = 0;
 
-        /* "graph.pyx":247
+        /* "biobox\lib\graph.pyx":247
  *                             b=scipy.signal.fftconvolve(grid, self.g, mode='same')
  *                             b/=np.max(b)
  *                             b/=ampl             # <<<<<<<<<<<<<<
@@ -7386,7 +7386,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
         __Pyx_DECREF_SET(__pyx_v_b, __pyx_t_5);
         __pyx_t_5 = 0;
 
-        /* "graph.pyx":244
+        /* "biobox\lib\graph.pyx":244
  *                                         grid[xpos,ypos,zpos]=1
  * 
  *                         if len(b)==0:             # <<<<<<<<<<<<<<
@@ -7396,7 +7396,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
         goto __pyx_L29;
       }
 
-      /* "graph.pyx":249
+      /* "biobox\lib\graph.pyx":249
  *                             b/=ampl
  *                         else:
  *                             b_tmp=scipy.signal.fftconvolve(grid, self.g, mode='same')             # <<<<<<<<<<<<<<
@@ -7431,7 +7431,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
         __Pyx_XDECREF_SET(__pyx_v_b_tmp, __pyx_t_7);
         __pyx_t_7 = 0;
 
-        /* "graph.pyx":250
+        /* "biobox\lib\graph.pyx":250
  *                         else:
  *                             b_tmp=scipy.signal.fftconvolve(grid, self.g, mode='same')
  *                             b_tmp/=np.max(b_tmp)             # <<<<<<<<<<<<<<
@@ -7474,7 +7474,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
         __Pyx_DECREF_SET(__pyx_v_b_tmp, __pyx_t_18);
         __pyx_t_18 = 0;
 
-        /* "graph.pyx":251
+        /* "biobox\lib\graph.pyx":251
  *                             b_tmp=scipy.signal.fftconvolve(grid, self.g, mode='same')
  *                             b_tmp/=np.max(b_tmp)
  *                             b_tmp/=ampl             # <<<<<<<<<<<<<<
@@ -7486,7 +7486,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
         __Pyx_DECREF_SET(__pyx_v_b_tmp, __pyx_t_18);
         __pyx_t_18 = 0;
 
-        /* "graph.pyx":252
+        /* "biobox\lib\graph.pyx":252
  *                             b_tmp/=np.max(b_tmp)
  *                             b_tmp/=ampl
  *                             b+=b_tmp             # <<<<<<<<<<<<<<
@@ -7500,7 +7500,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
       }
       __pyx_L29:;
 
-      /* "graph.pyx":223
+      /* "biobox\lib\graph.pyx":223
  *                 else:
  *                     b=[]
  *                     for a in np.unique(self.params[:,0]):             # <<<<<<<<<<<<<<
@@ -7510,7 +7510,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
     }
     __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
 
-    /* "graph.pyx":255
+    /* "biobox\lib\graph.pyx":255
  * 
  *                     #accept points where density is under threshold (i.e., region is accessible)
  *                     self.access_grid=b<1.0             # <<<<<<<<<<<<<<
@@ -7527,7 +7527,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
   }
   __pyx_L4:;
 
-  /* "graph.pyx":257
+  /* "biobox\lib\graph.pyx":257
  *                     self.access_grid=b<1.0
  * 
  *                 self.access_grid_shape=np.array(b.shape)             # <<<<<<<<<<<<<<
@@ -7574,7 +7574,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
   __pyx_v_self->access_grid_shape = ((PyArrayObject *)__pyx_t_12);
   __pyx_t_12 = 0;
 
-  /* "graph.pyx":187
+  /* "biobox\lib\graph.pyx":187
  *         #@param end coordinates of the second point to link
  *         #@param stds number of standard deviations for electron density boundaries definition
  *         cpdef place_local_grid(self, np.ndarray start, np.ndarray end, float stds=3.0):             # <<<<<<<<<<<<<<
@@ -7595,7 +7595,7 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
   __Pyx_XDECREF(__pyx_t_11);
   __Pyx_XDECREF(__pyx_t_12);
   __Pyx_XDECREF(__pyx_t_18);
-  __Pyx_AddTraceback("graph.Graph.place_local_grid", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.place_local_grid", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XDECREF((PyObject *)__pyx_v_grid);
@@ -7614,8 +7614,8 @@ static PyObject *__pyx_f_5graph_5Graph_place_local_grid(struct __pyx_obj_5graph_
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5graph_5Graph_7place_local_grid(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_pw_5graph_5Graph_7place_local_grid(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_7place_local_grid(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_7place_local_grid(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyArrayObject *__pyx_v_start = 0;
   PyArrayObject *__pyx_v_end = 0;
   float __pyx_v_stds;
@@ -7678,13 +7678,13 @@ static PyObject *__pyx_pw_5graph_5Graph_7place_local_grid(PyObject *__pyx_v_self
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("place_local_grid", 0, 2, 3, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 187; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
-  __Pyx_AddTraceback("graph.Graph.place_local_grid", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.place_local_grid", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_start), __pyx_ptype_5numpy_ndarray, 1, "start", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 187; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_end), __pyx_ptype_5numpy_ndarray, 1, "end", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 187; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_5graph_5Graph_6place_local_grid(((struct __pyx_obj_5graph_Graph *)__pyx_v_self), __pyx_v_start, __pyx_v_end, __pyx_v_stds);
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_6place_local_grid(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self), __pyx_v_start, __pyx_v_end, __pyx_v_stds);
 
   /* function exit code */
   goto __pyx_L0;
@@ -7695,11 +7695,11 @@ static PyObject *__pyx_pw_5graph_5Graph_7place_local_grid(PyObject *__pyx_v_self
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5graph_5Graph_6place_local_grid(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_start, PyArrayObject *__pyx_v_end, float __pyx_v_stds) {
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_6place_local_grid(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_start, PyArrayObject *__pyx_v_end, float __pyx_v_stds) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
-  struct __pyx_opt_args_5graph_5Graph_place_local_grid __pyx_t_2;
+  struct __pyx_opt_args_6biobox_3lib_5graph_5Graph_place_local_grid __pyx_t_2;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -7707,7 +7707,7 @@ static PyObject *__pyx_pf_5graph_5Graph_6place_local_grid(struct __pyx_obj_5grap
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_2.__pyx_n = 1;
   __pyx_t_2.stds = __pyx_v_stds;
-  __pyx_t_1 = __pyx_vtabptr_5graph_Graph->place_local_grid(__pyx_v_self, __pyx_v_start, __pyx_v_end, 1, &__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 187; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_vtabptr_6biobox_3lib_5graph_Graph->place_local_grid(__pyx_v_self, __pyx_v_start, __pyx_v_end, 1, &__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 187; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7716,7 +7716,7 @@ static PyObject *__pyx_pf_5graph_5Graph_6place_local_grid(struct __pyx_obj_5grap
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("graph.Graph.place_local_grid", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.place_local_grid", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -7724,7 +7724,7 @@ static PyObject *__pyx_pf_5graph_5Graph_6place_local_grid(struct __pyx_obj_5grap
   return __pyx_r;
 }
 
-/* "graph.pyx":265
+/* "biobox\lib\graph.pyx":265
  *         # @param accessibility grid index, can be either flat or 3D
  *         # @param flat_index if true, the index will be first converted into 3D
  *         cpdef np.ndarray get_points_from_idx_flat(self, int idx2):             # <<<<<<<<<<<<<<
@@ -7732,8 +7732,8 @@ static PyObject *__pyx_pf_5graph_5Graph_6place_local_grid(struct __pyx_obj_5grap
  *                 return idx*self.step+self.center-self.step*np.array(self.access_grid_shape)/2.0
  */
 
-static PyObject *__pyx_pw_5graph_5Graph_9get_points_from_idx_flat(PyObject *__pyx_v_self, PyObject *__pyx_arg_idx2); /*proto*/
-static PyArrayObject *__pyx_f_5graph_5Graph_get_points_from_idx_flat(struct __pyx_obj_5graph_Graph *__pyx_v_self, int __pyx_v_idx2, int __pyx_skip_dispatch) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_9get_points_from_idx_flat(PyObject *__pyx_v_self, PyObject *__pyx_arg_idx2); /*proto*/
+static PyArrayObject *__pyx_f_6biobox_3lib_5graph_5Graph_get_points_from_idx_flat(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, int __pyx_v_idx2, int __pyx_skip_dispatch) {
   PyArrayObject *__pyx_v_idx = 0;
   PyArrayObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
@@ -7753,7 +7753,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_get_points_from_idx_flat(struct __py
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
     __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_get_points_from_idx_flat); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 265; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_5graph_5Graph_9get_points_from_idx_flat)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_6biobox_3lib_5graph_5Graph_9get_points_from_idx_flat)) {
       __Pyx_XDECREF(((PyObject *)__pyx_r));
       __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_idx2); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 265; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_3);
@@ -7793,7 +7793,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_get_points_from_idx_flat(struct __py
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "graph.pyx":266
+  /* "biobox\lib\graph.pyx":266
  *         # @param flat_index if true, the index will be first converted into 3D
  *         cpdef np.ndarray get_points_from_idx_flat(self, int idx2):
  *                 cdef np.ndarray idx=np.array(self.get_3d_index(idx2))             # <<<<<<<<<<<<<<
@@ -7805,7 +7805,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_get_points_from_idx_flat(struct __py
   __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_array); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 266; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = ((struct __pyx_vtabstruct_5graph_Graph *)__pyx_v_self->__pyx_vtab)->get_3d_index(__pyx_v_self, __pyx_v_idx2, 0); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 266; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = ((struct __pyx_vtabstruct_6biobox_3lib_5graph_Graph *)__pyx_v_self->__pyx_vtab)->get_3d_index(__pyx_v_self, __pyx_v_idx2, 0); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 266; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_6 = NULL;
   if (CYTHON_COMPILING_IN_CPYTHON && unlikely(PyMethod_Check(__pyx_t_4))) {
@@ -7837,7 +7837,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_get_points_from_idx_flat(struct __py
   __pyx_v_idx = ((PyArrayObject *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "graph.pyx":267
+  /* "biobox\lib\graph.pyx":267
  *         cpdef np.ndarray get_points_from_idx_flat(self, int idx2):
  *                 cdef np.ndarray idx=np.array(self.get_3d_index(idx2))
  *                 return idx*self.step+self.center-self.step*np.array(self.access_grid_shape)/2.0             # <<<<<<<<<<<<<<
@@ -7901,7 +7901,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_get_points_from_idx_flat(struct __py
   __pyx_t_6 = 0;
   goto __pyx_L0;
 
-  /* "graph.pyx":265
+  /* "biobox\lib\graph.pyx":265
  *         # @param accessibility grid index, can be either flat or 3D
  *         # @param flat_index if true, the index will be first converted into 3D
  *         cpdef np.ndarray get_points_from_idx_flat(self, int idx2):             # <<<<<<<<<<<<<<
@@ -7917,7 +7917,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_get_points_from_idx_flat(struct __py
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_6);
-  __Pyx_AddTraceback("graph.Graph.get_points_from_idx_flat", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.get_points_from_idx_flat", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XDECREF((PyObject *)__pyx_v_idx);
@@ -7927,8 +7927,8 @@ static PyArrayObject *__pyx_f_5graph_5Graph_get_points_from_idx_flat(struct __py
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5graph_5Graph_9get_points_from_idx_flat(PyObject *__pyx_v_self, PyObject *__pyx_arg_idx2); /*proto*/
-static PyObject *__pyx_pw_5graph_5Graph_9get_points_from_idx_flat(PyObject *__pyx_v_self, PyObject *__pyx_arg_idx2) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_9get_points_from_idx_flat(PyObject *__pyx_v_self, PyObject *__pyx_arg_idx2); /*proto*/
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_9get_points_from_idx_flat(PyObject *__pyx_v_self, PyObject *__pyx_arg_idx2) {
   int __pyx_v_idx2;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
@@ -7941,18 +7941,18 @@ static PyObject *__pyx_pw_5graph_5Graph_9get_points_from_idx_flat(PyObject *__py
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
-  __Pyx_AddTraceback("graph.Graph.get_points_from_idx_flat", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.get_points_from_idx_flat", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_5graph_5Graph_8get_points_from_idx_flat(((struct __pyx_obj_5graph_Graph *)__pyx_v_self), ((int)__pyx_v_idx2));
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_8get_points_from_idx_flat(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self), ((int)__pyx_v_idx2));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5graph_5Graph_8get_points_from_idx_flat(struct __pyx_obj_5graph_Graph *__pyx_v_self, int __pyx_v_idx2) {
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_8get_points_from_idx_flat(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, int __pyx_v_idx2) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -7961,7 +7961,7 @@ static PyObject *__pyx_pf_5graph_5Graph_8get_points_from_idx_flat(struct __pyx_o
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("get_points_from_idx_flat", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = ((PyObject *)__pyx_f_5graph_5Graph_get_points_from_idx_flat(__pyx_v_self, __pyx_v_idx2, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 265; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = ((PyObject *)__pyx_f_6biobox_3lib_5graph_5Graph_get_points_from_idx_flat(__pyx_v_self, __pyx_v_idx2, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 265; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7970,7 +7970,7 @@ static PyObject *__pyx_pf_5graph_5Graph_8get_points_from_idx_flat(struct __pyx_o
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("graph.Graph.get_points_from_idx_flat", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.get_points_from_idx_flat", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -7978,7 +7978,7 @@ static PyObject *__pyx_pf_5graph_5Graph_8get_points_from_idx_flat(struct __pyx_o
   return __pyx_r;
 }
 
-/* "graph.pyx":273
+/* "biobox\lib\graph.pyx":273
  *         # @param accessibility grid index, can be either flat or 3D
  *         # @param flat_index if true, the index will be first converted into 3D
  *         cpdef np.ndarray get_points_from_idx(self, np.ndarray idx):             # <<<<<<<<<<<<<<
@@ -7986,8 +7986,8 @@ static PyObject *__pyx_pf_5graph_5Graph_8get_points_from_idx_flat(struct __pyx_o
  *                 return idx*self.step+self.center-self.step*np.array(self.access_grid_shape)/2.0
  */
 
-static PyObject *__pyx_pw_5graph_5Graph_11get_points_from_idx(PyObject *__pyx_v_self, PyObject *__pyx_v_idx); /*proto*/
-static PyArrayObject *__pyx_f_5graph_5Graph_get_points_from_idx(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_idx, int __pyx_skip_dispatch) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_11get_points_from_idx(PyObject *__pyx_v_self, PyObject *__pyx_v_idx); /*proto*/
+static PyArrayObject *__pyx_f_6biobox_3lib_5graph_5Graph_get_points_from_idx(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_idx, int __pyx_skip_dispatch) {
   PyArrayObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -8006,7 +8006,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_get_points_from_idx(struct __pyx_obj
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
     __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_get_points_from_idx); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 273; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_5graph_5Graph_11get_points_from_idx)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_6biobox_3lib_5graph_5Graph_11get_points_from_idx)) {
       __Pyx_XDECREF(((PyObject *)__pyx_r));
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_3 = __pyx_t_1; __pyx_t_4 = NULL;
@@ -8043,7 +8043,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_get_points_from_idx(struct __pyx_obj
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "graph.pyx":275
+  /* "biobox\lib\graph.pyx":275
  *         cpdef np.ndarray get_points_from_idx(self, np.ndarray idx):
  *                 #idx=np.array(idx2)
  *                 return idx*self.step+self.center-self.step*np.array(self.access_grid_shape)/2.0             # <<<<<<<<<<<<<<
@@ -8107,7 +8107,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_get_points_from_idx(struct __pyx_obj
   __pyx_t_4 = 0;
   goto __pyx_L0;
 
-  /* "graph.pyx":273
+  /* "biobox\lib\graph.pyx":273
  *         # @param accessibility grid index, can be either flat or 3D
  *         # @param flat_index if true, the index will be first converted into 3D
  *         cpdef np.ndarray get_points_from_idx(self, np.ndarray idx):             # <<<<<<<<<<<<<<
@@ -8123,7 +8123,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_get_points_from_idx(struct __pyx_obj
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_6);
-  __Pyx_AddTraceback("graph.Graph.get_points_from_idx", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.get_points_from_idx", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XGIVEREF((PyObject *)__pyx_r);
@@ -8132,8 +8132,8 @@ static PyArrayObject *__pyx_f_5graph_5Graph_get_points_from_idx(struct __pyx_obj
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5graph_5Graph_11get_points_from_idx(PyObject *__pyx_v_self, PyObject *__pyx_v_idx); /*proto*/
-static PyObject *__pyx_pw_5graph_5Graph_11get_points_from_idx(PyObject *__pyx_v_self, PyObject *__pyx_v_idx) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_11get_points_from_idx(PyObject *__pyx_v_self, PyObject *__pyx_v_idx); /*proto*/
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_11get_points_from_idx(PyObject *__pyx_v_self, PyObject *__pyx_v_idx) {
   CYTHON_UNUSED int __pyx_lineno = 0;
   CYTHON_UNUSED const char *__pyx_filename = NULL;
   CYTHON_UNUSED int __pyx_clineno = 0;
@@ -8141,7 +8141,7 @@ static PyObject *__pyx_pw_5graph_5Graph_11get_points_from_idx(PyObject *__pyx_v_
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("get_points_from_idx (wrapper)", 0);
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_idx), __pyx_ptype_5numpy_ndarray, 1, "idx", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 273; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_5graph_5Graph_10get_points_from_idx(((struct __pyx_obj_5graph_Graph *)__pyx_v_self), ((PyArrayObject *)__pyx_v_idx));
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_10get_points_from_idx(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self), ((PyArrayObject *)__pyx_v_idx));
 
   /* function exit code */
   goto __pyx_L0;
@@ -8152,7 +8152,7 @@ static PyObject *__pyx_pw_5graph_5Graph_11get_points_from_idx(PyObject *__pyx_v_
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5graph_5Graph_10get_points_from_idx(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_idx) {
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_10get_points_from_idx(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_idx) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -8161,7 +8161,7 @@ static PyObject *__pyx_pf_5graph_5Graph_10get_points_from_idx(struct __pyx_obj_5
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("get_points_from_idx", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = ((PyObject *)__pyx_f_5graph_5Graph_get_points_from_idx(__pyx_v_self, __pyx_v_idx, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 273; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = ((PyObject *)__pyx_f_6biobox_3lib_5graph_5Graph_get_points_from_idx(__pyx_v_self, __pyx_v_idx, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 273; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -8170,7 +8170,7 @@ static PyObject *__pyx_pf_5graph_5Graph_10get_points_from_idx(struct __pyx_obj_5
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("graph.Graph.get_points_from_idx", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.get_points_from_idx", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -8178,7 +8178,7 @@ static PyObject *__pyx_pf_5graph_5Graph_10get_points_from_idx(struct __pyx_obj_5
   return __pyx_r;
 }
 
-/* "graph.pyx":280
+/* "biobox\lib\graph.pyx":280
  *         ##given a target point, give the closest node in accessibility graph.
  *         #@param target point in space next to protein (typically an atom coordinate selected with atomselect)
  *         cpdef get_closest_nodes(self, np.ndarray[double, ndim=2] target):             # <<<<<<<<<<<<<<
@@ -8186,8 +8186,8 @@ static PyObject *__pyx_pf_5graph_5Graph_10get_points_from_idx(struct __pyx_obj_5
  *                 cdef int pos
  */
 
-static PyObject *__pyx_pw_5graph_5Graph_13get_closest_nodes(PyObject *__pyx_v_self, PyObject *__pyx_v_target); /*proto*/
-static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_target, int __pyx_skip_dispatch) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_13get_closest_nodes(PyObject *__pyx_v_self, PyObject *__pyx_v_target); /*proto*/
+static PyObject *__pyx_f_6biobox_3lib_5graph_5Graph_get_closest_nodes(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_target, int __pyx_skip_dispatch) {
   PyObject *__pyx_v_idx = 0;
   PyObject *__pyx_v_dists = 0;
   PyObject *__pyx_v_t = NULL;
@@ -8245,7 +8245,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
     __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_get_closest_nodes); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 280; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_5graph_5Graph_13get_closest_nodes)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_6biobox_3lib_5graph_5Graph_13get_closest_nodes)) {
       __Pyx_XDECREF(__pyx_r);
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_3 = __pyx_t_1; __pyx_t_4 = NULL;
@@ -8281,7 +8281,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "graph.pyx":283
+  /* "biobox\lib\graph.pyx":283
  * 
  *                 cdef int pos
  *                 cdef list idx=[]             # <<<<<<<<<<<<<<
@@ -8293,7 +8293,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
   __pyx_v_idx = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "graph.pyx":284
+  /* "biobox\lib\graph.pyx":284
  *                 cdef int pos
  *                 cdef list idx=[]
  *                 cdef list dists=[]             # <<<<<<<<<<<<<<
@@ -8305,7 +8305,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
   __pyx_v_dists = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "graph.pyx":288
+  /* "biobox\lib\graph.pyx":288
  *                 # 1) find approximate mapping using self.xax, self.yax and self.zax
  *                 # 2) take coordinate having minimum distance between immediate neighbors being true in self.access_grid
  *                 for t in target:             # <<<<<<<<<<<<<<
@@ -8354,7 +8354,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
     __Pyx_XDECREF_SET(__pyx_v_t, __pyx_t_2);
     __pyx_t_2 = 0;
 
-    /* "graph.pyx":289
+    /* "biobox\lib\graph.pyx":289
  *                 # 2) take coordinate having minimum distance between immediate neighbors being true in self.access_grid
  *                 for t in target:
  *                     i=np.argmin(np.abs(self.xax+self.center[0]-t[0]))             # <<<<<<<<<<<<<<
@@ -8437,7 +8437,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
     __Pyx_XDECREF_SET(__pyx_v_i, __pyx_t_2);
     __pyx_t_2 = 0;
 
-    /* "graph.pyx":290
+    /* "biobox\lib\graph.pyx":290
  *                 for t in target:
  *                     i=np.argmin(np.abs(self.xax+self.center[0]-t[0]))
  *                     j=np.argmin(np.abs(self.yax+self.center[1]-t[1]))             # <<<<<<<<<<<<<<
@@ -8520,7 +8520,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
     __Pyx_XDECREF_SET(__pyx_v_j, __pyx_t_2);
     __pyx_t_2 = 0;
 
-    /* "graph.pyx":291
+    /* "biobox\lib\graph.pyx":291
  *                     i=np.argmin(np.abs(self.xax+self.center[0]-t[0]))
  *                     j=np.argmin(np.abs(self.yax+self.center[1]-t[1]))
  *                     k=np.argmin(np.abs(self.zax+self.center[2]-t[2]))             # <<<<<<<<<<<<<<
@@ -8603,7 +8603,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
     __Pyx_XDECREF_SET(__pyx_v_k, __pyx_t_2);
     __pyx_t_2 = 0;
 
-    /* "graph.pyx":293
+    /* "biobox\lib\graph.pyx":293
  *                     k=np.argmin(np.abs(self.zax+self.center[2]-t[2]))
  * 
  *                     bestpos=[]             # <<<<<<<<<<<<<<
@@ -8615,7 +8615,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
     __Pyx_XDECREF_SET(__pyx_v_bestpos, ((PyObject*)__pyx_t_2));
     __pyx_t_2 = 0;
 
-    /* "graph.pyx":294
+    /* "biobox\lib\graph.pyx":294
  * 
  *                     bestpos=[]
  *                     bestdist=10000             # <<<<<<<<<<<<<<
@@ -8625,7 +8625,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
     __Pyx_INCREF(__pyx_int_10000);
     __Pyx_XDECREF_SET(__pyx_v_bestdist, __pyx_int_10000);
 
-    /* "graph.pyx":295
+    /* "biobox\lib\graph.pyx":295
  *                     bestpos=[]
  *                     bestdist=10000
  *                     for x in xrange(i-2,i+3,1):             # <<<<<<<<<<<<<<
@@ -8693,7 +8693,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
       __Pyx_XDECREF_SET(__pyx_v_x, __pyx_t_10);
       __pyx_t_10 = 0;
 
-      /* "graph.pyx":296
+      /* "biobox\lib\graph.pyx":296
  *                     bestdist=10000
  *                     for x in xrange(i-2,i+3,1):
  *                         for y in xrange(j-2,j+3,1):             # <<<<<<<<<<<<<<
@@ -8761,7 +8761,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
         __Pyx_XDECREF_SET(__pyx_v_y, __pyx_t_2);
         __pyx_t_2 = 0;
 
-        /* "graph.pyx":297
+        /* "biobox\lib\graph.pyx":297
  *                     for x in xrange(i-2,i+3,1):
  *                         for y in xrange(j-2,j+3,1):
  *                             for z in xrange(k-2,k+3,1):             # <<<<<<<<<<<<<<
@@ -8829,7 +8829,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
           __Pyx_XDECREF_SET(__pyx_v_z, __pyx_t_10);
           __pyx_t_10 = 0;
 
-          /* "graph.pyx":299
+          /* "biobox\lib\graph.pyx":299
  *                             for z in xrange(k-2,k+3,1):
  * 
  *                                 if x>=self.access_grid_shape[0] or y>=self.access_grid_shape[1] or z>=self.access_grid_shape[2]:             # <<<<<<<<<<<<<<
@@ -8868,7 +8868,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
           __pyx_L12_bool_binop_done:;
           if (__pyx_t_17) {
 
-            /* "graph.pyx":300
+            /* "biobox\lib\graph.pyx":300
  * 
  *                                 if x>=self.access_grid_shape[0] or y>=self.access_grid_shape[1] or z>=self.access_grid_shape[2]:
  *                                     continue             # <<<<<<<<<<<<<<
@@ -8877,7 +8877,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
  */
             goto __pyx_L9_continue;
 
-            /* "graph.pyx":299
+            /* "biobox\lib\graph.pyx":299
  *                             for z in xrange(k-2,k+3,1):
  * 
  *                                 if x>=self.access_grid_shape[0] or y>=self.access_grid_shape[1] or z>=self.access_grid_shape[2]:             # <<<<<<<<<<<<<<
@@ -8886,7 +8886,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
  */
           }
 
-          /* "graph.pyx":302
+          /* "biobox\lib\graph.pyx":302
  *                                     continue
  * 
  *                                 if x<0 or y<0 or z<0:             # <<<<<<<<<<<<<<
@@ -8916,7 +8916,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
           __pyx_L16_bool_binop_done:;
           if (__pyx_t_17) {
 
-            /* "graph.pyx":303
+            /* "biobox\lib\graph.pyx":303
  * 
  *                                 if x<0 or y<0 or z<0:
  *                                     continue             # <<<<<<<<<<<<<<
@@ -8925,7 +8925,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
  */
             goto __pyx_L9_continue;
 
-            /* "graph.pyx":302
+            /* "biobox\lib\graph.pyx":302
  *                                     continue
  * 
  *                                 if x<0 or y<0 or z<0:             # <<<<<<<<<<<<<<
@@ -8934,7 +8934,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
  */
           }
 
-          /* "graph.pyx":305
+          /* "biobox\lib\graph.pyx":305
  *                                     continue
  * 
  *                                 if not self.access_grid[x,y,z]:             # <<<<<<<<<<<<<<
@@ -8960,7 +8960,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
           __pyx_t_18 = ((!__pyx_t_17) != 0);
           if (__pyx_t_18) {
 
-            /* "graph.pyx":306
+            /* "biobox\lib\graph.pyx":306
  * 
  *                                 if not self.access_grid[x,y,z]:
  *                                     continue             # <<<<<<<<<<<<<<
@@ -8969,7 +8969,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
  */
             goto __pyx_L9_continue;
 
-            /* "graph.pyx":305
+            /* "biobox\lib\graph.pyx":305
  *                                     continue
  * 
  *                                 if not self.access_grid[x,y,z]:             # <<<<<<<<<<<<<<
@@ -8978,7 +8978,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
  */
           }
 
-          /* "graph.pyx":308
+          /* "biobox\lib\graph.pyx":308
  *                                     continue
  * 
  *                                 pt=self.get_points_from_idx(np.array([x,y,z]))             # <<<<<<<<<<<<<<
@@ -9028,13 +9028,13 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
           }
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
           if (!(likely(((__pyx_t_10) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_10, __pyx_ptype_5numpy_ndarray))))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 308; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-          __pyx_t_3 = ((PyObject *)((struct __pyx_vtabstruct_5graph_Graph *)__pyx_v_self->__pyx_vtab)->get_points_from_idx(__pyx_v_self, ((PyArrayObject *)__pyx_t_10), 0)); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 308; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __pyx_t_3 = ((PyObject *)((struct __pyx_vtabstruct_6biobox_3lib_5graph_Graph *)__pyx_v_self->__pyx_vtab)->get_points_from_idx(__pyx_v_self, ((PyArrayObject *)__pyx_t_10), 0)); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 308; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           __Pyx_GOTREF(__pyx_t_3);
           __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
           __Pyx_XDECREF_SET(__pyx_v_pt, ((PyArrayObject *)__pyx_t_3));
           __pyx_t_3 = 0;
 
-          /* "graph.pyx":309
+          /* "biobox\lib\graph.pyx":309
  * 
  *                                 pt=self.get_points_from_idx(np.array([x,y,z]))
  *                                 v=pt-t             # <<<<<<<<<<<<<<
@@ -9046,7 +9046,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
           __Pyx_XDECREF_SET(__pyx_v_v, __pyx_t_3);
           __pyx_t_3 = 0;
 
-          /* "graph.pyx":311
+          /* "biobox\lib\graph.pyx":311
  *                                 v=pt-t
  * 
  *                                 dist=v[0]*v[0]+v[1]*v[1]+v[2]*v[2]             # <<<<<<<<<<<<<<
@@ -9088,7 +9088,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
           __Pyx_XDECREF_SET(__pyx_v_dist, __pyx_t_19);
           __pyx_t_19 = 0;
 
-          /* "graph.pyx":312
+          /* "biobox\lib\graph.pyx":312
  * 
  *                                 dist=v[0]*v[0]+v[1]*v[1]+v[2]*v[2]
  *                                 if dist<bestdist:             # <<<<<<<<<<<<<<
@@ -9100,7 +9100,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
           __Pyx_DECREF(__pyx_t_19); __pyx_t_19 = 0;
           if (__pyx_t_18) {
 
-            /* "graph.pyx":313
+            /* "biobox\lib\graph.pyx":313
  *                                 dist=v[0]*v[0]+v[1]*v[1]+v[2]*v[2]
  *                                 if dist<bestdist:
  *                                     bestdist=dist             # <<<<<<<<<<<<<<
@@ -9110,7 +9110,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
             __Pyx_INCREF(__pyx_v_dist);
             __Pyx_DECREF_SET(__pyx_v_bestdist, __pyx_v_dist);
 
-            /* "graph.pyx":314
+            /* "biobox\lib\graph.pyx":314
  *                                 if dist<bestdist:
  *                                     bestdist=dist
  *                                     bestpos=[x,y,z]             # <<<<<<<<<<<<<<
@@ -9131,7 +9131,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
             __Pyx_DECREF_SET(__pyx_v_bestpos, ((PyObject*)__pyx_t_19));
             __pyx_t_19 = 0;
 
-            /* "graph.pyx":312
+            /* "biobox\lib\graph.pyx":312
  * 
  *                                 dist=v[0]*v[0]+v[1]*v[1]+v[2]*v[2]
  *                                 if dist<bestdist:             # <<<<<<<<<<<<<<
@@ -9140,7 +9140,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
  */
           }
 
-          /* "graph.pyx":297
+          /* "biobox\lib\graph.pyx":297
  *                     for x in xrange(i-2,i+3,1):
  *                         for y in xrange(j-2,j+3,1):
  *                             for z in xrange(k-2,k+3,1):             # <<<<<<<<<<<<<<
@@ -9151,7 +9151,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
         }
         __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
 
-        /* "graph.pyx":296
+        /* "biobox\lib\graph.pyx":296
  *                     bestdist=10000
  *                     for x in xrange(i-2,i+3,1):
  *                         for y in xrange(j-2,j+3,1):             # <<<<<<<<<<<<<<
@@ -9161,7 +9161,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
       }
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
 
-      /* "graph.pyx":295
+      /* "biobox\lib\graph.pyx":295
  *                     bestpos=[]
  *                     bestdist=10000
  *                     for x in xrange(i-2,i+3,1):             # <<<<<<<<<<<<<<
@@ -9171,7 +9171,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
     }
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "graph.pyx":316
+    /* "biobox\lib\graph.pyx":316
  *                                     bestpos=[x,y,z]
  * 
  *                     idx.append(bestpos)             # <<<<<<<<<<<<<<
@@ -9180,7 +9180,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
  */
     __pyx_t_20 = __Pyx_PyList_Append(__pyx_v_idx, __pyx_v_bestpos); if (unlikely(__pyx_t_20 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 316; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-    /* "graph.pyx":317
+    /* "biobox\lib\graph.pyx":317
  * 
  *                     idx.append(bestpos)
  *                     dists.append(bestdist)             # <<<<<<<<<<<<<<
@@ -9189,7 +9189,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
  */
     __pyx_t_20 = __Pyx_PyList_Append(__pyx_v_dists, __pyx_v_bestdist); if (unlikely(__pyx_t_20 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 317; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-    /* "graph.pyx":288
+    /* "biobox\lib\graph.pyx":288
  *                 # 1) find approximate mapping using self.xax, self.yax and self.zax
  *                 # 2) take coordinate having minimum distance between immediate neighbors being true in self.access_grid
  *                 for t in target:             # <<<<<<<<<<<<<<
@@ -9199,7 +9199,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "graph.pyx":335
+  /* "biobox\lib\graph.pyx":335
  *                 '''
  * 
  *                 return dists, np.array(idx)             # <<<<<<<<<<<<<<
@@ -9249,7 +9249,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
   __pyx_t_9 = 0;
   goto __pyx_L0;
 
-  /* "graph.pyx":280
+  /* "biobox\lib\graph.pyx":280
  *         ##given a target point, give the closest node in accessibility graph.
  *         #@param target point in space next to protein (typically an atom coordinate selected with atomselect)
  *         cpdef get_closest_nodes(self, np.ndarray[double, ndim=2] target):             # <<<<<<<<<<<<<<
@@ -9272,7 +9272,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
     __Pyx_ErrFetch(&__pyx_type, &__pyx_value, &__pyx_tb);
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_target.rcbuffer->pybuffer);
   __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
-  __Pyx_AddTraceback("graph.Graph.get_closest_nodes", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.get_closest_nodes", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   goto __pyx_L2;
   __pyx_L0:;
@@ -9298,8 +9298,8 @@ static PyObject *__pyx_f_5graph_5Graph_get_closest_nodes(struct __pyx_obj_5graph
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5graph_5Graph_13get_closest_nodes(PyObject *__pyx_v_self, PyObject *__pyx_v_target); /*proto*/
-static PyObject *__pyx_pw_5graph_5Graph_13get_closest_nodes(PyObject *__pyx_v_self, PyObject *__pyx_v_target) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_13get_closest_nodes(PyObject *__pyx_v_self, PyObject *__pyx_v_target); /*proto*/
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_13get_closest_nodes(PyObject *__pyx_v_self, PyObject *__pyx_v_target) {
   CYTHON_UNUSED int __pyx_lineno = 0;
   CYTHON_UNUSED const char *__pyx_filename = NULL;
   CYTHON_UNUSED int __pyx_clineno = 0;
@@ -9307,7 +9307,7 @@ static PyObject *__pyx_pw_5graph_5Graph_13get_closest_nodes(PyObject *__pyx_v_se
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("get_closest_nodes (wrapper)", 0);
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_target), __pyx_ptype_5numpy_ndarray, 1, "target", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 280; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_5graph_5Graph_12get_closest_nodes(((struct __pyx_obj_5graph_Graph *)__pyx_v_self), ((PyArrayObject *)__pyx_v_target));
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_12get_closest_nodes(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self), ((PyArrayObject *)__pyx_v_target));
 
   /* function exit code */
   goto __pyx_L0;
@@ -9318,7 +9318,7 @@ static PyObject *__pyx_pw_5graph_5Graph_13get_closest_nodes(PyObject *__pyx_v_se
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5graph_5Graph_12get_closest_nodes(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_target) {
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_12get_closest_nodes(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_target) {
   __Pyx_LocalBuf_ND __pyx_pybuffernd_target;
   __Pyx_Buffer __pyx_pybuffer_target;
   PyObject *__pyx_r = NULL;
@@ -9338,7 +9338,7 @@ static PyObject *__pyx_pf_5graph_5Graph_12get_closest_nodes(struct __pyx_obj_5gr
   }
   __pyx_pybuffernd_target.diminfo[0].strides = __pyx_pybuffernd_target.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_target.diminfo[0].shape = __pyx_pybuffernd_target.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_target.diminfo[1].strides = __pyx_pybuffernd_target.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_target.diminfo[1].shape = __pyx_pybuffernd_target.rcbuffer->pybuffer.shape[1];
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_5graph_5Graph_get_closest_nodes(__pyx_v_self, __pyx_v_target, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 280; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_6biobox_3lib_5graph_5Graph_get_closest_nodes(__pyx_v_self, __pyx_v_target, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 280; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -9351,7 +9351,7 @@ static PyObject *__pyx_pf_5graph_5Graph_12get_closest_nodes(struct __pyx_obj_5gr
     __Pyx_ErrFetch(&__pyx_type, &__pyx_value, &__pyx_tb);
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_target.rcbuffer->pybuffer);
   __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
-  __Pyx_AddTraceback("graph.Graph.get_closest_nodes", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.get_closest_nodes", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   goto __pyx_L2;
   __pyx_L0:;
@@ -9362,7 +9362,7 @@ static PyObject *__pyx_pf_5graph_5Graph_12get_closest_nodes(struct __pyx_obj_5gr
   return __pyx_r;
 }
 
-/* "graph.pyx":341
+/* "biobox\lib\graph.pyx":341
  *         #return indices of neighbors of point p (3d position).
  *         #@param position of point p
  *         cpdef np.ndarray neighbors(self, int idx, bool flattened):             # <<<<<<<<<<<<<<
@@ -9370,8 +9370,8 @@ static PyObject *__pyx_pf_5graph_5Graph_12get_closest_nodes(struct __pyx_obj_5gr
  *                 cdef int x
  */
 
-static PyObject *__pyx_pw_5graph_5Graph_15neighbors(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Graph *__pyx_v_self, int __pyx_v_idx, PyBoolObject *__pyx_v_flattened, int __pyx_skip_dispatch) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_15neighbors(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyArrayObject *__pyx_f_6biobox_3lib_5graph_5Graph_neighbors(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, int __pyx_v_idx, PyBoolObject *__pyx_v_flattened, int __pyx_skip_dispatch) {
   int __pyx_v_x;
   int __pyx_v_y;
   int __pyx_v_z;
@@ -9408,7 +9408,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
     __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_neighbors); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 341; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_5graph_5Graph_15neighbors)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_6biobox_3lib_5graph_5Graph_15neighbors)) {
       __Pyx_XDECREF(((PyObject *)__pyx_r));
       __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_idx); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 341; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_3);
@@ -9449,7 +9449,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "graph.pyx":346
+  /* "biobox\lib\graph.pyx":346
  *                 cdef int y
  *                 cdef int z
  *                 cdef list n=[]             # <<<<<<<<<<<<<<
@@ -9461,19 +9461,19 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
   __pyx_v_n = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "graph.pyx":347
+  /* "biobox\lib\graph.pyx":347
  *                 cdef int z
  *                 cdef list n=[]
  *                 cdef list p=self.get_3d_index(idx)             # <<<<<<<<<<<<<<
  * 
  *                 for x in xrange(p[0]-1,p[0]+2,1):
  */
-  __pyx_t_1 = ((struct __pyx_vtabstruct_5graph_Graph *)__pyx_v_self->__pyx_vtab)->get_3d_index(__pyx_v_self, __pyx_v_idx, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 347; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = ((struct __pyx_vtabstruct_6biobox_3lib_5graph_Graph *)__pyx_v_self->__pyx_vtab)->get_3d_index(__pyx_v_self, __pyx_v_idx, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 347; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_p = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "graph.pyx":349
+  /* "biobox\lib\graph.pyx":349
  *                 cdef list p=self.get_3d_index(idx)
  * 
  *                 for x in xrange(p[0]-1,p[0]+2,1):             # <<<<<<<<<<<<<<
@@ -9499,7 +9499,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
   for (__pyx_t_10 = __pyx_t_9; __pyx_t_10 < __pyx_t_8; __pyx_t_10+=1) {
     __pyx_v_x = __pyx_t_10;
 
-    /* "graph.pyx":350
+    /* "biobox\lib\graph.pyx":350
  * 
  *                 for x in xrange(p[0]-1,p[0]+2,1):
  *                     for y in xrange(p[1]-1,p[1]+2,1):             # <<<<<<<<<<<<<<
@@ -9525,7 +9525,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
     for (__pyx_t_13 = __pyx_t_12; __pyx_t_13 < __pyx_t_11; __pyx_t_13+=1) {
       __pyx_v_y = __pyx_t_13;
 
-      /* "graph.pyx":351
+      /* "biobox\lib\graph.pyx":351
  *                 for x in xrange(p[0]-1,p[0]+2,1):
  *                     for y in xrange(p[1]-1,p[1]+2,1):
  *                         for z in xrange(p[2]-1,p[2]+2,1):             # <<<<<<<<<<<<<<
@@ -9551,7 +9551,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
       for (__pyx_t_16 = __pyx_t_15; __pyx_t_16 < __pyx_t_14; __pyx_t_16+=1) {
         __pyx_v_z = __pyx_t_16;
 
-        /* "graph.pyx":353
+        /* "biobox\lib\graph.pyx":353
  *                         for z in xrange(p[2]-1,p[2]+2,1):
  * 
  *                             if x==p[0] and y==p[1] and z==p[2]:             # <<<<<<<<<<<<<<
@@ -9602,7 +9602,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
         __pyx_L10_bool_binop_done:;
         if (__pyx_t_17) {
 
-          /* "graph.pyx":354
+          /* "biobox\lib\graph.pyx":354
  * 
  *                             if x==p[0] and y==p[1] and z==p[2]:
  *                                 continue             # <<<<<<<<<<<<<<
@@ -9611,7 +9611,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
  */
           goto __pyx_L7_continue;
 
-          /* "graph.pyx":353
+          /* "biobox\lib\graph.pyx":353
  *                         for z in xrange(p[2]-1,p[2]+2,1):
  * 
  *                             if x==p[0] and y==p[1] and z==p[2]:             # <<<<<<<<<<<<<<
@@ -9620,7 +9620,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
  */
         }
 
-        /* "graph.pyx":356
+        /* "biobox\lib\graph.pyx":356
  *                                 continue
  * 
  *                             if x>=self.access_grid_shape[0] or y>=self.access_grid_shape[1] or z>=self.access_grid_shape[2]:             # <<<<<<<<<<<<<<
@@ -9668,7 +9668,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
         __pyx_L14_bool_binop_done:;
         if (__pyx_t_17) {
 
-          /* "graph.pyx":357
+          /* "biobox\lib\graph.pyx":357
  * 
  *                             if x>=self.access_grid_shape[0] or y>=self.access_grid_shape[1] or z>=self.access_grid_shape[2]:
  *                                 continue             # <<<<<<<<<<<<<<
@@ -9677,7 +9677,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
  */
           goto __pyx_L7_continue;
 
-          /* "graph.pyx":356
+          /* "biobox\lib\graph.pyx":356
  *                                 continue
  * 
  *                             if x>=self.access_grid_shape[0] or y>=self.access_grid_shape[1] or z>=self.access_grid_shape[2]:             # <<<<<<<<<<<<<<
@@ -9686,7 +9686,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
  */
         }
 
-        /* "graph.pyx":359
+        /* "biobox\lib\graph.pyx":359
  *                                 continue
  * 
  *                             if x<0 or y<0 or z<0:             # <<<<<<<<<<<<<<
@@ -9710,7 +9710,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
         __pyx_L18_bool_binop_done:;
         if (__pyx_t_17) {
 
-          /* "graph.pyx":360
+          /* "biobox\lib\graph.pyx":360
  * 
  *                             if x<0 or y<0 or z<0:
  *                                 continue             # <<<<<<<<<<<<<<
@@ -9719,7 +9719,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
  */
           goto __pyx_L7_continue;
 
-          /* "graph.pyx":359
+          /* "biobox\lib\graph.pyx":359
  *                                 continue
  * 
  *                             if x<0 or y<0 or z<0:             # <<<<<<<<<<<<<<
@@ -9728,7 +9728,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
  */
         }
 
-        /* "graph.pyx":362
+        /* "biobox\lib\graph.pyx":362
  *                                 continue
  * 
  *                             if self.access_grid[x,y,z]:             # <<<<<<<<<<<<<<
@@ -9759,7 +9759,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         if (__pyx_t_17) {
 
-          /* "graph.pyx":363
+          /* "biobox\lib\graph.pyx":363
  * 
  *                             if self.access_grid[x,y,z]:
  *                                 if flattened:             # <<<<<<<<<<<<<<
@@ -9769,7 +9769,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
           __pyx_t_17 = __Pyx_PyObject_IsTrue(((PyObject *)__pyx_v_flattened)); if (unlikely(__pyx_t_17 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 363; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           if (__pyx_t_17) {
 
-            /* "graph.pyx":364
+            /* "biobox\lib\graph.pyx":364
  *                             if self.access_grid[x,y,z]:
  *                                 if flattened:
  *                                     n.append(self.access_grid_shape[1]*self.access_grid_shape[2]*x+self.access_grid_shape[2]*y+z)             # <<<<<<<<<<<<<<
@@ -9811,7 +9811,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
             __pyx_t_19 = __Pyx_PyList_Append(__pyx_v_n, __pyx_t_2); if (unlikely(__pyx_t_19 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 364; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
             __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-            /* "graph.pyx":363
+            /* "biobox\lib\graph.pyx":363
  * 
  *                             if self.access_grid[x,y,z]:
  *                                 if flattened:             # <<<<<<<<<<<<<<
@@ -9821,7 +9821,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
             goto __pyx_L22;
           }
 
-          /* "graph.pyx":367
+          /* "biobox\lib\graph.pyx":367
  *                                     #n.append(self.get_flat_index(np.array([x,y,z])))
  *                                 else:
  *                                     n.append([x,y,z])             # <<<<<<<<<<<<<<
@@ -9851,7 +9851,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
           }
           __pyx_L22:;
 
-          /* "graph.pyx":362
+          /* "biobox\lib\graph.pyx":362
  *                                 continue
  * 
  *                             if self.access_grid[x,y,z]:             # <<<<<<<<<<<<<<
@@ -9864,7 +9864,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
     }
   }
 
-  /* "graph.pyx":369
+  /* "biobox\lib\graph.pyx":369
  *                                     n.append([x,y,z])
  * 
  *                 return np.array(n)             # <<<<<<<<<<<<<<
@@ -9907,7 +9907,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
   __pyx_t_7 = 0;
   goto __pyx_L0;
 
-  /* "graph.pyx":341
+  /* "biobox\lib\graph.pyx":341
  *         #return indices of neighbors of point p (3d position).
  *         #@param position of point p
  *         cpdef np.ndarray neighbors(self, int idx, bool flattened):             # <<<<<<<<<<<<<<
@@ -9923,7 +9923,7 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_7);
-  __Pyx_AddTraceback("graph.Graph.neighbors", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.neighbors", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_n);
@@ -9934,8 +9934,8 @@ static PyArrayObject *__pyx_f_5graph_5Graph_neighbors(struct __pyx_obj_5graph_Gr
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5graph_5Graph_15neighbors(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_pw_5graph_5Graph_15neighbors(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_15neighbors(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_15neighbors(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   int __pyx_v_idx;
   PyBoolObject *__pyx_v_flattened = 0;
   int __pyx_lineno = 0;
@@ -9983,12 +9983,12 @@ static PyObject *__pyx_pw_5graph_5Graph_15neighbors(PyObject *__pyx_v_self, PyOb
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("neighbors", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 341; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
-  __Pyx_AddTraceback("graph.Graph.neighbors", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.neighbors", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_flattened), __pyx_ptype_7cpython_4bool_bool, 1, "flattened", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 341; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_5graph_5Graph_14neighbors(((struct __pyx_obj_5graph_Graph *)__pyx_v_self), __pyx_v_idx, __pyx_v_flattened);
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_14neighbors(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self), __pyx_v_idx, __pyx_v_flattened);
 
   /* function exit code */
   goto __pyx_L0;
@@ -9999,7 +9999,7 @@ static PyObject *__pyx_pw_5graph_5Graph_15neighbors(PyObject *__pyx_v_self, PyOb
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5graph_5Graph_14neighbors(struct __pyx_obj_5graph_Graph *__pyx_v_self, int __pyx_v_idx, PyBoolObject *__pyx_v_flattened) {
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_14neighbors(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, int __pyx_v_idx, PyBoolObject *__pyx_v_flattened) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -10008,7 +10008,7 @@ static PyObject *__pyx_pf_5graph_5Graph_14neighbors(struct __pyx_obj_5graph_Grap
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("neighbors", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = ((PyObject *)__pyx_f_5graph_5Graph_neighbors(__pyx_v_self, __pyx_v_idx, __pyx_v_flattened, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 341; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = ((PyObject *)__pyx_f_6biobox_3lib_5graph_5Graph_neighbors(__pyx_v_self, __pyx_v_idx, __pyx_v_flattened, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 341; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -10017,7 +10017,7 @@ static PyObject *__pyx_pf_5graph_5Graph_14neighbors(struct __pyx_obj_5graph_Grap
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("graph.Graph.neighbors", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.neighbors", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -10025,7 +10025,7 @@ static PyObject *__pyx_pf_5graph_5Graph_14neighbors(struct __pyx_obj_5graph_Grap
   return __pyx_r;
 }
 
-/* "graph.pyx":376
+/* "biobox\lib\graph.pyx":376
  *         #cpdef get_flat_index(self,idx):
  *         #        return np.ravel_multi_index(idx,self.access_grid_shape)
  *         cpdef get_flat_index(self, np.ndarray thepos):             # <<<<<<<<<<<<<<
@@ -10033,8 +10033,8 @@ static PyObject *__pyx_pf_5graph_5Graph_14neighbors(struct __pyx_obj_5graph_Grap
  * 
  */
 
-static PyObject *__pyx_pw_5graph_5Graph_17get_flat_index(PyObject *__pyx_v_self, PyObject *__pyx_v_thepos); /*proto*/
-static PyObject *__pyx_f_5graph_5Graph_get_flat_index(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_thepos, int __pyx_skip_dispatch) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_17get_flat_index(PyObject *__pyx_v_self, PyObject *__pyx_v_thepos); /*proto*/
+static PyObject *__pyx_f_6biobox_3lib_5graph_5Graph_get_flat_index(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_thepos, int __pyx_skip_dispatch) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -10052,7 +10052,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_flat_index(struct __pyx_obj_5graph_Gr
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
     __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_get_flat_index); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 376; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_5graph_5Graph_17get_flat_index)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_6biobox_3lib_5graph_5Graph_17get_flat_index)) {
       __Pyx_XDECREF(__pyx_r);
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_3 = __pyx_t_1; __pyx_t_4 = NULL;
@@ -10088,7 +10088,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_flat_index(struct __pyx_obj_5graph_Gr
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "graph.pyx":377
+  /* "biobox\lib\graph.pyx":377
  *         #        return np.ravel_multi_index(idx,self.access_grid_shape)
  *         cpdef get_flat_index(self, np.ndarray thepos):
  *             return self.access_grid_shape[1]*self.access_grid_shape[2]*thepos[0]+self.access_grid_shape[2]*thepos[1]+thepos[2]             # <<<<<<<<<<<<<<
@@ -10132,7 +10132,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_flat_index(struct __pyx_obj_5graph_Gr
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "graph.pyx":376
+  /* "biobox\lib\graph.pyx":376
  *         #cpdef get_flat_index(self,idx):
  *         #        return np.ravel_multi_index(idx,self.access_grid_shape)
  *         cpdef get_flat_index(self, np.ndarray thepos):             # <<<<<<<<<<<<<<
@@ -10147,7 +10147,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_flat_index(struct __pyx_obj_5graph_Gr
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
-  __Pyx_AddTraceback("graph.Graph.get_flat_index", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.get_flat_index", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -10156,8 +10156,8 @@ static PyObject *__pyx_f_5graph_5Graph_get_flat_index(struct __pyx_obj_5graph_Gr
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5graph_5Graph_17get_flat_index(PyObject *__pyx_v_self, PyObject *__pyx_v_thepos); /*proto*/
-static PyObject *__pyx_pw_5graph_5Graph_17get_flat_index(PyObject *__pyx_v_self, PyObject *__pyx_v_thepos) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_17get_flat_index(PyObject *__pyx_v_self, PyObject *__pyx_v_thepos); /*proto*/
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_17get_flat_index(PyObject *__pyx_v_self, PyObject *__pyx_v_thepos) {
   CYTHON_UNUSED int __pyx_lineno = 0;
   CYTHON_UNUSED const char *__pyx_filename = NULL;
   CYTHON_UNUSED int __pyx_clineno = 0;
@@ -10165,7 +10165,7 @@ static PyObject *__pyx_pw_5graph_5Graph_17get_flat_index(PyObject *__pyx_v_self,
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("get_flat_index (wrapper)", 0);
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_thepos), __pyx_ptype_5numpy_ndarray, 1, "thepos", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 376; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_5graph_5Graph_16get_flat_index(((struct __pyx_obj_5graph_Graph *)__pyx_v_self), ((PyArrayObject *)__pyx_v_thepos));
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_16get_flat_index(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self), ((PyArrayObject *)__pyx_v_thepos));
 
   /* function exit code */
   goto __pyx_L0;
@@ -10176,7 +10176,7 @@ static PyObject *__pyx_pw_5graph_5Graph_17get_flat_index(PyObject *__pyx_v_self,
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5graph_5Graph_16get_flat_index(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_thepos) {
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_16get_flat_index(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyArrayObject *__pyx_v_thepos) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -10185,7 +10185,7 @@ static PyObject *__pyx_pf_5graph_5Graph_16get_flat_index(struct __pyx_obj_5graph
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("get_flat_index", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_5graph_5Graph_get_flat_index(__pyx_v_self, __pyx_v_thepos, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 376; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_6biobox_3lib_5graph_5Graph_get_flat_index(__pyx_v_self, __pyx_v_thepos, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 376; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -10194,7 +10194,7 @@ static PyObject *__pyx_pf_5graph_5Graph_16get_flat_index(struct __pyx_obj_5graph
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("graph.Graph.get_flat_index", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.get_flat_index", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -10202,7 +10202,7 @@ static PyObject *__pyx_pf_5graph_5Graph_16get_flat_index(struct __pyx_obj_5graph
   return __pyx_r;
 }
 
-/* "graph.pyx":382
+/* "biobox\lib\graph.pyx":382
  *         ##return 3d index from flattened one
  *         #@param idx flattened coordinate of a point in the graph
  *         cpdef list get_3d_index(self, int idx):             # <<<<<<<<<<<<<<
@@ -10210,8 +10210,8 @@ static PyObject *__pyx_pf_5graph_5Graph_16get_flat_index(struct __pyx_obj_5graph
  *             #unravelling explicitely implemented (faster than calling numpy unravel)
  */
 
-static PyObject *__pyx_pw_5graph_5Graph_19get_3d_index(PyObject *__pyx_v_self, PyObject *__pyx_arg_idx); /*proto*/
-static PyObject *__pyx_f_5graph_5Graph_get_3d_index(struct __pyx_obj_5graph_Graph *__pyx_v_self, int __pyx_v_idx, int __pyx_skip_dispatch) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_19get_3d_index(PyObject *__pyx_v_self, PyObject *__pyx_arg_idx); /*proto*/
+static PyObject *__pyx_f_6biobox_3lib_5graph_5Graph_get_3d_index(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, int __pyx_v_idx, int __pyx_skip_dispatch) {
   int __pyx_v_p1;
   int __pyx_v_p2;
   int __pyx_v_p3;
@@ -10234,7 +10234,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_3d_index(struct __pyx_obj_5graph_Grap
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
     __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_get_3d_index); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 382; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_5graph_5Graph_19get_3d_index)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_6biobox_3lib_5graph_5Graph_19get_3d_index)) {
       __Pyx_XDECREF(__pyx_r);
       __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_idx); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 382; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_3);
@@ -10274,7 +10274,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_3d_index(struct __pyx_obj_5graph_Grap
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "graph.pyx":385
+  /* "biobox\lib\graph.pyx":385
  * 
  *             #unravelling explicitely implemented (faster than calling numpy unravel)
  *             cdef int p1 = idx%self.access_grid_shape[2]             # <<<<<<<<<<<<<<
@@ -10293,7 +10293,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_3d_index(struct __pyx_obj_5graph_Grap
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_v_p1 = __pyx_t_7;
 
-  /* "graph.pyx":386
+  /* "biobox\lib\graph.pyx":386
  *             #unravelling explicitely implemented (faster than calling numpy unravel)
  *             cdef int p1 = idx%self.access_grid_shape[2]
  *             cdef int p2 = (idx/self.access_grid_shape[2])%self.access_grid_shape[1]             # <<<<<<<<<<<<<<
@@ -10318,7 +10318,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_3d_index(struct __pyx_obj_5graph_Grap
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_v_p2 = __pyx_t_7;
 
-  /* "graph.pyx":387
+  /* "biobox\lib\graph.pyx":387
  *             cdef int p1 = idx%self.access_grid_shape[2]
  *             cdef int p2 = (idx/self.access_grid_shape[2])%self.access_grid_shape[1]
  *             cdef int p3 = idx/(self.access_grid_shape[1]*self.access_grid_shape[2])             # <<<<<<<<<<<<<<
@@ -10343,7 +10343,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_3d_index(struct __pyx_obj_5graph_Grap
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_p3 = __pyx_t_7;
 
-  /* "graph.pyx":388
+  /* "biobox\lib\graph.pyx":388
  *             cdef int p2 = (idx/self.access_grid_shape[2])%self.access_grid_shape[1]
  *             cdef int p3 = idx/(self.access_grid_shape[1]*self.access_grid_shape[2])
  *             return [p3,p2,p1]             # <<<<<<<<<<<<<<
@@ -10372,7 +10372,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_3d_index(struct __pyx_obj_5graph_Grap
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "graph.pyx":382
+  /* "biobox\lib\graph.pyx":382
  *         ##return 3d index from flattened one
  *         #@param idx flattened coordinate of a point in the graph
  *         cpdef list get_3d_index(self, int idx):             # <<<<<<<<<<<<<<
@@ -10388,7 +10388,7 @@ static PyObject *__pyx_f_5graph_5Graph_get_3d_index(struct __pyx_obj_5graph_Grap
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_6);
-  __Pyx_AddTraceback("graph.Graph.get_3d_index", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.get_3d_index", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -10397,8 +10397,8 @@ static PyObject *__pyx_f_5graph_5Graph_get_3d_index(struct __pyx_obj_5graph_Grap
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5graph_5Graph_19get_3d_index(PyObject *__pyx_v_self, PyObject *__pyx_arg_idx); /*proto*/
-static PyObject *__pyx_pw_5graph_5Graph_19get_3d_index(PyObject *__pyx_v_self, PyObject *__pyx_arg_idx) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_19get_3d_index(PyObject *__pyx_v_self, PyObject *__pyx_arg_idx); /*proto*/
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_19get_3d_index(PyObject *__pyx_v_self, PyObject *__pyx_arg_idx) {
   int __pyx_v_idx;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
@@ -10411,18 +10411,18 @@ static PyObject *__pyx_pw_5graph_5Graph_19get_3d_index(PyObject *__pyx_v_self, P
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
-  __Pyx_AddTraceback("graph.Graph.get_3d_index", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.get_3d_index", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_5graph_5Graph_18get_3d_index(((struct __pyx_obj_5graph_Graph *)__pyx_v_self), ((int)__pyx_v_idx));
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_18get_3d_index(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self), ((int)__pyx_v_idx));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5graph_5Graph_18get_3d_index(struct __pyx_obj_5graph_Graph *__pyx_v_self, int __pyx_v_idx) {
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_18get_3d_index(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, int __pyx_v_idx) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -10431,7 +10431,7 @@ static PyObject *__pyx_pf_5graph_5Graph_18get_3d_index(struct __pyx_obj_5graph_G
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("get_3d_index", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_5graph_5Graph_get_3d_index(__pyx_v_self, __pyx_v_idx, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 382; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_6biobox_3lib_5graph_5Graph_get_3d_index(__pyx_v_self, __pyx_v_idx, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 382; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -10440,7 +10440,7 @@ static PyObject *__pyx_pf_5graph_5Graph_18get_3d_index(struct __pyx_obj_5graph_G
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("graph.Graph.get_3d_index", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.get_3d_index", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -10448,7 +10448,7 @@ static PyObject *__pyx_pf_5graph_5Graph_18get_3d_index(struct __pyx_obj_5graph_G
   return __pyx_r;
 }
 
-/* "graph.pyx":392
+/* "biobox\lib\graph.pyx":392
  * 
  * 
  *         cpdef heuristic(self, a, b):             # <<<<<<<<<<<<<<
@@ -10456,8 +10456,8 @@ static PyObject *__pyx_pf_5graph_5Graph_18get_3d_index(struct __pyx_obj_5graph_G
  *             cdef list bb=self.get_3d_index(b.T)
  */
 
-static PyObject *__pyx_pw_5graph_5Graph_21heuristic(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_f_5graph_5Graph_heuristic(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_a, PyObject *__pyx_v_b, int __pyx_skip_dispatch) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_21heuristic(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_f_6biobox_3lib_5graph_5Graph_heuristic(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_a, PyObject *__pyx_v_b, int __pyx_skip_dispatch) {
   PyObject *__pyx_v_aa = 0;
   PyObject *__pyx_v_bb = 0;
   PyObject *__pyx_v_v = 0;
@@ -10480,7 +10480,7 @@ static PyObject *__pyx_f_5graph_5Graph_heuristic(struct __pyx_obj_5graph_Graph *
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
     __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_heuristic); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 392; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_5graph_5Graph_21heuristic)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_6biobox_3lib_5graph_5Graph_21heuristic)) {
       __Pyx_XDECREF(__pyx_r);
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_3 = __pyx_t_1; __pyx_t_4 = NULL;
@@ -10518,7 +10518,7 @@ static PyObject *__pyx_f_5graph_5Graph_heuristic(struct __pyx_obj_5graph_Graph *
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "graph.pyx":393
+  /* "biobox\lib\graph.pyx":393
  * 
  *         cpdef heuristic(self, a, b):
  *             cdef list aa=self.get_3d_index(a.T)             # <<<<<<<<<<<<<<
@@ -10529,12 +10529,12 @@ static PyObject *__pyx_f_5graph_5Graph_heuristic(struct __pyx_obj_5graph_Graph *
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 393; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = ((struct __pyx_vtabstruct_5graph_Graph *)__pyx_v_self->__pyx_vtab)->get_3d_index(__pyx_v_self, __pyx_t_7, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 393; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = ((struct __pyx_vtabstruct_6biobox_3lib_5graph_Graph *)__pyx_v_self->__pyx_vtab)->get_3d_index(__pyx_v_self, __pyx_t_7, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 393; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_aa = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "graph.pyx":394
+  /* "biobox\lib\graph.pyx":394
  *         cpdef heuristic(self, a, b):
  *             cdef list aa=self.get_3d_index(a.T)
  *             cdef list bb=self.get_3d_index(b.T)             # <<<<<<<<<<<<<<
@@ -10545,12 +10545,12 @@ static PyObject *__pyx_f_5graph_5Graph_heuristic(struct __pyx_obj_5graph_Graph *
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 394; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = ((struct __pyx_vtabstruct_5graph_Graph *)__pyx_v_self->__pyx_vtab)->get_3d_index(__pyx_v_self, __pyx_t_7, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 394; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = ((struct __pyx_vtabstruct_6biobox_3lib_5graph_Graph *)__pyx_v_self->__pyx_vtab)->get_3d_index(__pyx_v_self, __pyx_t_7, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 394; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_bb = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "graph.pyx":395
+  /* "biobox\lib\graph.pyx":395
  *             cdef list aa=self.get_3d_index(a.T)
  *             cdef list bb=self.get_3d_index(b.T)
  *             cdef list v=[bb[0]-aa[0],bb[1]-aa[1],bb[2]-aa[2]]             # <<<<<<<<<<<<<<
@@ -10601,7 +10601,7 @@ static PyObject *__pyx_f_5graph_5Graph_heuristic(struct __pyx_obj_5graph_Graph *
   __pyx_v_v = ((PyObject*)__pyx_t_6);
   __pyx_t_6 = 0;
 
-  /* "graph.pyx":396
+  /* "biobox\lib\graph.pyx":396
  *             cdef list bb=self.get_3d_index(b.T)
  *             cdef list v=[bb[0]-aa[0],bb[1]-aa[1],bb[2]-aa[2]]
  *             return v[0]*v[0]+v[1]*v[1]+v[2]*v[2]             # <<<<<<<<<<<<<<
@@ -10627,7 +10627,7 @@ static PyObject *__pyx_f_5graph_5Graph_heuristic(struct __pyx_obj_5graph_Graph *
   __pyx_t_6 = 0;
   goto __pyx_L0;
 
-  /* "graph.pyx":392
+  /* "biobox\lib\graph.pyx":392
  * 
  * 
  *         cpdef heuristic(self, a, b):             # <<<<<<<<<<<<<<
@@ -10642,7 +10642,7 @@ static PyObject *__pyx_f_5graph_5Graph_heuristic(struct __pyx_obj_5graph_Graph *
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_6);
-  __Pyx_AddTraceback("graph.Graph.heuristic", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.heuristic", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_aa);
@@ -10654,8 +10654,8 @@ static PyObject *__pyx_f_5graph_5Graph_heuristic(struct __pyx_obj_5graph_Graph *
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5graph_5Graph_21heuristic(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_pw_5graph_5Graph_21heuristic(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_21heuristic(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_21heuristic(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_a = 0;
   PyObject *__pyx_v_b = 0;
   int __pyx_lineno = 0;
@@ -10703,18 +10703,18 @@ static PyObject *__pyx_pw_5graph_5Graph_21heuristic(PyObject *__pyx_v_self, PyOb
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("heuristic", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 392; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
-  __Pyx_AddTraceback("graph.Graph.heuristic", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.heuristic", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_5graph_5Graph_20heuristic(((struct __pyx_obj_5graph_Graph *)__pyx_v_self), __pyx_v_a, __pyx_v_b);
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_20heuristic(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self), __pyx_v_a, __pyx_v_b);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5graph_5Graph_20heuristic(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_a, PyObject *__pyx_v_b) {
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_20heuristic(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_a, PyObject *__pyx_v_b) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -10723,7 +10723,7 @@ static PyObject *__pyx_pf_5graph_5Graph_20heuristic(struct __pyx_obj_5graph_Grap
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("heuristic", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_5graph_5Graph_heuristic(__pyx_v_self, __pyx_v_a, __pyx_v_b, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 392; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_6biobox_3lib_5graph_5Graph_heuristic(__pyx_v_self, __pyx_v_a, __pyx_v_b, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 392; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -10732,7 +10732,7 @@ static PyObject *__pyx_pf_5graph_5Graph_20heuristic(struct __pyx_obj_5graph_Grap
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("graph.Graph.heuristic", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.heuristic", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -10740,7 +10740,7 @@ static PyObject *__pyx_pf_5graph_5Graph_20heuristic(struct __pyx_obj_5graph_Grap
   return __pyx_r;
 }
 
-/* "graph.pyx":403
+/* "biobox\lib\graph.pyx":403
  *         #@param a point (in flat coordiantes)
  *         #@param b point (in flat coordiantes)
  *         cpdef int cost(self, int a, int b):             # <<<<<<<<<<<<<<
@@ -10748,8 +10748,8 @@ static PyObject *__pyx_pf_5graph_5Graph_20heuristic(struct __pyx_obj_5graph_Grap
  *                 cdef list bb=self.get_3d_index(b)
  */
 
-static PyObject *__pyx_pw_5graph_5Graph_23cost(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static int __pyx_f_5graph_5Graph_cost(struct __pyx_obj_5graph_Graph *__pyx_v_self, int __pyx_v_a, int __pyx_v_b, int __pyx_skip_dispatch) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_23cost(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static int __pyx_f_6biobox_3lib_5graph_5Graph_cost(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, int __pyx_v_a, int __pyx_v_b, int __pyx_skip_dispatch) {
   PyObject *__pyx_v_aa = 0;
   PyObject *__pyx_v_bb = 0;
   PyObject *__pyx_v_v = 0;
@@ -10774,7 +10774,7 @@ static int __pyx_f_5graph_5Graph_cost(struct __pyx_obj_5graph_Graph *__pyx_v_sel
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
     __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_cost); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 403; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_5graph_5Graph_23cost)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_6biobox_3lib_5graph_5Graph_23cost)) {
       __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_a); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 403; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_3);
       __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_b); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 403; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -10816,31 +10816,31 @@ static int __pyx_f_5graph_5Graph_cost(struct __pyx_obj_5graph_Graph *__pyx_v_sel
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "graph.pyx":404
+  /* "biobox\lib\graph.pyx":404
  *         #@param b point (in flat coordiantes)
  *         cpdef int cost(self, int a, int b):
  *                 cdef list aa=self.get_3d_index(a)             # <<<<<<<<<<<<<<
  *                 cdef list bb=self.get_3d_index(b)
  *                 cdef list v=[bb[0]-aa[0],bb[1]-aa[1],bb[2]-aa[2]]
  */
-  __pyx_t_1 = ((struct __pyx_vtabstruct_5graph_Graph *)__pyx_v_self->__pyx_vtab)->get_3d_index(__pyx_v_self, __pyx_v_a, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 404; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = ((struct __pyx_vtabstruct_6biobox_3lib_5graph_Graph *)__pyx_v_self->__pyx_vtab)->get_3d_index(__pyx_v_self, __pyx_v_a, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 404; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_aa = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "graph.pyx":405
+  /* "biobox\lib\graph.pyx":405
  *         cpdef int cost(self, int a, int b):
  *                 cdef list aa=self.get_3d_index(a)
  *                 cdef list bb=self.get_3d_index(b)             # <<<<<<<<<<<<<<
  *                 cdef list v=[bb[0]-aa[0],bb[1]-aa[1],bb[2]-aa[2]]
  *                 #cdef v=np.array(self.get_3d_index(a))-np.array(self.get_3d_index(b))
  */
-  __pyx_t_1 = ((struct __pyx_vtabstruct_5graph_Graph *)__pyx_v_self->__pyx_vtab)->get_3d_index(__pyx_v_self, __pyx_v_b, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 405; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = ((struct __pyx_vtabstruct_6biobox_3lib_5graph_Graph *)__pyx_v_self->__pyx_vtab)->get_3d_index(__pyx_v_self, __pyx_v_b, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 405; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_bb = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "graph.pyx":406
+  /* "biobox\lib\graph.pyx":406
  *                 cdef list aa=self.get_3d_index(a)
  *                 cdef list bb=self.get_3d_index(b)
  *                 cdef list v=[bb[0]-aa[0],bb[1]-aa[1],bb[2]-aa[2]]             # <<<<<<<<<<<<<<
@@ -10891,7 +10891,7 @@ static int __pyx_f_5graph_5Graph_cost(struct __pyx_obj_5graph_Graph *__pyx_v_sel
   __pyx_v_v = ((PyObject*)__pyx_t_8);
   __pyx_t_8 = 0;
 
-  /* "graph.pyx":408
+  /* "biobox\lib\graph.pyx":408
  *                 cdef list v=[bb[0]-aa[0],bb[1]-aa[1],bb[2]-aa[2]]
  *                 #cdef v=np.array(self.get_3d_index(a))-np.array(self.get_3d_index(b))
  *                 return v[0]*v[0]+v[1]*v[1]+v[2]*v[2]             # <<<<<<<<<<<<<<
@@ -10917,7 +10917,7 @@ static int __pyx_f_5graph_5Graph_cost(struct __pyx_obj_5graph_Graph *__pyx_v_sel
   __pyx_r = __pyx_t_9;
   goto __pyx_L0;
 
-  /* "graph.pyx":403
+  /* "biobox\lib\graph.pyx":403
  *         #@param a point (in flat coordiantes)
  *         #@param b point (in flat coordiantes)
  *         cpdef int cost(self, int a, int b):             # <<<<<<<<<<<<<<
@@ -10934,7 +10934,7 @@ static int __pyx_f_5graph_5Graph_cost(struct __pyx_obj_5graph_Graph *__pyx_v_sel
   __Pyx_XDECREF(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_6);
   __Pyx_XDECREF(__pyx_t_8);
-  __Pyx_WriteUnraisable("graph.Graph.cost", __pyx_clineno, __pyx_lineno, __pyx_filename, 0, 0);
+  __Pyx_WriteUnraisable("biobox.lib.graph.Graph.cost", __pyx_clineno, __pyx_lineno, __pyx_filename, 0, 0);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_aa);
@@ -10945,8 +10945,8 @@ static int __pyx_f_5graph_5Graph_cost(struct __pyx_obj_5graph_Graph *__pyx_v_sel
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5graph_5Graph_23cost(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_pw_5graph_5Graph_23cost(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_23cost(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_23cost(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   int __pyx_v_a;
   int __pyx_v_b;
   int __pyx_lineno = 0;
@@ -10994,18 +10994,18 @@ static PyObject *__pyx_pw_5graph_5Graph_23cost(PyObject *__pyx_v_self, PyObject 
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("cost", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 403; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
-  __Pyx_AddTraceback("graph.Graph.cost", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.cost", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_5graph_5Graph_22cost(((struct __pyx_obj_5graph_Graph *)__pyx_v_self), __pyx_v_a, __pyx_v_b);
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_22cost(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self), __pyx_v_a, __pyx_v_b);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5graph_5Graph_22cost(struct __pyx_obj_5graph_Graph *__pyx_v_self, int __pyx_v_a, int __pyx_v_b) {
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_22cost(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, int __pyx_v_a, int __pyx_v_b) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -11014,7 +11014,7 @@ static PyObject *__pyx_pf_5graph_5Graph_22cost(struct __pyx_obj_5graph_Graph *__
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("cost", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_f_5graph_5Graph_cost(__pyx_v_self, __pyx_v_a, __pyx_v_b, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 403; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_f_6biobox_3lib_5graph_5Graph_cost(__pyx_v_self, __pyx_v_a, __pyx_v_b, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 403; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -11023,7 +11023,7 @@ static PyObject *__pyx_pf_5graph_5Graph_22cost(struct __pyx_obj_5graph_Graph *__
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("graph.Graph.cost", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.cost", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -11031,7 +11031,7 @@ static PyObject *__pyx_pf_5graph_5Graph_22cost(struct __pyx_obj_5graph_Graph *__
   return __pyx_r;
 }
 
-/* "graph.pyx":421
+/* "biobox\lib\graph.pyx":421
  *         # @param gaussian standard deviation
  *         # @retval 3d grid containing a binned gaussian density
  *         cdef _make_3d_gaussian(self, int degree=5, float sigma=0.5):             # <<<<<<<<<<<<<<
@@ -11039,7 +11039,7 @@ static PyObject *__pyx_pf_5graph_5Graph_22cost(struct __pyx_obj_5graph_Graph *__
  *                 cdef int window=degree*2+1
  */
 
-static PyObject *__pyx_f_5graph_5Graph__make_3d_gaussian(CYTHON_UNUSED struct __pyx_obj_5graph_Graph *__pyx_v_self, struct __pyx_opt_args_5graph_5Graph__make_3d_gaussian *__pyx_optional_args) {
+static PyObject *__pyx_f_6biobox_3lib_5graph_5Graph__make_3d_gaussian(CYTHON_UNUSED struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, struct __pyx_opt_args_6biobox_3lib_5graph_5Graph__make_3d_gaussian *__pyx_optional_args) {
   int __pyx_v_degree = ((int)5);
   float __pyx_v_sigma = ((float)0.5);
   int __pyx_v_window;
@@ -11082,7 +11082,7 @@ static PyObject *__pyx_f_5graph_5Graph__make_3d_gaussian(CYTHON_UNUSED struct __
     }
   }
 
-  /* "graph.pyx":423
+  /* "biobox\lib\graph.pyx":423
  *         cdef _make_3d_gaussian(self, int degree=5, float sigma=0.5):
  * 
  *                 cdef int window=degree*2+1             # <<<<<<<<<<<<<<
@@ -11091,7 +11091,7 @@ static PyObject *__pyx_f_5graph_5Graph__make_3d_gaussian(CYTHON_UNUSED struct __
  */
   __pyx_v_window = ((__pyx_v_degree * 2) + 1);
 
-  /* "graph.pyx":424
+  /* "biobox\lib\graph.pyx":424
  * 
  *                 cdef int window=degree*2+1
  *                 shape=(window,window,window)             # <<<<<<<<<<<<<<
@@ -11118,7 +11118,7 @@ static PyObject *__pyx_f_5graph_5Graph__make_3d_gaussian(CYTHON_UNUSED struct __
   __pyx_v_shape = __pyx_t_4;
   __pyx_t_4 = 0;
 
-  /* "graph.pyx":426
+  /* "biobox\lib\graph.pyx":426
  *                 shape=(window,window,window)
  * 
  *                 m,n,k = [(ss-1.)/2. for ss in shape]             # <<<<<<<<<<<<<<
@@ -11213,7 +11213,7 @@ static PyObject *__pyx_f_5graph_5Graph__make_3d_gaussian(CYTHON_UNUSED struct __
   __pyx_v_k = __pyx_t_2;
   __pyx_t_2 = 0;
 
-  /* "graph.pyx":428
+  /* "biobox\lib\graph.pyx":428
  *                 m,n,k = [(ss-1.)/2. for ss in shape]
  * 
  *                 x_ = np.arange(-m,m+1,1).astype(int)             # <<<<<<<<<<<<<<
@@ -11290,7 +11290,7 @@ static PyObject *__pyx_f_5graph_5Graph__make_3d_gaussian(CYTHON_UNUSED struct __
   __pyx_v_x_ = __pyx_t_4;
   __pyx_t_4 = 0;
 
-  /* "graph.pyx":429
+  /* "biobox\lib\graph.pyx":429
  * 
  *                 x_ = np.arange(-m,m+1,1).astype(int)
  *                 y_ = np.arange(-n,n+1,1).astype(int)             # <<<<<<<<<<<<<<
@@ -11367,7 +11367,7 @@ static PyObject *__pyx_f_5graph_5Graph__make_3d_gaussian(CYTHON_UNUSED struct __
   __pyx_v_y_ = __pyx_t_4;
   __pyx_t_4 = 0;
 
-  /* "graph.pyx":430
+  /* "biobox\lib\graph.pyx":430
  *                 x_ = np.arange(-m,m+1,1).astype(int)
  *                 y_ = np.arange(-n,n+1,1).astype(int)
  *                 z_ = np.arange(-k,k+1,1).astype(int)             # <<<<<<<<<<<<<<
@@ -11444,7 +11444,7 @@ static PyObject *__pyx_f_5graph_5Graph__make_3d_gaussian(CYTHON_UNUSED struct __
   __pyx_v_z_ = __pyx_t_4;
   __pyx_t_4 = 0;
 
-  /* "graph.pyx":431
+  /* "biobox\lib\graph.pyx":431
  *                 y_ = np.arange(-n,n+1,1).astype(int)
  *                 z_ = np.arange(-k,k+1,1).astype(int)
  *                 x, y, z = np.meshgrid(x_, y_, z_)             # <<<<<<<<<<<<<<
@@ -11550,7 +11550,7 @@ static PyObject *__pyx_f_5graph_5Graph__make_3d_gaussian(CYTHON_UNUSED struct __
   __pyx_v_z = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "graph.pyx":433
+  /* "biobox\lib\graph.pyx":433
  *                 x, y, z = np.meshgrid(x_, y_, z_)
  * 
  *                 h = np.exp( -(x*x + y*y + z*z) / (2.*sigma*sigma) )             # <<<<<<<<<<<<<<
@@ -11614,7 +11614,7 @@ static PyObject *__pyx_f_5graph_5Graph__make_3d_gaussian(CYTHON_UNUSED struct __
   __pyx_v_h = __pyx_t_4;
   __pyx_t_4 = 0;
 
-  /* "graph.pyx":434
+  /* "biobox\lib\graph.pyx":434
  * 
  *                 h = np.exp( -(x*x + y*y + z*z) / (2.*sigma*sigma) )
  *                 h[ h < np.finfo(h.dtype).eps*h.max() ] = 0             # <<<<<<<<<<<<<<
@@ -11686,7 +11686,7 @@ static PyObject *__pyx_f_5graph_5Graph__make_3d_gaussian(CYTHON_UNUSED struct __
   if (unlikely(PyObject_SetItem(__pyx_v_h, __pyx_t_4, __pyx_int_0) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 434; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "graph.pyx":435
+  /* "biobox\lib\graph.pyx":435
  *                 h = np.exp( -(x*x + y*y + z*z) / (2.*sigma*sigma) )
  *                 h[ h < np.finfo(h.dtype).eps*h.max() ] = 0
  *                 sumh = h.sum()             # <<<<<<<<<<<<<<
@@ -11716,7 +11716,7 @@ static PyObject *__pyx_f_5graph_5Graph__make_3d_gaussian(CYTHON_UNUSED struct __
   __pyx_v_sumh = __pyx_t_4;
   __pyx_t_4 = 0;
 
-  /* "graph.pyx":436
+  /* "biobox\lib\graph.pyx":436
  *                 h[ h < np.finfo(h.dtype).eps*h.max() ] = 0
  *                 sumh = h.sum()
  *                 if sumh != 0:             # <<<<<<<<<<<<<<
@@ -11728,7 +11728,7 @@ static PyObject *__pyx_f_5graph_5Graph__make_3d_gaussian(CYTHON_UNUSED struct __
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   if (__pyx_t_11) {
 
-    /* "graph.pyx":437
+    /* "biobox\lib\graph.pyx":437
  *                 sumh = h.sum()
  *                 if sumh != 0:
  *                     h /= sumh             # <<<<<<<<<<<<<<
@@ -11740,7 +11740,7 @@ static PyObject *__pyx_f_5graph_5Graph__make_3d_gaussian(CYTHON_UNUSED struct __
     __Pyx_DECREF_SET(__pyx_v_h, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "graph.pyx":436
+    /* "biobox\lib\graph.pyx":436
  *                 h[ h < np.finfo(h.dtype).eps*h.max() ] = 0
  *                 sumh = h.sum()
  *                 if sumh != 0:             # <<<<<<<<<<<<<<
@@ -11749,7 +11749,7 @@ static PyObject *__pyx_f_5graph_5Graph__make_3d_gaussian(CYTHON_UNUSED struct __
  */
   }
 
-  /* "graph.pyx":439
+  /* "biobox\lib\graph.pyx":439
  *                     h /= sumh
  * 
  *                 return h             # <<<<<<<<<<<<<<
@@ -11759,7 +11759,7 @@ static PyObject *__pyx_f_5graph_5Graph__make_3d_gaussian(CYTHON_UNUSED struct __
   __pyx_r = __pyx_v_h;
   goto __pyx_L0;
 
-  /* "graph.pyx":421
+  /* "biobox\lib\graph.pyx":421
  *         # @param gaussian standard deviation
  *         # @retval 3d grid containing a binned gaussian density
  *         cdef _make_3d_gaussian(self, int degree=5, float sigma=0.5):             # <<<<<<<<<<<<<<
@@ -11776,7 +11776,7 @@ static PyObject *__pyx_f_5graph_5Graph__make_3d_gaussian(CYTHON_UNUSED struct __
   __Pyx_XDECREF(__pyx_t_7);
   __Pyx_XDECREF(__pyx_t_8);
   __Pyx_XDECREF(__pyx_t_9);
-  __Pyx_AddTraceback("graph.Graph._make_3d_gaussian", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph._make_3d_gaussian", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_shape);
@@ -11797,7 +11797,7 @@ static PyObject *__pyx_f_5graph_5Graph__make_3d_gaussian(CYTHON_UNUSED struct __
   return __pyx_r;
 }
 
-/* "graph.pyx":30
+/* "biobox\lib\graph.pyx":30
  *         cdef np.ndarray yax
  *         cdef np.ndarray zax
  *         cdef public np.ndarray center #grid center             # <<<<<<<<<<<<<<
@@ -11806,19 +11806,19 @@ static PyObject *__pyx_f_5graph_5Graph__make_3d_gaussian(CYTHON_UNUSED struct __
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5graph_5Graph_6center_1__get__(PyObject *__pyx_v_self); /*proto*/
-static PyObject *__pyx_pw_5graph_5Graph_6center_1__get__(PyObject *__pyx_v_self) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_6center_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_6center_1__get__(PyObject *__pyx_v_self) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_5graph_5Graph_6center___get__(((struct __pyx_obj_5graph_Graph *)__pyx_v_self));
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_6center___get__(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5graph_5Graph_6center___get__(struct __pyx_obj_5graph_Graph *__pyx_v_self) {
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_6center___get__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__", 0);
@@ -11835,19 +11835,19 @@ static PyObject *__pyx_pf_5graph_5Graph_6center___get__(struct __pyx_obj_5graph_
 }
 
 /* Python wrapper */
-static int __pyx_pw_5graph_5Graph_6center_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
-static int __pyx_pw_5graph_5Graph_6center_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_6center_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_6center_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_5graph_5Graph_6center_2__set__(((struct __pyx_obj_5graph_Graph *)__pyx_v_self), ((PyObject *)__pyx_v_value));
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_6center_2__set__(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self), ((PyObject *)__pyx_v_value));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_5graph_5Graph_6center_2__set__(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value) {
+static int __pyx_pf_6biobox_3lib_5graph_5Graph_6center_2__set__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -11869,7 +11869,7 @@ static int __pyx_pf_5graph_5Graph_6center_2__set__(struct __pyx_obj_5graph_Graph
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("graph.Graph.center.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.center.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
@@ -11877,19 +11877,19 @@ static int __pyx_pf_5graph_5Graph_6center_2__set__(struct __pyx_obj_5graph_Graph
 }
 
 /* Python wrapper */
-static int __pyx_pw_5graph_5Graph_6center_5__del__(PyObject *__pyx_v_self); /*proto*/
-static int __pyx_pw_5graph_5Graph_6center_5__del__(PyObject *__pyx_v_self) {
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_6center_5__del__(PyObject *__pyx_v_self); /*proto*/
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_6center_5__del__(PyObject *__pyx_v_self) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__del__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_5graph_5Graph_6center_4__del__(((struct __pyx_obj_5graph_Graph *)__pyx_v_self));
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_6center_4__del__(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_5graph_5Graph_6center_4__del__(struct __pyx_obj_5graph_Graph *__pyx_v_self) {
+static int __pyx_pf_6biobox_3lib_5graph_5Graph_6center_4__del__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__del__", 0);
@@ -11905,7 +11905,7 @@ static int __pyx_pf_5graph_5Graph_6center_4__del__(struct __pyx_obj_5graph_Graph
   return __pyx_r;
 }
 
-/* "graph.pyx":31
+/* "biobox\lib\graph.pyx":31
  *         cdef np.ndarray zax
  *         cdef public np.ndarray center #grid center
  *         cdef public float step             # <<<<<<<<<<<<<<
@@ -11914,19 +11914,19 @@ static int __pyx_pf_5graph_5Graph_6center_4__del__(struct __pyx_obj_5graph_Graph
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5graph_5Graph_4step_1__get__(PyObject *__pyx_v_self); /*proto*/
-static PyObject *__pyx_pw_5graph_5Graph_4step_1__get__(PyObject *__pyx_v_self) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_4step_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_4step_1__get__(PyObject *__pyx_v_self) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_5graph_5Graph_4step___get__(((struct __pyx_obj_5graph_Graph *)__pyx_v_self));
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_4step___get__(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5graph_5Graph_4step___get__(struct __pyx_obj_5graph_Graph *__pyx_v_self) {
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_4step___get__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -11944,7 +11944,7 @@ static PyObject *__pyx_pf_5graph_5Graph_4step___get__(struct __pyx_obj_5graph_Gr
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("graph.Graph.step.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.step.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -11953,19 +11953,19 @@ static PyObject *__pyx_pf_5graph_5Graph_4step___get__(struct __pyx_obj_5graph_Gr
 }
 
 /* Python wrapper */
-static int __pyx_pw_5graph_5Graph_4step_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
-static int __pyx_pw_5graph_5Graph_4step_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_4step_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_4step_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_5graph_5Graph_4step_2__set__(((struct __pyx_obj_5graph_Graph *)__pyx_v_self), ((PyObject *)__pyx_v_value));
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_4step_2__set__(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self), ((PyObject *)__pyx_v_value));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_5graph_5Graph_4step_2__set__(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value) {
+static int __pyx_pf_6biobox_3lib_5graph_5Graph_4step_2__set__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   float __pyx_t_1;
@@ -11980,14 +11980,14 @@ static int __pyx_pf_5graph_5Graph_4step_2__set__(struct __pyx_obj_5graph_Graph *
   __pyx_r = 0;
   goto __pyx_L0;
   __pyx_L1_error:;
-  __Pyx_AddTraceback("graph.Graph.step.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.step.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "graph.pyx":32
+/* "biobox\lib\graph.pyx":32
  *         cdef public np.ndarray center #grid center
  *         cdef public float step
  *         cdef public np.ndarray prot_points             # <<<<<<<<<<<<<<
@@ -11996,19 +11996,19 @@ static int __pyx_pf_5graph_5Graph_4step_2__set__(struct __pyx_obj_5graph_Graph *
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5graph_5Graph_11prot_points_1__get__(PyObject *__pyx_v_self); /*proto*/
-static PyObject *__pyx_pw_5graph_5Graph_11prot_points_1__get__(PyObject *__pyx_v_self) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_11prot_points_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_11prot_points_1__get__(PyObject *__pyx_v_self) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_5graph_5Graph_11prot_points___get__(((struct __pyx_obj_5graph_Graph *)__pyx_v_self));
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_11prot_points___get__(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5graph_5Graph_11prot_points___get__(struct __pyx_obj_5graph_Graph *__pyx_v_self) {
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_11prot_points___get__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__", 0);
@@ -12025,19 +12025,19 @@ static PyObject *__pyx_pf_5graph_5Graph_11prot_points___get__(struct __pyx_obj_5
 }
 
 /* Python wrapper */
-static int __pyx_pw_5graph_5Graph_11prot_points_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
-static int __pyx_pw_5graph_5Graph_11prot_points_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_11prot_points_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_11prot_points_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_5graph_5Graph_11prot_points_2__set__(((struct __pyx_obj_5graph_Graph *)__pyx_v_self), ((PyObject *)__pyx_v_value));
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_11prot_points_2__set__(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self), ((PyObject *)__pyx_v_value));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_5graph_5Graph_11prot_points_2__set__(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value) {
+static int __pyx_pf_6biobox_3lib_5graph_5Graph_11prot_points_2__set__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -12059,7 +12059,7 @@ static int __pyx_pf_5graph_5Graph_11prot_points_2__set__(struct __pyx_obj_5graph
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("graph.Graph.prot_points.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.prot_points.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
@@ -12067,19 +12067,19 @@ static int __pyx_pf_5graph_5Graph_11prot_points_2__set__(struct __pyx_obj_5graph
 }
 
 /* Python wrapper */
-static int __pyx_pw_5graph_5Graph_11prot_points_5__del__(PyObject *__pyx_v_self); /*proto*/
-static int __pyx_pw_5graph_5Graph_11prot_points_5__del__(PyObject *__pyx_v_self) {
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_11prot_points_5__del__(PyObject *__pyx_v_self); /*proto*/
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_11prot_points_5__del__(PyObject *__pyx_v_self) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__del__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_5graph_5Graph_11prot_points_4__del__(((struct __pyx_obj_5graph_Graph *)__pyx_v_self));
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_11prot_points_4__del__(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_5graph_5Graph_11prot_points_4__del__(struct __pyx_obj_5graph_Graph *__pyx_v_self) {
+static int __pyx_pf_6biobox_3lib_5graph_5Graph_11prot_points_4__del__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__del__", 0);
@@ -12095,7 +12095,7 @@ static int __pyx_pf_5graph_5Graph_11prot_points_4__del__(struct __pyx_obj_5graph
   return __pyx_r;
 }
 
-/* "graph.pyx":33
+/* "biobox\lib\graph.pyx":33
  *         cdef public float step
  *         cdef public np.ndarray prot_points
  *         cdef public np.ndarray params             # <<<<<<<<<<<<<<
@@ -12104,19 +12104,19 @@ static int __pyx_pf_5graph_5Graph_11prot_points_4__del__(struct __pyx_obj_5graph
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5graph_5Graph_6params_1__get__(PyObject *__pyx_v_self); /*proto*/
-static PyObject *__pyx_pw_5graph_5Graph_6params_1__get__(PyObject *__pyx_v_self) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_6params_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_6params_1__get__(PyObject *__pyx_v_self) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_5graph_5Graph_6params___get__(((struct __pyx_obj_5graph_Graph *)__pyx_v_self));
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_6params___get__(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5graph_5Graph_6params___get__(struct __pyx_obj_5graph_Graph *__pyx_v_self) {
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_6params___get__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__", 0);
@@ -12133,19 +12133,19 @@ static PyObject *__pyx_pf_5graph_5Graph_6params___get__(struct __pyx_obj_5graph_
 }
 
 /* Python wrapper */
-static int __pyx_pw_5graph_5Graph_6params_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
-static int __pyx_pw_5graph_5Graph_6params_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_6params_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_6params_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_5graph_5Graph_6params_2__set__(((struct __pyx_obj_5graph_Graph *)__pyx_v_self), ((PyObject *)__pyx_v_value));
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_6params_2__set__(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self), ((PyObject *)__pyx_v_value));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_5graph_5Graph_6params_2__set__(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value) {
+static int __pyx_pf_6biobox_3lib_5graph_5Graph_6params_2__set__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -12167,7 +12167,7 @@ static int __pyx_pf_5graph_5Graph_6params_2__set__(struct __pyx_obj_5graph_Graph
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("graph.Graph.params.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.params.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
@@ -12175,19 +12175,19 @@ static int __pyx_pf_5graph_5Graph_6params_2__set__(struct __pyx_obj_5graph_Graph
 }
 
 /* Python wrapper */
-static int __pyx_pw_5graph_5Graph_6params_5__del__(PyObject *__pyx_v_self); /*proto*/
-static int __pyx_pw_5graph_5Graph_6params_5__del__(PyObject *__pyx_v_self) {
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_6params_5__del__(PyObject *__pyx_v_self); /*proto*/
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_6params_5__del__(PyObject *__pyx_v_self) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__del__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_5graph_5Graph_6params_4__del__(((struct __pyx_obj_5graph_Graph *)__pyx_v_self));
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_6params_4__del__(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_5graph_5Graph_6params_4__del__(struct __pyx_obj_5graph_Graph *__pyx_v_self) {
+static int __pyx_pf_6biobox_3lib_5graph_5Graph_6params_4__del__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__del__", 0);
@@ -12203,7 +12203,7 @@ static int __pyx_pf_5graph_5Graph_6params_4__del__(struct __pyx_obj_5graph_Graph
   return __pyx_r;
 }
 
-/* "graph.pyx":37
+/* "biobox\lib\graph.pyx":37
  *         cdef np.ndarray w
  *         cdef np.ndarray points
  *         cdef public np.ndarray access_grid             # <<<<<<<<<<<<<<
@@ -12212,19 +12212,19 @@ static int __pyx_pf_5graph_5Graph_6params_4__del__(struct __pyx_obj_5graph_Graph
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5graph_5Graph_11access_grid_1__get__(PyObject *__pyx_v_self); /*proto*/
-static PyObject *__pyx_pw_5graph_5Graph_11access_grid_1__get__(PyObject *__pyx_v_self) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_11access_grid_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_11access_grid_1__get__(PyObject *__pyx_v_self) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_5graph_5Graph_11access_grid___get__(((struct __pyx_obj_5graph_Graph *)__pyx_v_self));
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_11access_grid___get__(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5graph_5Graph_11access_grid___get__(struct __pyx_obj_5graph_Graph *__pyx_v_self) {
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_11access_grid___get__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__", 0);
@@ -12241,19 +12241,19 @@ static PyObject *__pyx_pf_5graph_5Graph_11access_grid___get__(struct __pyx_obj_5
 }
 
 /* Python wrapper */
-static int __pyx_pw_5graph_5Graph_11access_grid_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
-static int __pyx_pw_5graph_5Graph_11access_grid_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_11access_grid_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_11access_grid_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_5graph_5Graph_11access_grid_2__set__(((struct __pyx_obj_5graph_Graph *)__pyx_v_self), ((PyObject *)__pyx_v_value));
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_11access_grid_2__set__(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self), ((PyObject *)__pyx_v_value));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_5graph_5Graph_11access_grid_2__set__(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value) {
+static int __pyx_pf_6biobox_3lib_5graph_5Graph_11access_grid_2__set__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -12275,7 +12275,7 @@ static int __pyx_pf_5graph_5Graph_11access_grid_2__set__(struct __pyx_obj_5graph
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("graph.Graph.access_grid.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.access_grid.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
@@ -12283,19 +12283,19 @@ static int __pyx_pf_5graph_5Graph_11access_grid_2__set__(struct __pyx_obj_5graph
 }
 
 /* Python wrapper */
-static int __pyx_pw_5graph_5Graph_11access_grid_5__del__(PyObject *__pyx_v_self); /*proto*/
-static int __pyx_pw_5graph_5Graph_11access_grid_5__del__(PyObject *__pyx_v_self) {
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_11access_grid_5__del__(PyObject *__pyx_v_self); /*proto*/
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_11access_grid_5__del__(PyObject *__pyx_v_self) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__del__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_5graph_5Graph_11access_grid_4__del__(((struct __pyx_obj_5graph_Graph *)__pyx_v_self));
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_11access_grid_4__del__(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_5graph_5Graph_11access_grid_4__del__(struct __pyx_obj_5graph_Graph *__pyx_v_self) {
+static int __pyx_pf_6biobox_3lib_5graph_5Graph_11access_grid_4__del__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__del__", 0);
@@ -12311,7 +12311,7 @@ static int __pyx_pf_5graph_5Graph_11access_grid_4__del__(struct __pyx_obj_5graph
   return __pyx_r;
 }
 
-/* "graph.pyx":38
+/* "biobox\lib\graph.pyx":38
  *         cdef np.ndarray points
  *         cdef public np.ndarray access_grid
  *         cdef public np.ndarray access_grid_shape             # <<<<<<<<<<<<<<
@@ -12320,19 +12320,19 @@ static int __pyx_pf_5graph_5Graph_11access_grid_4__del__(struct __pyx_obj_5graph
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5graph_5Graph_17access_grid_shape_1__get__(PyObject *__pyx_v_self); /*proto*/
-static PyObject *__pyx_pw_5graph_5Graph_17access_grid_shape_1__get__(PyObject *__pyx_v_self) {
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_17access_grid_shape_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_6biobox_3lib_5graph_5Graph_17access_grid_shape_1__get__(PyObject *__pyx_v_self) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_5graph_5Graph_17access_grid_shape___get__(((struct __pyx_obj_5graph_Graph *)__pyx_v_self));
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_17access_grid_shape___get__(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5graph_5Graph_17access_grid_shape___get__(struct __pyx_obj_5graph_Graph *__pyx_v_self) {
+static PyObject *__pyx_pf_6biobox_3lib_5graph_5Graph_17access_grid_shape___get__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__", 0);
@@ -12349,19 +12349,19 @@ static PyObject *__pyx_pf_5graph_5Graph_17access_grid_shape___get__(struct __pyx
 }
 
 /* Python wrapper */
-static int __pyx_pw_5graph_5Graph_17access_grid_shape_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
-static int __pyx_pw_5graph_5Graph_17access_grid_shape_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_17access_grid_shape_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_17access_grid_shape_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_5graph_5Graph_17access_grid_shape_2__set__(((struct __pyx_obj_5graph_Graph *)__pyx_v_self), ((PyObject *)__pyx_v_value));
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_17access_grid_shape_2__set__(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self), ((PyObject *)__pyx_v_value));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_5graph_5Graph_17access_grid_shape_2__set__(struct __pyx_obj_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value) {
+static int __pyx_pf_6biobox_3lib_5graph_5Graph_17access_grid_shape_2__set__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self, PyObject *__pyx_v_value) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -12383,7 +12383,7 @@ static int __pyx_pf_5graph_5Graph_17access_grid_shape_2__set__(struct __pyx_obj_
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("graph.Graph.access_grid_shape.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.graph.Graph.access_grid_shape.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
@@ -12391,19 +12391,19 @@ static int __pyx_pf_5graph_5Graph_17access_grid_shape_2__set__(struct __pyx_obj_
 }
 
 /* Python wrapper */
-static int __pyx_pw_5graph_5Graph_17access_grid_shape_5__del__(PyObject *__pyx_v_self); /*proto*/
-static int __pyx_pw_5graph_5Graph_17access_grid_shape_5__del__(PyObject *__pyx_v_self) {
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_17access_grid_shape_5__del__(PyObject *__pyx_v_self); /*proto*/
+static int __pyx_pw_6biobox_3lib_5graph_5Graph_17access_grid_shape_5__del__(PyObject *__pyx_v_self) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__del__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_5graph_5Graph_17access_grid_shape_4__del__(((struct __pyx_obj_5graph_Graph *)__pyx_v_self));
+  __pyx_r = __pyx_pf_6biobox_3lib_5graph_5Graph_17access_grid_shape_4__del__(((struct __pyx_obj_6biobox_3lib_5graph_Graph *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_5graph_5Graph_17access_grid_shape_4__del__(struct __pyx_obj_5graph_Graph *__pyx_v_self) {
+static int __pyx_pf_6biobox_3lib_5graph_5Graph_17access_grid_shape_4__del__(struct __pyx_obj_6biobox_3lib_5graph_Graph *__pyx_v_self) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__del__", 0);
@@ -14561,10 +14561,10 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_get_array_base(PyArrayObject *__py
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
-static struct __pyx_vtabstruct_5graph_Graph __pyx_vtable_5graph_Graph;
+static struct __pyx_vtabstruct_6biobox_3lib_5graph_Graph __pyx_vtable_6biobox_3lib_5graph_Graph;
 
-static PyObject *__pyx_tp_new_5graph_Graph(PyTypeObject *t, CYTHON_UNUSED PyObject *a, CYTHON_UNUSED PyObject *k) {
-  struct __pyx_obj_5graph_Graph *p;
+static PyObject *__pyx_tp_new_6biobox_3lib_5graph_Graph(PyTypeObject *t, CYTHON_UNUSED PyObject *a, CYTHON_UNUSED PyObject *k) {
+  struct __pyx_obj_6biobox_3lib_5graph_Graph *p;
   PyObject *o;
   if (likely((t->tp_flags & Py_TPFLAGS_IS_ABSTRACT) == 0)) {
     o = (*t->tp_alloc)(t, 0);
@@ -14572,8 +14572,8 @@ static PyObject *__pyx_tp_new_5graph_Graph(PyTypeObject *t, CYTHON_UNUSED PyObje
     o = (PyObject *) PyBaseObject_Type.tp_new(t, __pyx_empty_tuple, 0);
   }
   if (unlikely(!o)) return 0;
-  p = ((struct __pyx_obj_5graph_Graph *)o);
-  p->__pyx_vtab = __pyx_vtabptr_5graph_Graph;
+  p = ((struct __pyx_obj_6biobox_3lib_5graph_Graph *)o);
+  p->__pyx_vtab = __pyx_vtabptr_6biobox_3lib_5graph_Graph;
   p->xax = ((PyArrayObject *)Py_None); Py_INCREF(Py_None);
   p->yax = ((PyArrayObject *)Py_None); Py_INCREF(Py_None);
   p->zax = ((PyArrayObject *)Py_None); Py_INCREF(Py_None);
@@ -14588,8 +14588,8 @@ static PyObject *__pyx_tp_new_5graph_Graph(PyTypeObject *t, CYTHON_UNUSED PyObje
   return o;
 }
 
-static void __pyx_tp_dealloc_5graph_Graph(PyObject *o) {
-  struct __pyx_obj_5graph_Graph *p = (struct __pyx_obj_5graph_Graph *)o;
+static void __pyx_tp_dealloc_6biobox_3lib_5graph_Graph(PyObject *o) {
+  struct __pyx_obj_6biobox_3lib_5graph_Graph *p = (struct __pyx_obj_6biobox_3lib_5graph_Graph *)o;
   #if PY_VERSION_HEX >= 0x030400a1
   if (unlikely(Py_TYPE(o)->tp_finalize) && !_PyGC_FINALIZED(o)) {
     if (PyObject_CallFinalizerFromDealloc(o)) return;
@@ -14610,9 +14610,9 @@ static void __pyx_tp_dealloc_5graph_Graph(PyObject *o) {
   (*Py_TYPE(o)->tp_free)(o);
 }
 
-static int __pyx_tp_traverse_5graph_Graph(PyObject *o, visitproc v, void *a) {
+static int __pyx_tp_traverse_6biobox_3lib_5graph_Graph(PyObject *o, visitproc v, void *a) {
   int e;
-  struct __pyx_obj_5graph_Graph *p = (struct __pyx_obj_5graph_Graph *)o;
+  struct __pyx_obj_6biobox_3lib_5graph_Graph *p = (struct __pyx_obj_6biobox_3lib_5graph_Graph *)o;
   if (p->xax) {
     e = (*v)(((PyObject*)p->xax), a); if (e) return e;
   }
@@ -14649,9 +14649,9 @@ static int __pyx_tp_traverse_5graph_Graph(PyObject *o, visitproc v, void *a) {
   return 0;
 }
 
-static int __pyx_tp_clear_5graph_Graph(PyObject *o) {
+static int __pyx_tp_clear_6biobox_3lib_5graph_Graph(PyObject *o) {
   PyObject* tmp;
-  struct __pyx_obj_5graph_Graph *p = (struct __pyx_obj_5graph_Graph *)o;
+  struct __pyx_obj_6biobox_3lib_5graph_Graph *p = (struct __pyx_obj_6biobox_3lib_5graph_Graph *)o;
   tmp = ((PyObject*)p->xax);
   p->xax = ((PyArrayObject *)Py_None); Py_INCREF(Py_None);
   Py_XDECREF(tmp);
@@ -14688,26 +14688,26 @@ static int __pyx_tp_clear_5graph_Graph(PyObject *o) {
   return 0;
 }
 
-static PyObject *__pyx_getprop_5graph_5Graph_center(PyObject *o, CYTHON_UNUSED void *x) {
-  return __pyx_pw_5graph_5Graph_6center_1__get__(o);
+static PyObject *__pyx_getprop_6biobox_3lib_5graph_5Graph_center(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_6biobox_3lib_5graph_5Graph_6center_1__get__(o);
 }
 
-static int __pyx_setprop_5graph_5Graph_center(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
+static int __pyx_setprop_6biobox_3lib_5graph_5Graph_center(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
   if (v) {
-    return __pyx_pw_5graph_5Graph_6center_3__set__(o, v);
+    return __pyx_pw_6biobox_3lib_5graph_5Graph_6center_3__set__(o, v);
   }
   else {
-    return __pyx_pw_5graph_5Graph_6center_5__del__(o);
+    return __pyx_pw_6biobox_3lib_5graph_5Graph_6center_5__del__(o);
   }
 }
 
-static PyObject *__pyx_getprop_5graph_5Graph_step(PyObject *o, CYTHON_UNUSED void *x) {
-  return __pyx_pw_5graph_5Graph_4step_1__get__(o);
+static PyObject *__pyx_getprop_6biobox_3lib_5graph_5Graph_step(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_6biobox_3lib_5graph_5Graph_4step_1__get__(o);
 }
 
-static int __pyx_setprop_5graph_5Graph_step(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
+static int __pyx_setprop_6biobox_3lib_5graph_5Graph_step(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
   if (v) {
-    return __pyx_pw_5graph_5Graph_4step_3__set__(o, v);
+    return __pyx_pw_6biobox_3lib_5graph_5Graph_4step_3__set__(o, v);
   }
   else {
     PyErr_SetString(PyExc_NotImplementedError, "__del__");
@@ -14715,89 +14715,89 @@ static int __pyx_setprop_5graph_5Graph_step(PyObject *o, PyObject *v, CYTHON_UNU
   }
 }
 
-static PyObject *__pyx_getprop_5graph_5Graph_prot_points(PyObject *o, CYTHON_UNUSED void *x) {
-  return __pyx_pw_5graph_5Graph_11prot_points_1__get__(o);
+static PyObject *__pyx_getprop_6biobox_3lib_5graph_5Graph_prot_points(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_6biobox_3lib_5graph_5Graph_11prot_points_1__get__(o);
 }
 
-static int __pyx_setprop_5graph_5Graph_prot_points(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
+static int __pyx_setprop_6biobox_3lib_5graph_5Graph_prot_points(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
   if (v) {
-    return __pyx_pw_5graph_5Graph_11prot_points_3__set__(o, v);
+    return __pyx_pw_6biobox_3lib_5graph_5Graph_11prot_points_3__set__(o, v);
   }
   else {
-    return __pyx_pw_5graph_5Graph_11prot_points_5__del__(o);
+    return __pyx_pw_6biobox_3lib_5graph_5Graph_11prot_points_5__del__(o);
   }
 }
 
-static PyObject *__pyx_getprop_5graph_5Graph_params(PyObject *o, CYTHON_UNUSED void *x) {
-  return __pyx_pw_5graph_5Graph_6params_1__get__(o);
+static PyObject *__pyx_getprop_6biobox_3lib_5graph_5Graph_params(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_6biobox_3lib_5graph_5Graph_6params_1__get__(o);
 }
 
-static int __pyx_setprop_5graph_5Graph_params(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
+static int __pyx_setprop_6biobox_3lib_5graph_5Graph_params(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
   if (v) {
-    return __pyx_pw_5graph_5Graph_6params_3__set__(o, v);
+    return __pyx_pw_6biobox_3lib_5graph_5Graph_6params_3__set__(o, v);
   }
   else {
-    return __pyx_pw_5graph_5Graph_6params_5__del__(o);
+    return __pyx_pw_6biobox_3lib_5graph_5Graph_6params_5__del__(o);
   }
 }
 
-static PyObject *__pyx_getprop_5graph_5Graph_access_grid(PyObject *o, CYTHON_UNUSED void *x) {
-  return __pyx_pw_5graph_5Graph_11access_grid_1__get__(o);
+static PyObject *__pyx_getprop_6biobox_3lib_5graph_5Graph_access_grid(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_6biobox_3lib_5graph_5Graph_11access_grid_1__get__(o);
 }
 
-static int __pyx_setprop_5graph_5Graph_access_grid(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
+static int __pyx_setprop_6biobox_3lib_5graph_5Graph_access_grid(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
   if (v) {
-    return __pyx_pw_5graph_5Graph_11access_grid_3__set__(o, v);
+    return __pyx_pw_6biobox_3lib_5graph_5Graph_11access_grid_3__set__(o, v);
   }
   else {
-    return __pyx_pw_5graph_5Graph_11access_grid_5__del__(o);
+    return __pyx_pw_6biobox_3lib_5graph_5Graph_11access_grid_5__del__(o);
   }
 }
 
-static PyObject *__pyx_getprop_5graph_5Graph_access_grid_shape(PyObject *o, CYTHON_UNUSED void *x) {
-  return __pyx_pw_5graph_5Graph_17access_grid_shape_1__get__(o);
+static PyObject *__pyx_getprop_6biobox_3lib_5graph_5Graph_access_grid_shape(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_6biobox_3lib_5graph_5Graph_17access_grid_shape_1__get__(o);
 }
 
-static int __pyx_setprop_5graph_5Graph_access_grid_shape(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
+static int __pyx_setprop_6biobox_3lib_5graph_5Graph_access_grid_shape(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
   if (v) {
-    return __pyx_pw_5graph_5Graph_17access_grid_shape_3__set__(o, v);
+    return __pyx_pw_6biobox_3lib_5graph_5Graph_17access_grid_shape_3__set__(o, v);
   }
   else {
-    return __pyx_pw_5graph_5Graph_17access_grid_shape_5__del__(o);
+    return __pyx_pw_6biobox_3lib_5graph_5Graph_17access_grid_shape_5__del__(o);
   }
 }
 
-static PyMethodDef __pyx_methods_5graph_Graph[] = {
-  {"make_grid", (PyCFunction)__pyx_pw_5graph_5Graph_3make_grid, METH_VARARGS|METH_KEYWORDS, 0},
-  {"make_global_grid", (PyCFunction)__pyx_pw_5graph_5Graph_5make_global_grid, METH_VARARGS|METH_KEYWORDS, 0},
-  {"place_local_grid", (PyCFunction)__pyx_pw_5graph_5Graph_7place_local_grid, METH_VARARGS|METH_KEYWORDS, 0},
-  {"get_points_from_idx_flat", (PyCFunction)__pyx_pw_5graph_5Graph_9get_points_from_idx_flat, METH_O, 0},
-  {"get_points_from_idx", (PyCFunction)__pyx_pw_5graph_5Graph_11get_points_from_idx, METH_O, 0},
-  {"get_closest_nodes", (PyCFunction)__pyx_pw_5graph_5Graph_13get_closest_nodes, METH_O, 0},
-  {"neighbors", (PyCFunction)__pyx_pw_5graph_5Graph_15neighbors, METH_VARARGS|METH_KEYWORDS, 0},
-  {"get_flat_index", (PyCFunction)__pyx_pw_5graph_5Graph_17get_flat_index, METH_O, 0},
-  {"get_3d_index", (PyCFunction)__pyx_pw_5graph_5Graph_19get_3d_index, METH_O, 0},
-  {"heuristic", (PyCFunction)__pyx_pw_5graph_5Graph_21heuristic, METH_VARARGS|METH_KEYWORDS, 0},
-  {"cost", (PyCFunction)__pyx_pw_5graph_5Graph_23cost, METH_VARARGS|METH_KEYWORDS, 0},
+static PyMethodDef __pyx_methods_6biobox_3lib_5graph_Graph[] = {
+  {"make_grid", (PyCFunction)__pyx_pw_6biobox_3lib_5graph_5Graph_3make_grid, METH_VARARGS|METH_KEYWORDS, 0},
+  {"make_global_grid", (PyCFunction)__pyx_pw_6biobox_3lib_5graph_5Graph_5make_global_grid, METH_VARARGS|METH_KEYWORDS, 0},
+  {"place_local_grid", (PyCFunction)__pyx_pw_6biobox_3lib_5graph_5Graph_7place_local_grid, METH_VARARGS|METH_KEYWORDS, 0},
+  {"get_points_from_idx_flat", (PyCFunction)__pyx_pw_6biobox_3lib_5graph_5Graph_9get_points_from_idx_flat, METH_O, 0},
+  {"get_points_from_idx", (PyCFunction)__pyx_pw_6biobox_3lib_5graph_5Graph_11get_points_from_idx, METH_O, 0},
+  {"get_closest_nodes", (PyCFunction)__pyx_pw_6biobox_3lib_5graph_5Graph_13get_closest_nodes, METH_O, 0},
+  {"neighbors", (PyCFunction)__pyx_pw_6biobox_3lib_5graph_5Graph_15neighbors, METH_VARARGS|METH_KEYWORDS, 0},
+  {"get_flat_index", (PyCFunction)__pyx_pw_6biobox_3lib_5graph_5Graph_17get_flat_index, METH_O, 0},
+  {"get_3d_index", (PyCFunction)__pyx_pw_6biobox_3lib_5graph_5Graph_19get_3d_index, METH_O, 0},
+  {"heuristic", (PyCFunction)__pyx_pw_6biobox_3lib_5graph_5Graph_21heuristic, METH_VARARGS|METH_KEYWORDS, 0},
+  {"cost", (PyCFunction)__pyx_pw_6biobox_3lib_5graph_5Graph_23cost, METH_VARARGS|METH_KEYWORDS, 0},
   {0, 0, 0, 0}
 };
 
-static struct PyGetSetDef __pyx_getsets_5graph_Graph[] = {
-  {(char *)"center", __pyx_getprop_5graph_5Graph_center, __pyx_setprop_5graph_5Graph_center, 0, 0},
-  {(char *)"step", __pyx_getprop_5graph_5Graph_step, __pyx_setprop_5graph_5Graph_step, 0, 0},
-  {(char *)"prot_points", __pyx_getprop_5graph_5Graph_prot_points, __pyx_setprop_5graph_5Graph_prot_points, 0, 0},
-  {(char *)"params", __pyx_getprop_5graph_5Graph_params, __pyx_setprop_5graph_5Graph_params, 0, 0},
-  {(char *)"access_grid", __pyx_getprop_5graph_5Graph_access_grid, __pyx_setprop_5graph_5Graph_access_grid, 0, 0},
-  {(char *)"access_grid_shape", __pyx_getprop_5graph_5Graph_access_grid_shape, __pyx_setprop_5graph_5Graph_access_grid_shape, 0, 0},
+static struct PyGetSetDef __pyx_getsets_6biobox_3lib_5graph_Graph[] = {
+  {(char *)"center", __pyx_getprop_6biobox_3lib_5graph_5Graph_center, __pyx_setprop_6biobox_3lib_5graph_5Graph_center, 0, 0},
+  {(char *)"step", __pyx_getprop_6biobox_3lib_5graph_5Graph_step, __pyx_setprop_6biobox_3lib_5graph_5Graph_step, 0, 0},
+  {(char *)"prot_points", __pyx_getprop_6biobox_3lib_5graph_5Graph_prot_points, __pyx_setprop_6biobox_3lib_5graph_5Graph_prot_points, 0, 0},
+  {(char *)"params", __pyx_getprop_6biobox_3lib_5graph_5Graph_params, __pyx_setprop_6biobox_3lib_5graph_5Graph_params, 0, 0},
+  {(char *)"access_grid", __pyx_getprop_6biobox_3lib_5graph_5Graph_access_grid, __pyx_setprop_6biobox_3lib_5graph_5Graph_access_grid, 0, 0},
+  {(char *)"access_grid_shape", __pyx_getprop_6biobox_3lib_5graph_5Graph_access_grid_shape, __pyx_setprop_6biobox_3lib_5graph_5Graph_access_grid_shape, 0, 0},
   {0, 0, 0, 0, 0}
 };
 
-static PyTypeObject __pyx_type_5graph_Graph = {
+static PyTypeObject __pyx_type_6biobox_3lib_5graph_Graph = {
   PyVarObject_HEAD_INIT(0, 0)
-  "graph.Graph", /*tp_name*/
-  sizeof(struct __pyx_obj_5graph_Graph), /*tp_basicsize*/
+  "biobox.lib.graph.Graph", /*tp_name*/
+  sizeof(struct __pyx_obj_6biobox_3lib_5graph_Graph), /*tp_basicsize*/
   0, /*tp_itemsize*/
-  __pyx_tp_dealloc_5graph_Graph, /*tp_dealloc*/
+  __pyx_tp_dealloc_6biobox_3lib_5graph_Graph, /*tp_dealloc*/
   0, /*tp_print*/
   0, /*tp_getattr*/
   0, /*tp_setattr*/
@@ -14819,23 +14819,23 @@ static PyTypeObject __pyx_type_5graph_Graph = {
   0, /*tp_as_buffer*/
   Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC, /*tp_flags*/
   0, /*tp_doc*/
-  __pyx_tp_traverse_5graph_Graph, /*tp_traverse*/
-  __pyx_tp_clear_5graph_Graph, /*tp_clear*/
+  __pyx_tp_traverse_6biobox_3lib_5graph_Graph, /*tp_traverse*/
+  __pyx_tp_clear_6biobox_3lib_5graph_Graph, /*tp_clear*/
   0, /*tp_richcompare*/
   0, /*tp_weaklistoffset*/
   0, /*tp_iter*/
   0, /*tp_iternext*/
-  __pyx_methods_5graph_Graph, /*tp_methods*/
+  __pyx_methods_6biobox_3lib_5graph_Graph, /*tp_methods*/
   0, /*tp_members*/
-  __pyx_getsets_5graph_Graph, /*tp_getset*/
+  __pyx_getsets_6biobox_3lib_5graph_Graph, /*tp_getset*/
   0, /*tp_base*/
   0, /*tp_dict*/
   0, /*tp_descr_get*/
   0, /*tp_descr_set*/
   0, /*tp_dictoffset*/
-  __pyx_pw_5graph_5Graph_1__init__, /*tp_init*/
+  __pyx_pw_6biobox_3lib_5graph_5Graph_1__init__, /*tp_init*/
   0, /*tp_alloc*/
-  __pyx_tp_new_5graph_Graph, /*tp_new*/
+  __pyx_tp_new_6biobox_3lib_5graph_Graph, /*tp_new*/
   0, /*tp_free*/
   0, /*tp_is_gc*/
   0, /*tp_bases*/
@@ -14975,7 +14975,7 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "graph.pyx":58
+  /* "biobox\lib\graph.pyx":58
  *             #define box according to desired boundaries
  *             if len(boundaries)==3:
  *                 if np.any(boundaries[:,0]>=boundaries[:,1]):             # <<<<<<<<<<<<<<
@@ -14995,7 +14995,7 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__6);
   __Pyx_GIVEREF(__pyx_tuple__6);
 
-  /* "graph.pyx":59
+  /* "biobox\lib\graph.pyx":59
  *             if len(boundaries)==3:
  *                 if np.any(boundaries[:,0]>=boundaries[:,1]):
  *                     raise Exception("upper grid boundary is greater than a lower boundary!")             # <<<<<<<<<<<<<<
@@ -15006,7 +15006,7 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__7);
   __Pyx_GIVEREF(__pyx_tuple__7);
 
-  /* "graph.pyx":123
+  /* "biobox\lib\graph.pyx":123
  *             else:
  *                 b=[]
  *                 for a in np.unique(self.params[:,0]):             # <<<<<<<<<<<<<<
@@ -15020,7 +15020,7 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__12);
   __Pyx_GIVEREF(__pyx_tuple__12);
 
-  /* "graph.pyx":127
+  /* "biobox\lib\graph.pyx":127
  *                     grid=np.zeros((len(self.xax),len(self.yax),len(self.zax)))
  * 
  *                     test=np.where(self.params[:,0]==a)[0]             # <<<<<<<<<<<<<<
@@ -15034,7 +15034,7 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__14);
   __Pyx_GIVEREF(__pyx_tuple__14);
 
-  /* "graph.pyx":223
+  /* "biobox\lib\graph.pyx":223
  *                 else:
  *                     b=[]
  *                     for a in np.unique(self.params[:,0]):             # <<<<<<<<<<<<<<
@@ -15048,7 +15048,7 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__16);
   __Pyx_GIVEREF(__pyx_tuple__16);
 
-  /* "graph.pyx":227
+  /* "biobox\lib\graph.pyx":227
  *                         grid=np.zeros((len(self.xax),len(self.yax),len(self.zax)))
  * 
  *                         test=np.where(self.params[:,0]==a)[0]             # <<<<<<<<<<<<<<
@@ -15224,14 +15224,14 @@ PyMODINIT_FUNC PyInit_graph(void)
   #if PY_MAJOR_VERSION < 3 && (__PYX_DEFAULT_STRING_ENCODING_IS_ASCII || __PYX_DEFAULT_STRING_ENCODING_IS_DEFAULT)
   if (__Pyx_init_sys_getdefaultencoding_params() < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   #endif
-  if (__pyx_module_is_main_graph) {
+  if (__pyx_module_is_main_biobox__lib__graph) {
     if (PyObject_SetAttrString(__pyx_m, "__name__", __pyx_n_s_main) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   #if PY_MAJOR_VERSION >= 3
   {
     PyObject *modules = PyImport_GetModuleDict(); if (unlikely(!modules)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    if (!PyDict_GetItemString(modules, "graph")) {
-      if (unlikely(PyDict_SetItemString(modules, "graph", __pyx_m) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    if (!PyDict_GetItemString(modules, "biobox.lib.graph")) {
+      if (unlikely(PyDict_SetItemString(modules, "biobox.lib.graph", __pyx_m) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     }
   }
   #endif
@@ -15243,24 +15243,24 @@ PyMODINIT_FUNC PyInit_graph(void)
   /*--- Variable export code ---*/
   /*--- Function export code ---*/
   /*--- Type init code ---*/
-  __pyx_vtabptr_5graph_Graph = &__pyx_vtable_5graph_Graph;
-  __pyx_vtable_5graph_Graph.make_grid = (PyObject *(*)(struct __pyx_obj_5graph_Graph *, int __pyx_skip_dispatch, struct __pyx_opt_args_5graph_5Graph_make_grid *__pyx_optional_args))__pyx_f_5graph_5Graph_make_grid;
-  __pyx_vtable_5graph_Graph.make_global_grid = (PyObject *(*)(struct __pyx_obj_5graph_Graph *, int __pyx_skip_dispatch, struct __pyx_opt_args_5graph_5Graph_make_global_grid *__pyx_optional_args))__pyx_f_5graph_5Graph_make_global_grid;
-  __pyx_vtable_5graph_Graph.place_local_grid = (PyObject *(*)(struct __pyx_obj_5graph_Graph *, PyArrayObject *, PyArrayObject *, int __pyx_skip_dispatch, struct __pyx_opt_args_5graph_5Graph_place_local_grid *__pyx_optional_args))__pyx_f_5graph_5Graph_place_local_grid;
-  __pyx_vtable_5graph_Graph.get_points_from_idx_flat = (PyArrayObject *(*)(struct __pyx_obj_5graph_Graph *, int, int __pyx_skip_dispatch))__pyx_f_5graph_5Graph_get_points_from_idx_flat;
-  __pyx_vtable_5graph_Graph.get_points_from_idx = (PyArrayObject *(*)(struct __pyx_obj_5graph_Graph *, PyArrayObject *, int __pyx_skip_dispatch))__pyx_f_5graph_5Graph_get_points_from_idx;
-  __pyx_vtable_5graph_Graph.get_closest_nodes = (PyObject *(*)(struct __pyx_obj_5graph_Graph *, PyArrayObject *, int __pyx_skip_dispatch))__pyx_f_5graph_5Graph_get_closest_nodes;
-  __pyx_vtable_5graph_Graph.neighbors = (PyArrayObject *(*)(struct __pyx_obj_5graph_Graph *, int, PyBoolObject *, int __pyx_skip_dispatch))__pyx_f_5graph_5Graph_neighbors;
-  __pyx_vtable_5graph_Graph.get_flat_index = (PyObject *(*)(struct __pyx_obj_5graph_Graph *, PyArrayObject *, int __pyx_skip_dispatch))__pyx_f_5graph_5Graph_get_flat_index;
-  __pyx_vtable_5graph_Graph.get_3d_index = (PyObject *(*)(struct __pyx_obj_5graph_Graph *, int, int __pyx_skip_dispatch))__pyx_f_5graph_5Graph_get_3d_index;
-  __pyx_vtable_5graph_Graph.heuristic = (PyObject *(*)(struct __pyx_obj_5graph_Graph *, PyObject *, PyObject *, int __pyx_skip_dispatch))__pyx_f_5graph_5Graph_heuristic;
-  __pyx_vtable_5graph_Graph.cost = (int (*)(struct __pyx_obj_5graph_Graph *, int, int, int __pyx_skip_dispatch))__pyx_f_5graph_5Graph_cost;
-  __pyx_vtable_5graph_Graph._make_3d_gaussian = (PyObject *(*)(struct __pyx_obj_5graph_Graph *, struct __pyx_opt_args_5graph_5Graph__make_3d_gaussian *__pyx_optional_args))__pyx_f_5graph_5Graph__make_3d_gaussian;
-  if (PyType_Ready(&__pyx_type_5graph_Graph) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 25; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_type_5graph_Graph.tp_print = 0;
-  if (__Pyx_SetVtable(__pyx_type_5graph_Graph.tp_dict, __pyx_vtabptr_5graph_Graph) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 25; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (PyObject_SetAttrString(__pyx_m, "Graph", (PyObject *)&__pyx_type_5graph_Graph) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 25; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_ptype_5graph_Graph = &__pyx_type_5graph_Graph;
+  __pyx_vtabptr_6biobox_3lib_5graph_Graph = &__pyx_vtable_6biobox_3lib_5graph_Graph;
+  __pyx_vtable_6biobox_3lib_5graph_Graph.make_grid = (PyObject *(*)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, int __pyx_skip_dispatch, struct __pyx_opt_args_6biobox_3lib_5graph_5Graph_make_grid *__pyx_optional_args))__pyx_f_6biobox_3lib_5graph_5Graph_make_grid;
+  __pyx_vtable_6biobox_3lib_5graph_Graph.make_global_grid = (PyObject *(*)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, int __pyx_skip_dispatch, struct __pyx_opt_args_6biobox_3lib_5graph_5Graph_make_global_grid *__pyx_optional_args))__pyx_f_6biobox_3lib_5graph_5Graph_make_global_grid;
+  __pyx_vtable_6biobox_3lib_5graph_Graph.place_local_grid = (PyObject *(*)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, PyArrayObject *, PyArrayObject *, int __pyx_skip_dispatch, struct __pyx_opt_args_6biobox_3lib_5graph_5Graph_place_local_grid *__pyx_optional_args))__pyx_f_6biobox_3lib_5graph_5Graph_place_local_grid;
+  __pyx_vtable_6biobox_3lib_5graph_Graph.get_points_from_idx_flat = (PyArrayObject *(*)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, int, int __pyx_skip_dispatch))__pyx_f_6biobox_3lib_5graph_5Graph_get_points_from_idx_flat;
+  __pyx_vtable_6biobox_3lib_5graph_Graph.get_points_from_idx = (PyArrayObject *(*)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, PyArrayObject *, int __pyx_skip_dispatch))__pyx_f_6biobox_3lib_5graph_5Graph_get_points_from_idx;
+  __pyx_vtable_6biobox_3lib_5graph_Graph.get_closest_nodes = (PyObject *(*)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, PyArrayObject *, int __pyx_skip_dispatch))__pyx_f_6biobox_3lib_5graph_5Graph_get_closest_nodes;
+  __pyx_vtable_6biobox_3lib_5graph_Graph.neighbors = (PyArrayObject *(*)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, int, PyBoolObject *, int __pyx_skip_dispatch))__pyx_f_6biobox_3lib_5graph_5Graph_neighbors;
+  __pyx_vtable_6biobox_3lib_5graph_Graph.get_flat_index = (PyObject *(*)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, PyArrayObject *, int __pyx_skip_dispatch))__pyx_f_6biobox_3lib_5graph_5Graph_get_flat_index;
+  __pyx_vtable_6biobox_3lib_5graph_Graph.get_3d_index = (PyObject *(*)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, int, int __pyx_skip_dispatch))__pyx_f_6biobox_3lib_5graph_5Graph_get_3d_index;
+  __pyx_vtable_6biobox_3lib_5graph_Graph.heuristic = (PyObject *(*)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, PyObject *, PyObject *, int __pyx_skip_dispatch))__pyx_f_6biobox_3lib_5graph_5Graph_heuristic;
+  __pyx_vtable_6biobox_3lib_5graph_Graph.cost = (int (*)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, int, int, int __pyx_skip_dispatch))__pyx_f_6biobox_3lib_5graph_5Graph_cost;
+  __pyx_vtable_6biobox_3lib_5graph_Graph._make_3d_gaussian = (PyObject *(*)(struct __pyx_obj_6biobox_3lib_5graph_Graph *, struct __pyx_opt_args_6biobox_3lib_5graph_5Graph__make_3d_gaussian *__pyx_optional_args))__pyx_f_6biobox_3lib_5graph_5Graph__make_3d_gaussian;
+  if (PyType_Ready(&__pyx_type_6biobox_3lib_5graph_Graph) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 25; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_type_6biobox_3lib_5graph_Graph.tp_print = 0;
+  if (__Pyx_SetVtable(__pyx_type_6biobox_3lib_5graph_Graph.tp_dict, __pyx_vtabptr_6biobox_3lib_5graph_Graph) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 25; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyObject_SetAttrString(__pyx_m, "Graph", (PyObject *)&__pyx_type_6biobox_3lib_5graph_Graph) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 25; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_ptype_6biobox_3lib_5graph_Graph = &__pyx_type_6biobox_3lib_5graph_Graph;
   /*--- Type import code ---*/
   __pyx_ptype_7cpython_4type_type = __Pyx_ImportType(__Pyx_BUILTIN_MODULE_NAME, "type", 
   #if CYTHON_COMPILING_IN_PYPY
@@ -15283,7 +15283,7 @@ PyMODINIT_FUNC PyInit_graph(void)
   if (__Pyx_patch_abc() < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   #endif
 
-  /* "graph.pyx":15
+  /* "biobox\lib\graph.pyx":15
  * 
  * 
  * import numpy as np             # <<<<<<<<<<<<<<
@@ -15295,7 +15295,7 @@ PyMODINIT_FUNC PyInit_graph(void)
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_np, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 15; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "graph.pyx":16
+  /* "biobox\lib\graph.pyx":16
  * 
  * import numpy as np
  * from matplotlib.mlab import dist             # <<<<<<<<<<<<<<
@@ -15316,7 +15316,7 @@ PyMODINIT_FUNC PyInit_graph(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "graph.pyx":19
+  /* "biobox\lib\graph.pyx":19
  * cimport numpy as np
  * from cpython cimport bool
  * import scipy.spatial.distance as S             # <<<<<<<<<<<<<<
@@ -15334,7 +15334,7 @@ PyMODINIT_FUNC PyInit_graph(void)
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_S, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 19; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "graph.pyx":20
+  /* "biobox\lib\graph.pyx":20
  * from cpython cimport bool
  * import scipy.spatial.distance as S
  * import scipy.signal             # <<<<<<<<<<<<<<
@@ -15346,7 +15346,7 @@ PyMODINIT_FUNC PyInit_graph(void)
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_scipy, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 20; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "graph.pyx":21
+  /* "biobox\lib\graph.pyx":21
  * import scipy.spatial.distance as S
  * import scipy.signal
  * from scipy.spatial import Delaunay             # <<<<<<<<<<<<<<
@@ -15367,7 +15367,7 @@ PyMODINIT_FUNC PyInit_graph(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "graph.pyx":49
+  /* "biobox\lib\graph.pyx":49
  *         #@param maxdist maximal grid size. If equal to -1, a grid around the whole points ensemble is built
  *         #@param boundaries build a grid within the desired box boundaries (if defined, maxdist parameter is ignored)
  *         cpdef make_grid(self, float step=1.0, float maxdist=-1, np.ndarray boundaries=np.array([]), int degree=5, int sigma=2, np.ndarray params=np.array([])):             # <<<<<<<<<<<<<<
@@ -15523,7 +15523,7 @@ PyMODINIT_FUNC PyInit_graph(void)
   __Pyx_GIVEREF(__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "graph.pyx":94
+  /* "biobox\lib\graph.pyx":94
  *         #@param boundaries build a grid within the desired box boundaries (if defined, maxdist parameter is ignored)
  *         #@param cloud build a grid using a points cloud as extrema for the construction of the box. If defined, maxdist and boundaries parameters are ignored.
  *         cpdef make_global_grid(self, float step=1.0, bool use_hull=False, np.ndarray boundaries=np.array([]), np.ndarray cloud=np.array([]), params=np.array([])):             # <<<<<<<<<<<<<<
@@ -15751,7 +15751,7 @@ PyMODINIT_FUNC PyInit_graph(void)
   __Pyx_GIVEREF(__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "graph.pyx":1
+  /* "biobox\lib\graph.pyx":1
  * # Copyright (c) 2014-2017 Matteo Degiacomi             # <<<<<<<<<<<<<<
  * #
  * # BiobOx is free software ;
@@ -15780,11 +15780,11 @@ PyMODINIT_FUNC PyInit_graph(void)
   __Pyx_XDECREF(__pyx_t_5);
   if (__pyx_m) {
     if (__pyx_d) {
-      __Pyx_AddTraceback("init graph", __pyx_clineno, __pyx_lineno, __pyx_filename);
+      __Pyx_AddTraceback("init biobox.lib.graph", __pyx_clineno, __pyx_lineno, __pyx_filename);
     }
     Py_DECREF(__pyx_m); __pyx_m = 0;
   } else if (!PyErr_Occurred()) {
-    PyErr_SetString(PyExc_ImportError, "init graph");
+    PyErr_SetString(PyExc_ImportError, "init biobox.lib.graph");
   }
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();

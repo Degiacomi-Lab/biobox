@@ -790,10 +790,20 @@ class Molecule(Structure):
 
         return ccs
 
-    
+    def get_data(self, indices, columns):
+        '''
+        Return information about atom of interest (i.e., slice the data DataFrame)
+
+        :param indices: list of indices
+        :param columns: list of columns (e.g. ["resname", "resid", "chain"])
+        :returns: slice of molecule's data DataFrame
+        '''
+
+        return self.data.ix[indices, columns].values
+        
     def query(self, query_text, get_index=False):
         '''
-        ## select specific atoms in a multimer un the basis of a text query.
+        Select specific atoms in a multimer un the basis of a text query.
 
         :param query_text: string selecting atoms of interest. Uses the pandas query syntax, can access all columns in the dataframe self.data.
         :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)

@@ -242,8 +242,8 @@ static CYTHON_INLINE float __PYX_NAN() {
   #endif
 #endif
 
-#define __PYX_HAVE__fastmath
-#define __PYX_HAVE_API__fastmath
+#define __PYX_HAVE__biobox__lib__fastmath
+#define __PYX_HAVE_API__biobox__lib__fastmath
 #include "string.h"
 #include "stdio.h"
 #include "stdlib.h"
@@ -479,7 +479,7 @@ static const char *__pyx_filename;
 
 
 static const char *__pyx_f[] = {
-  "fastmath.pyx",
+  "biobox\\lib\\fastmath.pyx",
   "__init__.pxd",
   "type.pxd",
   "bool.pxd",
@@ -1179,15 +1179,15 @@ static PyTypeObject *__pyx_ptype_5numpy_ndarray = 0;
 static PyTypeObject *__pyx_ptype_5numpy_ufunc = 0;
 static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *, char *, char *, int *); /*proto*/
 
-/* Module declarations from 'fastmath' */
-static PyObject *__pyx_f_8fastmath_cython_min_manhattan(PyArrayObject *, PyArrayObject *); /*proto*/
-static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *, PyArrayObject *, PyArrayObject *); /*proto*/
-static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *, PyArrayObject *, float, int, float, int __pyx_skip_dispatch); /*proto*/
-static PyObject *__pyx_f_8fastmath_cython_ravel(PyArrayObject *, PyArrayObject *); /*proto*/
-#define __Pyx_MODULE_NAME "fastmath"
-int __pyx_module_is_main_fastmath = 0;
+/* Module declarations from 'biobox.lib.fastmath' */
+static PyObject *__pyx_f_6biobox_3lib_8fastmath_cython_min_manhattan(PyArrayObject *, PyArrayObject *); /*proto*/
+static PyObject *__pyx_f_6biobox_3lib_8fastmath_cython_line_of_sight(PyArrayObject *, PyArrayObject *, PyArrayObject *); /*proto*/
+static PyObject *__pyx_f_6biobox_3lib_8fastmath_cython_get_surface(PyArrayObject *, PyArrayObject *, float, int, float, int __pyx_skip_dispatch); /*proto*/
+static PyObject *__pyx_f_6biobox_3lib_8fastmath_cython_ravel(PyArrayObject *, PyArrayObject *); /*proto*/
+#define __Pyx_MODULE_NAME "biobox.lib.fastmath"
+int __pyx_module_is_main_biobox__lib__fastmath = 0;
 
-/* Implementation of 'fastmath' */
+/* Implementation of 'biobox.lib.fastmath' */
 static PyObject *__pyx_builtin_xrange;
 static PyObject *__pyx_builtin_range;
 static PyObject *__pyx_builtin_ValueError;
@@ -1234,7 +1234,6 @@ static char __pyx_k_thepos[] = "thepos";
 static char __pyx_k_xrange[] = "xrange";
 static char __pyx_k_c_ravel[] = "c_ravel";
 static char __pyx_k_newaxis[] = "newaxis";
-static char __pyx_k_fastmath[] = "fastmath";
 static char __pyx_k_theshape[] = "theshape";
 static char __pyx_k_threshold[] = "threshold";
 static char __pyx_k_ValueError[] = "ValueError";
@@ -1244,6 +1243,7 @@ static char __pyx_k_RuntimeError[] = "RuntimeError";
 static char __pyx_k_c_get_surface[] = "c_get_surface";
 static char __pyx_k_n_sphere_point[] = "n_sphere_point";
 static char __pyx_k_c_line_of_sight[] = "c_line_of_sight";
+static char __pyx_k_biobox_lib_fastmath[] = "biobox.lib.fastmath";
 static char __pyx_k_scipy_spatial_distance[] = "scipy.spatial.distance";
 static char __pyx_k_ndarray_is_not_C_contiguous[] = "ndarray is not C contiguous";
 static char __pyx_k_C_Users_Matteo_workspace_biobox[] = "C:\\Users\\Matteo\\workspace\\biobox\\lib\\fastmath.pyx";
@@ -1265,13 +1265,13 @@ static PyObject *__pyx_n_s_access_grid;
 static PyObject *__pyx_n_s_any;
 static PyObject *__pyx_n_s_array;
 static PyObject *__pyx_n_s_b;
+static PyObject *__pyx_n_s_biobox_lib_fastmath;
 static PyObject *__pyx_n_s_c_get_surface;
 static PyObject *__pyx_n_s_c_heuristic;
 static PyObject *__pyx_n_s_c_line_of_sight;
 static PyObject *__pyx_n_s_c_ravel;
 static PyObject *__pyx_n_s_cdist;
 static PyObject *__pyx_n_s_cos;
-static PyObject *__pyx_n_s_fastmath;
 static PyObject *__pyx_n_s_import;
 static PyObject *__pyx_n_s_main;
 static PyObject *__pyx_n_s_max;
@@ -1296,11 +1296,11 @@ static PyObject *__pyx_n_s_threshold;
 static PyObject *__pyx_kp_u_unknown_dtype_code_in_numpy_pxd;
 static PyObject *__pyx_n_s_where;
 static PyObject *__pyx_n_s_xrange;
-static PyObject *__pyx_pf_8fastmath_cython_get_surface(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_points, PyArrayObject *__pyx_v_radii, float __pyx_v_probe, int __pyx_v_n_sphere_point, float __pyx_v_threshold); /* proto */
-static PyObject *__pyx_pf_8fastmath_2c_heuristic(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_a, PyArrayObject *__pyx_v_b); /* proto */
-static PyObject *__pyx_pf_8fastmath_4c_line_of_sight(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_access_grid, PyArrayObject *__pyx_v_a, PyArrayObject *__pyx_v_b); /* proto */
-static PyObject *__pyx_pf_8fastmath_6c_get_surface(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_points, PyArrayObject *__pyx_v_radii, float __pyx_v_probe, int __pyx_v_n_sphere_point, float __pyx_v_threshold); /* proto */
-static PyObject *__pyx_pf_8fastmath_8c_ravel(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_thepos, PyArrayObject *__pyx_v_theshape); /* proto */
+static PyObject *__pyx_pf_6biobox_3lib_8fastmath_cython_get_surface(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_points, PyArrayObject *__pyx_v_radii, float __pyx_v_probe, int __pyx_v_n_sphere_point, float __pyx_v_threshold); /* proto */
+static PyObject *__pyx_pf_6biobox_3lib_8fastmath_2c_heuristic(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_a, PyArrayObject *__pyx_v_b); /* proto */
+static PyObject *__pyx_pf_6biobox_3lib_8fastmath_4c_line_of_sight(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_access_grid, PyArrayObject *__pyx_v_a, PyArrayObject *__pyx_v_b); /* proto */
+static PyObject *__pyx_pf_6biobox_3lib_8fastmath_6c_get_surface(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_points, PyArrayObject *__pyx_v_radii, float __pyx_v_probe, int __pyx_v_n_sphere_point, float __pyx_v_threshold); /* proto */
+static PyObject *__pyx_pf_6biobox_3lib_8fastmath_8c_ravel(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_thepos, PyArrayObject *__pyx_v_theshape); /* proto */
 static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, Py_buffer *__pyx_v_info, int __pyx_v_flags); /* proto */
 static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_self, Py_buffer *__pyx_v_info); /* proto */
 static PyObject *__pyx_float_4_0;
@@ -1328,7 +1328,7 @@ static PyObject *__pyx_codeobj__16;
 static PyObject *__pyx_codeobj__18;
 static PyObject *__pyx_codeobj__20;
 
-/* "fastmath.pyx":24
+/* "biobox\lib\fastmath.pyx":24
  * 
  * ### HEURISTIC FOR SHORTEST PATH ###
  * cdef cython_min_manhattan(np.ndarray a, np.ndarray b):             # <<<<<<<<<<<<<<
@@ -1336,7 +1336,7 @@ static PyObject *__pyx_codeobj__20;
  *     cdef float themin = 1000000
  */
 
-static PyObject *__pyx_f_8fastmath_cython_min_manhattan(PyArrayObject *__pyx_v_a, PyArrayObject *__pyx_v_b) {
+static PyObject *__pyx_f_6biobox_3lib_8fastmath_cython_min_manhattan(PyArrayObject *__pyx_v_a, PyArrayObject *__pyx_v_b) {
   float __pyx_v_l;
   float __pyx_v_themin;
   PyObject *__pyx_v_a1 = NULL;
@@ -1356,7 +1356,7 @@ static PyObject *__pyx_f_8fastmath_cython_min_manhattan(PyArrayObject *__pyx_v_a
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("cython_min_manhattan", 0);
 
-  /* "fastmath.pyx":26
+  /* "biobox\lib\fastmath.pyx":26
  * cdef cython_min_manhattan(np.ndarray a, np.ndarray b):
  *     cdef float l
  *     cdef float themin = 1000000             # <<<<<<<<<<<<<<
@@ -1365,7 +1365,7 @@ static PyObject *__pyx_f_8fastmath_cython_min_manhattan(PyArrayObject *__pyx_v_a
  */
   __pyx_v_themin = 1000000.0;
 
-  /* "fastmath.pyx":28
+  /* "biobox\lib\fastmath.pyx":28
  *     cdef float themin = 1000000
  * 
  *     for a1 in a:             # <<<<<<<<<<<<<<
@@ -1414,7 +1414,7 @@ static PyObject *__pyx_f_8fastmath_cython_min_manhattan(PyArrayObject *__pyx_v_a
     __Pyx_XDECREF_SET(__pyx_v_a1, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "fastmath.pyx":29
+    /* "biobox\lib\fastmath.pyx":29
  * 
  *     for a1 in a:
  *         l=abs(a1[0] - b[0]) + abs(a1[1] - b[1]) + abs(a1[2] - b[2])             # <<<<<<<<<<<<<<
@@ -1466,7 +1466,7 @@ static PyObject *__pyx_f_8fastmath_cython_min_manhattan(PyArrayObject *__pyx_v_a
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __pyx_v_l = __pyx_t_8;
 
-    /* "fastmath.pyx":30
+    /* "biobox\lib\fastmath.pyx":30
  *     for a1 in a:
  *         l=abs(a1[0] - b[0]) + abs(a1[1] - b[1]) + abs(a1[2] - b[2])
  *         if l<themin:             # <<<<<<<<<<<<<<
@@ -1476,7 +1476,7 @@ static PyObject *__pyx_f_8fastmath_cython_min_manhattan(PyArrayObject *__pyx_v_a
     __pyx_t_9 = ((__pyx_v_l < __pyx_v_themin) != 0);
     if (__pyx_t_9) {
 
-      /* "fastmath.pyx":31
+      /* "biobox\lib\fastmath.pyx":31
  *         l=abs(a1[0] - b[0]) + abs(a1[1] - b[1]) + abs(a1[2] - b[2])
  *         if l<themin:
  *             themin=l             # <<<<<<<<<<<<<<
@@ -1485,7 +1485,7 @@ static PyObject *__pyx_f_8fastmath_cython_min_manhattan(PyArrayObject *__pyx_v_a
  */
       __pyx_v_themin = __pyx_v_l;
 
-      /* "fastmath.pyx":30
+      /* "biobox\lib\fastmath.pyx":30
  *     for a1 in a:
  *         l=abs(a1[0] - b[0]) + abs(a1[1] - b[1]) + abs(a1[2] - b[2])
  *         if l<themin:             # <<<<<<<<<<<<<<
@@ -1494,7 +1494,7 @@ static PyObject *__pyx_f_8fastmath_cython_min_manhattan(PyArrayObject *__pyx_v_a
  */
     }
 
-    /* "fastmath.pyx":28
+    /* "biobox\lib\fastmath.pyx":28
  *     cdef float themin = 1000000
  * 
  *     for a1 in a:             # <<<<<<<<<<<<<<
@@ -1504,7 +1504,7 @@ static PyObject *__pyx_f_8fastmath_cython_min_manhattan(PyArrayObject *__pyx_v_a
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "fastmath.pyx":33
+  /* "biobox\lib\fastmath.pyx":33
  *             themin=l
  * 
  *     return themin             # <<<<<<<<<<<<<<
@@ -1518,7 +1518,7 @@ static PyObject *__pyx_f_8fastmath_cython_min_manhattan(PyArrayObject *__pyx_v_a
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "fastmath.pyx":24
+  /* "biobox\lib\fastmath.pyx":24
  * 
  * ### HEURISTIC FOR SHORTEST PATH ###
  * cdef cython_min_manhattan(np.ndarray a, np.ndarray b):             # <<<<<<<<<<<<<<
@@ -1533,7 +1533,7 @@ static PyObject *__pyx_f_8fastmath_cython_min_manhattan(PyArrayObject *__pyx_v_a
   __Pyx_XDECREF(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_6);
   __Pyx_XDECREF(__pyx_t_7);
-  __Pyx_AddTraceback("fastmath.cython_min_manhattan", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.fastmath.cython_min_manhattan", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_a1);
@@ -1542,7 +1542,7 @@ static PyObject *__pyx_f_8fastmath_cython_min_manhattan(PyArrayObject *__pyx_v_a
   return __pyx_r;
 }
 
-/* "fastmath.pyx":37
+/* "biobox\lib\fastmath.pyx":37
  * ### BRESENHAM ALGORITHM ###
  * 
  * cdef cython_line_of_sight(np.ndarray access_grid, np.ndarray a, np.ndarray b):             # <<<<<<<<<<<<<<
@@ -1550,7 +1550,7 @@ static PyObject *__pyx_f_8fastmath_cython_min_manhattan(PyArrayObject *__pyx_v_a
  *     cdef np.ndarray point
  */
 
-static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_access_grid, PyArrayObject *__pyx_v_a, PyArrayObject *__pyx_v_b) {
+static PyObject *__pyx_f_6biobox_3lib_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_access_grid, PyArrayObject *__pyx_v_a, PyArrayObject *__pyx_v_b) {
   PyArrayObject *__pyx_v_point = 0;
   PyArrayObject *__pyx_v_delta = 0;
   int __pyx_v_x_inc;
@@ -1581,7 +1581,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("cython_line_of_sight", 0);
 
-  /* "fastmath.pyx":53
+  /* "biobox\lib\fastmath.pyx":53
  *     cdef int err2
  * 
  *     point=a[:]             # <<<<<<<<<<<<<<
@@ -1594,7 +1594,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
   __pyx_v_point = ((PyArrayObject *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "fastmath.pyx":54
+  /* "biobox\lib\fastmath.pyx":54
  * 
  *     point=a[:]
  *     delta=b-a             # <<<<<<<<<<<<<<
@@ -1607,7 +1607,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
   __pyx_v_delta = ((PyArrayObject *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "fastmath.pyx":56
+  /* "biobox\lib\fastmath.pyx":56
  *     delta=b-a
  * 
  *     if delta[0]<0:             # <<<<<<<<<<<<<<
@@ -1622,7 +1622,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (__pyx_t_3) {
 
-    /* "fastmath.pyx":57
+    /* "biobox\lib\fastmath.pyx":57
  * 
  *     if delta[0]<0:
  *         x_inc=-1             # <<<<<<<<<<<<<<
@@ -1631,7 +1631,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
  */
     __pyx_v_x_inc = -1;
 
-    /* "fastmath.pyx":56
+    /* "biobox\lib\fastmath.pyx":56
  *     delta=b-a
  * 
  *     if delta[0]<0:             # <<<<<<<<<<<<<<
@@ -1641,7 +1641,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
     goto __pyx_L3;
   }
 
-  /* "fastmath.pyx":59
+  /* "biobox\lib\fastmath.pyx":59
  *         x_inc=-1
  *     else:
  *         x_inc=1             # <<<<<<<<<<<<<<
@@ -1653,7 +1653,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
   }
   __pyx_L3:;
 
-  /* "fastmath.pyx":61
+  /* "biobox\lib\fastmath.pyx":61
  *         x_inc=1
  * 
  *     if delta[1]<0:             # <<<<<<<<<<<<<<
@@ -1668,7 +1668,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_3) {
 
-    /* "fastmath.pyx":62
+    /* "biobox\lib\fastmath.pyx":62
  * 
  *     if delta[1]<0:
  *         y_inc=-1             # <<<<<<<<<<<<<<
@@ -1677,7 +1677,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
  */
     __pyx_v_y_inc = -1;
 
-    /* "fastmath.pyx":61
+    /* "biobox\lib\fastmath.pyx":61
  *         x_inc=1
  * 
  *     if delta[1]<0:             # <<<<<<<<<<<<<<
@@ -1687,7 +1687,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
     goto __pyx_L4;
   }
 
-  /* "fastmath.pyx":64
+  /* "biobox\lib\fastmath.pyx":64
  *         y_inc=-1
  *     else:
  *         y_inc=1             # <<<<<<<<<<<<<<
@@ -1699,7 +1699,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
   }
   __pyx_L4:;
 
-  /* "fastmath.pyx":66
+  /* "biobox\lib\fastmath.pyx":66
  *         y_inc=1
  * 
  *     if delta[2]<0:             # <<<<<<<<<<<<<<
@@ -1714,7 +1714,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (__pyx_t_3) {
 
-    /* "fastmath.pyx":67
+    /* "biobox\lib\fastmath.pyx":67
  * 
  *     if delta[2]<0:
  *         z_inc=-1             # <<<<<<<<<<<<<<
@@ -1723,7 +1723,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
  */
     __pyx_v_z_inc = -1;
 
-    /* "fastmath.pyx":66
+    /* "biobox\lib\fastmath.pyx":66
  *         y_inc=1
  * 
  *     if delta[2]<0:             # <<<<<<<<<<<<<<
@@ -1733,7 +1733,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
     goto __pyx_L5;
   }
 
-  /* "fastmath.pyx":69
+  /* "biobox\lib\fastmath.pyx":69
  *         z_inc=-1
  *     else:
  *         z_inc=1             # <<<<<<<<<<<<<<
@@ -1745,7 +1745,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
   }
   __pyx_L5:;
 
-  /* "fastmath.pyx":71
+  /* "biobox\lib\fastmath.pyx":71
  *         z_inc=1
  * 
  *     l = abs(delta[0])             # <<<<<<<<<<<<<<
@@ -1761,7 +1761,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_l = __pyx_t_4;
 
-  /* "fastmath.pyx":72
+  /* "biobox\lib\fastmath.pyx":72
  * 
  *     l = abs(delta[0])
  *     m = abs(delta[1])             # <<<<<<<<<<<<<<
@@ -1777,7 +1777,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_v_m = __pyx_t_4;
 
-  /* "fastmath.pyx":73
+  /* "biobox\lib\fastmath.pyx":73
  *     l = abs(delta[0])
  *     m = abs(delta[1])
  *     n = abs(delta[2])             # <<<<<<<<<<<<<<
@@ -1793,7 +1793,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_n = __pyx_t_4;
 
-  /* "fastmath.pyx":74
+  /* "biobox\lib\fastmath.pyx":74
  *     m = abs(delta[1])
  *     n = abs(delta[2])
  *     dx2 = (l << 1)             # <<<<<<<<<<<<<<
@@ -1802,7 +1802,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
  */
   __pyx_v_dx2 = (__pyx_v_l << 1);
 
-  /* "fastmath.pyx":75
+  /* "biobox\lib\fastmath.pyx":75
  *     n = abs(delta[2])
  *     dx2 = (l << 1)
  *     dy2 = (m << 1)             # <<<<<<<<<<<<<<
@@ -1811,7 +1811,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
  */
   __pyx_v_dy2 = (__pyx_v_m << 1);
 
-  /* "fastmath.pyx":76
+  /* "biobox\lib\fastmath.pyx":76
  *     dx2 = (l << 1)
  *     dy2 = (m << 1)
  *     dz2 = (n << 1)             # <<<<<<<<<<<<<<
@@ -1820,7 +1820,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
  */
   __pyx_v_dz2 = (__pyx_v_n << 1);
 
-  /* "fastmath.pyx":78
+  /* "biobox\lib\fastmath.pyx":78
  *     dz2 = (n << 1)
  * 
  *     if l >= m and l >= n:             # <<<<<<<<<<<<<<
@@ -1838,7 +1838,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
   __pyx_L7_bool_binop_done:;
   if (__pyx_t_3) {
 
-    /* "fastmath.pyx":79
+    /* "biobox\lib\fastmath.pyx":79
  * 
  *     if l >= m and l >= n:
  *         err_1 = dy2 - l             # <<<<<<<<<<<<<<
@@ -1850,7 +1850,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
     __pyx_v_err_1 = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "fastmath.pyx":80
+    /* "biobox\lib\fastmath.pyx":80
  *     if l >= m and l >= n:
  *         err_1 = dy2 - l
  *         err_2 = dz2 - l             # <<<<<<<<<<<<<<
@@ -1862,7 +1862,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
     __pyx_v_err_2 = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "fastmath.pyx":81
+    /* "biobox\lib\fastmath.pyx":81
  *         err_1 = dy2 - l
  *         err_2 = dz2 - l
  *         for i in xrange(0, l, 1):             # <<<<<<<<<<<<<<
@@ -1873,7 +1873,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
     for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_4; __pyx_t_6+=1) {
       __pyx_v_i = __pyx_t_6;
 
-      /* "fastmath.pyx":83
+      /* "biobox\lib\fastmath.pyx":83
  *         for i in xrange(0, l, 1):
  * 
  *             if err_1 > 0:             # <<<<<<<<<<<<<<
@@ -1885,7 +1885,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       if (__pyx_t_3) {
 
-        /* "fastmath.pyx":84
+        /* "biobox\lib\fastmath.pyx":84
  * 
  *             if err_1 > 0:
  *                 point[1] += y_inc             # <<<<<<<<<<<<<<
@@ -1904,7 +1904,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
         if (unlikely(__Pyx_SetItemInt(((PyObject *)__pyx_v_point), __pyx_t_7, __pyx_t_8, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 0, 0) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 84; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
 
-        /* "fastmath.pyx":85
+        /* "biobox\lib\fastmath.pyx":85
  *             if err_1 > 0:
  *                 point[1] += y_inc
  *                 err_1 -= dx2             # <<<<<<<<<<<<<<
@@ -1919,7 +1919,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
         __Pyx_DECREF_SET(__pyx_v_err_1, __pyx_t_2);
         __pyx_t_2 = 0;
 
-        /* "fastmath.pyx":83
+        /* "biobox\lib\fastmath.pyx":83
  *         for i in xrange(0, l, 1):
  * 
  *             if err_1 > 0:             # <<<<<<<<<<<<<<
@@ -1928,7 +1928,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
  */
       }
 
-      /* "fastmath.pyx":87
+      /* "biobox\lib\fastmath.pyx":87
  *                 err_1 -= dx2
  * 
  *             if err_2 > 0:             # <<<<<<<<<<<<<<
@@ -1940,7 +1940,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       if (__pyx_t_3) {
 
-        /* "fastmath.pyx":88
+        /* "biobox\lib\fastmath.pyx":88
  * 
  *             if err_2 > 0:
  *                 point[2] += z_inc             # <<<<<<<<<<<<<<
@@ -1959,7 +1959,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
         if (unlikely(__Pyx_SetItemInt(((PyObject *)__pyx_v_point), __pyx_t_7, __pyx_t_1, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 0, 0) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 88; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-        /* "fastmath.pyx":89
+        /* "biobox\lib\fastmath.pyx":89
  *             if err_2 > 0:
  *                 point[2] += z_inc
  *                 err_2 -= dx2             # <<<<<<<<<<<<<<
@@ -1974,7 +1974,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
         __Pyx_DECREF_SET(__pyx_v_err_2, __pyx_t_8);
         __pyx_t_8 = 0;
 
-        /* "fastmath.pyx":87
+        /* "biobox\lib\fastmath.pyx":87
  *                 err_1 -= dx2
  * 
  *             if err_2 > 0:             # <<<<<<<<<<<<<<
@@ -1983,7 +1983,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
  */
       }
 
-      /* "fastmath.pyx":91
+      /* "biobox\lib\fastmath.pyx":91
  *                 err_2 -= dx2
  * 
  *             err_1 += dy2             # <<<<<<<<<<<<<<
@@ -1998,7 +1998,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
       __Pyx_DECREF_SET(__pyx_v_err_1, __pyx_t_1);
       __pyx_t_1 = 0;
 
-      /* "fastmath.pyx":92
+      /* "biobox\lib\fastmath.pyx":92
  * 
  *             err_1 += dy2
  *             err_2 += dz2             # <<<<<<<<<<<<<<
@@ -2013,7 +2013,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
       __Pyx_DECREF_SET(__pyx_v_err_2, __pyx_t_8);
       __pyx_t_8 = 0;
 
-      /* "fastmath.pyx":93
+      /* "biobox\lib\fastmath.pyx":93
  *             err_1 += dy2
  *             err_2 += dz2
  *             point[0] += x_inc             # <<<<<<<<<<<<<<
@@ -2032,7 +2032,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
       if (unlikely(__Pyx_SetItemInt(((PyObject *)__pyx_v_point), __pyx_t_7, __pyx_t_2, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 0, 0) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 93; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-      /* "fastmath.pyx":95
+      /* "biobox\lib\fastmath.pyx":95
  *             point[0] += x_inc
  * 
  *             if not access_grid[point[0],point[1],point[2]]:             # <<<<<<<<<<<<<<
@@ -2064,7 +2064,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
       __pyx_t_5 = ((!__pyx_t_3) != 0);
       if (__pyx_t_5) {
 
-        /* "fastmath.pyx":96
+        /* "biobox\lib\fastmath.pyx":96
  * 
  *             if not access_grid[point[0],point[1],point[2]]:
  *                 return False             # <<<<<<<<<<<<<<
@@ -2076,7 +2076,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
         __pyx_r = Py_False;
         goto __pyx_L0;
 
-        /* "fastmath.pyx":95
+        /* "biobox\lib\fastmath.pyx":95
  *             point[0] += x_inc
  * 
  *             if not access_grid[point[0],point[1],point[2]]:             # <<<<<<<<<<<<<<
@@ -2086,7 +2086,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
       }
     }
 
-    /* "fastmath.pyx":78
+    /* "biobox\lib\fastmath.pyx":78
  *     dz2 = (n << 1)
  * 
  *     if l >= m and l >= n:             # <<<<<<<<<<<<<<
@@ -2096,7 +2096,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
     goto __pyx_L6;
   }
 
-  /* "fastmath.pyx":99
+  /* "biobox\lib\fastmath.pyx":99
  * 
  * 
  *     elif m >= l and m >= n:             # <<<<<<<<<<<<<<
@@ -2114,7 +2114,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
   __pyx_L14_bool_binop_done:;
   if (__pyx_t_5) {
 
-    /* "fastmath.pyx":100
+    /* "biobox\lib\fastmath.pyx":100
  * 
  *     elif m >= l and m >= n:
  *         err_1 = dx2 - m             # <<<<<<<<<<<<<<
@@ -2126,7 +2126,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
     __pyx_v_err_1 = __pyx_t_8;
     __pyx_t_8 = 0;
 
-    /* "fastmath.pyx":101
+    /* "biobox\lib\fastmath.pyx":101
  *     elif m >= l and m >= n:
  *         err_1 = dx2 - m
  *         err_2 = dz2 - m             # <<<<<<<<<<<<<<
@@ -2138,7 +2138,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
     __pyx_v_err_2 = __pyx_t_8;
     __pyx_t_8 = 0;
 
-    /* "fastmath.pyx":102
+    /* "biobox\lib\fastmath.pyx":102
  *         err_1 = dx2 - m
  *         err_2 = dz2 - m
  *         for i in xrange(0, m, 1):             # <<<<<<<<<<<<<<
@@ -2149,7 +2149,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
     for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_4; __pyx_t_6+=1) {
       __pyx_v_i = __pyx_t_6;
 
-      /* "fastmath.pyx":104
+      /* "biobox\lib\fastmath.pyx":104
  *         for i in xrange(0, m, 1):
  * 
  *             if err_1 > 0:             # <<<<<<<<<<<<<<
@@ -2161,7 +2161,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
       if (__pyx_t_5) {
 
-        /* "fastmath.pyx":105
+        /* "biobox\lib\fastmath.pyx":105
  * 
  *             if err_1 > 0:
  *                 point[0] += x_inc             # <<<<<<<<<<<<<<
@@ -2180,7 +2180,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
         if (unlikely(__Pyx_SetItemInt(((PyObject *)__pyx_v_point), __pyx_t_7, __pyx_t_1, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 0, 0) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 105; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-        /* "fastmath.pyx":106
+        /* "biobox\lib\fastmath.pyx":106
  *             if err_1 > 0:
  *                 point[0] += x_inc
  *                 err_1 -= dy2             # <<<<<<<<<<<<<<
@@ -2195,7 +2195,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
         __Pyx_DECREF_SET(__pyx_v_err_1, __pyx_t_9);
         __pyx_t_9 = 0;
 
-        /* "fastmath.pyx":104
+        /* "biobox\lib\fastmath.pyx":104
  *         for i in xrange(0, m, 1):
  * 
  *             if err_1 > 0:             # <<<<<<<<<<<<<<
@@ -2204,7 +2204,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
  */
       }
 
-      /* "fastmath.pyx":108
+      /* "biobox\lib\fastmath.pyx":108
  *                 err_1 -= dy2
  * 
  *             if err_2 > 0:             # <<<<<<<<<<<<<<
@@ -2216,7 +2216,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
       if (__pyx_t_5) {
 
-        /* "fastmath.pyx":109
+        /* "biobox\lib\fastmath.pyx":109
  * 
  *             if err_2 > 0:
  *                 point[2] += z_inc             # <<<<<<<<<<<<<<
@@ -2235,7 +2235,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
         if (unlikely(__Pyx_SetItemInt(((PyObject *)__pyx_v_point), __pyx_t_7, __pyx_t_8, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 0, 0) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 109; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
 
-        /* "fastmath.pyx":110
+        /* "biobox\lib\fastmath.pyx":110
  *             if err_2 > 0:
  *                 point[2] += z_inc
  *                 err_2 -= dy2             # <<<<<<<<<<<<<<
@@ -2250,7 +2250,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
         __Pyx_DECREF_SET(__pyx_v_err_2, __pyx_t_1);
         __pyx_t_1 = 0;
 
-        /* "fastmath.pyx":108
+        /* "biobox\lib\fastmath.pyx":108
  *                 err_1 -= dy2
  * 
  *             if err_2 > 0:             # <<<<<<<<<<<<<<
@@ -2259,7 +2259,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
  */
       }
 
-      /* "fastmath.pyx":112
+      /* "biobox\lib\fastmath.pyx":112
  *                 err_2 -= dy2
  * 
  *             err_1 += dx2             # <<<<<<<<<<<<<<
@@ -2274,7 +2274,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
       __Pyx_DECREF_SET(__pyx_v_err_1, __pyx_t_8);
       __pyx_t_8 = 0;
 
-      /* "fastmath.pyx":113
+      /* "biobox\lib\fastmath.pyx":113
  * 
  *             err_1 += dx2
  *             err_2 += dz2             # <<<<<<<<<<<<<<
@@ -2289,7 +2289,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
       __Pyx_DECREF_SET(__pyx_v_err_2, __pyx_t_1);
       __pyx_t_1 = 0;
 
-      /* "fastmath.pyx":114
+      /* "biobox\lib\fastmath.pyx":114
  *             err_1 += dx2
  *             err_2 += dz2
  *             point[1] += y_inc             # <<<<<<<<<<<<<<
@@ -2308,7 +2308,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
       if (unlikely(__Pyx_SetItemInt(((PyObject *)__pyx_v_point), __pyx_t_7, __pyx_t_9, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 0, 0) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 114; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
 
-      /* "fastmath.pyx":116
+      /* "biobox\lib\fastmath.pyx":116
  *             point[1] += y_inc
  * 
  *             if not access_grid[point[0],point[1],point[2]]:             # <<<<<<<<<<<<<<
@@ -2340,7 +2340,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
       __pyx_t_3 = ((!__pyx_t_5) != 0);
       if (__pyx_t_3) {
 
-        /* "fastmath.pyx":117
+        /* "biobox\lib\fastmath.pyx":117
  * 
  *             if not access_grid[point[0],point[1],point[2]]:
  *                 return False             # <<<<<<<<<<<<<<
@@ -2352,7 +2352,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
         __pyx_r = Py_False;
         goto __pyx_L0;
 
-        /* "fastmath.pyx":116
+        /* "biobox\lib\fastmath.pyx":116
  *             point[1] += y_inc
  * 
  *             if not access_grid[point[0],point[1],point[2]]:             # <<<<<<<<<<<<<<
@@ -2362,7 +2362,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
       }
     }
 
-    /* "fastmath.pyx":99
+    /* "biobox\lib\fastmath.pyx":99
  * 
  * 
  *     elif m >= l and m >= n:             # <<<<<<<<<<<<<<
@@ -2372,7 +2372,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
     goto __pyx_L6;
   }
 
-  /* "fastmath.pyx":120
+  /* "biobox\lib\fastmath.pyx":120
  * 
  *     else:
  *         err_1 = dy2 - m             # <<<<<<<<<<<<<<
@@ -2385,7 +2385,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
     __pyx_v_err_1 = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "fastmath.pyx":121
+    /* "biobox\lib\fastmath.pyx":121
  *     else:
  *         err_1 = dy2 - m
  *         err_2 = dx2 - m             # <<<<<<<<<<<<<<
@@ -2397,7 +2397,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
     __pyx_v_err_2 = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "fastmath.pyx":122
+    /* "biobox\lib\fastmath.pyx":122
  *         err_1 = dy2 - m
  *         err_2 = dx2 - m
  *         for i in xrange(0, n, 1):             # <<<<<<<<<<<<<<
@@ -2408,7 +2408,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
     for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_4; __pyx_t_6+=1) {
       __pyx_v_i = __pyx_t_6;
 
-      /* "fastmath.pyx":124
+      /* "biobox\lib\fastmath.pyx":124
  *         for i in xrange(0, n, 1):
  * 
  *             if err_1 > 0:             # <<<<<<<<<<<<<<
@@ -2420,7 +2420,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       if (__pyx_t_3) {
 
-        /* "fastmath.pyx":125
+        /* "biobox\lib\fastmath.pyx":125
  * 
  *             if err_1 > 0:
  *                 point[1] += y_inc             # <<<<<<<<<<<<<<
@@ -2439,7 +2439,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
         if (unlikely(__Pyx_SetItemInt(((PyObject *)__pyx_v_point), __pyx_t_7, __pyx_t_8, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 0, 0) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 125; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
 
-        /* "fastmath.pyx":126
+        /* "biobox\lib\fastmath.pyx":126
  *             if err_1 > 0:
  *                 point[1] += y_inc
  *                 err_1 -= dz2             # <<<<<<<<<<<<<<
@@ -2454,7 +2454,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
         __Pyx_DECREF_SET(__pyx_v_err_1, __pyx_t_2);
         __pyx_t_2 = 0;
 
-        /* "fastmath.pyx":124
+        /* "biobox\lib\fastmath.pyx":124
  *         for i in xrange(0, n, 1):
  * 
  *             if err_1 > 0:             # <<<<<<<<<<<<<<
@@ -2463,7 +2463,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
  */
       }
 
-      /* "fastmath.pyx":128
+      /* "biobox\lib\fastmath.pyx":128
  *                 err_1 -= dz2
  * 
  *             if err_2 > 0:             # <<<<<<<<<<<<<<
@@ -2475,7 +2475,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       if (__pyx_t_3) {
 
-        /* "fastmath.pyx":129
+        /* "biobox\lib\fastmath.pyx":129
  * 
  *             if err_2 > 0:
  *                 point[0] += x_inc             # <<<<<<<<<<<<<<
@@ -2494,7 +2494,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
         if (unlikely(__Pyx_SetItemInt(((PyObject *)__pyx_v_point), __pyx_t_7, __pyx_t_1, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 0, 0) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 129; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-        /* "fastmath.pyx":130
+        /* "biobox\lib\fastmath.pyx":130
  *             if err_2 > 0:
  *                 point[0] += x_inc
  *                 err_2 -= dz2             # <<<<<<<<<<<<<<
@@ -2509,7 +2509,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
         __Pyx_DECREF_SET(__pyx_v_err_2, __pyx_t_8);
         __pyx_t_8 = 0;
 
-        /* "fastmath.pyx":128
+        /* "biobox\lib\fastmath.pyx":128
  *                 err_1 -= dz2
  * 
  *             if err_2 > 0:             # <<<<<<<<<<<<<<
@@ -2518,7 +2518,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
  */
       }
 
-      /* "fastmath.pyx":132
+      /* "biobox\lib\fastmath.pyx":132
  *                 err_2 -= dz2
  * 
  *             err_1 += dy2             # <<<<<<<<<<<<<<
@@ -2533,7 +2533,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
       __Pyx_DECREF_SET(__pyx_v_err_1, __pyx_t_1);
       __pyx_t_1 = 0;
 
-      /* "fastmath.pyx":133
+      /* "biobox\lib\fastmath.pyx":133
  * 
  *             err_1 += dy2
  *             err_2 += dx2             # <<<<<<<<<<<<<<
@@ -2548,7 +2548,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
       __Pyx_DECREF_SET(__pyx_v_err_2, __pyx_t_8);
       __pyx_t_8 = 0;
 
-      /* "fastmath.pyx":134
+      /* "biobox\lib\fastmath.pyx":134
  *             err_1 += dy2
  *             err_2 += dx2
  *             point[2] += z_inc             # <<<<<<<<<<<<<<
@@ -2567,7 +2567,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
       if (unlikely(__Pyx_SetItemInt(((PyObject *)__pyx_v_point), __pyx_t_7, __pyx_t_2, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 0, 0) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 134; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-      /* "fastmath.pyx":136
+      /* "biobox\lib\fastmath.pyx":136
  *             point[2] += z_inc
  * 
  *             if not access_grid[point[0],point[1],point[2]]:             # <<<<<<<<<<<<<<
@@ -2599,7 +2599,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
       __pyx_t_5 = ((!__pyx_t_3) != 0);
       if (__pyx_t_5) {
 
-        /* "fastmath.pyx":137
+        /* "biobox\lib\fastmath.pyx":137
  * 
  *             if not access_grid[point[0],point[1],point[2]]:
  *                 return False             # <<<<<<<<<<<<<<
@@ -2611,7 +2611,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
         __pyx_r = Py_False;
         goto __pyx_L0;
 
-        /* "fastmath.pyx":136
+        /* "biobox\lib\fastmath.pyx":136
  *             point[2] += z_inc
  * 
  *             if not access_grid[point[0],point[1],point[2]]:             # <<<<<<<<<<<<<<
@@ -2623,7 +2623,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
   }
   __pyx_L6:;
 
-  /* "fastmath.pyx":139
+  /* "biobox\lib\fastmath.pyx":139
  *                 return False
  * 
  *     return True             # <<<<<<<<<<<<<<
@@ -2635,7 +2635,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
   __pyx_r = Py_True;
   goto __pyx_L0;
 
-  /* "fastmath.pyx":37
+  /* "biobox\lib\fastmath.pyx":37
  * ### BRESENHAM ALGORITHM ###
  * 
  * cdef cython_line_of_sight(np.ndarray access_grid, np.ndarray a, np.ndarray b):             # <<<<<<<<<<<<<<
@@ -2649,7 +2649,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
   __Pyx_XDECREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_8);
   __Pyx_XDECREF(__pyx_t_9);
-  __Pyx_AddTraceback("fastmath.cython_line_of_sight", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.fastmath.cython_line_of_sight", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XDECREF((PyObject *)__pyx_v_point);
@@ -2661,7 +2661,7 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
   return __pyx_r;
 }
 
-/* "fastmath.pyx":143
+/* "biobox\lib\fastmath.pyx":143
  * 
  * ### SASA ###
  * cpdef cython_get_surface(np.ndarray points, np.ndarray radii, float probe, int n_sphere_point, float threshold):             # <<<<<<<<<<<<<<
@@ -2669,8 +2669,8 @@ static PyObject *__pyx_f_8fastmath_cython_line_of_sight(PyArrayObject *__pyx_v_a
  *     cdef np.ndarray mesh
  */
 
-static PyObject *__pyx_pw_8fastmath_1cython_get_surface(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_points, PyArrayObject *__pyx_v_radii, float __pyx_v_probe, int __pyx_v_n_sphere_point, float __pyx_v_threshold, CYTHON_UNUSED int __pyx_skip_dispatch) {
+static PyObject *__pyx_pw_6biobox_3lib_8fastmath_1cython_get_surface(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_f_6biobox_3lib_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_points, PyArrayObject *__pyx_v_radii, float __pyx_v_probe, int __pyx_v_n_sphere_point, float __pyx_v_threshold, CYTHON_UNUSED int __pyx_skip_dispatch) {
   PyArrayObject *__pyx_v_mesh = 0;
   PyArrayObject *__pyx_v_dist = 0;
   PyArrayObject *__pyx_v_test = 0;
@@ -2717,7 +2717,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("cython_get_surface", 0);
 
-  /* "fastmath.pyx":149
+  /* "biobox\lib\fastmath.pyx":149
  *     cdef np.ndarray test
  *     cdef int cnt
  *     cdef float asa=0.0             # <<<<<<<<<<<<<<
@@ -2726,7 +2726,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
  */
   __pyx_v_asa = 0.0;
 
-  /* "fastmath.pyx":150
+  /* "biobox\lib\fastmath.pyx":150
  *     cdef int cnt
  *     cdef float asa=0.0
  *     cdef float const=4.0*np.pi/n_sphere_point             # <<<<<<<<<<<<<<
@@ -2751,7 +2751,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_v_const = __pyx_t_4;
 
-  /* "fastmath.pyx":153
+  /* "biobox\lib\fastmath.pyx":153
  *     cdef np.ndarray sphere_points
  *     cdef bool fail
  *     cdef float thethreshold=n_sphere_point*threshold             # <<<<<<<<<<<<<<
@@ -2760,7 +2760,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
  */
   __pyx_v_thethreshold = (__pyx_v_n_sphere_point * __pyx_v_threshold);
 
-  /* "fastmath.pyx":163
+  /* "biobox\lib\fastmath.pyx":163
  * 
  *     #create unit sphere points cloud (using golden spiral)
  *     pts = []             # <<<<<<<<<<<<<<
@@ -2772,7 +2772,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
   __pyx_v_pts = ((PyObject*)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "fastmath.pyx":164
+  /* "biobox\lib\fastmath.pyx":164
  *     #create unit sphere points cloud (using golden spiral)
  *     pts = []
  *     inc = np.pi*(3-np.sqrt(5))             # <<<<<<<<<<<<<<
@@ -2803,7 +2803,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_v_inc = __pyx_t_4;
 
-  /* "fastmath.pyx":165
+  /* "biobox\lib\fastmath.pyx":165
  *     pts = []
  *     inc = np.pi*(3-np.sqrt(5))
  *     offset =2/float(n_sphere_point)             # <<<<<<<<<<<<<<
@@ -2816,7 +2816,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
   }
   __pyx_v_offset = (2.0 / ((double)__pyx_v_n_sphere_point));
 
-  /* "fastmath.pyx":166
+  /* "biobox\lib\fastmath.pyx":166
  *     inc = np.pi*(3-np.sqrt(5))
  *     offset =2/float(n_sphere_point)
  *     for k in range(int(n_sphere_point)):             # <<<<<<<<<<<<<<
@@ -2827,7 +2827,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
   for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
     __pyx_v_k = __pyx_t_6;
 
-    /* "fastmath.pyx":167
+    /* "biobox\lib\fastmath.pyx":167
  *     offset =2/float(n_sphere_point)
  *     for k in range(int(n_sphere_point)):
  *             y=k*offset-1+(offset/2)             # <<<<<<<<<<<<<<
@@ -2836,7 +2836,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
  */
     __pyx_v_y = (((__pyx_v_k * __pyx_v_offset) - 1.0) + (__pyx_v_offset / 2.0));
 
-    /* "fastmath.pyx":168
+    /* "biobox\lib\fastmath.pyx":168
  *     for k in range(int(n_sphere_point)):
  *             y=k*offset-1+(offset/2)
  *             r=np.sqrt(1 - y*y)             # <<<<<<<<<<<<<<
@@ -2880,7 +2880,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_v_r = __pyx_t_4;
 
-    /* "fastmath.pyx":169
+    /* "biobox\lib\fastmath.pyx":169
  *             y=k*offset-1+(offset/2)
  *             r=np.sqrt(1 - y*y)
  *             phi=k*inc             # <<<<<<<<<<<<<<
@@ -2889,7 +2889,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
  */
     __pyx_v_phi = (__pyx_v_k * __pyx_v_inc);
 
-    /* "fastmath.pyx":170
+    /* "biobox\lib\fastmath.pyx":170
  *             r=np.sqrt(1 - y*y)
  *             phi=k*inc
  *             pts.append([np.cos(phi)*r, y, np.sin(phi)*r])             # <<<<<<<<<<<<<<
@@ -2991,7 +2991,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "fastmath.pyx":172
+  /* "biobox\lib\fastmath.pyx":172
  *             pts.append([np.cos(phi)*r, y, np.sin(phi)*r])
  * 
  *     sphere_points=np.array(pts)             # <<<<<<<<<<<<<<
@@ -3032,7 +3032,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
   __pyx_v_sphere_points = ((PyArrayObject *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "fastmath.pyx":174
+  /* "biobox\lib\fastmath.pyx":174
  *     sphere_points=np.array(pts)
  * 
  *     contact_map=S.cdist(points,points)             # <<<<<<<<<<<<<<
@@ -3074,7 +3074,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
   __pyx_v_contact_map = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "fastmath.pyx":176
+  /* "biobox\lib\fastmath.pyx":176
  *     contact_map=S.cdist(points,points)
  * 
  *     asa=0.0             # <<<<<<<<<<<<<<
@@ -3083,7 +3083,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
  */
   __pyx_v_asa = 0.0;
 
-  /* "fastmath.pyx":177
+  /* "biobox\lib\fastmath.pyx":177
  * 
  *     asa=0.0
  *     surface_atoms=[]             # <<<<<<<<<<<<<<
@@ -3095,7 +3095,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
   __pyx_v_surface_atoms = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "fastmath.pyx":178
+  /* "biobox\lib\fastmath.pyx":178
  *     asa=0.0
  *     surface_atoms=[]
  *     mesh_pts=[]             # <<<<<<<<<<<<<<
@@ -3107,7 +3107,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
   __pyx_v_mesh_pts = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "fastmath.pyx":180
+  /* "biobox\lib\fastmath.pyx":180
  *     mesh_pts=[]
  *     #compute accessible surface for every atom
  *     for i in xrange(0,len(points),1):             # <<<<<<<<<<<<<<
@@ -3118,7 +3118,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
   for (__pyx_t_13 = 0; __pyx_t_13 < __pyx_t_12; __pyx_t_13+=1) {
     __pyx_v_i = __pyx_t_13;
 
-    /* "fastmath.pyx":183
+    /* "biobox\lib\fastmath.pyx":183
  * 
  *             #place mesh points around atom of choice
  *             mesh=sphere_points*(radii[i]+probe)+points[i]             # <<<<<<<<<<<<<<
@@ -3146,7 +3146,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
     __Pyx_XDECREF_SET(__pyx_v_mesh, ((PyArrayObject *)__pyx_t_1));
     __pyx_t_1 = 0;
 
-    /* "fastmath.pyx":186
+    /* "biobox\lib\fastmath.pyx":186
  * 
  *             #compute distance matrix between mesh points and neighboring atoms
  *             test=np.where(contact_map[i,:]<radii.max()+probe*2)[0]             # <<<<<<<<<<<<<<
@@ -3233,7 +3233,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
     __Pyx_XDECREF_SET(__pyx_v_test, ((PyArrayObject *)__pyx_t_7));
     __pyx_t_7 = 0;
 
-    /* "fastmath.pyx":187
+    /* "biobox\lib\fastmath.pyx":187
  *             #compute distance matrix between mesh points and neighboring atoms
  *             test=np.where(contact_map[i,:]<radii.max()+probe*2)[0]
  *             neigh=points[test]             # <<<<<<<<<<<<<<
@@ -3245,7 +3245,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
     __Pyx_XDECREF_SET(__pyx_v_neigh, __pyx_t_7);
     __pyx_t_7 = 0;
 
-    /* "fastmath.pyx":188
+    /* "biobox\lib\fastmath.pyx":188
  *             test=np.where(contact_map[i,:]<radii.max()+probe*2)[0]
  *             neigh=points[test]
  *             dist=S.cdist(neigh,mesh)-radii[test][:,np.newaxis]             # <<<<<<<<<<<<<<
@@ -3311,7 +3311,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
     __Pyx_XDECREF_SET(__pyx_v_dist, ((PyArrayObject *)__pyx_t_3));
     __pyx_t_3 = 0;
 
-    /* "fastmath.pyx":192
+    /* "biobox\lib\fastmath.pyx":192
  *             #lines=atoms, columns=mesh points. Count columns containing values greater than probe*2
  *             #i.e. allowing sufficient space for a probe to fit completely
  *             cnt=0             # <<<<<<<<<<<<<<
@@ -3320,7 +3320,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
  */
     __pyx_v_cnt = 0;
 
-    /* "fastmath.pyx":193
+    /* "biobox\lib\fastmath.pyx":193
  *             #i.e. allowing sufficient space for a probe to fit completely
  *             cnt=0
  *             for m in range(dist.shape[1]):             # <<<<<<<<<<<<<<
@@ -3331,7 +3331,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
     for (__pyx_t_16 = 0; __pyx_t_16 < __pyx_t_15; __pyx_t_16+=1) {
       __pyx_v_m = __pyx_t_16;
 
-      /* "fastmath.pyx":194
+      /* "biobox\lib\fastmath.pyx":194
  *             cnt=0
  *             for m in range(dist.shape[1]):
  *                     if not np.any(dist[:,m]<probe):             # <<<<<<<<<<<<<<
@@ -3392,7 +3392,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
       __pyx_t_18 = ((!__pyx_t_17) != 0);
       if (__pyx_t_18) {
 
-        /* "fastmath.pyx":195
+        /* "biobox\lib\fastmath.pyx":195
  *             for m in range(dist.shape[1]):
  *                     if not np.any(dist[:,m]<probe):
  *                             cnt+=1             # <<<<<<<<<<<<<<
@@ -3401,7 +3401,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
  */
         __pyx_v_cnt = (__pyx_v_cnt + 1);
 
-        /* "fastmath.pyx":196
+        /* "biobox\lib\fastmath.pyx":196
  *                     if not np.any(dist[:,m]<probe):
  *                             cnt+=1
  *                             mesh_pts.append(mesh[m])             # <<<<<<<<<<<<<<
@@ -3413,7 +3413,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
         __pyx_t_11 = __Pyx_PyList_Append(__pyx_v_mesh_pts, __pyx_t_3); if (unlikely(__pyx_t_11 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 196; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-        /* "fastmath.pyx":194
+        /* "biobox\lib\fastmath.pyx":194
  *             cnt=0
  *             for m in range(dist.shape[1]):
  *                     if not np.any(dist[:,m]<probe):             # <<<<<<<<<<<<<<
@@ -3423,7 +3423,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
       }
     }
 
-    /* "fastmath.pyx":199
+    /* "biobox\lib\fastmath.pyx":199
  * 
  *             #calculate asa for current atom, if a sufficient amount of mesh points is exposed (NOTE: to verify)
  *             if cnt>thethreshold:             # <<<<<<<<<<<<<<
@@ -3433,7 +3433,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
     __pyx_t_18 = ((__pyx_v_cnt > __pyx_v_thethreshold) != 0);
     if (__pyx_t_18) {
 
-      /* "fastmath.pyx":200
+      /* "biobox\lib\fastmath.pyx":200
  *             #calculate asa for current atom, if a sufficient amount of mesh points is exposed (NOTE: to verify)
  *             if cnt>thethreshold:
  *                     surface_atoms.append(i)             # <<<<<<<<<<<<<<
@@ -3445,7 +3445,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
       __pyx_t_11 = __Pyx_PyList_Append(__pyx_v_surface_atoms, __pyx_t_3); if (unlikely(__pyx_t_11 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 200; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-      /* "fastmath.pyx":201
+      /* "biobox\lib\fastmath.pyx":201
  *             if cnt>thethreshold:
  *                     surface_atoms.append(i)
  *                     asa+=const*cnt*(radii[i]+probe)**2             # <<<<<<<<<<<<<<
@@ -3479,7 +3479,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __pyx_v_asa = __pyx_t_4;
 
-      /* "fastmath.pyx":199
+      /* "biobox\lib\fastmath.pyx":199
  * 
  *             #calculate asa for current atom, if a sufficient amount of mesh points is exposed (NOTE: to verify)
  *             if cnt>thethreshold:             # <<<<<<<<<<<<<<
@@ -3489,7 +3489,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
     }
   }
 
-  /* "fastmath.pyx":203
+  /* "biobox\lib\fastmath.pyx":203
  *                     asa+=const*cnt*(radii[i]+probe)**2
  * 
  *     return asa, np.array(mesh_pts), np.array(surface_atoms)             # <<<<<<<<<<<<<<
@@ -3574,7 +3574,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
   __pyx_t_3 = 0;
   goto __pyx_L0;
 
-  /* "fastmath.pyx":143
+  /* "biobox\lib\fastmath.pyx":143
  * 
  * ### SASA ###
  * cpdef cython_get_surface(np.ndarray points, np.ndarray radii, float probe, int n_sphere_point, float threshold):             # <<<<<<<<<<<<<<
@@ -3591,7 +3591,7 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
   __Pyx_XDECREF(__pyx_t_8);
   __Pyx_XDECREF(__pyx_t_9);
   __Pyx_XDECREF(__pyx_t_10);
-  __Pyx_AddTraceback("fastmath.cython_get_surface", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.fastmath.cython_get_surface", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XDECREF((PyObject *)__pyx_v_mesh);
@@ -3609,8 +3609,8 @@ static PyObject *__pyx_f_8fastmath_cython_get_surface(PyArrayObject *__pyx_v_poi
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8fastmath_1cython_get_surface(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_pw_8fastmath_1cython_get_surface(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_6biobox_3lib_8fastmath_1cython_get_surface(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_6biobox_3lib_8fastmath_1cython_get_surface(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyArrayObject *__pyx_v_points = 0;
   PyArrayObject *__pyx_v_radii = 0;
   float __pyx_v_probe;
@@ -3685,13 +3685,13 @@ static PyObject *__pyx_pw_8fastmath_1cython_get_surface(PyObject *__pyx_self, Py
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("cython_get_surface", 1, 5, 5, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 143; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
-  __Pyx_AddTraceback("fastmath.cython_get_surface", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.fastmath.cython_get_surface", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_points), __pyx_ptype_5numpy_ndarray, 1, "points", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 143; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_radii), __pyx_ptype_5numpy_ndarray, 1, "radii", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 143; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_8fastmath_cython_get_surface(__pyx_self, __pyx_v_points, __pyx_v_radii, __pyx_v_probe, __pyx_v_n_sphere_point, __pyx_v_threshold);
+  __pyx_r = __pyx_pf_6biobox_3lib_8fastmath_cython_get_surface(__pyx_self, __pyx_v_points, __pyx_v_radii, __pyx_v_probe, __pyx_v_n_sphere_point, __pyx_v_threshold);
 
   /* function exit code */
   goto __pyx_L0;
@@ -3702,7 +3702,7 @@ static PyObject *__pyx_pw_8fastmath_1cython_get_surface(PyObject *__pyx_self, Py
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8fastmath_cython_get_surface(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_points, PyArrayObject *__pyx_v_radii, float __pyx_v_probe, int __pyx_v_n_sphere_point, float __pyx_v_threshold) {
+static PyObject *__pyx_pf_6biobox_3lib_8fastmath_cython_get_surface(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_points, PyArrayObject *__pyx_v_radii, float __pyx_v_probe, int __pyx_v_n_sphere_point, float __pyx_v_threshold) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -3711,7 +3711,7 @@ static PyObject *__pyx_pf_8fastmath_cython_get_surface(CYTHON_UNUSED PyObject *_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("cython_get_surface", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_8fastmath_cython_get_surface(__pyx_v_points, __pyx_v_radii, __pyx_v_probe, __pyx_v_n_sphere_point, __pyx_v_threshold, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 143; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_6biobox_3lib_8fastmath_cython_get_surface(__pyx_v_points, __pyx_v_radii, __pyx_v_probe, __pyx_v_n_sphere_point, __pyx_v_threshold, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 143; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3720,7 +3720,7 @@ static PyObject *__pyx_pf_8fastmath_cython_get_surface(CYTHON_UNUSED PyObject *_
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("fastmath.cython_get_surface", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.fastmath.cython_get_surface", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -3728,7 +3728,7 @@ static PyObject *__pyx_pf_8fastmath_cython_get_surface(CYTHON_UNUSED PyObject *_
   return __pyx_r;
 }
 
-/* "fastmath.pyx":208
+/* "biobox\lib\fastmath.pyx":208
  * 
  * ### RAVEL INDEX ####
  * cdef cython_ravel(np.ndarray thepos, np.ndarray theshape):             # <<<<<<<<<<<<<<
@@ -3736,7 +3736,7 @@ static PyObject *__pyx_pf_8fastmath_cython_get_surface(CYTHON_UNUSED PyObject *_
  * 
  */
 
-static PyObject *__pyx_f_8fastmath_cython_ravel(PyArrayObject *__pyx_v_thepos, PyArrayObject *__pyx_v_theshape) {
+static PyObject *__pyx_f_6biobox_3lib_8fastmath_cython_ravel(PyArrayObject *__pyx_v_thepos, PyArrayObject *__pyx_v_theshape) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -3748,7 +3748,7 @@ static PyObject *__pyx_f_8fastmath_cython_ravel(PyArrayObject *__pyx_v_thepos, P
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("cython_ravel", 0);
 
-  /* "fastmath.pyx":209
+  /* "biobox\lib\fastmath.pyx":209
  * ### RAVEL INDEX ####
  * cdef cython_ravel(np.ndarray thepos, np.ndarray theshape):
  *     return theshape[1]*theshape[2]*thepos[0]+theshape[2]*thepos[1]+thepos[2]             # <<<<<<<<<<<<<<
@@ -3792,7 +3792,7 @@ static PyObject *__pyx_f_8fastmath_cython_ravel(PyArrayObject *__pyx_v_thepos, P
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "fastmath.pyx":208
+  /* "biobox\lib\fastmath.pyx":208
  * 
  * ### RAVEL INDEX ####
  * cdef cython_ravel(np.ndarray thepos, np.ndarray theshape):             # <<<<<<<<<<<<<<
@@ -3806,7 +3806,7 @@ static PyObject *__pyx_f_8fastmath_cython_ravel(PyArrayObject *__pyx_v_thepos, P
   __Pyx_XDECREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
-  __Pyx_AddTraceback("fastmath.cython_ravel", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.fastmath.cython_ravel", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -3814,7 +3814,7 @@ static PyObject *__pyx_f_8fastmath_cython_ravel(PyArrayObject *__pyx_v_thepos, P
   return __pyx_r;
 }
 
-/* "fastmath.pyx":215
+/* "biobox\lib\fastmath.pyx":215
  * ### EXPORTS ###
  * #a: all possible targets, b: starting points
  * def c_heuristic(np.ndarray a, np.ndarray b):             # <<<<<<<<<<<<<<
@@ -3823,9 +3823,9 @@ static PyObject *__pyx_f_8fastmath_cython_ravel(PyArrayObject *__pyx_v_thepos, P
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8fastmath_3c_heuristic(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_mdef_8fastmath_3c_heuristic = {"c_heuristic", (PyCFunction)__pyx_pw_8fastmath_3c_heuristic, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_8fastmath_3c_heuristic(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_6biobox_3lib_8fastmath_3c_heuristic(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_6biobox_3lib_8fastmath_3c_heuristic = {"c_heuristic", (PyCFunction)__pyx_pw_6biobox_3lib_8fastmath_3c_heuristic, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_6biobox_3lib_8fastmath_3c_heuristic(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyArrayObject *__pyx_v_a = 0;
   PyArrayObject *__pyx_v_b = 0;
   int __pyx_lineno = 0;
@@ -3873,13 +3873,13 @@ static PyObject *__pyx_pw_8fastmath_3c_heuristic(PyObject *__pyx_self, PyObject 
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("c_heuristic", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
-  __Pyx_AddTraceback("fastmath.c_heuristic", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.fastmath.c_heuristic", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_a), __pyx_ptype_5numpy_ndarray, 1, "a", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_b), __pyx_ptype_5numpy_ndarray, 1, "b", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_8fastmath_2c_heuristic(__pyx_self, __pyx_v_a, __pyx_v_b);
+  __pyx_r = __pyx_pf_6biobox_3lib_8fastmath_2c_heuristic(__pyx_self, __pyx_v_a, __pyx_v_b);
 
   /* function exit code */
   goto __pyx_L0;
@@ -3890,7 +3890,7 @@ static PyObject *__pyx_pw_8fastmath_3c_heuristic(PyObject *__pyx_self, PyObject 
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8fastmath_2c_heuristic(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_a, PyArrayObject *__pyx_v_b) {
+static PyObject *__pyx_pf_6biobox_3lib_8fastmath_2c_heuristic(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_a, PyArrayObject *__pyx_v_b) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -3899,7 +3899,7 @@ static PyObject *__pyx_pf_8fastmath_2c_heuristic(CYTHON_UNUSED PyObject *__pyx_s
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("c_heuristic", 0);
 
-  /* "fastmath.pyx":216
+  /* "biobox\lib\fastmath.pyx":216
  * #a: all possible targets, b: starting points
  * def c_heuristic(np.ndarray a, np.ndarray b):
  *     return cython_min_manhattan(a,b)             # <<<<<<<<<<<<<<
@@ -3907,13 +3907,13 @@ static PyObject *__pyx_pf_8fastmath_2c_heuristic(CYTHON_UNUSED PyObject *__pyx_s
  * def c_line_of_sight(np.ndarray access_grid, np.ndarray a, np.ndarray b):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_8fastmath_cython_min_manhattan(__pyx_v_a, __pyx_v_b); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 216; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_6biobox_3lib_8fastmath_cython_min_manhattan(__pyx_v_a, __pyx_v_b); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 216; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "fastmath.pyx":215
+  /* "biobox\lib\fastmath.pyx":215
  * ### EXPORTS ###
  * #a: all possible targets, b: starting points
  * def c_heuristic(np.ndarray a, np.ndarray b):             # <<<<<<<<<<<<<<
@@ -3924,7 +3924,7 @@ static PyObject *__pyx_pf_8fastmath_2c_heuristic(CYTHON_UNUSED PyObject *__pyx_s
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("fastmath.c_heuristic", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.fastmath.c_heuristic", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -3932,7 +3932,7 @@ static PyObject *__pyx_pf_8fastmath_2c_heuristic(CYTHON_UNUSED PyObject *__pyx_s
   return __pyx_r;
 }
 
-/* "fastmath.pyx":218
+/* "biobox\lib\fastmath.pyx":218
  *     return cython_min_manhattan(a,b)
  * 
  * def c_line_of_sight(np.ndarray access_grid, np.ndarray a, np.ndarray b):             # <<<<<<<<<<<<<<
@@ -3941,9 +3941,9 @@ static PyObject *__pyx_pf_8fastmath_2c_heuristic(CYTHON_UNUSED PyObject *__pyx_s
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8fastmath_5c_line_of_sight(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_mdef_8fastmath_5c_line_of_sight = {"c_line_of_sight", (PyCFunction)__pyx_pw_8fastmath_5c_line_of_sight, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_8fastmath_5c_line_of_sight(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_6biobox_3lib_8fastmath_5c_line_of_sight(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_6biobox_3lib_8fastmath_5c_line_of_sight = {"c_line_of_sight", (PyCFunction)__pyx_pw_6biobox_3lib_8fastmath_5c_line_of_sight, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_6biobox_3lib_8fastmath_5c_line_of_sight(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyArrayObject *__pyx_v_access_grid = 0;
   PyArrayObject *__pyx_v_a = 0;
   PyArrayObject *__pyx_v_b = 0;
@@ -4000,14 +4000,14 @@ static PyObject *__pyx_pw_8fastmath_5c_line_of_sight(PyObject *__pyx_self, PyObj
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("c_line_of_sight", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
-  __Pyx_AddTraceback("fastmath.c_line_of_sight", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.fastmath.c_line_of_sight", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_access_grid), __pyx_ptype_5numpy_ndarray, 1, "access_grid", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_a), __pyx_ptype_5numpy_ndarray, 1, "a", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_b), __pyx_ptype_5numpy_ndarray, 1, "b", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_8fastmath_4c_line_of_sight(__pyx_self, __pyx_v_access_grid, __pyx_v_a, __pyx_v_b);
+  __pyx_r = __pyx_pf_6biobox_3lib_8fastmath_4c_line_of_sight(__pyx_self, __pyx_v_access_grid, __pyx_v_a, __pyx_v_b);
 
   /* function exit code */
   goto __pyx_L0;
@@ -4018,7 +4018,7 @@ static PyObject *__pyx_pw_8fastmath_5c_line_of_sight(PyObject *__pyx_self, PyObj
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8fastmath_4c_line_of_sight(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_access_grid, PyArrayObject *__pyx_v_a, PyArrayObject *__pyx_v_b) {
+static PyObject *__pyx_pf_6biobox_3lib_8fastmath_4c_line_of_sight(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_access_grid, PyArrayObject *__pyx_v_a, PyArrayObject *__pyx_v_b) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -4027,7 +4027,7 @@ static PyObject *__pyx_pf_8fastmath_4c_line_of_sight(CYTHON_UNUSED PyObject *__p
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("c_line_of_sight", 0);
 
-  /* "fastmath.pyx":219
+  /* "biobox\lib\fastmath.pyx":219
  * 
  * def c_line_of_sight(np.ndarray access_grid, np.ndarray a, np.ndarray b):
  *     return cython_line_of_sight(access_grid,a,b)             # <<<<<<<<<<<<<<
@@ -4035,13 +4035,13 @@ static PyObject *__pyx_pf_8fastmath_4c_line_of_sight(CYTHON_UNUSED PyObject *__p
  * def c_get_surface(np.ndarray points, np.ndarray radii, float probe, int n_sphere_point, float threshold):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_8fastmath_cython_line_of_sight(__pyx_v_access_grid, __pyx_v_a, __pyx_v_b); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_6biobox_3lib_8fastmath_cython_line_of_sight(__pyx_v_access_grid, __pyx_v_a, __pyx_v_b); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "fastmath.pyx":218
+  /* "biobox\lib\fastmath.pyx":218
  *     return cython_min_manhattan(a,b)
  * 
  * def c_line_of_sight(np.ndarray access_grid, np.ndarray a, np.ndarray b):             # <<<<<<<<<<<<<<
@@ -4052,7 +4052,7 @@ static PyObject *__pyx_pf_8fastmath_4c_line_of_sight(CYTHON_UNUSED PyObject *__p
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("fastmath.c_line_of_sight", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.fastmath.c_line_of_sight", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -4060,7 +4060,7 @@ static PyObject *__pyx_pf_8fastmath_4c_line_of_sight(CYTHON_UNUSED PyObject *__p
   return __pyx_r;
 }
 
-/* "fastmath.pyx":221
+/* "biobox\lib\fastmath.pyx":221
  *     return cython_line_of_sight(access_grid,a,b)
  * 
  * def c_get_surface(np.ndarray points, np.ndarray radii, float probe, int n_sphere_point, float threshold):             # <<<<<<<<<<<<<<
@@ -4069,9 +4069,9 @@ static PyObject *__pyx_pf_8fastmath_4c_line_of_sight(CYTHON_UNUSED PyObject *__p
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8fastmath_7c_get_surface(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_mdef_8fastmath_7c_get_surface = {"c_get_surface", (PyCFunction)__pyx_pw_8fastmath_7c_get_surface, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_8fastmath_7c_get_surface(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_6biobox_3lib_8fastmath_7c_get_surface(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_6biobox_3lib_8fastmath_7c_get_surface = {"c_get_surface", (PyCFunction)__pyx_pw_6biobox_3lib_8fastmath_7c_get_surface, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_6biobox_3lib_8fastmath_7c_get_surface(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyArrayObject *__pyx_v_points = 0;
   PyArrayObject *__pyx_v_radii = 0;
   float __pyx_v_probe;
@@ -4146,13 +4146,13 @@ static PyObject *__pyx_pw_8fastmath_7c_get_surface(PyObject *__pyx_self, PyObjec
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("c_get_surface", 1, 5, 5, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 221; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
-  __Pyx_AddTraceback("fastmath.c_get_surface", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.fastmath.c_get_surface", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_points), __pyx_ptype_5numpy_ndarray, 1, "points", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 221; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_radii), __pyx_ptype_5numpy_ndarray, 1, "radii", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 221; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_8fastmath_6c_get_surface(__pyx_self, __pyx_v_points, __pyx_v_radii, __pyx_v_probe, __pyx_v_n_sphere_point, __pyx_v_threshold);
+  __pyx_r = __pyx_pf_6biobox_3lib_8fastmath_6c_get_surface(__pyx_self, __pyx_v_points, __pyx_v_radii, __pyx_v_probe, __pyx_v_n_sphere_point, __pyx_v_threshold);
 
   /* function exit code */
   goto __pyx_L0;
@@ -4163,7 +4163,7 @@ static PyObject *__pyx_pw_8fastmath_7c_get_surface(PyObject *__pyx_self, PyObjec
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8fastmath_6c_get_surface(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_points, PyArrayObject *__pyx_v_radii, float __pyx_v_probe, int __pyx_v_n_sphere_point, float __pyx_v_threshold) {
+static PyObject *__pyx_pf_6biobox_3lib_8fastmath_6c_get_surface(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_points, PyArrayObject *__pyx_v_radii, float __pyx_v_probe, int __pyx_v_n_sphere_point, float __pyx_v_threshold) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -4172,7 +4172,7 @@ static PyObject *__pyx_pf_8fastmath_6c_get_surface(CYTHON_UNUSED PyObject *__pyx
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("c_get_surface", 0);
 
-  /* "fastmath.pyx":222
+  /* "biobox\lib\fastmath.pyx":222
  * 
  * def c_get_surface(np.ndarray points, np.ndarray radii, float probe, int n_sphere_point, float threshold):
  *     return cython_get_surface(points, radii, probe, n_sphere_point, threshold)             # <<<<<<<<<<<<<<
@@ -4180,13 +4180,13 @@ static PyObject *__pyx_pf_8fastmath_6c_get_surface(CYTHON_UNUSED PyObject *__pyx
  * def c_ravel(np.ndarray thepos, np.ndarray theshape):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_8fastmath_cython_get_surface(__pyx_v_points, __pyx_v_radii, __pyx_v_probe, __pyx_v_n_sphere_point, __pyx_v_threshold, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 222; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_6biobox_3lib_8fastmath_cython_get_surface(__pyx_v_points, __pyx_v_radii, __pyx_v_probe, __pyx_v_n_sphere_point, __pyx_v_threshold, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 222; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "fastmath.pyx":221
+  /* "biobox\lib\fastmath.pyx":221
  *     return cython_line_of_sight(access_grid,a,b)
  * 
  * def c_get_surface(np.ndarray points, np.ndarray radii, float probe, int n_sphere_point, float threshold):             # <<<<<<<<<<<<<<
@@ -4197,7 +4197,7 @@ static PyObject *__pyx_pf_8fastmath_6c_get_surface(CYTHON_UNUSED PyObject *__pyx
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("fastmath.c_get_surface", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.fastmath.c_get_surface", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -4205,7 +4205,7 @@ static PyObject *__pyx_pf_8fastmath_6c_get_surface(CYTHON_UNUSED PyObject *__pyx
   return __pyx_r;
 }
 
-/* "fastmath.pyx":224
+/* "biobox\lib\fastmath.pyx":224
  *     return cython_get_surface(points, radii, probe, n_sphere_point, threshold)
  * 
  * def c_ravel(np.ndarray thepos, np.ndarray theshape):             # <<<<<<<<<<<<<<
@@ -4213,9 +4213,9 @@ static PyObject *__pyx_pf_8fastmath_6c_get_surface(CYTHON_UNUSED PyObject *__pyx
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8fastmath_9c_ravel(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_mdef_8fastmath_9c_ravel = {"c_ravel", (PyCFunction)__pyx_pw_8fastmath_9c_ravel, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_8fastmath_9c_ravel(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_6biobox_3lib_8fastmath_9c_ravel(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_6biobox_3lib_8fastmath_9c_ravel = {"c_ravel", (PyCFunction)__pyx_pw_6biobox_3lib_8fastmath_9c_ravel, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_6biobox_3lib_8fastmath_9c_ravel(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyArrayObject *__pyx_v_thepos = 0;
   PyArrayObject *__pyx_v_theshape = 0;
   int __pyx_lineno = 0;
@@ -4263,13 +4263,13 @@ static PyObject *__pyx_pw_8fastmath_9c_ravel(PyObject *__pyx_self, PyObject *__p
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("c_ravel", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 224; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
-  __Pyx_AddTraceback("fastmath.c_ravel", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.fastmath.c_ravel", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_thepos), __pyx_ptype_5numpy_ndarray, 1, "thepos", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 224; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_theshape), __pyx_ptype_5numpy_ndarray, 1, "theshape", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 224; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_8fastmath_8c_ravel(__pyx_self, __pyx_v_thepos, __pyx_v_theshape);
+  __pyx_r = __pyx_pf_6biobox_3lib_8fastmath_8c_ravel(__pyx_self, __pyx_v_thepos, __pyx_v_theshape);
 
   /* function exit code */
   goto __pyx_L0;
@@ -4280,7 +4280,7 @@ static PyObject *__pyx_pw_8fastmath_9c_ravel(PyObject *__pyx_self, PyObject *__p
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8fastmath_8c_ravel(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_thepos, PyArrayObject *__pyx_v_theshape) {
+static PyObject *__pyx_pf_6biobox_3lib_8fastmath_8c_ravel(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_thepos, PyArrayObject *__pyx_v_theshape) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -4289,19 +4289,19 @@ static PyObject *__pyx_pf_8fastmath_8c_ravel(CYTHON_UNUSED PyObject *__pyx_self,
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("c_ravel", 0);
 
-  /* "fastmath.pyx":225
+  /* "biobox\lib\fastmath.pyx":225
  * 
  * def c_ravel(np.ndarray thepos, np.ndarray theshape):
  *     return cython_ravel(thepos, theshape)             # <<<<<<<<<<<<<<
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_8fastmath_cython_ravel(__pyx_v_thepos, __pyx_v_theshape); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 225; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_6biobox_3lib_8fastmath_cython_ravel(__pyx_v_thepos, __pyx_v_theshape); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 225; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "fastmath.pyx":224
+  /* "biobox\lib\fastmath.pyx":224
  *     return cython_get_surface(points, radii, probe, n_sphere_point, threshold)
  * 
  * def c_ravel(np.ndarray thepos, np.ndarray theshape):             # <<<<<<<<<<<<<<
@@ -4311,7 +4311,7 @@ static PyObject *__pyx_pf_8fastmath_8c_ravel(CYTHON_UNUSED PyObject *__pyx_self,
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("fastmath.c_ravel", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("biobox.lib.fastmath.c_ravel", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -6463,7 +6463,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_get_array_base(PyArrayObject *__py
 }
 
 static PyMethodDef __pyx_methods[] = {
-  {"cython_get_surface", (PyCFunction)__pyx_pw_8fastmath_1cython_get_surface, METH_VARARGS|METH_KEYWORDS, 0},
+  {"cython_get_surface", (PyCFunction)__pyx_pw_6biobox_3lib_8fastmath_1cython_get_surface, METH_VARARGS|METH_KEYWORDS, 0},
   {0, 0, 0, 0}
 };
 
@@ -6499,13 +6499,13 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_any, __pyx_k_any, sizeof(__pyx_k_any), 0, 0, 1, 1},
   {&__pyx_n_s_array, __pyx_k_array, sizeof(__pyx_k_array), 0, 0, 1, 1},
   {&__pyx_n_s_b, __pyx_k_b, sizeof(__pyx_k_b), 0, 0, 1, 1},
+  {&__pyx_n_s_biobox_lib_fastmath, __pyx_k_biobox_lib_fastmath, sizeof(__pyx_k_biobox_lib_fastmath), 0, 0, 1, 1},
   {&__pyx_n_s_c_get_surface, __pyx_k_c_get_surface, sizeof(__pyx_k_c_get_surface), 0, 0, 1, 1},
   {&__pyx_n_s_c_heuristic, __pyx_k_c_heuristic, sizeof(__pyx_k_c_heuristic), 0, 0, 1, 1},
   {&__pyx_n_s_c_line_of_sight, __pyx_k_c_line_of_sight, sizeof(__pyx_k_c_line_of_sight), 0, 0, 1, 1},
   {&__pyx_n_s_c_ravel, __pyx_k_c_ravel, sizeof(__pyx_k_c_ravel), 0, 0, 1, 1},
   {&__pyx_n_s_cdist, __pyx_k_cdist, sizeof(__pyx_k_cdist), 0, 0, 1, 1},
   {&__pyx_n_s_cos, __pyx_k_cos, sizeof(__pyx_k_cos), 0, 0, 1, 1},
-  {&__pyx_n_s_fastmath, __pyx_k_fastmath, sizeof(__pyx_k_fastmath), 0, 0, 1, 1},
   {&__pyx_n_s_import, __pyx_k_import, sizeof(__pyx_k_import), 0, 0, 1, 1},
   {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
   {&__pyx_n_s_max, __pyx_k_max, sizeof(__pyx_k_max), 0, 0, 1, 1},
@@ -6550,7 +6550,7 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "fastmath.pyx":53
+  /* "biobox\lib\fastmath.pyx":53
  *     cdef int err2
  * 
  *     point=a[:]             # <<<<<<<<<<<<<<
@@ -6561,7 +6561,7 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_slice_);
   __Pyx_GIVEREF(__pyx_slice_);
 
-  /* "fastmath.pyx":164
+  /* "biobox\lib\fastmath.pyx":164
  *     #create unit sphere points cloud (using golden spiral)
  *     pts = []
  *     inc = np.pi*(3-np.sqrt(5))             # <<<<<<<<<<<<<<
@@ -6572,7 +6572,7 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__2);
   __Pyx_GIVEREF(__pyx_tuple__2);
 
-  /* "fastmath.pyx":186
+  /* "biobox\lib\fastmath.pyx":186
  * 
  *             #compute distance matrix between mesh points and neighboring atoms
  *             test=np.where(contact_map[i,:]<radii.max()+probe*2)[0]             # <<<<<<<<<<<<<<
@@ -6583,7 +6583,7 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_slice__3);
   __Pyx_GIVEREF(__pyx_slice__3);
 
-  /* "fastmath.pyx":188
+  /* "biobox\lib\fastmath.pyx":188
  *             test=np.where(contact_map[i,:]<radii.max()+probe*2)[0]
  *             neigh=points[test]
  *             dist=S.cdist(neigh,mesh)-radii[test][:,np.newaxis]             # <<<<<<<<<<<<<<
@@ -6594,7 +6594,7 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_slice__4);
   __Pyx_GIVEREF(__pyx_slice__4);
 
-  /* "fastmath.pyx":194
+  /* "biobox\lib\fastmath.pyx":194
  *             cnt=0
  *             for m in range(dist.shape[1]):
  *                     if not np.any(dist[:,m]<probe):             # <<<<<<<<<<<<<<
@@ -6671,7 +6671,7 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__11);
   __Pyx_GIVEREF(__pyx_tuple__11);
 
-  /* "fastmath.pyx":215
+  /* "biobox\lib\fastmath.pyx":215
  * ### EXPORTS ###
  * #a: all possible targets, b: starting points
  * def c_heuristic(np.ndarray a, np.ndarray b):             # <<<<<<<<<<<<<<
@@ -6683,7 +6683,7 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__13);
   __pyx_codeobj__14 = (PyObject*)__Pyx_PyCode_New(2, 0, 2, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__13, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_C_Users_Matteo_workspace_biobox, __pyx_n_s_c_heuristic, 215, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__14)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-  /* "fastmath.pyx":218
+  /* "biobox\lib\fastmath.pyx":218
  *     return cython_min_manhattan(a,b)
  * 
  * def c_line_of_sight(np.ndarray access_grid, np.ndarray a, np.ndarray b):             # <<<<<<<<<<<<<<
@@ -6695,7 +6695,7 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__15);
   __pyx_codeobj__16 = (PyObject*)__Pyx_PyCode_New(3, 0, 3, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__15, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_C_Users_Matteo_workspace_biobox, __pyx_n_s_c_line_of_sight, 218, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__16)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-  /* "fastmath.pyx":221
+  /* "biobox\lib\fastmath.pyx":221
  *     return cython_line_of_sight(access_grid,a,b)
  * 
  * def c_get_surface(np.ndarray points, np.ndarray radii, float probe, int n_sphere_point, float threshold):             # <<<<<<<<<<<<<<
@@ -6707,7 +6707,7 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__17);
   __pyx_codeobj__18 = (PyObject*)__Pyx_PyCode_New(5, 0, 5, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__17, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_C_Users_Matteo_workspace_biobox, __pyx_n_s_c_get_surface, 221, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__18)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 221; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-  /* "fastmath.pyx":224
+  /* "biobox\lib\fastmath.pyx":224
  *     return cython_get_surface(points, radii, probe, n_sphere_point, threshold)
  * 
  * def c_ravel(np.ndarray thepos, np.ndarray theshape):             # <<<<<<<<<<<<<<
@@ -6804,14 +6804,14 @@ PyMODINIT_FUNC PyInit_fastmath(void)
   #if PY_MAJOR_VERSION < 3 && (__PYX_DEFAULT_STRING_ENCODING_IS_ASCII || __PYX_DEFAULT_STRING_ENCODING_IS_DEFAULT)
   if (__Pyx_init_sys_getdefaultencoding_params() < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   #endif
-  if (__pyx_module_is_main_fastmath) {
+  if (__pyx_module_is_main_biobox__lib__fastmath) {
     if (PyObject_SetAttrString(__pyx_m, "__name__", __pyx_n_s_main) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   #if PY_MAJOR_VERSION >= 3
   {
     PyObject *modules = PyImport_GetModuleDict(); if (unlikely(!modules)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    if (!PyDict_GetItemString(modules, "fastmath")) {
-      if (unlikely(PyDict_SetItemString(modules, "fastmath", __pyx_m) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    if (!PyDict_GetItemString(modules, "biobox.lib.fastmath")) {
+      if (unlikely(PyDict_SetItemString(modules, "biobox.lib.fastmath", __pyx_m) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     }
   }
   #endif
@@ -6845,7 +6845,7 @@ PyMODINIT_FUNC PyInit_fastmath(void)
   if (__Pyx_patch_abc() < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   #endif
 
-  /* "fastmath.pyx":17
+  /* "biobox\lib\fastmath.pyx":17
  * # CYTHON CALLS FOR HEAVY-DUTY METHODS IN PATH CLASS
  * 
  * import numpy as np             # <<<<<<<<<<<<<<
@@ -6857,7 +6857,7 @@ PyMODINIT_FUNC PyInit_fastmath(void)
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_np, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "fastmath.pyx":20
+  /* "biobox\lib\fastmath.pyx":20
  * cimport numpy as np
  * from cpython cimport bool
  * import scipy.spatial.distance as S             # <<<<<<<<<<<<<<
@@ -6875,54 +6875,54 @@ PyMODINIT_FUNC PyInit_fastmath(void)
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_S, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 20; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "fastmath.pyx":215
+  /* "biobox\lib\fastmath.pyx":215
  * ### EXPORTS ###
  * #a: all possible targets, b: starting points
  * def c_heuristic(np.ndarray a, np.ndarray b):             # <<<<<<<<<<<<<<
  *     return cython_min_manhattan(a,b)
  * 
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_8fastmath_3c_heuristic, NULL, __pyx_n_s_fastmath); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_6biobox_3lib_8fastmath_3c_heuristic, NULL, __pyx_n_s_biobox_lib_fastmath); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_c_heuristic, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "fastmath.pyx":218
+  /* "biobox\lib\fastmath.pyx":218
  *     return cython_min_manhattan(a,b)
  * 
  * def c_line_of_sight(np.ndarray access_grid, np.ndarray a, np.ndarray b):             # <<<<<<<<<<<<<<
  *     return cython_line_of_sight(access_grid,a,b)
  * 
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_8fastmath_5c_line_of_sight, NULL, __pyx_n_s_fastmath); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_6biobox_3lib_8fastmath_5c_line_of_sight, NULL, __pyx_n_s_biobox_lib_fastmath); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_c_line_of_sight, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "fastmath.pyx":221
+  /* "biobox\lib\fastmath.pyx":221
  *     return cython_line_of_sight(access_grid,a,b)
  * 
  * def c_get_surface(np.ndarray points, np.ndarray radii, float probe, int n_sphere_point, float threshold):             # <<<<<<<<<<<<<<
  *     return cython_get_surface(points, radii, probe, n_sphere_point, threshold)
  * 
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_8fastmath_7c_get_surface, NULL, __pyx_n_s_fastmath); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 221; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_6biobox_3lib_8fastmath_7c_get_surface, NULL, __pyx_n_s_biobox_lib_fastmath); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 221; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_c_get_surface, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 221; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "fastmath.pyx":224
+  /* "biobox\lib\fastmath.pyx":224
  *     return cython_get_surface(points, radii, probe, n_sphere_point, threshold)
  * 
  * def c_ravel(np.ndarray thepos, np.ndarray theshape):             # <<<<<<<<<<<<<<
  *     return cython_ravel(thepos, theshape)
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_8fastmath_9c_ravel, NULL, __pyx_n_s_fastmath); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 224; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_6biobox_3lib_8fastmath_9c_ravel, NULL, __pyx_n_s_biobox_lib_fastmath); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 224; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_c_ravel, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 224; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "fastmath.pyx":1
+  /* "biobox\lib\fastmath.pyx":1
  * # Copyright (c) 2014-2017 Matteo Degiacomi             # <<<<<<<<<<<<<<
  * #
  * # BiobOx is free software ;
@@ -6948,11 +6948,11 @@ PyMODINIT_FUNC PyInit_fastmath(void)
   __Pyx_XDECREF(__pyx_t_2);
   if (__pyx_m) {
     if (__pyx_d) {
-      __Pyx_AddTraceback("init fastmath", __pyx_clineno, __pyx_lineno, __pyx_filename);
+      __Pyx_AddTraceback("init biobox.lib.fastmath", __pyx_clineno, __pyx_lineno, __pyx_filename);
     }
     Py_DECREF(__pyx_m); __pyx_m = 0;
   } else if (!PyErr_Occurred()) {
-    PyErr_SetString(PyExc_ImportError, "init fastmath");
+    PyErr_SetString(PyExc_ImportError, "init biobox.lib.fastmath");
   }
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
