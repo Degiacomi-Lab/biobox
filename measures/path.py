@@ -14,6 +14,7 @@
 import heapq
 import scipy.spatial.distance as SD
 import numpy as np
+from sklearn.cluster import DBSCAN
 
 import biobox.lib.fastmath as FM # cythonized
 from biobox.lib.graph import Graph # cythonized
@@ -921,20 +922,28 @@ class Xlink(Path):
 
         # build concentric spheres
         # allow a surface of pts_den A^2 to every point
-        n_sphere_point = int(4.0 * np.pi * (radii[0]**2) / float(pts_surf))
+        n_sphere_point = int(4.0*np.pi*(radii[0]**2)/float(pts_surf))
         to_test = np.arange(n_sphere_point)
         res = []
+
+        pts_dist = -1
+        pts_dist_test = False
         for radius in radii:
             Sph = Sphere(radius, n_sphere_point=n_sphere_point, radius=0.0)
             Sph.translate(posCA[0], posCA[1], posCA[2])
 
-            # accept only clash free points in sphere. Unacceptable positions
-            # will be retested in the next smaller sphere
-            dist = SD.cdist(Sph.points, self.molecule.points)
+            if not pts_dist_test:
+                dsts = SD.cdist(Sph.points, Sph.points)
+                pts_dist = np.min(dsts[dsts != 0])
+                pts_dist_test = True
+
+            # accept only clash free points in sphere.
+            # unacceptable positions will be retested in the next smaller sphere
+            dist = SD.cdist(Sph.points,self.molecule.points)
             new_to_test = []
-            for k in xrange(0, dist.shape[0], 1):
-                # keep sphere points at more than threshold from all neighbors
-                if not np.any(dist[k] < thresh) and k in to_test:
+            for k in xrange(0,dist.shape[0],1):
+                #keep sphere points at more than threshold from all neighbors
+                if not np.any(dist[k]<thresh) and k in to_test:
                     res.append(Sph.points[k])
 
                 elif k in to_test:
@@ -943,29 +952,42 @@ class Xlink(Path):
             to_test = new_to_test
 
         # accept only points in same half sphere of side chain
-        posCB = pts[resdata[:, 2] == "CB"][0]
-        posO = pts[resdata[:, 2] == "O"][0]
-        posC = pts[resdata[:, 2] == "C"][0]
-        posN = pts[resdata[:, 2] == "N"][0]
+        posCB = pts[resdata[:,2]=="CB"][0]
+        posO = pts[resdata[:,2]=="O"][0]
+        posC = pts[resdata[:,2]=="C"][0]
+        posN = pts[resdata[:,2]=="N"][0]
 
         # compute residue plane
-        plane_vec1 = posC - posN
-        plane_vec2 = posC - posO
+        plane_vec1 = posC-posN
+        plane_vec2 = posC-posO
         xprod = np.cross(plane_vec1, plane_vec2)
         xprod /= np.linalg.norm(xprod)
 
         # compute angle of CB with respect of plane normal
-        side_vec = posCB - posCA
+        side_vec = posCB-posCA
         side_vec /= np.linalg.norm(side_vec)
         angle1 = np.rad2deg(np.arccos(np.dot(xprod, side_vec)))
 
         res2 = [side]
         for p in res:
-            side_vec2 = p - posCA
+            side_vec2 = p-posCA
             side_vec2 /= np.linalg.norm(side_vec2)
             angle2 = np.rad2deg(np.arccos(np.dot(xprod, side_vec2)))
 
-            if (angle1 > 90 and angle2 > 90) or (angle1 < 90 and angle2 < 90):
+            if (angle1>90 and angle2>90) or (angle1<90 and angle2<90):
                 res2.append(p)
 
-        return np.array(res2)
+        res3 = np.array(res2)
+
+        #select only points reachable from the actual available coordinate
+        rds = np.sort(np.array(radii)) #sorted radii list
+        dists = np.array([rds[i+1]-rds[i] for i in range(len(rds)-1)]) #distances between adjacent spherical shells
+      
+        step = np.max([pts_dist, np.max(dists), 3.0])
+        db = DBSCAN(eps=step, min_samples=2).fit(res3)
+        if db.labels_[0] != -1:
+            R = res3[db.labels_ == db.labels_[0]]
+        else:
+            R = np.array([res3[0]])
+        
+        return R
