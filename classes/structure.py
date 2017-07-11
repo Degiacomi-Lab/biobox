@@ -48,16 +48,15 @@ class Structure(object):
         '''collection of properties. By default, 'center' (geometric center of the Structure) is defined'''
 
         self.properties['center'] = self.get_center()
-       
+   
+        idx = np.arange(len(self.points))     
         if isinstance(r, list) or type(r).__module__ == 'numpy':
             if len(r) > 0:
-                rad = r*np.ones(len(self.points))
-                idx = np.arange(len(self.points))
-
+                self.data = pd.DataFrame(r, index=idx, columns=["radius"])
+        else:
+                rad = r*np.ones(len(self.points))           
                 self.data = pd.DataFrame(rad, index=idx, columns=["radius"])
                 ''' metadata about each atom (pandas Dataframe)'''
-        else:
-            self.data = pd.DataFrame(index=[], columns=[])
 
     def set_current(self, pos):
         '''
