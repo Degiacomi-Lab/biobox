@@ -1083,7 +1083,7 @@ class Molecule(Structure):
         # separate chains
         for i in xrange(len(intervals) - 1):
             thepos = i % len(self.chain_names)
-            self.data[intervals[i]:intervals[i + 1], 4] = self.chain_names[thepos]
+            self.data.loc[intervals[i]:intervals[i + 1], "chain"] = self.chain_names[thepos]
 
         return len(intervals) - 1
 
