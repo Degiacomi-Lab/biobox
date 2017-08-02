@@ -163,7 +163,7 @@ def saxs(M, crysol_path='', crysol_options="-lm 20 -ns 500", pdbname=""):
     compute SAXS curve using crysol (from ATSAS suite)
 
     :param M: any biobox object
-    :param crysol_path: path to crysol executable. By default, the environment variable ATSASPATH is sought. This allows redirecting to a specific impact root folder.
+    :param crysol_path: path to crysol executable. If not provided, the environment variable ATSASPATH is sought instead. This allows redirecting to a specific ATSAS bin folder.
     :param crysol_options: flags to be passes to impact executable
     :param pdbname: if a file has been already written, crysol can be asked to analyze it
     :returns: SAXS curve (nx2 numpy array)
@@ -193,10 +193,10 @@ def saxs(M, crysol_path='', crysol_options="-lm 20 -ns 500", pdbname=""):
     outfile = os.path.basename(pdbname).split('.')[0]
 
     call_line = os.path.join(crysol_path, "crysol")
-    try:
-        subprocess.check_call('%s %s %s >& /dev/null' %(call_line, crysol_options, pdbname), shell=True)
-    except Exception as e:
-        raise Exception("ERROR: crysol calculation failed!")
+    #try:
+    subprocess.check_call('%s %s %s > /dev/null' %(call_line, crysol_options, pdbname), shell=True)
+    #except Exception as e:
+    #    raise Exception("ERROR: crysol calculation failed!")
 
     data = np.loadtxt("%s00.int" % outfile, skiprows=1)
     try:
