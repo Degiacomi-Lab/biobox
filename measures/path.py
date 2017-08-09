@@ -743,8 +743,8 @@ class Xlink(Path):
                 # extract atom's residue information, in case
                 # verbosity is requested             
                 if verbose:
-                    l1 = self.molecule.data[indices[i], ["resname", "chain", "resid"]].values
-                    l2 = self.molecule.data[indices[j], ["resname", "chain", "resid"]].values
+                    l1 = self.molecule.data.ix[indices[i], ["resname", "chain", "resid"]].values
+                    l2 = self.molecule.data.ix[indices[j], ["resname", "chain", "resid"]].values
 
                 # if sidechain flexibility is needed, launch ensemble of
                 # measures on spheres
