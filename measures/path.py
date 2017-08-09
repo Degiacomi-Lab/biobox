@@ -286,12 +286,12 @@ class Path(object):
             vec = waypoints[i - 1] - waypoints[i]
             distance = np.sqrt(np.dot(vec, vec))
 
-            if distance < 1.0:
+            if distance < 0.01: #was 1A
                 continue
 
             vec /= np.linalg.norm(vec)
             start_here = waypoints[i]
-            for a in np.linspace(distance - 1, 1, int(distance)):
+            for a in np.linspace(distance, 1, 100):#int(distance)):
                 pt = start_here + a * vec
                 wpts.append(pt)
 
@@ -766,11 +766,9 @@ class Xlink(Path):
                         # sort measures order from shortest to longest,
                         # according to euclidean distance
                         idxs = np.array(np.unravel_index(np.argsort(dist_sph, axis=None), dist_sph.shape)).T
-
                         # in case both spheres contain just one point
-                        if dist_sph.shape[0] == 1 and dist_sph.shape[1] == 1:
-                            idxs = idxs[0]
-
+                        #if dist_sph.shape[0] == 1 and dist_sph.shape[1] == 1:
+                        #    idxs = idxs[0]
                         for k in xrange(0, len(idxs), 1):
 
                             # stop if euclidean distance is greater than max
@@ -778,7 +776,7 @@ class Xlink(Path):
                             if dist_sph[idxs[k, 0], idxs[k, 1]] > self.maxdist:
                                 pts_crd = []
                                 break
-
+ 
                             # stop if euclidean distance is greater than best
                             # curved path found up to now
                             if dist_sph[idxs[k, 0], idxs[k, 1]] > bestdist:
