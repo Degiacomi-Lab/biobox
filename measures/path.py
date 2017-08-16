@@ -286,12 +286,12 @@ class Path(object):
             vec = waypoints[i - 1] - waypoints[i]
             distance = np.sqrt(np.dot(vec, vec))
 
-            if distance < 0.01: #was 1A
+            if distance < 1: #was 0.01A
                 continue
 
             vec /= np.linalg.norm(vec)
             start_here = waypoints[i]
-            for a in np.linspace(distance, 1, 100):#int(distance)):
+            for a in np.linspace(distance, 1, int(distance)):
                 pt = start_here + a * vec
                 wpts.append(pt)
 

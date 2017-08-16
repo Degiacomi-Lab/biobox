@@ -790,17 +790,50 @@ class Molecule(Structure):
 
         return ccs
 
-    def get_data(self, indices, columns):
+    def get_data(self, indices=[], columns=[]):
         '''
-        Return information about atom of interest (i.e., slice the data DataFrame)
+        Return information about atoms of interest (i.e., slice the data DataFrame)
 
-        :param indices: list of indices
-        :param columns: list of columns (e.g. ["resname", "resid", "chain"])
-        :returns: slice of molecule's data DataFrame
+        :param indices: list of indices, if not provided all atom data is returned
+        :param columns: list of columns (e.g. ["resname", "resid", "chain"]), if not provided all columns are returned
+        :returns: numpy array containing a slice of molecule's data
         '''
 
-        return self.data.ix[indices, columns].values
-        
+        if len(indices) == 0 and len(columns) == 0:
+            return self.data.values
+
+        elif len(indices) == 0 and len(columns) != 0:
+            return self.data[columns].values
+
+        elif len(indices) != 0 and len(columns) == 0:
+            return self.data.ix[indices].values
+
+        else:
+            return self.data.ix[indices, columns].values   
+
+
+    def set_data(self, value, indices=[], columns=[]):
+        '''
+        Return information about atoms of interest (i.e., slice the data DataFrame)
+
+        :param indices: list of indices, if not provided all atom data is returned
+        :param columns: list of columns (e.g. ["resname", "resid", "chain"]), if not provided all columns are returned
+        :returns: numpy array containing a slice of molecule's data
+        '''
+
+        if len(indices) == 0 and len(columns) == 0:
+            raise Exception("indices, columns or both should be provided")
+
+        elif len(indices) == 0 and len(columns) != 0:
+            self.data[columns] = value
+
+        elif len(indices) != 0 and len(columns) == 0:
+            self.data.loc[indices] = value
+
+        else:
+            self.data.loc[indices, columns] = value
+
+
     def query(self, query_text, get_index=False):
         '''
         Select specific atoms in a multimer un the basis of a text query.
@@ -1039,7 +1072,7 @@ class Molecule(Structure):
         M = Molecule()
         postmp = self.coordinates[:, idxs]
         M.coordinates = postmp[frames]
-        M.data = self.data[idxs]
+        M.data = self.data.ix[idxs]
 
         M.current = 0
         M.points = M.coordinates[M.current]
@@ -1097,6 +1130,7 @@ class Molecule(Structure):
 
         :returns: list aggregated data and coordinates for every point, as string.
         '''
+
         if len(index) == 0:
             index = xrange(0, len(self.points), 1)
 
@@ -1104,18 +1138,18 @@ class Molecule(Structure):
         # coordinates and properties)
         d = []
         for i in index:
-            d.append([self.data["atom"][i],
-                      self.data["index"][i],
-                      self.data["name"][i],
-                      self.data["resname"][i],
-                      self.data["chain"][i],
-                      self.data["resid"][i],
+            d.append([self.data["atom"].values[i],
+                      self.data["index"].values[i],
+                      self.data["name"].values[i],
+                      self.data["resname"].values[i],
+                      self.data["chain"].values[i],
+                      self.data["resid"].values[i],
                       self.points[i, 0],
                       self.points[i, 1],
                       self.points[i, 2],
-                      self.data["beta"][i],
-                      self.data["occupancy"][i],
-                      self.data["atomtype"][i]])
+                      self.data["beta"].values[i],
+                      self.data["occupancy"].values[i],
+                      self.data["atomtype"].values[i]])
 
         return d
 
