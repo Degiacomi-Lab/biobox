@@ -463,13 +463,13 @@ class Molecule(Structure):
         
         a_type = []
         for i in xrange(0, len(self.data), 1):
-            atom = self.data["name"][i]
+            atom = self.data["name"].values[i]
             try:
                 a_type.append(self.knowledge["atomtype"][atom])
             except Exception, ex:
                 a_type.append("")
 
-        self.data["name"] = a_type
+        self.data["atomtype"] = a_type
 
     def get_vdw_density(self, buff=3, step=0.5, kernel_half_width=10):
         '''
@@ -487,8 +487,8 @@ class Molecule(Structure):
         dens = []
         for d in atomdata:
             # select atomtype and point only to those coordinates
-            pts = self.points[[self.properties["data"][:, 8] == d[0]]]
-            # print self.properties['data'][:, 8]
+            pts = self.points[[self.data["atomtype"].values == d[0]]]
+
             # if there are atoms from a certain type
             if len(pts) > 0:
                 # use the standard density calculation with a atom-type
@@ -519,6 +519,8 @@ class Molecule(Structure):
         D.properties['filename'] = ''
         D.properties["sigma"] = np.std(dens)
 
+        return D
+
     def get_electrostatics(self, step=1.0, buff=3, threshold=0.01, vdw_kernel_half_width=5, elect_kernel_half_width=12, chain='*', clear_mass=True):
         '''
         generate electrostatics map from points
@@ -538,7 +540,7 @@ class Molecule(Structure):
 
         try:
             # numpy array of charges [c1, c2, c3, ...]
-            charges = self.data['charge'][idx]
+            charges = self.data['charge'].values[idx]
         except Exception, e:
             raise Exception('ERROR: No charges associated with %s' % self)
 
@@ -572,7 +574,7 @@ class Molecule(Structure):
 
         # initialize 3d kernel_box
         # how many steps are needed to reach kernel half width in angstroms
-        l_kernel = 2 * elect_kernel_half_width / step
+        l_kernel = int(2 * elect_kernel_half_width / step)
         # the kernel is an empty box...
         kernel = np.zeros((l_kernel, l_kernel, l_kernel))
         it = np.nditer(kernel, flags=['multi_index'])
@@ -858,7 +860,7 @@ class Molecule(Structure):
         :param chain: selection of a specific chain name (accepts * as wildcard). Can also be a list or numpy array of strings.
         :param res: residue ID of desired atoms (accepts * as wildcard). Can also be a list or numpy array of of int.
         :param atom: name of desired atom (accepts * as wildcard). Can also be a list or numpy array of strings.
-        :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.properties['data'])
+        :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)
         :param use_resname: if set to True, consider information in "res" variable as resnames, and not resids
         :returns: coordinates of the selected points and, if get_index is set to true, their indices in self.points array.
         '''
@@ -936,7 +938,7 @@ class Molecule(Structure):
         :param chain: chain name (accepts * as wildcard). Can also be a list or numpy array of strings.
         :param res: residue ID (accepts * as wildcard). Can also be a list or numpy array of of int.
         :param atom: atom name (accepts * as wildcard). Can also be a list or numpy array of strings.
-        :param get_index: if set to True, returns the indices of atoms in self.points array (and self.properties['data'])
+        :param get_index: if set to True, returns the indices of atoms in self.points array (and self.data)
         :param use_resname: if set to True, consider information in "res" variable as resnames, and not resids
         :returns: coordinates of the selected points not matching the query, if get_index is set to true, their indices in self.points array.
         '''
@@ -960,7 +962,7 @@ class Molecule(Structure):
         Select atoms having the same residue and chain as a given atom (or list of atoms)
 
         :param index indices: of atoms of choice (integer of list of integers)
-        :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.properties['data'])
+        :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)
         :returns: coordinates of the selected points and, if get_index is set to true, their indices in self.points array.
         '''
 
@@ -988,7 +990,7 @@ class Molecule(Structure):
         Select atoms having the same residue and chain as a given atom (or list of atoms)
 
         :param index: indices of atoms of choice (integer of list of integers)
-        :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.properties['data'])
+        :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)
         :returns: coordinates of the selected points and, if get_index is set to true, their indices in self.points array.
         '''
 
@@ -1272,9 +1274,9 @@ class Molecule(Structure):
 
         try:
             if len(indices) == 0:
-                b = self.data["beta"].astype(float)
+                b = self.data["beta"].values
             else:
-                b = self.data["beta"][indices].astype(float)
+                b = self.data["beta"].values[indices]
 
             return np.sqrt(b * 3 / (8 * np.pi * np.pi))
 
@@ -1294,17 +1296,17 @@ class Molecule(Structure):
         #@todo mass of N and C termini to add for every chain
 
         mass = 0
-        chains = np.unique(self.data["chain"])
+        chains = np.unique(self.data["chain"].values)
         for chainname in chains:
             # for every chain, get a list of all its (unique) resids
             indices = self.atomselect(chainname, "*", "*", True)[1]
-            resids = np.unique(self.data['resid'][indices])
+            resids = np.unique(self.data['resid'].values[indices])
 
             for r in resids:
                 # for every residue in the chain, get the index of its first
                 # atom, and extract its associated resname
                 index = self.atomselect(chainname, int(r), "*", True)[1]
-                resname = self.properties['data'][index[0], 3]
+                resname = self.data['resname'].values[index[0]]
 
                 if resname not in skip_resname:
                     try:
@@ -1329,8 +1331,8 @@ class Molecule(Structure):
 
         mass = 0
         for i in xrange(0, len(self.data), 1):
-            resname = self.data["resname"][i]
-            atomtype = self.data["atomtype"][i]
+            resname = self.data["resname"].values[i]
+            atomtype = self.data["atomtype"].values[i]
 
             if resname not in skip_resname:
                 try:
