@@ -29,7 +29,7 @@ class InstallCommand(build_ext):
                         os.rename(os.path.join(root, filename), filename)
 
         except Exception, ex:
-            print "files already exist, skipping..."
+            print("files already exist, skipping...")
 
         shutil.rmtree("build")
 os.chdir("lib")

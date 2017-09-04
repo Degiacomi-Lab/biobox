@@ -270,7 +270,7 @@ class Structure(object):
 
         # compute moment of inertia tensor
         I0 = np.zeros((3, 3), np.float64)
-        for i in xrange(0, len(self.points), 1):
+        for i in range(0, len(self.points), 1):
             mass = 1  # self.mass[atom] / constants.Na
             I0[0, 0] += mass * (self.points[i, 1] * self.points[i, 1] + self.points[i, 2] * self.points[i, 2])
             I0[1, 1] += mass * (self.points[i, 0] * self.points[i, 0] + self.points[i, 2] * self.points[i, 2])
@@ -358,7 +358,7 @@ class Structure(object):
         fout = open(filename, "w")
 
         for f in frames:
-            for i in xrange(0, len(self.coordinates[0]), 1):
+            for i in range(0, len(self.coordinates[0]), 1):
                 if i > 99999:
                     nb = hex(i).split('x')[1]
                 else:
@@ -477,7 +477,7 @@ class Structure(object):
 
         # cumulate all squared distances with respect of mean
         d = []
-        for i in xrange(0, self.coordinates.shape[0], 1):
+        for i in range(0, self.coordinates.shape[0], 1):
             d.append(np.sum((self.coordinates[i, indices] - means)**2, axis=1))
 
         # compute square root of sum of mean squared distances
@@ -512,7 +512,7 @@ class Structure(object):
         #    return -1
 
         disp = deepcopy(coords)
-        for i in xrange(0, len(disp), 1):
+        for i in range(0, len(disp), 1):
             disp[i] -= np.mean(disp[i])
 
         # compute covariance matrix, eigenvalues and eigenvectors
@@ -528,7 +528,7 @@ class Structure(object):
             # print "   ---------------------------------"
             cumulative = 0
             cnt = 0
-            for i in xrange(0, len(eigenval), 1):
+            for i in range(0, len(eigenval), 1):
                 cumulative += eigenval[i]
                 # print "   %s, %s, %s"%(i+1, eigenval[i],
                 # cumulative/np.sum(eigenval))
@@ -540,7 +540,7 @@ class Structure(object):
             # lines = n-th eigenvector component, columns = simulation frame
             # print "\n>> projecting trajectory on %s eigenvectors..."%cnt
             p = []
-            for i in xrange(0, cnt, 1):
+            for i in range(0, cnt, 1):
                 p.append(np.dot(eigenvec[:, i], coords))
 
             proj = np.array(p)
@@ -582,7 +582,7 @@ class Structure(object):
         m1sum = np.sum(np.sum(m1 * m1, axis=0), axis=0)
 
         RMSD = []
-        for i in xrange(0, len(self.coordinates), 1):
+        for i in range(0, len(self.coordinates), 1):
 
             if i == ref_index:
                 RMSD.append(0.0)
@@ -700,8 +700,8 @@ class Structure(object):
         else:
             rmsd = np.zeros((len(self.coordinates), len(self.coordinates)))
 
-        for i in xrange(0, len(self.coordinates) - 1, 1):
-            for j in xrange(i + 1, len(self.coordinates), 1):
+        for i in range(0, len(self.coordinates) - 1, 1):
+            for j in range(i + 1, len(self.coordinates), 1):
                 r = self.rmsd(i, j, points_index)
 
                 if flat:

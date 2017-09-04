@@ -252,8 +252,8 @@ class Molecule(Structure):
                 alternative_xyz = np.array(alternative).astype(float)
             except Exception, e:
                 alternative_xyz = np.array([alternative[0]]).astype(float)
-                print 'WARNING: found %s models, but their atom count differs' % len(alternative)
-                print 'WARNING: treating only the first model in file %s' % pdb
+                print('WARNING: found %s models, but their atom count differs' % len(alternative))
+                print('WARNING: treating only the first model in file %s' % pdb)
                 #raise Exception('ERROR: models appear not to have the same amount of atoms')
 
             self.add_xyz(alternative_xyz)
@@ -442,8 +442,8 @@ class Molecule(Structure):
                 alternative_xyz = np.array(alternative).astype(float)
             except Exception, ex:
                 alternative_xyz = np.array([alternative[0]]).astype(float)
-                print 'WARNING: found %s models, but their atom count differs' % len(alternative)
-                print 'WARNING: treating only the first model in file %s' % pqr
+                print('WARNING: found %s models, but their atom count differs' % len(alternative))
+                print('WARNING: treating only the first model in file %s' % pqr)
                 #raise Exception('ERROR: models appear not to have the same amount of atoms')
 
             self.add_xyz(alternative_xyz)
@@ -620,7 +620,7 @@ class Molecule(Structure):
 
             it.iternext()
 
-        print 'removed %s points due to van der Waals clashing' % i
+        print('removed %s points due to van der Waals clashing' % i)
 
         # split the density into two maps
         e_pos = deepcopy(e)
@@ -1367,7 +1367,7 @@ class Molecule(Structure):
         Ndata = self.data.ix[Nidx, ["chain", "resid"]].values
         Hdata = self.data.ix[Hidx, ["chain", "resid"]].values
 
-        print Ndata
+        print(Ndata)
 
         a1 = []
         a2 = []

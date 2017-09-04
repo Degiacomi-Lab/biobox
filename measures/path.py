@@ -181,7 +181,7 @@ class Path(object):
                 came_from, cost_so_far = self.lazy_theta_star(
                     idx_start, idx_end)
             else:
-                print "ERROR: search method %s unknown." % method
+                print("ERROR: search method %s unknown." % method)
                 return -1, np.array([])
 
             # get waypoints using path dictionary, end node index and target
@@ -262,7 +262,7 @@ class Path(object):
 
             if test[i + 1] == 1:  # if point is visible
 
-                for j in xrange(len(waypoints) - 2, i + 1, -1):
+                for j in range(len(waypoints) - 2, i + 1, -1):
                     # test from end to second neighbor
                     if test[j + 1] == 1:
                         v = waypoints[i].copy()
@@ -513,7 +513,7 @@ class Path(object):
         # for every flagged angle, try to straighten
         while np.any(angles_test == 1):
 
-            for i in xrange(0, len(angles_test), 1):
+            for i in range(0, len(angles_test), 1):
                 # if an angle is not (almost) straight, try to straighten it
                 if angles_test[i] == 1:
 
@@ -712,7 +712,7 @@ class Xlink(Path):
                     spheres.append(s)
 
                     if verbose:
-                        print "> made sphere with %s points" % len(s)
+                        print("> made sphere with %s points" % len(s))
                         Sph = Structure(p=s)
                         Sph.write_pdb("sphere%s.pdb" % i)
 
@@ -734,8 +734,8 @@ class Xlink(Path):
             paths = []
 
         # iterate over every pair
-        for i in xrange(0, len(indices) - 1, 1):
-            for j in xrange(i, len(indices), 1):
+        for i in range(0, len(indices) - 1, 1):
+            for j in range(i, len(indices), 1):
 
                 if i == j:
                     continue
@@ -769,7 +769,7 @@ class Xlink(Path):
                         # in case both spheres contain just one point
                         #if dist_sph.shape[0] == 1 and dist_sph.shape[1] == 1:
                         #    idxs = idxs[0]
-                        for k in xrange(0, len(idxs), 1):
+                        for k in range(0, len(idxs), 1):
 
                             # stop if euclidean distance is greater than max
                             # distance threshold
@@ -804,13 +804,13 @@ class Xlink(Path):
                     if bestdist < self.graph.step:
                         bestdist = self.graph.step
                         if verbose:
-                            print "> %s%s_%s and %s%s_%s can get in contact!" % (l1[0], l1[2], l1[1], l2[0], l2[2], l2[1])
+                            print("> %s%s_%s and %s%s_%s can get in contact!" % (l1[0], l1[2], l1[1], l2[0], l2[2], l2[1]))
 
                     # if no connection found, indicate failure
                     if bestdist == 1000000:
                         dist = -1
                         if verbose:
-                            print "> %s%s_%s and %s%s_%s cannot be linked!" % (l1[0], l1[2], l1[1], l2[0], l2[2], l2[1])
+                            print("> %s%s_%s and %s%s_%s cannot be linked!" % (l1[0], l1[2], l1[1], l2[0], l2[2], l2[1]))
 
                     else:
                         dist = bestdist
@@ -826,10 +826,10 @@ class Xlink(Path):
                     # if verbosity requested, report on failed measures
                     if verbose:
                         if dist == -1:
-                            print "> %s%s_%s and %s%s_%s are too far!" % (l1[0], l1[2], l1[1], l2[0], l2[2], l2[1])
+                            print("> %s%s_%s and %s%s_%s are too far!" % (l1[0], l1[2], l1[1], l2[0], l2[2], l2[1]))
 
                         if dist == -2:
-                            print "> %s%s_%s vs %s%s_%s : likely buried targets" % (l1[0], l1[2], l1[1], l2[0], l2[2], l2[1])
+                            print("> %s%s_%s vs %s%s_%s : likely buried targets" % (l1[0], l1[2], l1[1], l2[0], l2[2], l2[1]))
 
                     # dist = -1: sites are too far, dist == -2: one of the two
                     # targets is buried
@@ -846,7 +846,7 @@ class Xlink(Path):
 
                 # if verbosity requested, report obtaiend distance
                 if verbose and dist > 0:
-                    print "> %s%s_%s vs %s%s_%s: %5.2fA" % (l1[0], l1[2], l1[1], l2[0], l2[2], l2[1], dist)
+                    print("> %s%s_%s vs %s%s_%s: %5.2fA" % (l1[0], l1[2], l1[1], l2[0], l2[2], l2[1], dist))
 
                 if get_path:
                     path_data = [[i, j]]
@@ -939,7 +939,7 @@ class Xlink(Path):
             # unacceptable positions will be retested in the next smaller sphere
             dist = SD.cdist(Sph.points,self.molecule.points)
             new_to_test = []
-            for k in xrange(0,dist.shape[0],1):
+            for k in range(0,dist.shape[0],1):
                 #keep sphere points at more than threshold from all neighbors
                 if not np.any(dist[k]<thresh) and k in to_test:
                     res.append(Sph.points[k])

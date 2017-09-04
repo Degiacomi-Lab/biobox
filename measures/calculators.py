@@ -85,7 +85,7 @@ def sasa(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
         M = M.make_structure()
 
     if len(targets) == 0:
-        targets = xrange(0, len(M.points), 1)
+        targets = range(0, len(M.points), 1)
 
     # getting radii associated to every atom
     radii = M.data['radius'].values
@@ -97,7 +97,7 @@ def sasa(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
     pts = []
     inc = np.pi * (3 - np.sqrt(5))
     offset = 2 / float(n_sphere_point)
-    for k in range(int(n_sphere_point)):
+    for k in xrange(int(n_sphere_point)):
         y = k * offset - 1 + (offset / 2)
         r = np.sqrt(1 - y * y)
         phi = k * inc
@@ -411,4 +411,4 @@ def random_string(length=32):
     :param length: length of random string
     '''
     return ''.join([random.choice(string.ascii_letters)
-                    for n in xrange(length)])
+                    for n in range(length)])

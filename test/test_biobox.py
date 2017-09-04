@@ -11,7 +11,7 @@ class test_density(unittest.TestCase):
 
     def test_density_points(self):
 
-        print "\n> density: placing points"
+        print("\n> density: placing points")
  
         try:       
             self.D.place_points(5)            
@@ -20,7 +20,7 @@ class test_density(unittest.TestCase):
 
     def test_density_CCS(self):
 
-        print "\n> density: CCS calculation"
+        print("\n> density: CCS calculation")
  
         try:          
             self.D.threshold_vol_ccs(sampling_points=1, append=False, noise_filter=0)
@@ -37,7 +37,7 @@ class test_structures(unittest.TestCase):
 
     def test_xlink(self):
     
-        print "\n> testing shortest path"
+        print("\n> testing shortest path")
     
         try:
             #extract indices of atoms to connect
@@ -58,7 +58,7 @@ class test_structures(unittest.TestCase):
 
     def test_SASA(self):
 
-        print "\n> testing molecule's SASA"
+        print("\n> testing molecule's SASA")
         try:
             [sasa, mesh, surf_idx] = bb.sasa(self.M, n_sphere_point=400)
         except Exception, ex:
@@ -67,7 +67,7 @@ class test_structures(unittest.TestCase):
 
     def test_monomer_CCS(self):
 
-        print "\n> testing CCS"
+        print("\n> testing CCS")
         
         try:
             ccs1 = bb.ccs(self.M)
@@ -80,7 +80,7 @@ class test_structures(unittest.TestCase):
 
     def test_multimer_CCS(self):
 
-        print "\n> testing multimer CCS"        
+        print("\n> testing multimer CCS")
 
         try:
             A = bb.Multimer()
@@ -92,7 +92,7 @@ class test_structures(unittest.TestCase):
 
     def test_multimer_selections(self):
 
-        print "\n> testing multimer atomselect and query"
+        print("\n> testing multimer atomselect and query")
         try:        
             A = bb.Multimer()
             A.load_list([self.M, self.M], ["1", "2"])
@@ -118,7 +118,7 @@ class test_structures(unittest.TestCase):
 
     def test_multimer_rototranslations(self):
         
-        print "\n> testing multimer rototranslations"
+        print("\n> testing multimer rototranslations")
         try:
             P = bb.Multimer()
             P.load(self.M, 6)
@@ -132,7 +132,7 @@ class test_structures(unittest.TestCase):
     #test rototranslations on double disks (prism method)
     def test_monomers_rototranslations(self):
 
-        print "\n> testing monomer rototranslations"
+        print("\n> testing monomer rototranslations")
         try:
             self.M.align_axes()
             self.M.rotate(10, 10, 10)
@@ -145,7 +145,7 @@ class test_structures(unittest.TestCase):
     #test assembly of multiple polyhedral architectures, and RMSD evaluation
     def test_polyRMSD(self):
 
-        print "\n> assemblying Polyhedra"
+        print("\n> assemblying Polyhedra")
         try:    
             #setup desired polyhedron
             P = bb.Multimer()
@@ -172,7 +172,7 @@ class test_structures(unittest.TestCase):
     #create all convex shapes
     def test_shapes(self):
 
-        print "\n> testing convex shapes"
+        print("\n> testing convex shapes")
         try:
             C1 = bb.Prism(10, 20, 5)
             C1.get_surface()
@@ -200,5 +200,3 @@ class test_structures(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
-

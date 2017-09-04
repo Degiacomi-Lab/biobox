@@ -151,7 +151,7 @@ class Polyhedron(Assembly):
             # add structure to existing units as alternative conformation
             # (initially all identical)
             self.current += 1
-            for i in xrange(0, len(self.unit), 1):
+            for i in range(0, len(self.unit), 1):
                 self.unit[i].add_xyz(self.building_block.get_xyz())
                 self.unit[i].set_current(self.current)
 
@@ -160,8 +160,8 @@ class Polyhedron(Assembly):
         if 'ndarray' in str(type(phone)):
             try:
                 if len(phone) != len(fag) or len(phone) != len(pen) or len(phone) != len(np.unique(self.conn_type)):
-                    print "ERROR: inconsistent length in provided angle arrays"
-                    print "> received the following angles: %s, %s, %s" % (phone, fag, pen)
+                    print("ERROR: inconsistent length in provided angle arrays")
+                    print("> received the following angles: %s, %s, %s" % (phone, fag, pen))
                     return -1
             except Exception as e:
                 raise Exception("ERROR: all angle arrays should have length %s" %(len(np.unique(self.conn_type))))
@@ -170,7 +170,7 @@ class Polyhedron(Assembly):
         # radians, not degrees)
         poly_xyz = self._polycalc_core(self.W, self.L, self.H, S, self.nu, self.phi, np.radians(phone), np.radians(fag), np.radians(pen), deformation)
 
-        for x in xrange(0, len(self.unit), 1):
+        for x in range(0, len(self.unit), 1):
             coords = poly_xyz[x, :, :].squeeze()
 
             # if add_conformation:
@@ -217,13 +217,13 @@ class Polyhedron(Assembly):
         S = Structure()
 
         # all alternative coordinates are accumulated in a Structure instance
-        for i in xrange(0, self.unit[0].coordinates.shape[0], 1):
+        for i in range(0, self.unit[0].coordinates.shape[0], 1):
             self.set_current(i)
 
             # if specific coordinates are requested, load only those
             if len(points_indices) > 0:
                 pts = self.unit[0].get_xyz()
-                for i in xrange(1, len(self.unit), 1):
+                for i in range(1, len(self.unit), 1):
                     pts = np.concatenate((pts, self.unit[i].get_xyz()[points_indices[i], :]))
 
             # otherwise, load everything
@@ -276,7 +276,7 @@ class Polyhedron(Assembly):
         fout.write("mol new %s.pdb\n" % output)
         fout.write("mol modstyle 0 top VDW 1.000000 12.000000\n")
 
-        for k in xrange(0, len(self.conn), 1):
+        for k in range(0, len(self.conn), 1):
 
             i = pos[self.conn[k][0]]
             j = pos[self.conn[k][1]]
@@ -298,9 +298,9 @@ class Polyhedron(Assembly):
         # create dictionary with neighbors (key: chain name, values: numpy
         # array of neighboring chains)
         neigh_dict = {}
-        for i in xrange(0, len(self.conn), 1):
+        for i in range(0, len(self.conn), 1):
             neighs = []
-            for j in xrange(0, len(self.conn), 1):
+            for j in range(0, len(self.conn), 1):
                 if i != j:
                     if self.conn[i, 0] in self.conn[j] or self.conn[i, 1] in self.conn[j]:
                         if return_chain_names:
@@ -347,7 +347,7 @@ class Polyhedron(Assembly):
 
                 # prepare connection type information
                 if len(linetosave) == 3 + 3 * vert + 2 * edges:
-                    print "WARNING: database contains no connection type for %s. Supposing all edges have same connection type." % polyname
+                    print("WARNING: database contains no connection type for %s. Supposing all edges have same connection type." % polyname)
                     conn_type = np.zeros(edges)
 
                 elif len(linetosave) == 3 + 3 * vert + 3 * edges:

@@ -65,7 +65,7 @@ class Assembly(object):
         :param struct: object of class Structure (or subclasses)
         '''
         dfs = [self.data]
-        for i in xrange(len(self.unit), len(self.unit) + n, 1):
+        for i in range(len(self.unit), len(self.unit) + n, 1):
             e = deepcopy(struct)
             self.unit.append(e)
             self.unit_labels[str(i)] = i
@@ -89,7 +89,7 @@ class Assembly(object):
         :param n: number if instances of assembly to merge (only one by default)
         '''
         atmp = deepcopy(assembly)
-        for i in xrange(0, n, 1):
+        for i in range(0, n, 1):
             for a in atmp.unit:
                 self.load(a, 1)
 
@@ -132,7 +132,7 @@ class Assembly(object):
 
         self.current += 1
 
-        for i in xrange(0, len(self.unit), 1):
+        for i in range(0, len(self.unit), 1):
             if self.unit[i].coordinates.shape[1] != new_assembly.unit[i].coordinates.shape[1]:
                 raise Exception("ERROR: subunit %s conformation should have %s atoms, but %s found!" %(i, self.unit[i].coordinates.shape[0], new_assembly.unit[i].coordinates.shape[0]))
 
@@ -165,7 +165,7 @@ class Assembly(object):
 
         # append new structures to old ones
         dfs = [self.data]
-        for i in xrange(len(self.unit), len(self.unit) + len(struct_list), 1):
+        for i in range(len(self.unit), len(self.unit) + len(struct_list), 1):
             # create dictionary with neighbors
             e = deepcopy(struct_list[i])
             self.unit.append(e)
@@ -207,7 +207,7 @@ class Assembly(object):
 
         # if no group has been selected, every subunit forms a group by itself
         if len(groups) == 0:
-            for i in xrange(0, len(self.unit), 1):
+            for i in range(0, len(self.unit), 1):
                 groups.append([i])
 
         # keep track of the position of previous member of chain
@@ -215,17 +215,17 @@ class Assembly(object):
 
         # print groups, len(self.unit), len(groups)
 
-        for i in xrange(0, len(groups), 1):
+        for i in range(0, len(groups), 1):
             # get group center, will be used to center it to the origin
             pts = self.unit[groups[i][0]].get_xyz()
-            for j in xrange(1, len(groups[i]), 1):
+            for j in range(1, len(groups[i]), 1):
                 pts = np.concatenate((pts, self.unit[groups[i][j]].get_xyz()))
 
             current_center = np.mean(pts, axis=0)
 
             # center group, rotate it, and send it to designated area (element
             # by element)
-            for j in xrange(0, len(groups[i]), 1):
+            for j in range(0, len(groups[i]), 1):
                 self.unit[groups[i][j]].translate(-current_center[0], -current_center[1], -current_center[2])
                 self.unit[groups[i][j]].rotate(0, 0, angle * (i))
 
@@ -236,7 +236,7 @@ class Assembly(object):
             # compute group center after rototranslation, and store it for next
             # iteration
             pts = self.unit[groups[i][0]].get_xyz()
-            for j in xrange(1, len(groups[i]), 1):
+            for j in range(1, len(groups[i]), 1):
                 pts = np.concatenate((pts, self.unit[groups[i][j]].get_xyz()))
 
             last_center = np.mean(pts, axis=0)
@@ -249,7 +249,7 @@ class Assembly(object):
         :param radius: radial displacement with respect of the origin (along x axis)
         :param displacement: tangential displacement
         '''
-        for i in xrange(0, len(self.unit), 1):
+        for i in range(0, len(self.unit), 1):
 
             # get the extreme point on the x axis and move the atom corresponding to it to the origin
             # add to the translation a displacement along the x axis
@@ -277,7 +277,7 @@ class Assembly(object):
         if np.mod(len(self.unit), 2) != 0:
             raise Exception("cannot build polyhedron, need an even number of units!")
 
-        for i in xrange(0, int(len(self.unit) / 2.0), 1):
+        for i in range(0, int(len(self.unit) / 2.0), 1):
 
             # rotate the second half of subunits upside down
             self.rotate(180.0, 0.0, 0.0, i + int(len(self.unit) / 2.0))
@@ -310,7 +310,7 @@ class Assembly(object):
         if np.mod(len(self.unit), 2) != 0:
             raise Exception("ERROR: cannot build polyhedron, need an even number of units!")
 
-        for i in xrange(0, int(len(self.unit) / 2.0), 1):
+        for i in range(0, int(len(self.unit) / 2.0), 1):
 
             # rotate the second half of subunits upside down
             self.rotate(180.0, 0.0, 0.0, i + int(len(self.unit) / 2.0))
@@ -344,7 +344,7 @@ class Assembly(object):
         if isinstance(unit, list):
             # rotate everything
             if len(unit) == 0:
-                for i in xrange(0, len(self.unit), 1):
+                for i in range(0, len(self.unit), 1):
                     self.unit[i].rotate(x, y, z)
             # rotate desired units
             else:
@@ -372,7 +372,7 @@ class Assembly(object):
         if isinstance(unit, list):
             # translate everything
             if len(unit) == 0:
-                for i in xrange(0, len(self.unit), 1):
+                for i in range(0, len(self.unit), 1):
                     self.unit[i].translate(x, y, z)
             # translate desired units
             else:
@@ -395,7 +395,7 @@ class Assembly(object):
         '''
 
         if unit == -1:
-            for i in xrange(0, len(self.unit), 1):
+            for i in range(0, len(self.unit), 1):
                 self.unit[i].center_to_origin()
         else:
             u = self.unit_labels[str(unit)]
@@ -416,7 +416,7 @@ class Assembly(object):
         :returns: collapsed version of assembly's atoms coordinates.
         '''
         pts = self.unit[0].get_xyz()
-        for i in xrange(1, len(self.unit), 1):
+        for i in range(1, len(self.unit), 1):
             pts = np.concatenate((pts, self.unit[i].get_xyz()))
 
         return pts
@@ -428,7 +428,7 @@ class Assembly(object):
         :returns: list of units coordinates.
         '''
         pts = []
-        for i in xrange(0, len(self.unit), 1):
+        for i in range(0, len(self.unit), 1):
             pts.append(self.unit[i].get_xyz())
 
         return np.array(pts)
@@ -464,7 +464,7 @@ class Assembly(object):
         
         # sum asa of individual components
         asa = 0
-        for i in xrange(0, len(self.unit), 1):
+        for i in range(0, len(self.unit), 1):
             asa += sasa(self.unit[i])[0]
 
         # subtract assembly asa
@@ -480,9 +480,9 @@ class Assembly(object):
 
         fout = open(filename, "w")
 
-        for i in xrange(0, len(self.unit), 1):
+        for i in range(0, len(self.unit), 1):
 
-            for j in xrange(0, len(self.unit[i].points), 1):
+            for j in range(0, len(self.unit[i].points), 1):
                 l = (i + len(self.unit) * j, "SPH", "SPH", self.chain_names[i],
                      i, self.unit[i].points[j, 0], self.unit[i].points[j, 1],
                      self.unit[i].points[j, 2], self.unit[i].data["radius"][j], 1.0, "C")

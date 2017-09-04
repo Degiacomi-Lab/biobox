@@ -98,16 +98,16 @@ class Density(Structure):
         # if any error went undetected during loading (missing information),
         # data structures may be inconsistent. Call cleaning procedure!
         if len(self.properties['density']) == 0:
-            print "density map could not be correctly loaded!"
+            print("density map could not be correctly loaded!")
             self._reset_info(self)
         elif len(self.properties['size']) == 0:
-            print "density map information missing!"
+            print("density map information missing!")
             self._reset_info(self)
         elif len(self.properties['origin']) == 0:
-            print "map origin information missing!"
+            print("map origin information missing!")
             self._reset_info(self)
         elif len(self.properties['delta']) == 0:
-            print "voxel size information missing!"
+            print("voxel size information missing!")
             self._reset_info(self)
 
         # if all required information is present, place points instead of
@@ -160,9 +160,9 @@ class Density(Structure):
                                      self.properties['size'][1] * 2,
                                      self.properties['size'][2] * 2))
 
-        for x in xrange(1, self.properties['size'][0] - 1, 1):
-            for y in xrange(1, self.properties['size'][1] - 1, 1):
-                for z in xrange(1, self.properties['size'][2] - 1, 1):
+        for x in range(1, self.properties['size'][0] - 1, 1):
+            for y in range(1, self.properties['size'][1] - 1, 1):
+                for z in range(1, self.properties['size'][2] - 1, 1):
                     if self.properties['density'][x, y, z] > thresh:
                         oversampled_data[x * 2, y * 2, z * 2] = self.properties['density'][x, y, z]
                         oversampled_data[x * 2 + 1, y * 2, z * 2] = self.properties['density'][x, y, z]
@@ -302,7 +302,7 @@ class Density(Structure):
             except Exception, e:
                 vol = 0.0
 
-            print "threshold=%s, error=%s" % (thresh, vol * density - mass)
+            print("threshold=%s, error=%s" % (thresh, vol * density - mass))
             result.append([thresh, vol * density - mass])
 
         r = np.array(result)
@@ -385,14 +385,14 @@ class Density(Structure):
         for thresh in np.linspace(low, high, num=sampling_points):
             try:
                 self.place_points(thresh, noise_filter=noise_filter)
-                print "placed!"
+                print("placed!")
                 vol = self.get_volume()
                 ccs = bb.ccs(self, scale=False)
             except Exception, ex:
                 vol = 0
                 ccs = 0
 
-            print "thresh: %s, vol=%s, ccs=%s (%s points)" % (thresh, vol, ccs, len(self.points))
+            print("thresh: %s, vol=%s, ccs=%s (%s points)" % (thresh, vol, ccs, len(self.points)))
             result.append([thresh, vol, ccs])
 
         r = np.array(result)
@@ -518,9 +518,9 @@ class Density(Structure):
         fout.write("object 3 class array type double rank 0 items %i data follows\n"%(dens.shape[0] * dens.shape[1] * dens.shape[2]))
 
         cnt = 0
-        for xpos in xrange(0, dens.shape[0], 1):
-            for ypos in xrange(0, dens.shape[1], 1):
-                for zpos in xrange(0, dens.shape[2], 1):
+        for xpos in range(0, dens.shape[0], 1):
+            for ypos in range(0, dens.shape[1], 1):
+                for zpos in range(0, dens.shape[2], 1):
                     fout.write("%s " % dens[xpos, ypos, zpos])
                     cnt += 1
                     if cnt % 3 == 0:
@@ -548,11 +548,11 @@ class Density(Structure):
         identifier = 'ATOM'  # atom to be used to mimick density
         symbol = 'H'  # element for atom
 
-        print 'exporting density greater than %s to pdb' % threshold
+        print('exporting density greater than %s to pdb' % threshold)
 
-        for xpos in xrange(0, dens.shape[0], 1):
-            for ypos in xrange(0, dens.shape[1], 1):
-                for zpos in xrange(0, dens.shape[2], 1):
+        for xpos in range(0, dens.shape[0], 1):
+            for ypos in range(0, dens.shape[1], 1):
+                for zpos in range(0, dens.shape[2], 1):
                     if dens[xpos, ypos, zpos] > threshold:
                         x_coord = float(xpos / step) + origin[0]
                         y_coord = float(ypos / step) + origin[1]
@@ -648,13 +648,13 @@ if __name__ == "__main__":
 
     import biobox as bb
     
-    print "loading density..."
+    print("loading density...")
     D = bb.Density()
     D.import_map("..\\test\\EMD-1080.mrc", "mrc")
     
-    print "placing points..."
+    print("placing points...")
     D.place_points(6, noise_filter=0)
     
     
-    print "one point of CCS calculation..."
+    print("one point of CCS calculation...")
     D.threshold_vol_ccs(sampling_points=1, append=False, noise_filter=0)
