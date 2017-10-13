@@ -652,9 +652,10 @@ class Molecule(Structure):
         replicate molecule according to list of transformation matrices
         '''
 
-        M2 = Molecule()
         xyzall = []
-        data = []
+        #data = []
+        # create new data entry (renumber indices, reassign chain name)
+        data = np.empty([0, 9])
 
         # replicate original coordinates applying transformations
         cnt = 0
@@ -664,17 +665,22 @@ class Molecule(Structure):
             xyzall.extend(xyz2)  # merge
 
             #assign a specific name to the new chain
-            newdata = deepcopy(self.data)
-            newdata["chain"] = self.chain_names[cnt]
+            #newdata = deepcopy(self.data)
+            #newdata["chain"] = self.chain_names[cnt]
 
-            if cnt == 0:
-                data = [newdata]
-            else:
-                data.append(newdata)
+            #if cnt == 0:
+            #    data = [newdata]
+            #else:
+            #    data.append(newdata)
+
+            data_tmp = self.data[[
+                "atom", "index", "name", "resname", "chain",
+                "resid", "beta", "occupancy", "atomtype"]].values
+
+            data_tmp[:, 4] = self.chain_names[cnt]
+            data = np.concatenate((data, data_tmp))
 
             cnt += 1
-
-        M2.coordinates = np.array([xyzall])
 
         # temporary vectorized hexadecimal maker, in case there are more than
         # 9999 atoms
@@ -683,9 +689,14 @@ class Molecule(Structure):
 
         vhex = np.vectorize(dohex)
 
-        newdata = np.array(data)
-        indices = np.linspace(1, len(newdata), len(newdata)).astype(int)
-        self.data["index"] = vhex(indices)
+        indices = np.linspace(1, len(data), len(data)).astype(int)
+        idx = vhex(indices)
+        cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
+
+        M2 = Molecule()
+        M2.coordinates = np.array([xyzall])
+        M2.data = pd.DataFrame(data, index=idx, columns=cols)
+        M2.properties['center'] = M2.get_center()
 
         return M2
 
