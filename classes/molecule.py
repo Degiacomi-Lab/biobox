@@ -741,7 +741,7 @@ class Molecule(Structure):
         # print "\n> loading %s..."%filename
         fin = open(filename, "r")
 
-        line = fin.readline()
+	line = fin.readline()
 
         d_data = []
         b = []
@@ -751,13 +751,14 @@ class Molecule(Structure):
             atoms = int(fin.readline())
             d_data = []
             while cnt < atoms:
-                w = fin.readline().split()
-                resnumber = w[0][0:-3]
-                resname = w[0][-3:len(w[0])]
+                w = fin.readline()
+		# Read array as defined by .gro style characters (res int, res, atomtype, int, x_coord, y_coord, z_coord) 
+		w = [w[0:5].strip(), w[5:10].strip(), w[10:15].strip(), w[15:20].strip(), w[20:28].strip(), w[28:36].strip(), w[36:44].strip()]
+		resname = w[1]; resnumber=w[0]
 
                 # read data useful for indexing (guess what is missing)
-                d_data.append(["ATOM", w[2], w[1], resname, "A", resnumber, "0.0", "0.0", ""])
-                d.append([w[3], w[4], w[5]])
+                d_data.append(["ATOM", w[3], w[2], resname, "A", resnumber, "0.0", "0.0", ""])
+                d.append([w[4], w[5], w[6]])
                 cnt += 1
 
             # add one conformation (in Angstrom) and store its box size in
@@ -1236,8 +1237,6 @@ class Molecule(Structure):
 
         f_out = open(outname, "w")
         for f in frames:
-            f_out.write("%s\n" % outname.split(".")[0])
-            f_out.write("%s\n" % len(self.points))
             # get all informations from PDB (for current conformation) in a
             # list
             self.set_current(f)
@@ -1245,9 +1244,11 @@ class Molecule(Structure):
             # ATOM/HETATM, index, atom name, resname, chain name, residue ID, x,
             # y, z, beta factor, occupancy, atomtype
             d = self.get_pdb_data(index)
+            f_out.write("%s\n" % outname.split(".")[0])
+            f_out.write("%s\n" % len(d))
             for i in xrange(0, len(d), 1):
                 # create and write .gro line
-                L = '%5d%-5s%5s%5d%8.3f%8.3f%8.3f\n' % (d[i][5], d[i][3], d[i][2], int(d[i][1]), float(d[i][6]) / 10.0, float(d[i][7]) / 10.0, float(d[i][8]) / 10.0)
+                L = '%5d%-5s%5s%5d%8.3f%8.3f%8.3f\n' % (int(d[i][5]), d[i][3], d[i][2], int(d[i][1]), float(d[i][6]) / 10.0, float(d[i][7]) / 10.0, float(d[i][8]) / 10.0)
                 f_out.write(L)
 
             if "box" in self.properties:
@@ -1256,7 +1257,12 @@ class Molecule(Structure):
                 minpos = np.min(self.points, axis=0) / 10.0
                 b = np.max(self.points, axis=0) - minpos / 10.0
 
-            f_out.write("%10.5f%10.5f%10.5f\n" % (b[0], b[1], b[2]))
+            formatting = ""
+            for item in b:
+                formatting+="%10.5f"
+            formatting+="\n"
+
+            f_out.write(formatting%tuple(b))
 
         f_out.close()
         self.set_current(currentbkp)
