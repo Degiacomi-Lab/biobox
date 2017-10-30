@@ -259,12 +259,12 @@ class Polyhedron(Assembly):
             if len(self.deform) == 0:
                 raise Exception("ERROR: %s deformation coefficients provided, but no deformation axis found!" % len(deformation))
 
-        elif len(deformation) == len(self.deform[:, 1]):
-            for d in self.deform:
-                pos[int(d[0])] += deformation[int(d[1])] * d[2:5]
+            elif len(deformation) == len(self.deform[:, 1]):
+                for d in self.deform:
+                    pos[int(d[0])] += deformation[int(d[1])] * d[2:5]
 
-        else:
-            raise Exception("ERROR: %s deformation coefficients expected, but %s found" % (len(deformation), np.unique(self.deform[:, 1])))
+            else:
+                raise Exception("ERROR: %s deformation coefficients expected, but %s found" % (len(deformation), np.unique(self.deform[:, 1])))
 
         # output vertices coordinates
         S = Structure(pos)
