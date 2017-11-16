@@ -157,8 +157,6 @@ class Multimer(Polyhedron):
         if not skipcharge:
             M.data['charge'] = c
 
-
-
         return M
 
     #def rmsd(self, ref_index, u="*", chain="*", resid="*", atom="*", align=False):
@@ -202,6 +200,8 @@ class Multimer(Polyhedron):
         :param outname: name of PDB file to generate
         '''
 
+        formatting = '%-6s%5i  %-4s%-4s%1s%4i    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n'
+
         f_out = open(outname, "w")
 
         for f in xrange(len(self.unit[0].coordinates)):
@@ -211,19 +211,19 @@ class Multimer(Polyhedron):
             for j in xrange(0, len(self.unit), 1):
                 self.unit[j].set_current(f)
 
-        for j in xrange(0, len(self.unit), 1):
-            # get data about points and their properties from the desired
-            # protein structure
-            d = self.unit[j].get_pdb_data()
+            for j in xrange(0, len(self.unit), 1):
+                # get data about points and their properties from the desired
+                # protein structure
+                d = self.unit[j].get_pdb_data()
 
-            for i in xrange(0, len(self.unit[j].points), 1):
-                # create and write PDB lin
-                L = '%-6s%5i  %-4s%-4s%1s%4i    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], cnt, d[i][2], d[i][3], self.chain_names[j], int(d[i][5]), float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
-                #L='%-6s%5i  %-4s%-4s%1s%4i    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n'%(d[i][0], cnt, d[i][2], d[i][3], self.chain_names[j], d[i][5], d[i][6], d[i][7], d[i][8], d[i][9], d[i][10], d[i][11])
-                f_out.write(L)
-                cnt += 1
+                for i in xrange(0, len(self.unit[j].points), 1):
+                    # create and write PDB line
+                    L = formatting % (d[i][0], cnt, d[i][2], d[i][3], self.chain_names[j], int(d[i][5]), float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
+                    
+                    f_out.write(L)
+                    cnt += 1
 
-            f_out.write("TER\n")
+                f_out.write("TER\n")
 
-        f_out.write("END\n")
+            f_out.write("END\n")
         f_out.close()

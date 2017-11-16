@@ -34,13 +34,11 @@ class Prism(Structure):
 
         super(Prism, self).__init__(r=radius)
 
-        self.properties['r'] = r - radius
-        self.properties['h'] = h - radius * 2
-        self.properties['n'] = n
-        self.properties['skew'] = skew
+        new_r = r - radius
+        new_h = h - radius * 2
 
         ulist = np.arange(0, 2 * np.pi, pts_density_u)
-        hlist = np.arange(0, self.properties['h'] + pts_density_h, pts_density_h)
+        hlist = np.arange(0, new_h + pts_density_h, pts_density_h)
 
         # parametric function for prism surface (side)
         p = []
@@ -50,14 +48,20 @@ class Prism(Structure):
                 p.append([radial * np.cos(u), radial * np.sin(u) + skew * v / hlist.max(), v])
 
         # parametric function for prism bottom and top
-        rlist = np.arange(0, self.properties['r'], pts_density_u)
+        rlist = np.arange(0, new_r, pts_density_u)
         for u in ulist:
             for r1 in rlist:
                 radial = np.cos(np.pi / n) / np.cos(u - np.pi / n * (2 * np.floor(n * u / (2 * np.pi)) + 1)) * r1
                 p.append([radial * np.cos(u), radial * np.sin(u), hlist.min()])
                 p.append([radial * np.cos(u), radial * np.sin(u) + skew, hlist.max()])
 
-        self.add_xyz(np.array(p))
+        super(Prism, self).__init__(p=np.array(p), r=radius)
+
+        self.properties['r'] = r - radius
+        self.properties['h'] = h - radius * 2
+        self.properties['n'] = n
+        self.properties['skew'] = skew
+
         self.center_to_origin()
 
     def get_surface(self):
@@ -109,20 +113,19 @@ class Cylinder(Structure):
 
         super(Cylinder, self).__init__(r=radius)
 
-        self.properties['r1'] = r - radius
-        self.properties['r2'] = (r - radius) * squeeze
-        self.properties['h'] = h - radius * 2
-        self.properties['skew'] = skew
+        r1 = r - radius
+        r2 = (r - radius) * squeeze
+        new_h = h - radius * 2
 
         p = []
         ulist = np.arange(0, 2 * np.pi, pts_density_u)
-        hlist = np.arange(0.0, self.properties['h'] + pts_density_h, pts_density_h)
+        hlist = np.arange(0.0, new_h + pts_density_h, pts_density_h)
 
         # parametric function for cylinder surface (side)
         for u in ulist:
             for v in hlist:
-                p.append([self.properties['r1'] * np.cos(u),
-                          self.properties['r2'] * np.sin(u) + skew * v / hlist.max(),
+                p.append([r1 * np.cos(u),
+                          r2 * np.sin(u) + skew * v / hlist.max(),
                           v])
 
         # parametric function for elliptical surface (bottom and top)
@@ -130,14 +133,21 @@ class Cylinder(Structure):
         vlist = np.arange(-np.pi, np.pi, pts_density_u)
         for u in ulist:
             for v in vlist:
-                p.append([self.properties['r1'] * np.cos(u) * np.cos(v),
-                          self.properties['r2'] * np.cos(u) * np.sin(v),
+                p.append([r1 * np.cos(u) * np.cos(v),
+                          r2 * np.cos(u) * np.sin(v),
                           hlist.min()])
-                p.append([self.properties['r1'] * np.cos(u) * np.cos(v),
-                          self.properties['r2'] * np.cos(u) * np.sin(v) + skew,
+                p.append([r1 * np.cos(u) * np.cos(v),
+                          r2 * np.cos(u) * np.sin(v) + skew,
                           hlist.max()])
 
-        self.add_xyz(np.array(p))
+
+        super(Cylinder, self).__init__(p=np.array(p), r=radius)
+
+        self.properties['r1'] = r1
+        self.properties['r2'] = r2
+        self.properties['h'] = new_h
+        self.properties['skew'] = skew
+
         self.center_to_origin()
 
     def get_surface(self):
@@ -196,30 +206,32 @@ class Cone(Structure):
 
         # @todo allow to squeeze the base
 
-        super(Cone, self).__init__(r=radius)
-
-        self.properties['r'] = r - radius
-        self.properties['h'] = h - radius * 2
-        self.properties['skew'] = skew
+        new_r = r - radius
+        new_h = h - radius * 2
 
         p = []
         ulist = np.arange(0, 2 * np.pi, pts_density_r)
-        hlist = np.arange(0, self.properties['h'] + pts_density_h, pts_density_h)
+        hlist = np.arange(0, new_h + pts_density_h, pts_density_h)
 
         # parametric function for ellipsoid surface (side)
         for u in ulist:
             for v in hlist:
-                p.append([(self.properties['h'] - v) / self.properties['h'] * self.properties['r'] *  np.cos(u),
-                          (self.properties['h'] - v) / self.properties['h'] * self.properties['r'] *  np.sin(u) + skew * v / hlist.max(),
+                p.append([(new_h - v) / new_h * new_r *  np.cos(u),
+                          (new_h - v) / new_h * new_r *  np.sin(u) + skew * v / hlist.max(),
                           v])
 
         # parametric function for ellipsoid surface (bottom and top)
-        rlist = np.arange(0, self.properties['r'], pts_density_h)
+        rlist = np.arange(0, new_r, pts_density_h)
         for u in ulist:
             for r in rlist:
                 p.append([r * np.cos(u), r * np.sin(u), hlist.min()])
 
-        self.add_xyz(np.array(p))
+        super(Cone, self).__init__(p=np.array(p), r=radius)
+
+        self.properties['r'] = new_r
+        self.properties['h'] = new_h
+        self.properties['skew'] = skew
+
         self.center_to_origin()
 
     def get_surface(self):
@@ -262,13 +274,6 @@ class Sphere(Structure):
         :param radius: size of the individual points composing it
         :param n_sphere_point: This parameter defines the amount of points in the sphere
         '''
-        super(Sphere, self).__init__(r=radius)
-
-        self.properties['a'] = 1.0  # squeezing coeff on x axis
-        self.properties['b'] = 1.0  # squeezing coeff on y axis
-        self.properties['c'] = 1.0  # squeezing coeff on z axis
-
-        self.properties['r'] = r - radius
 
         pts = []
         inc = np.pi * (3 - np.sqrt(5))
@@ -279,8 +284,16 @@ class Sphere(Structure):
             phi = k * inc
             pts.append([np.cos(phi) * r, y, np.sin(phi) * r])
 
-        self.add_xyz(np.array(pts) * self.properties['r'])
+        rad  = r - radius
 
+        super(Sphere, self).__init__(p=np.array(pts) * rad, r=np.ones(n_sphere_point)*radius)
+
+        self.properties['a'] = 1.0  # squeezing coeff on x axis
+        self.properties['b'] = 1.0  # squeezing coeff on y axis
+        self.properties['c'] = 1.0  # squeezing coeff on z axis
+        self.properties['r'] = rad
+
+       
     def _old_get_surface(self):
         '''
         compute sphere surface.
@@ -383,11 +396,9 @@ class Ellipsoid(Structure):
         :param pts_density_v: This parameter defines the density of points along the v angle (using parametric function for ellipsoid)
         '''
 
-        super(Ellipsoid, self).__init__(r=radius)
-
-        self.properties['a'] = a - radius
-        self.properties['b'] = b - radius
-        self.properties['c'] = c - radius
+        new_a = a - radius
+        new_b = b - radius
+        new_c = c - radius
 
         p = []
         ulist = np.arange(-np.pi / 2, np.pi / 2, pts_density_u)
@@ -396,11 +407,16 @@ class Ellipsoid(Structure):
         # parametric function for ellipsoid surface
         for u in ulist:
             for v in vlist:
-                p.append([self.properties['a'] * np.cos(u) * np.cos(v),
-                          self.properties['b'] * np.cos(u) * np.sin(v),
-                          self.properties['c'] * np.sin(u)])
+                p.append([new_a * np.cos(u) * np.cos(v),
+                          new_b * np.cos(u) * np.sin(v),
+                          new_c * np.sin(u)])
 
-        self.add_xyz(np.array(p))
+
+        super(Ellipsoid, self).__init__(p=np.array(p), r=radius)
+        self.properties['a'] = new_a
+        self.properties['b'] = new_b
+        self.properties['c'] = new_c
+
         self.center_to_origin()
 
     def check_inclusion(self, p):

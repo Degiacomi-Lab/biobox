@@ -367,7 +367,7 @@ class Structure(object):
                      self.coordinates[f, i, 0],
                      self.coordinates[f, i, 1],
                      self.coordinates[f, i, 2],
-                     self.data['radius'][i],
+                     self.data['radius'].values[i],
                      1.0, "Z")
                 L = 'ATOM  %5s  %-4s%-4s%1s%4i    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % l
                 fout.write(L)
