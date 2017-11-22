@@ -218,7 +218,7 @@ class Path(object):
             try:
                 pred = came_from[pts_idx[-1]]
 
-            except Exception, ex:
+            except Exception as ex:
                 return -1, np.array([])
 
             if pred == idx_start:
@@ -705,7 +705,7 @@ class Xlink(Path):
                 #s = self._get_sphere(i)
                     s = self._get_half_sphere(i, pts_surf=sphere_pts_surf)
 
-                except Exception, ex:
+                except Exception as ex:
                     raise Exception(str(ex))
 
                 if len(s) > 0:
@@ -724,7 +724,7 @@ class Xlink(Path):
         for i in indices:
             try:
                 pts.append(self.molecule.points[i])
-            except Exception, ex:
+            except Exception as ex:
                 raise Exception("could not find index %s in molecule!" % i)
 
         # allocate distance matrix

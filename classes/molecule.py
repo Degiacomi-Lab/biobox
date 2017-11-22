@@ -93,7 +93,7 @@ class Molecule(Structure):
 
         try:
             f_in = open(pdb, "r")
-        except Exception, ex:
+        except Exception as ex:
             raise Exception('ERROR: file %s not found!' % pdb)
 
         # store filename
@@ -113,14 +113,14 @@ class Molecule(Structure):
             if "REMARK 350   BIOMT" in line:
                 try:
                     biomt.append(line.split()[4:8])
-                except Exception, ex:
+                except Exception as ex:
                     raise Exception("ERROR: biomatrix format seems corrupted")
 
             # load symmetry matrix, if any is present
             if "REMARK 290   SMTRY" in line:
                 try:
                     symm.append(line.split()[4:8])
-                except Exception, ex:
+                except Exception as ex:
                     raise Exception("ERROR: symmetry matrix format seems corrupted")
 
             # if a complete model was parsed store all the saved data into
@@ -139,13 +139,13 @@ class Molecule(Structure):
                         idx = np.arange(len(data))
                         self.data = pd.DataFrame(data, index=idx, columns=cols)
 
-                    except Exception, ex:
+                    except Exception as ex:
                         raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' %pdb)
 
                     # saving vdw radii
                     try:
                         self.data['radius'] = np.array(r)
-                    except Exception, ex:
+                    except Exception as ex:
                         raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' %pdb)
 
                     # save default charge state
@@ -156,7 +156,7 @@ class Molecule(Structure):
                     if len(p) > 0:
                         alternative.append(np.array(p))
                     p = []
-                except Exception, ex:
+                except Exception as ex:
                     raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' % pdb)
 
             if record == 'ATOM' or (include_hetatm and record == 'HETATM'):
@@ -179,26 +179,26 @@ class Molecule(Structure):
                     # extract occupancy
                     try:
                         w.append(float(line[54:60]))
-                    except Exception, ex:
+                    except Exception as ex:
                         w.append(1.0)
 
                     # extract beta factor
                     try:
                         # w.append("{0.2f}".format(float(line[60:66])))
                         w.append(float(line[60:66]))
-                    except Exception, ex:
+                    except Exception as ex:
                         w.append(0.0)
 
                     # extract atomtype
                     try:
                         w.append(line[76:78].strip())
-                    except Exception, ex:
+                    except Exception as ex:
                         w.append("")
 
                     # use atomtype to extract vdw radius
                     try:
                         r.append(self.know('atom_vdw')[line[76:78].strip()])
-                    except Exception, ex:
+                    except Exception as ex:
                         r.append(self.know('atom_vdw')['.'])
 
                     # assign default charge state of 0
@@ -226,12 +226,12 @@ class Molecule(Structure):
                     idx = np.arange(len(data))
                     self.data = pd.DataFrame(data, index=idx, columns=cols)
 
-                except Exception, ex:
+                except Exception as ex:
                     raise Exception('ERROR: something went wrong when saving data in %s!\nERROR: are all the columns separated?' %pdb)
 
                 try:
                     self.data['radius'] = np.array(r)
-                except Exception, ex:
+                except Exception as ex:
                     raise Exception('ERROR: something went wrong when saving van der Waals radii in %s!\nERROR: are all the columns separated?' % pdb)
 
                 # save default charge state
@@ -242,7 +242,7 @@ class Molecule(Structure):
                 if len(p) > 0:
                     alternative.append(np.array(p))
                 p = []
-            except Exception, ex:
+            except Exception as ex:
                 raise Exception('ERROR: something went wrong when saving coordinates in %s!\nERROR: are all the columns separated?' %pdb)
 
         # transform the alternative temporary list into a nice multiple
@@ -250,7 +250,7 @@ class Molecule(Structure):
         if len(alternative) > 0:
             try:
                 alternative_xyz = np.array(alternative).astype(float)
-            except Exception, e:
+            except Exception as e:
                 alternative_xyz = np.array([alternative[0]]).astype(float)
                 print('WARNING: found %s models, but their atom count differs' % len(alternative))
                 print('WARNING: treating only the first model in file %s' % pdb)
@@ -303,7 +303,7 @@ class Molecule(Structure):
 
         try:
             f_in = open(pqr, "r")
-        except Exception, ex:
+        except Exception as ex:
             raise Exception('ERROR: file %s not found!' % pqr)
 
         # store filename
@@ -330,19 +330,19 @@ class Molecule(Structure):
                         idx = np.arange(len(data))
                         self.data = pd.DataFrame(data, index=idx, columns=cols)
 
-                    except Exception, ex:
+                    except Exception as ex:
                         raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' %pqr)
 
                     # saving vdw radii
                     try:
                         self.data['radius'] = np.array(r)
-                    except Exception, ex:
+                    except Exception as ex:
                         raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' %pqr)
 
                     # saving electrostatics
                     try:
                         self.data['charge'] = np.array(e)
-                    except Exception, ex:
+                    except Exception as ex:
                         raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' % pqr)
 
                 # save 3D coordinates of every atom and restart the accumulator
@@ -350,7 +350,7 @@ class Molecule(Structure):
                     if len(p) > 0:
                         alternative.append(np.array(p))
                     p = []
-                except Exception, ex:
+                except Exception as ex:
                     raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' %pqr)
 
             if record == 'ATOM' or (include_hetatm and record == 'HETATM'):
@@ -366,13 +366,13 @@ class Molecule(Structure):
                     try:
                         # 54 is separator, 55 is plus/minus
                         e.append(float(line[54:62]))
-                    except Exception, ex:
+                    except Exception as ex:
                         e.append(0.0)
 
                     # extract vdW radius
                     try:
                         r.append(float(line[62:69]))
-                    except Exception, ex:
+                    except Exception as ex:
                         r.append(self.know('atom_vdw')['.'])
 
                     # initialize list
@@ -419,12 +419,12 @@ class Molecule(Structure):
                     idx = np.arange(len(data))
                     self.data = pd.DataFrame(data, index=idx, columns=cols)
 
-                except Exception, ex:
+                except Exception as ex:
                     raise Exception('ERROR: something went wrong when saving data in %s!\nERROR: are all the columns separated?' % pqr)
 
                 try:
                     self.data['radius'] = np.array(r)
-                except Exception, ex:
+                except Exception as ex:
                     raise Exception('ERROR: something went wrong when saving van der Waals radii in %s!\nERROR: are all the columns separated?' %pqr)
 
             # save 3D coordinates of every atom and restart the accumulator
@@ -432,7 +432,7 @@ class Molecule(Structure):
                 if len(p) > 0:
                     alternative.append(np.array(p))
                 p = []
-            except Exception, ex:
+            except Exception as ex:
                 raise Exception('ERROR: something went wrong when saving coordinates in %s!\nERROR: are all the columns separated?' %pqr)
 
         # transform the alternative temporary list into a nice multiple
@@ -440,7 +440,7 @@ class Molecule(Structure):
         if len(alternative) > 0:
             try:
                 alternative_xyz = np.array(alternative).astype(float)
-            except Exception, ex:
+            except Exception as ex:
                 alternative_xyz = np.array([alternative[0]]).astype(float)
                 print('WARNING: found %s models, but their atom count differs' % len(alternative))
                 print('WARNING: treating only the first model in file %s' % pqr)
@@ -466,7 +466,7 @@ class Molecule(Structure):
             atom = self.data["name"].values[i]
             try:
                 a_type.append(self.knowledge["atomtype"][atom])
-            except Exception, ex:
+            except Exception as ex:
                 a_type.append("")
 
         self.data["atomtype"] = a_type
@@ -541,7 +541,7 @@ class Molecule(Structure):
         try:
             # numpy array of charges [c1, c2, c3, ...]
             charges = self.data['charge'].values[idx]
-        except Exception, e:
+        except Exception as e:
             raise Exception('ERROR: No charges associated with %s' % self)
 
         charges = np.reshape(charges, (len(charges), 1))
@@ -741,7 +741,7 @@ class Molecule(Structure):
         # print "\n> loading %s..."%filename
         fin = open(filename, "r")
 
-	line = fin.readline()
+        line = fin.readline()
 
         d_data = []
         b = []
@@ -752,9 +752,9 @@ class Molecule(Structure):
             d_data = []
             while cnt < atoms:
                 w = fin.readline()
-		# Read array as defined by .gro style characters (res int, res, atomtype, int, x_coord, y_coord, z_coord) 
-		w = [w[0:5].strip(), w[5:10].strip(), w[10:15].strip(), w[15:20].strip(), w[20:28].strip(), w[28:36].strip(), w[36:44].strip()]
-		resname = w[1]; resnumber=w[0]
+                # Read array as defined by .gro style characters (res int, res, atomtype, int, x_coord, y_coord, z_coord) 
+                w = [w[0:5].strip(), w[5:10].strip(), w[10:15].strip(), w[15:20].strip(), w[20:28].strip(), w[28:36].strip(), w[36:44].strip()]
+                resname = w[1]; resnumber=w[0]
 
                 # read data useful for indexing (guess what is missing)
                 d_data.append(["ATOM", w[3], w[2], resname, "A", resnumber, "0.0", "0.0", ""])
@@ -1009,7 +1009,7 @@ class Molecule(Structure):
         try:
             test = len(index)  # this should fail if index is a number
             idlist = index
-        except Exception, e:
+        except Exception as e:
             idlist = [index]
 
         D = self.data.values
@@ -1282,7 +1282,7 @@ class Molecule(Structure):
         try:
             rmsf = self.rmsf(indices, step)
             return 8.0 * (np.pi**2) * (rmsf**2) / 3.0
-        except Exception, ex:
+        except Exception as ex:
             raise Exception('ERROR: could not calculate RMSF!')
 
     def rmsf_from_beta_factor(self, indices=[]):
@@ -1300,7 +1300,7 @@ class Molecule(Structure):
 
             return np.sqrt(b * 3 / (8 * np.pi * np.pi))
 
-        except Exception, ex:
+        except Exception as ex:
             raise Exception('ERROR: beta factors missing?')
 
     def get_mass_by_residue(self, skip_resname=[]):
@@ -1332,7 +1332,7 @@ class Molecule(Structure):
                     try:
                         # add mass of residue to total mass
                         mass += self.know('residue_mass')[resname]
-                    except Exception, ex:
+                    except Exception as ex:
                         #@todo: if residue is not known, why not summing constituent atoms masses, warning the user that it's an estimation?
                         raise Exception("ERROR: mass for resname %s is unknown!\nInsert a key in protein\'s masses dictionary knowledge['residue_mass'] and retry!\nex.: protein.knowledge['residue_mass'][\"TST\"]=142.42" %resname)
 
@@ -1357,7 +1357,7 @@ class Molecule(Structure):
             if resname not in skip_resname:
                 try:
                     mass += self.know('atom_mass')[atomtype]
-                except Exception, e:
+                except Exception as e:
                     if atomtype == "":
                         raise Exception("ERROR: no atomtype found!")
                     else:

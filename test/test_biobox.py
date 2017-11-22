@@ -15,7 +15,7 @@ class test_density(unittest.TestCase):
  
         try:       
             self.D.place_points(5)            
-        except Exception, ex:
+        except Exception as ex:
             assert False
 
     def test_density_CCS(self):
@@ -24,7 +24,7 @@ class test_density(unittest.TestCase):
  
         try:          
             self.D.threshold_vol_ccs(sampling_points=1, append=False, noise_filter=0)
-        except Exception, ex:
+        except Exception as ex:
             assert False
 
 
@@ -52,7 +52,7 @@ class test_structures(unittest.TestCase):
     
             distance2, paths = XL.distance_matrix(idx, method="theta", get_path=True, smooth=True, verbose=False, flexible_sidechain=True, test_los=True)
 
-        except Exception, ex:
+        except Exception as ex:
             assert False
              
 
@@ -61,7 +61,7 @@ class test_structures(unittest.TestCase):
         print("\n> testing molecule's SASA")
         try:
             [sasa, mesh, surf_idx] = bb.sasa(self.M, n_sphere_point=400)
-        except Exception, ex:
+        except Exception as ex:
             assert False
 
 
@@ -72,7 +72,7 @@ class test_structures(unittest.TestCase):
         try:
             ccs1 = bb.ccs(self.M)
             ccs2 = bb.ccs(self.M, use_lib=False)
-        except Exception, ex:
+        except Exception as ex:
             assert False
 
         self.assertAlmostEqual(ccs1, ccs2, delta=ccs2/10.0) #max 10% difference
@@ -87,7 +87,7 @@ class test_structures(unittest.TestCase):
             A.load(self.M, 3)
             A.make_circular_symmetry(30)
             bb.ccs(A)
-        except Exception, ex:
+        except Exception as ex:
             assert False
 
     def test_multimer_selections(self):
@@ -96,21 +96,21 @@ class test_structures(unittest.TestCase):
         try:        
             A = bb.Multimer()
             A.load_list([self.M, self.M], ["1", "2"])
-        except Exception, ex:
+        except Exception as ex:
             assert False
 
         pts_test = self.M.atomselect("*", "LYS", "CA", use_resname = True)
 
         try:
             pts = A.query('unit == "1" and resname == "LYS" and name == "CA"')
-        except Exception, ex:
+        except Exception as ex:
             assert False
 
         self.assertEqual(len(pts), len(pts_test))
 
         try:
             pts = A.atomselect("1", "*", "LYS", "CA", use_resname = True)
-        except Exception, ex:
+        except Exception as ex:
             assert False
 
         self.assertEqual(len(pts), len(pts_test))
@@ -125,7 +125,7 @@ class test_structures(unittest.TestCase):
             P.rotate(0, 0, 90)
             P.make_prism(25, 15, 180, 45, 90)
             P.rotate(10, 10, 10, [1, 2])
-        except Exception, ex:
+        except Exception as ex:
             assert False
 
 
@@ -138,7 +138,7 @@ class test_structures(unittest.TestCase):
             self.M.rotate(10, 10, 10)
             self.M.translate(20, 20, 20)
                     
-        except Exception, ex:
+        except Exception as ex:
             assert False
 
 
@@ -165,7 +165,7 @@ class test_structures(unittest.TestCase):
             P.set_current(1)
             a2 = P.atomselect(["1", "2"], "*", 90, "CA")
             
-        except Exception, ex:
+        except Exception as ex:
             assert False
 
 
@@ -194,7 +194,7 @@ class test_structures(unittest.TestCase):
             C5.get_surface()
             C5.get_volume()
         
-        except Exception, ex:
+        except Exception as ex:
             assert False
 
 

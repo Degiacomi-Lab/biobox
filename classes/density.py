@@ -115,7 +115,7 @@ class Density(Structure):
         else:
             try:
                 self.place_points()
-            except Exception, e:
+            except Exception as e:
                 pass
 
             self.properties['format'] = format
@@ -299,7 +299,7 @@ class Density(Structure):
             try:
                 self.place_points(thresh)
                 vol = self.get_volume()
-            except Exception, e:
+            except Exception as e:
                 vol = 0.0
 
             print("threshold=%s, error=%s" % (thresh, vol * density - mass))
@@ -310,7 +310,7 @@ class Density(Structure):
 
         try:
             self.place_points(bestthresh)
-        except Exception, ex:
+        except Exception as ex:
             pass
 
         return r
@@ -331,7 +331,7 @@ class Density(Structure):
                 self.place_points(thresh, noise_filter)
                 vol = self.get_volume()
                 ccs = bb.ccs(self, scale=False)
-            except Exception, ex:
+            except Exception as ex:
                 vol = 0
                 ccs = 0
 
@@ -388,7 +388,7 @@ class Density(Structure):
                 print("placed!")
                 vol = self.get_volume()
                 ccs = bb.ccs(self, scale=False)
-            except Exception, ex:
+            except Exception as ex:
                 vol = 0
                 ccs = 0
 
@@ -434,7 +434,7 @@ class Density(Structure):
             try:
                 self.place_points(thresh)
                 vol = self.get_volume()
-            except Exception, ex:
+            except Exception as ex:
                 vol = 0
 
             mass_model = vol * density
@@ -462,7 +462,7 @@ class Density(Structure):
 
         try:
             self.place_points(bestthresh)
-        except Exception, ex:
+        except Exception as ex:
             pass
 
         return r
@@ -602,7 +602,7 @@ class Density(Structure):
                 (self.properties['size'][0],
                  self.properties['size'][1],
                  self.properties['size'][2]))
-        except Exception, ex:
+        except Exception as ex:
             raise Exception("reshaping of dx data failed! Dimensions and dataset size are inconsistent!")
 
     def _import_mrc(self, filename, fileformat):

@@ -204,7 +204,7 @@ def saxs(M, crysol_path='', crysol_options="-lm 20 -ns 500", pdbname=""):
         os.remove("%s00.int" % outfile)
         os.remove("%s00.log" % outfile)
         os.remove("%s.pdb" % outfile)
-    except Exception, ex:
+    except Exception as ex:
         pass
 
     return data[:, 0:2]

@@ -1042,5 +1042,5 @@ if __name__ == "__main__":
         print "shape: %s" % np.array(density.shape)
         print "delta: %s" % (np.identity(3) * np.array(thedata.mrc_data.data_step))
 
-    except Exception, ex:
+    except Exception as ex:
         print "%s" % ex

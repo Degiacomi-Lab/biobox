@@ -28,10 +28,11 @@ class InstallCommand(build_ext):
                     if extension in ["pyd", "so"]:
                         os.rename(os.path.join(root, filename), filename)
 
-        except Exception, ex:
+        except Exception as ex:
             print("files already exist, skipping...")
 
-        shutil.rmtree("build")
+        shutil.rmtree("build")
+
 os.chdir("lib")
 
 # small hack to get around a problem in older cython versions, i.e.

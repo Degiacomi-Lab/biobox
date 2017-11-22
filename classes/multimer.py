@@ -70,7 +70,7 @@ class Multimer(Polyhedron):
             if isinstance(u, str) or isinstance(u, int):
                 try:
                     unit_id = [self.unit_labels[str(u)]]
-                except Exception, ex:
+                except Exception as ex:
                     raise Exception("ERROR: unit %s not found!" % u)
 
             elif isinstance(u, list) or type(u).__module__ == 'numpy':
@@ -78,7 +78,7 @@ class Multimer(Polyhedron):
                 for c in xrange(0, len(u), 1):
                     try:
                         unit_id.append(self.unit_labels[str(u[c])])
-                    except Exception, ex:
+                    except Exception as ex:
                         raise Exception("ERROR: unit %s not found!" % u[c])
             else:
                 raise Exception("ERROR: wrong type for unit selection. Should be str, int, list, or numpy")
@@ -138,7 +138,7 @@ class Multimer(Polyhedron):
                     c = self.unit[i].data['charge']
                 else:
                     c = np.concatenate((c, self.unit[i].data['charge']))
-            except Exception, ex:
+            except Exception as ex:
                 skipcharge = True
                 continue
 
