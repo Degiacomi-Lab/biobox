@@ -75,7 +75,7 @@ class Multimer(Polyhedron):
 
             elif isinstance(u, list) or type(u).__module__ == 'numpy':
                 unit_id = []
-                for c in xrange(0, len(u), 1):
+                for c in range(0, len(u), 1):
                     try:
                         unit_id.append(self.unit_labels[str(u[c])])
                     except Exception as ex:
@@ -86,7 +86,7 @@ class Multimer(Polyhedron):
         # initialize storage for indices and coordinates
         indices = []
         pts = np.empty([0, 3])
-        for i in xrange(0, len(self.unit), 1):
+        for i in range(0, len(self.unit), 1):
             if i in unit_id:
                 [pts_tmp, index_tmp] = self.unit[i].atomselect(chain, resid, atom, True, use_resname=use_resname)
                 pts = np.concatenate((pts, pts_tmp))
@@ -115,7 +115,7 @@ class Multimer(Polyhedron):
         r = []
         c = []
         skipcharge = False
-        for i in xrange(0, len(self.unit), 1):
+        for i in range(0, len(self.unit), 1):
             data_tmp = self.unit[i].data[[
                 "atom", "index", "name", "resname", "chain",
                 "resid", "beta", "occupancy", "atomtype"]].values
@@ -204,19 +204,19 @@ class Multimer(Polyhedron):
 
         f_out = open(outname, "w")
 
-        for f in xrange(len(self.unit[0].coordinates)):
+        for f in range(len(self.unit[0].coordinates)):
 
             cnt = 1
             # set current state to new frame
-            for j in xrange(0, len(self.unit), 1):
+            for j in range(0, len(self.unit), 1):
                 self.unit[j].set_current(f)
 
-        for j in xrange(0, len(self.unit), 1):
+        for j in range(0, len(self.unit), 1):
             # get data about points and their properties from the desired
             # protein structure
             d = self.unit[j].get_pdb_data()
 
-            for i in xrange(0, len(self.unit[j].points), 1):
+            for i in range(0, len(self.unit[j].points), 1):
                 # create and write PDB lin
                 if d[i][2][0].isdigit():
                     L = '%-6s%5i %-5s%-4s%1s%4i    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], cnt, d[i][2], d[i][3], self.chain_names[j], int(d[i][5]), float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])

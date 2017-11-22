@@ -185,7 +185,7 @@ class Polyhedron(Assembly):
 
         :param index: number of alternative conformation (starting from 0)
         '''
-        for x in xrange(0, len(self.unit), 1):
+        for x in range(0, len(self.unit), 1):
             self.unit[x].set_current(index)
 
     def delete_xyz(self, index):
@@ -196,7 +196,7 @@ class Polyhedron(Assembly):
         :param index: alternative coordinates set to remove (starting from zero)
         '''
 
-        for u in xrange(0, len(self.unit), 1):
+        for u in range(0, len(self.unit), 1):
             self.unit[u].delete_xyz(index)
 
         if index > 0:

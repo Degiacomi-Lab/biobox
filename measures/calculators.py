@@ -97,7 +97,7 @@ def sasa(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
     pts = []
     inc = np.pi * (3 - np.sqrt(5))
     offset = 2 / float(n_sphere_point)
-    for k in xrange(int(n_sphere_point)):
+    for k in range(int(n_sphere_point)):
         y = k * offset - 1 + (offset / 2)
         r = np.sqrt(1 - y * y)
         phi = k * inc

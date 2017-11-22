@@ -462,7 +462,7 @@ class Molecule(Structure):
         '''
         
         a_type = []
-        for i in xrange(0, len(self.data), 1):
+        for i in range(0, len(self.data), 1):
             atom = self.data["name"].values[i]
             try:
                 a_type.append(self.knowledge["atomtype"][atom])
@@ -886,7 +886,7 @@ class Molecule(Structure):
                 
         elif isinstance(chain, list) or type(chain).__module__ == 'numpy':
             chain_query = self.data["chain"].values == chain[0]
-            for c in xrange(1, len(chain), 1):
+            for c in range(1, len(chain), 1):
                 chain_query = np.logical_or(chain_query, self.data["chain"].values == chain[c])
         else:
             raise Exception("ERROR: wrong type for chain selection. Should be str, list, or numpy")
@@ -911,7 +911,7 @@ class Molecule(Structure):
             else:
                 res_query = self.data["resid"].values == res[0]
 
-            for r in xrange(1, len(res), 1):
+            for r in range(1, len(res), 1):
                 if use_resname:
                     res_query = np.logical_or(res_query, self.data["resname"].values == str(res[r]))
                 else:
@@ -928,7 +928,7 @@ class Molecule(Structure):
                 atom_query = self.data["name"].values == atom
         elif isinstance(atom, list) or type(atom).__module__ == 'numpy':
             atom_query = self.data["name"].values == atom[0]
-            for a in xrange(1, len(atom), 1):
+            for a in range(1, len(atom), 1):
                 atom_query = np.logical_or(atom_query, self.data["name"].values == atom[a])
         else:
             raise Exception("ERROR: wrong type for atom selection. Should be str, list, or numpy")
@@ -960,7 +960,7 @@ class Molecule(Structure):
 
         #invert the selection
         idxs2 = []
-        for i in xrange(len(self.points)):
+        for i in range(len(self.points)):
             if i not in idxs:
                 idxs2.append(i)
 
@@ -1111,7 +1111,7 @@ class Molecule(Structure):
         intervals = [0]
 
         if not use_backbone:
-            for i in xrange(len(self.coordinates[0]) - 1):
+            for i in range(len(self.coordinates[0]) - 1):
                 dist = np.sqrt(np.dot(self.points[i] - self.points[i + 1], self.points[i] - self.points[i + 1]))
                 if dist > distance:
                     intervals.append(i + 1)
@@ -1120,7 +1120,7 @@ class Molecule(Structure):
             #aminoacids start with N. Find where a C is too far from the next N.
             posN, idxN = self.atomselect("*", "*", "N", get_index=True)
             posC = self.atomselect("*", "*", "C")
-            for i in xrange(len(idxN)-1):
+            for i in range(len(idxN)-1):
                 dist = np.sqrt(np.dot(posC[i] - posN[i+1], posC[i] - posN[i+1]))
                 if dist > distance:
                     intervals.append(idxN[i+1])
@@ -1128,7 +1128,7 @@ class Molecule(Structure):
         intervals.append(len(self.coordinates[0]))
 
         # separate chains
-        for i in xrange(len(intervals) - 1):
+        for i in range(len(intervals) - 1):
             thepos = i % len(self.chain_names)
             self.data.loc[intervals[i]:intervals[i + 1], "chain"] = self.chain_names[thepos]
 
@@ -1146,7 +1146,7 @@ class Molecule(Structure):
         '''
 
         if len(index) == 0:
-            index = xrange(0, len(self.points), 1)
+            index = range(0, len(self.points), 1)
 
         # create a list containing all infos contained in pdb (point
         # coordinates and properties)
@@ -1199,7 +1199,7 @@ class Molecule(Structure):
             self.set_current(f)
             d = self.get_pdb_data(index)
 
-            for i in xrange(0, len(d), 1):
+            for i in range(0, len(d), 1):
                 # create and write PDB line
                 if d[i][2][0].isdigit():
                     L = '%-6s%5s %-5s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], d[i][1], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
@@ -1249,7 +1249,7 @@ class Molecule(Structure):
             d = self.get_pdb_data(index)
             f_out.write("%s\n" % outname.split(".")[0])
             f_out.write("%s\n" % len(d))
-            for i in xrange(0, len(d), 1):
+            for i in range(0, len(d), 1):
                 # create and write .gro line
                 L = '%5d%-5s%5s%5d%8.3f%8.3f%8.3f\n' % (int(d[i][5]), d[i][3], d[i][2], int(d[i][1]), float(d[i][6]) / 10.0, float(d[i][7]) / 10.0, float(d[i][8]) / 10.0)
                 f_out.write(L)
@@ -1350,7 +1350,7 @@ class Molecule(Structure):
         '''
 
         mass = 0
-        for i in xrange(0, len(self.data), 1):
+        for i in range(0, len(self.data), 1):
             resname = self.data["resname"].values[i]
             atomtype = self.data["atomtype"].values[i]
 
@@ -1392,7 +1392,7 @@ class Molecule(Structure):
         a1 = []
         a2 = []
         d = []
-        for i in xrange(0, len(Ndata), 1):
+        for i in range(0, len(Ndata), 1):
             j = np.where(
                 np.logical_and(
                     Hdata[:, 0] == Ndata[i, 0],

@@ -58,7 +58,7 @@ def lennard_jones(points1, points2, epsilon=1.0, sigma=2.7, cutoff=12.0, coeff1=
     couples = get_neighbors(dist, cutoff)
 
     enrg = 0.0
-    for i in xrange(0, len(couples[0]), 1):
+    for i in range(0, len(couples[0]), 1):
         the_dist = dist[couples[0, i], couples[1, i]]
         enrg += 4 * epsilon * ((sigma / the_dist)**coeff1 - (sigma / the_dist)**coeff2)
 
