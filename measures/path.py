@@ -280,7 +280,7 @@ class Path(object):
 
         wpts = [waypoints[0]]
 
-        for i in xrange(1, len(waypoints), 1):
+        for i in range(1, len(waypoints), 1):
 
             # add points in interval between old and new point
             vec = waypoints[i - 1] - waypoints[i]
@@ -305,7 +305,7 @@ class Path(object):
         # distance initialized with distance between best starting point and
         # closes graph node
         dist = 0
-        for i in xrange(1, len(waypoints), 1):
+        for i in range(1, len(waypoints), 1):
             dist += np.sqrt(np.dot(waypoints[i - 1] - waypoints[i], waypoints[i - 1] - waypoints[i]))
 
         return dist
@@ -487,7 +487,7 @@ class Path(object):
         angles_test = np.zeros(len(chain) - 2)
 
         # first test: scan all angles, and pinpoint the ones to check
-        for i in xrange(1, len(chain) - 1, 1):
+        for i in range(1, len(chain) - 1, 1):
 
             mod1 = np.linalg.norm(chain[i] - chain[i - 1])
             mod2 = np.linalg.norm(chain[i + 1] - chain[i])
@@ -531,7 +531,7 @@ class Path(object):
                         angles_test[i + 1] = 1
 
         dist = 0
-        for i in xrange(0, len(chain) - 1, 1):
+        for i in range(0, len(chain) - 1, 1):
             dist += np.sqrt(np.dot(chain[i] - chain[i + 1], chain[i] - chain[i + 1]))
 
         return dist, chain
@@ -891,7 +891,7 @@ class Xlink(Path):
         dist = SD.cdist(Sph.points, self.molecule.points)
 
         res = [side]
-        for k in xrange(0, dist.shape[0], 1):
+        for k in range(0, dist.shape[0], 1):
             # keep sphere points at more than 1A from all neighbors
             if not np.any(dist[k] < thresh):
                 res.append(Sph.points[k])
