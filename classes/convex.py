@@ -274,15 +274,15 @@ class Sphere(Structure):
         :param radius: size of the individual points composing it
         :param n_sphere_point: This parameter defines the amount of points in the sphere
         '''
-
+ 
         pts = []
         inc = np.pi * (3 - np.sqrt(5))
         offset = 2 / float(n_sphere_point)
         for k in range(int(n_sphere_point)):
             y = k * offset - 1 + (offset / 2)
-            r = np.sqrt(1 - y * y)
+            r2 = np.sqrt(1 - y * y)
             phi = k * inc
-            pts.append([np.cos(phi) * r, y, np.sin(phi) * r])
+            pts.append([np.cos(phi) * r2, y, np.sin(phi) * r2])
 
         rad  = r - radius
 
@@ -369,7 +369,9 @@ class Sphere(Structure):
         self.get_center()
 
         test = (p[:, 0] - self.properties['center'][0])**2 / (self.properties['r'] * self.properties['a'])**2 + (p[:, 1] - self.properties['center'][1])**2 / (self.properties['r'] * self.properties['b'])**2 + (p[:, 2] - self.properties['center'][2])**2 / (self.properties['c'] * self.properties['r'])**2
-        return len(np.where(test < 1.0)[0])
+        #return len(np.where(test < 1.0)[0])
+        return test < 1.0 #is True, inside ellipsoid, if False, outside
+
 
     def get_sphericity(self):
         '''
