@@ -480,13 +480,22 @@ class Assembly(object):
 
         fout = open(filename, "w")
 
+        hex_test = len(self.unit[-1].points) * len(self.unit)
+        if hex_test > 99999:
+            test = 0     # Set condition for if we need to convert to hexidecimcals
+        else:
+            test = 1
+        
         for i in range(0, len(self.unit), 1):
-
             for j in range(0, len(self.unit[i].points), 1):
-                l = (i + len(self.unit) * j, "SPH", "SPH", self.chain_names[i],
+                if test == 0:
+                    idx_val = hex(1 + i + len(self.unit) * j).split('x')[1]  # remove 0x at start of hexidecimal number
+                else:
+                    idx_val = 1 + i + len(self.unit) * j
+                l = (idx_val, "SPH", "SPH", self.chain_names[i],
                      i, self.unit[i].points[j, 0], self.unit[i].points[j, 1],
                      self.unit[i].points[j, 2], self.unit[i].data["radius"][j], 1.0, "C")
-                L = 'ATOM  %5i  %-4s%-4s%1s%4i    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % l
+                L = 'ATOM  %5s  %-4s%-4s%1s%4i    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % l
                 fout.write(L)
 
         fout.close()

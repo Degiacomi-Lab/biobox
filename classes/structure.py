@@ -358,12 +358,22 @@ class Structure(object):
         fout = open(filename, "w")
 
         for f in frames:
+            
+            # Build our hexidecimal array if num. of atoms > 99999
+            idx_val = np.arange(1, len(self.coordinates) + 1, 1)
+
+            if len(idx_val) > 99999:
+                vhex = np.vectorize(hex)
+                idx_val = vhex(idx_val)   # convert index values to hexidecimal
+                idx_val = [num[2:] for num in idx_val]  # remove 0x at start of hexidecimal number
+
             for i in range(0, len(self.coordinates[0]), 1):
-                if i > 99999:
-                    nb = hex(i).split('x')[1]
-                else:
-                    nb = str(i)
-                l = (nb, "SPH", "SPH", "A", np.mod(i, 9999),
+                #if i > 99999:
+                #    nb = hex(i).split('x')[1]
+                #else:
+                #    nb = str(i)
+                
+                l = (idx_val[i], "SPH", "SPH", "A", np.mod(i, 9999),
                      self.coordinates[f, i, 0],
                      self.coordinates[f, i, 1],
                      self.coordinates[f, i, 2],

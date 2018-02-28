@@ -138,6 +138,8 @@ class Molecule(Structure):
                         cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
                         idx = np.arange(len(data))
                         self.data = pd.DataFrame(data, index=idx, columns=cols)
+                        # Set the index numbers to the idx values to avoid hexadecimal counts
+                        self.data["index"] = idx
 
                     except Exception as ex:
                         raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' %pdb)
@@ -225,6 +227,8 @@ class Molecule(Structure):
                     cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
                     idx = np.arange(len(data))
                     self.data = pd.DataFrame(data, index=idx, columns=cols)
+                    # Set the index numbers to the idx values to avoid hexadecimal counts
+                    self.data["index"] = idx
 
                 except Exception as ex:
                     raise Exception('ERROR: something went wrong when saving data in %s!\nERROR: are all the columns separated?' %pdb)
@@ -1193,18 +1197,23 @@ class Molecule(Structure):
         f_out = open(outname, "w")
 
         for f in frames:
-
-            # get all informations from PDB (for current conformation) in a
-            # list
+            # get all informations from PDB (for current conformation) in a list
             self.set_current(f)
             d = self.get_pdb_data(index)
-
+            
+            # Build our hexidecimal array if num. of atoms > 99999
+            idx_val = np.arange(1, len(d) + 1, 1)
+            if len(idx_val) > 99999:
+                vhex = np.vectorize(hex)
+                idx_val = vhex(idx_val)   # convert index values to hexidecimal
+                idx_val = [num[2:] for num in idx_val]  # remove 0x at start of hexidecimal number
+            
             for i in range(0, len(d), 1):
                 # create and write PDB line
                 if d[i][2][0].isdigit():
-                    L = '%-6s%5s %-5s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], d[i][1], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
+                    L = '%-6s%5s %-5s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
                 else:
-                    L = '%-6s%5s  %-4s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], d[i][1], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
+                    L = '%-6s%5s  %-4s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
                 f_out.write(L)
 
             f_out.write("END\n")
