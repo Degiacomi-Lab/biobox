@@ -333,6 +333,7 @@ class Molecule(Structure):
                         cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
                         idx = np.arange(len(data))
                         self.data = pd.DataFrame(data, index=idx, columns=cols)
+                        self.data["index"] = idx # convert to internal numbering system
 
                     except Exception as ex:
                         raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' %pqr)
@@ -422,6 +423,7 @@ class Molecule(Structure):
                     cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
                     idx = np.arange(len(data))
                     self.data = pd.DataFrame(data, index=idx, columns=cols)
+                    self.data["index"] = idx # convert to internal numbering system
 
                 except Exception as ex:
                     raise Exception('ERROR: something went wrong when saving data in %s!\nERROR: are all the columns separated?' % pqr)
