@@ -1475,3 +1475,158 @@ class Molecule(Structure):
                 res.append([idx[c[0]], idx[c[1]], dist[c[0], c[1]]])
 
         return np.array(res)
+    
+    def pdb2pqr(self, ff=""):
+        '''
+        Parses data from the pdb input into a pqr format. This uses the panda dataframe with the information
+        regarding atom indexes, types etc. in the self.data files.
+        It outputs a panda dataframe with the pqr equivilent information. It requires a datafile forcefield input.
+        The default is the amber14sb forcefield file held within the classes/ folder.
+        
+        :param ff: name of forcefield text file input that needs to be read to read charges / vdw radii.
+        '''
+        
+        HIP = np.array(["HIP"] * 18)    # create numpy array structures to possibly reassign later
+        HIE = np.array(["HIE"] * 17)    # create numpy array structures to possibly reassign later
+        HID = np.array(["HID"] * 17)    # create numpy array structures to possibly reassign later
+
+        start_chain = self.data["resid"].iloc[0]   # This is in case we get 1 or 2 as the first chain ID start
+        end_chain = self.data["resid"].iloc[-1]    #  We don't know the end chain number so we find it here
+        start_res = self.data["resname"].iloc[0] 
+        end_res = self.data["resname"].iloc[-1] 
+        
+        # Need to check if first residue is actually an N-termini residue, and if so, reassign resnames if necessary
+        if (self.data["name"].iloc[0:27] == 'H1').any() and (self.data["name"].iloc[0:27] == 'H2').any() and (self.data["name"].iloc[0:27] == 'H3').any() and self.data["resname"][0][0] != 'N':
+            print 'Found N-Termini, reassigning first resname to match the forcefield'
+            start_index = self.data.index[self.data["resid"] == start_chain]
+            for N in start_index:
+                self.data["resname"].iloc[N] = 'N' + start_res   # First chain needs to be prefixed with N-termini resname
+
+        # Now need to check if last residue is actually a C-termini residue, and if so, reassign resnames if necessary    
+        if (self.data["name"].iloc[-27:-1] == 'OC1').any() and self.data["resname"].iloc[-1][0] != 'C':
+            end_index = self.data.index[self.data["resid"] == end_chain]
+            print 'Found C-Termini, reassigning last resname to match the forcefield'
+            for C in end_index:
+                self.data["resname"].iloc[C] = 'C' + end_res   # First chain needs to be prefixed with N-termini resname
+                
+        if len(ff) == 0:
+            #"amber14sb.dat"
+            folder = os.path.dirname(os.path.realpath(__file__))
+            ff = "%s/amber14sb.dat" % folder
+            
+        if os.path.isfile(ff) != 1:
+            raise Exception("ERROR: %s not found!" % ff)
+        
+        ff = np.loadtxt(ff, skiprows=2, usecols=(0,1,2,3,4), dtype=str)
+                        
+        cols = ['resname', 'name', 'charge', 'radius', 'atomtype'] # where radius is the VdW radius in the amber file
+        idx = np.arange(len(ff))
+        pqr_data = pd.DataFrame(ff, index=idx, columns=cols)
+    
+        charges = []
+        radius = []
+        atomtypes = []
+        
+        # Need to check whether it matches HIE, HID or HIP depending on what protons are present and where
+        his_check = self.data["resname"] == 'HIS'  # Check if we need to do following calculation
+        if np.sum(his_check) != 0:
+            print "WARNING: found residue with name HIS, checking to see what protonation state it is in and reassigning to HIP, HIE or HID.\nYou should check HIS in your pdb file is right to be sure!"          
+            for ix in range(len(self.data["resname"])):
+                H_length = 17 # Set this as it is more common, and also covers the basis to capture HD1 or HE2 later if necessary (as C and O tend to be last a
+                # N is always the first atom (use that as basis)                                                                                                                             
+                
+                if self.data["name"][ix] == 'N' and self.data["resname"][ix] == 'HIS':                                                                                         
+                    if (self.data["name"][ix:(ix+H_length)] == 'HE2').any() and (self.data["name"][ix:(ix+H_length)] == 'HD1').any(): # If the residue contains HE2 and HD1, it is a HIP residue
+                        H_length = 18     #   number of atoms in histdine (HIP)
+                        self.data["resname"][ix:(ix+H_length-1)] = HIP
+                    elif (self.data["name"][ix:(ix+H_length)] == 'HE2').any():
+                        #print np.shape(self.data.loc[i:(i+H_length), "resname"]), np.shape(HIE)
+                        #print self.data.loc[ix:(ix+H_length), "resname"]
+                        self.data.loc[ix:(ix+H_length-1), "resname"] = HIE
+                        #print self.data.loc[ix:(ix+H_length), "resname"]
+                    elif (self.data["name"][ix:(ix+H_length)] == 'HD1').any():
+                        self.data["resname"][ix:(ix+H_length-1)] = HID
+
+        # Move through each line in the pdb.data file and find the corresponding charge / vdw radius as supplied by the forcefield
+        for i, resnames in enumerate(self.data["resname"]):
+            values_res = pqr_data["resname"] == resnames 
+            values_name = pqr_data["name"] == self.data["name"][i]
+            values = np.logical_and(values_res, values_name)
+            value_loc = pqr_data[values]
+      
+            if len(value_loc) == 0:
+                print value_loc, resnames, self.data["name"][i], self.data["resname"][i], self.data["resid"].iloc[i], self.data["index"].iloc[i]
+                raise Exception("ERROR: The atom names in your PDB file do not match the PQR file")
+            else:
+                charges.append(float(value_loc.iloc[0]["charge"]))
+                radius.append(float(value_loc.iloc[0]["radius"]))
+                atomtypes.append(value_loc.iloc[0]["atomtype"]) 
+        
+        # Drop the beta factor / occupancy data to be replaced with charge / vdw radius numbers    
+        pqr = self.data.drop(['atomtype', 'radius', 'charge'], axis=1) #  remove obselete data
+        pqr['atomtype'] = atomtypes  # Replace with Amber derived data for each atom
+        pqr['radius'] = radius
+        pqr['charge'] = charges
+    
+        print "Conversion Complete"
+    
+        return pqr
+    
+    def write_pqr(self, outname, conformations=[], index=[]):
+        '''
+        overload superclass method for writing (multi)pqr.
+
+        :param outname: name of pqr file to be generated.
+        :param index: indices of atoms to write to file. If empty, all atoms are returned. Index values obtaineable with a call like: index=molecule.atomselect("A", [1, 2, 3], "CA", True)[1]
+        :param conformations: list of conformation indices to write to file. By default, a multipdb with all conformations will be produced.
+        '''
+
+        # store current frame, so it will be reestablished after file output is
+        # complete
+        currentbkp = self.current
+        
+        # if a subset of all available frames is requested to be written,
+        # select them first
+        if len(conformations) == 0:
+            frames = range(0, len(self.coordinates), 1)
+        else:
+            if np.max(conformations) < len(self.coordinates):
+                frames = conformations
+            else:
+                raise Exception("ERROR: requested coordinate index %s, but only %s are available" %(np.max(conformations), len(self.coordinates)))
+
+        # Get our PQR database style
+        pqr = self.pdb2pqr()
+
+        f_out = open(outname, "w")
+
+        for f in frames:
+            # get all informations from PDB (for current conformation) in a list
+            self.set_current(f)
+            d = self.get_pdb_data(index)
+            
+            # Get our 
+            
+            
+            # Build our hexidecimal array if num. of atoms > 99999
+            idx_val = np.arange(1, len(d) + 1, 1)
+            if len(idx_val) > 99999:
+                vhex = np.vectorize(hex)
+                idx_val = vhex(idx_val)   # convert index values to hexidecimal
+                idx_val = [num[2:] for num in idx_val]  # remove 0x at start of hexidecimal number
+            
+            for i in range(0, len(d), 1):
+                # create and write PDB line
+                if d[i][2][0].isdigit():
+                    L = '%-6s%5s %-5s%-4s%1s%4s    %8.3f%8.3f%8.3f%7.4f%7.4f        %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(pqr.iloc[i]["charge"]), float(pqr.iloc[i]["radius"]), d[i][11])
+                else:
+                    L = '%-6s%5s  %-4s%-4s%1s%4s    %8.3f%8.3f%8.3f%7.4f%7.4f        %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(pqr.iloc[i]["charge"]), float(pqr.iloc[i]["radius"]), d[i][11])
+                f_out.write(L)
+
+            f_out.write("END\n")
+
+        f_out.close()
+
+        self.set_current(currentbkp)
+
+        return
