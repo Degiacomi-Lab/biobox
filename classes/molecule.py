@@ -1138,7 +1138,7 @@ class Molecule(Structure):
             thepos = i % len(self.chain_names)
             self.data.loc[intervals[i]:intervals[i + 1], "chain"] = self.chain_names[thepos]
 
-        return len(intervals) - 1
+        return len(intervals) - 1, intervals
 
     def get_pdb_data(self, index=[]):
         '''
@@ -1485,7 +1485,28 @@ class Molecule(Structure):
         
         :param ff: name of forcefield text file input that needs to be read to read charges / vdw radii.
         '''
-        
+
+        _, intervals = self.guess_chain_split()     
+        # patch naming of C-termini
+        for i in intervals[1:]:
+            idxs = self.same_residue(i-1, get_index=True)[1]   
+            names = self.data.loc[idxs, ["name"]].values
+            if np.any(names == "OC1") or np.any(names == "OXT"):
+                resname = self.data.loc[idxs[0], ["resname"]].values[0]
+                newresnames = np.array(["C"+resname]*len(idxs))
+                self.data.loc[idxs, ["resname"]] = newresnames
+
+        # patch naming of N-termini
+        for i in intervals[0:-1]:
+            idxs = self.same_residue(i, get_index=True)[1]   
+            names = self.data.loc[idxs, ["name"]].values
+            if np.any(names == "H1") and np.any(names == "H2") and np.any(names == "H3"):
+                resname = self.data.loc[idxs[0], ["resname"]].values[0]
+                newresnames = np.array(["N"+resname]*len(idxs))
+                self.data.loc[idxs, ["resname"]] = newresnames
+
+
+
         HIP = np.array(["HIP"] * 18)    # create numpy array structures to possibly reassign later
         HIE = np.array(["HIE"] * 17)    # create numpy array structures to possibly reassign later
         HID = np.array(["HID"] * 17)    # create numpy array structures to possibly reassign later
@@ -1502,13 +1523,16 @@ class Molecule(Structure):
             for N in start_index:
                 self.data["resname"].iloc[N] = 'N' + start_res   # First chain needs to be prefixed with N-termini resname
 
+
+        '''
         # Now need to check if last residue is actually a C-termini residue, and if so, reassign resnames if necessary    
         if (self.data["name"].iloc[-27:-1] == 'OC1').any() and self.data["resname"].iloc[-1][0] != 'C':
             end_index = self.data.index[self.data["resid"] == end_chain]
             print 'Found C-Termini, reassigning last resname to match the forcefield'
             for C in end_index:
                 self.data["resname"].iloc[C] = 'C' + end_res   # First chain needs to be prefixed with N-termini resname
-                
+        '''
+     
         if len(ff) == 0:
             #"amber14sb.dat"
             folder = os.path.dirname(os.path.realpath(__file__))
@@ -1568,7 +1592,7 @@ class Molecule(Structure):
         pqr['radius'] = radius
         pqr['charge'] = charges
     
-        print "Conversion Complete"
+        print("Conversion Complete")
     
         return pqr
     
