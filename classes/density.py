@@ -579,7 +579,9 @@ class Density(Structure):
         dlt = []
         for line in fin:
             w = line.split()
-            if len(w) == 3:
+            if w[0] == "#":
+                continue
+            elif len(w) == 3:
                 d.append(w[0])
                 d.append(w[1])
                 d.append(w[2])
