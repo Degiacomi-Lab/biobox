@@ -1,3 +1,4 @@
+from __future__ import division
 # Copyright (c) 2014-2017 Matteo Degiacomi
 #
 # BiobOx is free software ;
@@ -16,6 +17,14 @@ from copy import deepcopy
 import numpy as np
 import scipy.signal
 import pandas as pd
+
+# Definiton of constants for later calculations
+epsilon0 = 8.8542 * 10**(-12) # m**-3 kg**-1 s**4 A**2, Permitivitty of free space
+kB = 1.3806 * 10**(-23) # m**2 kg s**-2 K-1, Lattice Boltzmann constant
+e = 1.602 * 10**(-19) # A s, electronic charge
+m = 1 * 10**(-9) # number of nm in 1 m
+c = 3.336 * 10**(-30) # conversion from debye to e m
+Na = 6.022 * 10**(23) # Avagadros Number
 
 from biobox.classes.structure import Structure
 
@@ -1654,3 +1663,343 @@ class Molecule(Structure):
         self.set_current(currentbkp)
 
         return
+    
+    def get_dipole_map(self, orig, pqr, time_start = 0, time_end = 2, window_size = 3, write_dipole_map = False, fname = "dipole_map.tcl"):
+        '''
+        Generate a vector (x, y, z) of instantaneous dipole moments at time_val within voxels centred at orig. 
+        The size of the voxels is governed by the number of orig points and the size of the system. In essence,
+        orig contains the inherent desired shift for the sliding window.
+        
+        Orig should be built in a separate function that looks at the entirety of the multipdb to account for atomic 
+        coordinates outside our current investigated bounds (and to keep the number of voxels the same for different
+        cartisian sized systems).
+    
+        :param orig: Origin of voxels from which we'll find our dipole for (this must be constant across timeframes)
+        :param pqr: PQR converted file of PDB file. See pdb2pqr for more details.
+        :param time_start: Start frame for finding the dipole map
+        :param time_end: End frame for finding the dipole map (for just 1 frame, it needs to be one more than time_start)
+        :param window_size: Size of the window we're calculating dipole moments for. Should account for electrostatics falling to zero
+        (or close) at the boundaries. Shouldn't be too small otherwise the memory demand will be too high. 1 nm is default in +- x, y, z.
+        :param write_dipole_map: Boolean. If true, write a dipole map for time_val in the tcl format to be read in with VMD command: source dipole_map.tcl
+        :param fname: Name of dipole_map tcl file.
+        :returns: Vector map of dipoles in x, y and z in the shape of the no. or orig points in x, y and z.
+        '''
+    
+        time_val = np.arange(time_start, time_end) # Create range of frames for us to explore depending on user input. (Default is just the first 2)
+    
+        if write_dipole_map:
+            data_file = open(fname, "w") # open a file for writing to
+            #data_file.write("draw material Diffuse\n")
+    
+        x_range = orig[0] - window_size / 2.   # Create shifted coordinates to account for start of windows
+        y_range = orig[1] - window_size / 2.
+        z_range = orig[2] - window_size / 2.
+
+        x_fill = np.zeros((len(z_range) * len(y_range), 3)).tolist() # prep empty arrays in case we don't find any atoms in our loops
+        y_fill = np.zeros((len(z_range), 3)).tolist()
+        z_fill = [[0., 0., 0.]]
+    
+        dipole_map = []
+        for it in time_val:     # it for i in time
+        
+            D = self.coordinates[it]
+            dipole_snapshot = []
+    
+            for ix, x_item in enumerate(x_range):
+                x_test1 = x_item <= D[:,0]
+                x_test2 = D[:,0] < x_item + window_size
+                x_where = np.logical_and(x_test1, x_test2)
+
+                xslice = D[x_where]
+        
+                if not xslice.size:    # append dipole of 0s along axis if no atoms are found within this slice
+                    dipole_snapshot.extend(x_fill)   # multiply by these lengths to account for grid for first z
+                    continue
+        
+                else:
+                    chargex_slice = pqr["charge"].values[x_where]
+            
+                    for iy, y_item in enumerate(y_range):
+                        y_test1 = y_item <= xslice[:,1]
+                        y_test2 = xslice[:,1] < y_item + window_size
+                        y_where = np.logical_and(y_test1, y_test2)
+
+                        yslice = xslice[y_where]
+            
+                        if not yslice.size:
+                            dipole_snapshot.extend(y_fill)   # Again, account for what we're about to skip
+                            continue
+            
+                        else:
+                            chargey_slice = chargex_slice[y_where]
+                            for iz, z_item in enumerate(z_range):
+
+                                z_test1 = z_item <= yslice[:,2]
+                                z_test2 = yslice[:,2] < z_item + window_size
+                                z_where = np.logical_and(z_test1, z_test2)
+
+                                coord = yslice[z_where] 
+                                charge_slice = chargey_slice[z_where]
+                            
+                                if not coord.size:
+                                    dipole_snapshot.extend(z_fill)   # Again, account for what we're about to skip
+                                    continue
+                        
+                                else:
+
+                                    # We take our centre point as the centre of the voxel box
+                                    x_diff = charge_slice * (coord[:,0] - orig[0][ix]) # calculate the displacements in x,y,z 
+                                    y_diff = charge_slice * (coord[:,1] - orig[1][iy])
+                                    z_diff = charge_slice * (coord[:,2] - orig[2][iz])
+    
+                                    #now units are in C m
+                                    dipole = [[np.sum(x_diff, axis=0), np.sum(y_diff, axis=0), np.sum(z_diff, axis=0)]]
+                                    dipole_snapshot.extend(dipole)
+                                   
+            
+            #print np.shape(dipole_snapshot)
+            dipole_snapshot = np.array(dipole_snapshot).astype(np.float32)
+            dipole_snapshot = np.reshape(dipole_snapshot, (len(x_range), len(y_range), len(z_range), 3))  # Reshape as necessary size to match coordinate system
+            dipole_map.append(dipole_snapshot) # Create dipole_map over time
+        
+        if write_dipole_map:  
+            dip_avg = np.mean(np.array(dipole_map), axis=0)
+            
+            for ix in range(np.shape(dip_avg)[0]):
+                    for iy in range(np.shape(dip_avg)[1]):
+                        for iz in range(np.shape(dip_avg)[2]):
+                            if np.sqrt(dip_avg[ix][iy][iz][0]**2 + dip_avg[ix][iy][iz][0]**2 + dip_avg[ix][iy][iz][0]**2) > 0.6:
+                                dip_x = orig[0][ix] + dip_avg[ix][iy][iz][0]
+                                dip_y = orig[1][iy] + dip_avg[ix][iy][iz][1]
+                                dip_z = orig[2][iz] + dip_avg[ix][iy][iz][2]
+                                data_file.write("draw cone { %f %f %f } { %f %f %f } radius 0.3\n"%(orig[0][ix], orig[1][iy], orig[2][iz], dip_x, dip_y, dip_z))
+                            else:
+                                continue
+         
+        return dipole_map
+
+    def get_dipole_density(self, dipole_map, orig, min_val, kernel_width, V, outname, eqn = 'gauss', T = 310.15, P = 101 * 10**3, epsilonE = 54., window_size = 3.):
+        '''
+        This generates an electron density based on a dipole map obtained with get_dipole_map. It requires the same coordinate system, orig, as
+        said dipole map. It is based on a paper by Pitera et al. written in 2001: 
+            
+        Dielectric properties of proteins from simulation; The effects of solvent, ligands, pH and temperature.
+    
+        It also requires the approximation that polarisability can be defined using the permitivitty of local space, and subsequently a van der Waal
+        object can also be defined in terms of polarisability, this relies on the Clausius-Moletti relation between molecular
+        polarisability and dielectric constant. 
+    
+        :param dipole_map: Dimensions of (t, x, y, z, [v_x, v_y, v_z]) where [v_x, v_y, v_z] is the vector dipole values for points x, y, z at time t.
+        :param orig: Coordinate system (x, y, z) we measure our dipole from. MUST be the same as that used in get_dipole_map
+        :param min_val: Minimum coorinates (x, y, z) from which to define our origin. Wrong choice could cause a shift in real space of the density.
+        :param kernel_width: Number of voxels to define our gaussian from. Essentially given by the number of shifts possible within a window in 1 direction.
+        :param V: The partial specific volume for the protein (worth investigating further). Units of m^3.
+        :param outname: Filename for output dx file.
+        :param eqn: Type of equation used for convolution. OPtions are Gaussian, Slater or Lorentzian
+        :param T: Temperature of simulation. Default is body temp (K).
+        :param P: Pressure of simulation. Default is atmospheric (Pa).
+        :param epsilonE: External permitivitty outside the protein. Another variable worth investigating. Default is from 2001 paper regarding a salt water solvent.
+        :param window_size: Size of the window we're calculating dipole moments for. Should account for electrostatics falling to zero and be same as get_dipole_map
+        '''    
+
+        if np.shape(dipole_map)[0] < 2:
+            raise Exception("ERROR: The number of frames in your dipole map is %i. 2 or more are required for electron density calculations."%(np.shape(dipole_map)[0]))
+    
+        #print("What function would you like to use? Please enter a number.\n1. Gaussian: exp(-(x**2 + y**2 + z**2) / 2 * sigma)\n2. Slater: exp(-(x**2 + y**2 + z**2)**(1./2.) / 2 * sigma)")
+        #eqn = input()
+        #if eqn != 1 or 2:
+        #    print("ERROR: You did not enter a valid number for your choice of equation\n Defaulting to Gaussian.")
+        #    eqn = 1
+            
+        # Depending on the size of the system and user RAM, we need to try two slightly different methods to avoid memory issues.
+        try:
+            dipole_map = np.array(dipole_map)      
+
+            p_M = np.sum(np.mean(np.power(dipole_map, 2.), axis=0) - np.power(np.mean(dipole_map, axis=0), 2), axis=3)
+        
+            p_M = np.array(p_M).astype(np.float64) * e**2 * m**2 # Unit conversion
+            
+            # Now we need to define epsilon_r (the dielectric permitivitty)
+            val = p_M / (3. * epsilon0 * V * kB * T)
+
+            epsilon_top = 1. + (val * ((2. * epsilonE) / (2. * epsilonE + 1.)))
+            epsilon_bot = 1. - (val * (1. / (2. * epsilonE + 1.)))
+
+            epsilon = epsilon_top / epsilon_bot
+        
+            epsilon[np.where(epsilon < 1.0)] = 1.0
+
+            # Now we want to calculate our van der waals volume based on the Claussius-Moletti relation between polarisability and permitivitty.
+            Vvdw = (kB * T * (epsilon - 1.) * 3.) / (4. * np.pi * P * (epsilon + 2.))
+            
+            r_vdw = ((3. * Vvdw) / (4. * np.pi))**(1./3.)
+        
+            sigma = r_vdw / (2. * np.sqrt(2. * np.log(2.))) # Setting r_vdw equal to the FWHM of our gaussian / Lorentz / Slater function.
+    
+            pts = np.zeros((len(orig[0]), len(orig[1]), len(orig[2])))
+
+            sigma = sigma / m  # convert back into nm units to match with x, y, z coord used in meshgrid below
+    
+            # Create 3D function kernal
+
+            mesh = np.linspace(0, window_size, kernel_width) - window_size / 2.
+            x, y, z = np.meshgrid(mesh, mesh, mesh)
+
+            # We should have a buffer (default is 2 * window_size) at the edges of our box, so should be able to sum contributing gaussians across entire system.
+            sigmanonzero = np.nonzero(sigma) #  Get only contributing sigmas for faster calculations.
+            if len(mesh) % 2. == 0.: # Number is even (no point doing this check later - saves time)
+                for i in range(np.shape(sigmanonzero)[1]):
+                    if eqn == 'gauss':
+                        gauss = np.exp(-(x * x + y * y + z * z) / (2. * sigma[sigmanonzero[0][i]][sigmanonzero[1][i]][sigmanonzero[2][i]]**2))   # Create gaussian with specific sigma from e density
+                    elif eqn == 'slater':
+                        gauss = np.exp(-np.sqrt((x * x + y * y + z * z)) / (2. * sigma[sigmanonzero[0][i]][sigmanonzero[1][i]][sigmanonzero[2][i]]**2))   # Create Alater functional with specific sigma from e density
+                    pts_range = int(((len(mesh) + 1.) / 2.))
+                    pts[sigmanonzero[0][i] - pts_range : sigmanonzero[0][i] + pts_range ,
+                        sigmanonzero[1][i] - pts_range : sigmanonzero[1][i] + pts_range ,
+                        sigmanonzero[2][i] - pts_range : sigmanonzero[2][i] + pts_range ] += gauss # move 1 ahead duye to python numbering"""
+            else:  # number is odd
+                for i in range(np.shape(sigmanonzero)[1]):
+                    if eqn == 'gauss':
+                        gauss = np.exp(-(x * x + y * y + z * z) / (2. * sigma[sigmanonzero[0][i]][sigmanonzero[1][i]][sigmanonzero[2][i]]**2))   # Create gaussian with specific sigma from e density
+                    elif eqn == 'slater':
+                        gauss = np.exp(-np.sqrt((x * x + y * y + z * z)) / (2. * sigma[sigmanonzero[0][i]][sigmanonzero[1][i]][sigmanonzero[2][i]]**2))   # Create Alater functional with specific sigma from e density
+                    pts_range = int(((len(mesh)) / 2.))
+                    pts[sigmanonzero[0][i] - pts_range : sigmanonzero[0][i] + pts_range + 1,
+                        sigmanonzero[1][i] - pts_range : sigmanonzero[1][i] + pts_range + 1,
+                        sigmanonzero[2][i] - pts_range : sigmanonzero[2][i] + pts_range + 1] += gauss # move 1 ahead duye to python numbering"""
+    
+        except MemoryError:
+            print("Size of protein is too large for electron density map production. Breaking calculations down into smaller chunks (may take longer, or not work if data structure too big).\n")
+        
+            # Too much to handle! We'll have to create a loop to slim down the large arrays. Let's make the loop in x (second set of indices).
+            dipole_map = np.array(dipole_map)
+            p_M = []
+            for i in range(np.shape(dipole_map)[1]):
+                fluc = np.sum(np.mean(np.power(dipole_map[:,i], 2.), axis=0) - np.power(np.mean(dipole_map[:,i], axis=0), 2), axis=2)
+                p_M.append(fluc)
+            p_M = np.array(p_M).astype(np.float64) * e**2. * m**2. # convert units
+        
+            # Now we need to define epsilon_r (the dielectric permitivitty)
+            val = p_M / (3. * epsilon0 * V * kB * T)
+
+            epsilon_top = 1. + (val * ((2. * epsilonE) / (2. * epsilonE + 1.)))
+            epsilon_bot = 1. - (val * (1. / (2. * epsilonE + 1.)))
+    
+            epsilon = epsilon_top / epsilon_bot
+            
+            epsilon[np.where(epsilon < 1.0)] = 1.0
+
+            # Now we want to calculate our van der waals volume based on the Claussius-Moletti relation between polarisability and permitivitty.
+            Vvdw = (kB * T * (epsilon - 1.) * 3.) / (4. * np.pi * P * (epsilon + 2.))
+            r_vdw = ((3. * Vvdw) / (4. * np.pi))**(1./3.)
+        
+            sigma = r_vdw / (2. * np.sqrt(2. * np.log(2.))) # Setting r_vdw equal to the FWHM of our gaussian / Lorentz / Slater function.
+    
+            pts = np.zeros((len(orig[0]), len(orig[1]), len(orig[2])))
+    
+            sigma = sigma / m  # convert back into nm units to match with x, y, z coord used in meshgrid below
+        
+            # Create 3D function kernal
+    
+            mesh = np.linspace(0, window_size, kernel_width) - window_size / 2.
+            x, y, z = np.meshgrid(mesh, mesh, mesh)
+
+            # We should have a buffer (default is 2 * window_size) at the edges of our box, so should be able to sum contributing gaussians across entire system.
+            sigmanonzero = np.nonzero(sigma) #  Get only contributing sigmas for faster calculations.
+            if len(mesh) % 2. == 0.: # Number is even (no point doing this check later - saves time)
+                for i in range(np.shape(sigmanonzero)[1]):
+                    if eqn == 'gauss':
+                        gauss = np.exp(-(x * x + y * y + z * z) / (2. * sigma[sigmanonzero[0][i]][sigmanonzero[1][i]][sigmanonzero[2][i]]**2))   # Create gaussian with specific sigma from e density
+                    elif eqn == 'slater':
+                        gauss = np.exp(-np.sqrt((x * x + y * y + z * z)) / (2. * sigma[sigmanonzero[0][i]][sigmanonzero[1][i]][sigmanonzero[2][i]]**2))   # Create Alater functional with specific sigma from e density
+                    pts_range = int(((len(mesh) + 1.) / 2.))
+                    pts[sigmanonzero[0][i] - pts_range : sigmanonzero[0][i] + pts_range ,
+                        sigmanonzero[1][i] - pts_range : sigmanonzero[1][i] + pts_range ,
+                        sigmanonzero[2][i] - pts_range : sigmanonzero[2][i] + pts_range ] += gauss # move 1 ahead duye to python numbering"""
+            else:  # number is odd
+                for i in range(np.shape(sigmanonzero)[1]):
+                    if eqn == 'gauss':
+                        gauss = np.exp(-(x * x + y * y + z * z) / (2. * sigma[sigmanonzero[0][i]][sigmanonzero[1][i]][sigmanonzero[2][i]]**2))   # Create gaussian with specific sigma from e density
+                    elif eqn == 'slater':
+                        gauss = np.exp(-np.sqrt((x * x + y * y + z * z)) / (2. * sigma[sigmanonzero[0][i]][sigmanonzero[1][i]][sigmanonzero[2][i]]**2))   # Create Alater functional with specific sigma from e density
+                    pts_range = int(((len(mesh)) / 2.))
+                    pts[sigmanonzero[0][i] - pts_range : sigmanonzero[0][i] + pts_range + 1,
+                        sigmanonzero[1][i] - pts_range : sigmanonzero[1][i] + pts_range + 1,
+                        sigmanonzero[2][i] - pts_range : sigmanonzero[2][i] + pts_range + 1] += gauss # move 1 ahead duye to python numbering"""
+    
+        # prepare density structure export
+        pts /= pts.max()
+        
+        from biobox.classes.density import Density
+        
+        D = Density()
+
+        D.properties['density'] = pts
+        D.properties['size'] = np.array(pts.shape)
+        D.properties['origin'] = np.array(min_val)   
+        D.properties['delta'] = np.identity(3) * window_size / kernel_width #(step size)
+        D.properties['format'] = 'dx'
+        D.properties['filename'] = ''
+        D.properties['sigma'] = np.std(pts)
+    
+        D.write_dx(outname)
+
+    def write_elec_density_from_multipdb(self, outname, time_start, time_end, T = 310.15, P = 101 * 10**3, window_size = 3, resolution = 0.75, dip_map = False):
+        '''
+        This links together get_dipole_map and get_dipole_density using an all important default set of buffer parameters.
+        This function serves as a means for the user not to have to define their own coordinate system, but it is quite bassic
+        and uses most of the default settings in the required function.
+        
+        :param outname: Name of desired output file (dx format)
+        :param time_start: First frame to find electron density from
+        :param time_end: Last frame to find electrno density from (runs from time_start:time_ends)
+        :param window_size: Size of window to calculate dipole through (nm).
+        :param resolution: Desired resolution (nm), also defines the shift we move our sliding window by.
+        '''
+    
+        if time_start == time_end:
+            raise Exception('ERROR: time_end must be at least 1 frame more than time_start')
+        
+        time_end += 1 # shift by 1 to account for python counting
+            
+        kernel_width = window_size / resolution
+        idxs = self.atomselect("*", "*", "*", get_index=True)[1]
+
+        """ Now we want to parse in our multipdb file """
+        #idx = S.atomselect("*", "*", "*", get_index=True)[1]
+        crds = self.coordinates[time_start:time_end, idxs]    # Skip the first 1 ns of simulation data for equilibriation (1 frame = 50 ps)
+
+        M = self.pdb2pqr()
+    
+        mass = self.get_mass_by_residue() # Returns mass in Daltons
+        vol_spec_const = 0.73 # cm3 g-1, that weird specific volume parameter that seems to have a loose definiton
+        spec_vol = vol_spec_const * 10**(-6) * mass / Na # Compute specific volume autmoatically (using necessay unit conversion)
+
+        # Find the maximum / minimum boundaries of our box and add buffer regions to the edges to use the desired resolution
+        maxmin = []
+        diff = []
+        remain = []
+        buff = []
+        buffmaxmin = []
+
+        for i in range(3):
+            """ 3 for the three cartisian coordiantes, we want do define our coordinate system and reference frame as the FIRST in the sim. """
+            maxmin.append(np.amin(crds[:,:,i]))
+            maxmin.append(np.amax(crds[:,:,i]))
+            diff.append(maxmin[2*i+1] - maxmin[2*i])
+            remain.append(diff[i] % window_size)  # Get the remainder of any divisions for our buffer
+            buff.append((window_size - remain[i]) / 2.) # Create the values for our buffer coordinates
+            buffmaxmin.append(maxmin[2*i]-buff[i] - 2 * window_size )  # We need to increase the buffer zone to aacount for density cutoff
+            buffmaxmin.append(maxmin[2*i+1]+buff[i] + 2 * window_size ) # Create our new boundaries with the buffer region
+        
+        x_range = np.arange(buffmaxmin[0], buffmaxmin[1]+resolution-window_size, resolution)   # From minimum of buffer to maximum of buffer + voxel shift - res. () In other words, the start site of every coordinate).
+        y_range = np.arange(buffmaxmin[2], buffmaxmin[3]+resolution-window_size, resolution)   # This is for _item in the loop above, where we analyse what atoms are present between this and the next (+ res)
+        z_range = np.arange(buffmaxmin[4], buffmaxmin[5]+resolution-window_size, resolution)
+    
+        orig = np.array([x_range, y_range, z_range]) + window_size / 2.
+
+        dipoles  = self.get_dipole_map(orig = orig, pqr = M, time_start = time_start, time_end = time_end, write_dipole_map = dip_map)
+    
+        min_crds = [buffmaxmin[0] + 3 * resolution, buffmaxmin[2] + 3 * resolution, buffmaxmin[4] + 3 * resolution]
+
+        self.get_dipole_density(dipole_map = dipoles, orig = orig, min_val = min_crds, kernel_width = kernel_width, V = spec_vol, outname = outname, T = T, P = P)
