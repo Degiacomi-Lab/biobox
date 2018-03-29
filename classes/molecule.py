@@ -74,7 +74,10 @@ class Molecule(Structure):
                                       "CD": "C", "CE": "C", "CE1": "C", "CE2": "C", "CE3": "C", "CZ2": "C", "CZ3": "C", "CH2": "C",
                                       "N": "N", "NH1": "N", "NH2": "N", "NZ": "N", "NE": "N", "NE1": "N", "NE2": "N", "ND1": "N", "ND2": "N",
                                       "O": "O", "OG": "O", "OG1": "O", "OG2": "O", "OD1": "O", "OD2": "O", "OE1": "O", "OE2": "O", "OH": "O", "OXT": "O",
-                                      "SD": "S", "SG": "S"}
+                                      "SD": "S", "SG": "S", "H": "H", "HA": "H", "HB1": "H", "HB2": "H", "HE1": "H", "HE2": "H", "HD1": "H", "HD2": "H", 
+                                      "H1": "H", "H2": "H", "H3": "H", "HH11": "H", "HH12": "H", "HH21": "H", "HH22": "H", "HG1": "H", "HG2": "H", "HE21": "H", 
+                                      "HE22": "H", "HD11": "H", "HD12": "H", "HD13": "H", "HD21": "H", "HD22": "H", "HG11": "H", "HG12": "H", "HG13": "H", 
+                                      "HG21": "H", "HG22": "H", "HG23": "H", "HZ2": "H", "HZ3": "H", "HZ": "H", "HA1": "H", "HA2": "H", "HB": "H", "HD3": "H", "HG": "H", "HZ1": "H", "HE3": "H", "HB3": "H", "HH1": "H", "HH2": "H", "HD23": "H", "HD13": "H", "HE": "H", "HH": "H", "OC1": "O", "OC2": "O"}
 
     def know(self, prop):
         '''
@@ -1115,7 +1118,8 @@ class Molecule(Structure):
         reassign chain name, using distance cutoff (cannot be undone).
         If two consecutive atoms are beyond a cutoff, a new chain is assigned.
 
-        :param distance: distance cutoff distance
+        :param distance: distance cutoff distanceR: no atomtype found!
+
         :param use_backbone: if True, splitting will be performed considering backbone atoms (N and C), all atoms in a sequence otherwise
         '''
 
@@ -1379,6 +1383,7 @@ class Molecule(Structure):
                     mass += self.know('atom_mass')[atomtype]
                 except Exception as e:
                     if atomtype == "":
+                        print self.data.values[i:i+40]
                         raise Exception("ERROR: no atomtype found!")
                     else:
                         raise Exception("ERROR: mass for atom %s is unknown!\nInsert a key in protein\'s masses dictionary knowledge['atom_mass'] and retry!\nex.: protein.knowledge['atom_mass'][\"PI\"]=3.141592" %atomtype)
@@ -1571,14 +1576,14 @@ class Molecule(Structure):
                 if self.data["name"][ix] == 'N' and self.data["resname"][ix] == 'HIS':                                                                                         
                     if (self.data["name"][ix:(ix+H_length)] == 'HE2').any() and (self.data["name"][ix:(ix+H_length)] == 'HD1').any(): # If the residue contains HE2 and HD1, it is a HIP residue
                         H_length = 18     #   number of atoms in histdine (HIP)
-                        self.data["resname"][ix:(ix+H_length-1)] = HIP
+                        self.data.loc[ix:(ix+H_length-1), "resname"] = HIP
                     elif (self.data["name"][ix:(ix+H_length)] == 'HE2').any():
                         #print np.shape(self.data.loc[i:(i+H_length), "resname"]), np.shape(HIE)
                         #print self.data.loc[ix:(ix+H_length), "resname"]
                         self.data.loc[ix:(ix+H_length-1), "resname"] = HIE
                         #print self.data.loc[ix:(ix+H_length), "resname"]
                     elif (self.data["name"][ix:(ix+H_length)] == 'HD1').any():
-                        self.data["resname"][ix:(ix+H_length-1)] = HID
+                        self.data.loc[ix:(ix+H_length-1), "resname"] = HID
 
         # Move through each line in the pdb.data file and find the corresponding charge / vdw radius as supplied by the forcefield
         for i, resnames in enumerate(self.data["resname"]):
@@ -1944,7 +1949,7 @@ class Molecule(Structure):
     
         D.write_dx(outname)
 
-    def write_elec_density_from_multipdb(self, outname, time_start, time_end, T = 310.15, P = 101 * 10**3, window_size = 3, resolution = 0.75, dip_map = False):
+    def write_elec_density_from_multipdb(self, outname, time_start, time_end, den = 0.73, T = 310.15, P = 101 * 10**3, window_size = 3, resolution = 0.75, dip_map = False):
         '''
         This links together get_dipole_map and get_dipole_density using an all important default set of buffer parameters.
         This function serves as a means for the user not to have to define their own coordinate system, but it is quite bassic
@@ -1960,7 +1965,8 @@ class Molecule(Structure):
         if time_start == time_end:
             raise Exception('ERROR: time_end must be at least 1 frame more than time_start')
         
-        time_end += 1 # shift by 1 to account for python counting
+        if time_end != -1:
+            time_end += 1 # shift by 1 to account for python counting
             
         kernel_width = window_size / resolution
         idxs = self.atomselect("*", "*", "*", get_index=True)[1]
@@ -1970,10 +1976,11 @@ class Molecule(Structure):
         crds = self.coordinates[time_start:time_end, idxs]    # Skip the first 1 ns of simulation data for equilibriation (1 frame = 50 ps)
 
         M = self.pdb2pqr()
-    
-        mass = self.get_mass_by_residue() # Returns mass in Daltons
-        vol_spec_const = 0.73 # cm3 g-1, that weird specific volume parameter that seems to have a loose definiton
-        spec_vol = vol_spec_const * 10**(-6) * mass / Na # Compute specific volume autmoatically (using necessay unit conversion)
+        
+        self.assign_atomtype()
+        mass = self.get_mass_by_atom() # Returns mass in Daltons
+        # den in cm3 g-1, that weird specific volume parameter that seems to have a loose definiton
+        spec_vol = den * 10**(-6) * mass / Na # Compute specific volume autmoatically (using necessay unit conversion)
 
         # Find the maximum / minimum boundaries of our box and add buffer regions to the edges to use the desired resolution
         maxmin = []
