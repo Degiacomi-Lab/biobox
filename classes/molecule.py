@@ -1781,7 +1781,7 @@ class Molecule(Structure):
                             else:
                                 continue
          
-        return dipole_map
+        return np.array(dipole_map).astype(np.float32)
 
     def get_dipole_density(self, dipole_map, orig, min_val, kernel_width, V, outname, eqn = 'gauss', T = 310.15, P = 101 * 10**3, epsilonE = 54., window_size = 3.):
         '''
@@ -1806,9 +1806,11 @@ class Molecule(Structure):
         :param epsilonE: External permitivitty outside the protein. Another variable worth investigating. Default is from 2001 paper regarding a salt water solvent.
         :param window_size: Size of the window we're calculating dipole moments for. Should account for electrostatics falling to zero and be same as get_dipole_map
         '''    
+        
+        test = dipole_map.shape
 
-        if np.shape(dipole_map)[0] < 2:
-            raise Exception("ERROR: The number of frames in your dipole map is %i. 2 or more are required for electron density calculations."%(np.shape(dipole_map)[0]))
+        if test[0] < 2:
+            raise Exception("ERROR: The number of frames in your dipole map is %i. 2 or more are required for electron density calculations."%(test[0]))
     
         #print("What function would you like to use? Please enter a number.\n1. Gaussian: exp(-(x**2 + y**2 + z**2) / 2 * sigma)\n2. Slater: exp(-(x**2 + y**2 + z**2)**(1./2.) / 2 * sigma)")
         #eqn = input()
@@ -1877,7 +1879,6 @@ class Molecule(Structure):
             print("Size of protein is too large for electron density map production. Breaking calculations down into smaller chunks (may take longer, or not work if data structure too big).\n")
         
             # Too much to handle! We'll have to create a loop to slim down the large arrays. Let's make the loop in x (second set of indices).
-            dipole_map = np.array(dipole_map)
             p_M = []
             for i in range(np.shape(dipole_map)[1]):
                 fluc = np.sum(np.mean(np.power(dipole_map[:,i], 2.), axis=0) - np.power(np.mean(dipole_map[:,i], axis=0), 2), axis=2)
@@ -2006,7 +2007,7 @@ class Molecule(Structure):
         orig = np.array([x_range, y_range, z_range]) + window_size / 2.
 
         dipoles  = self.get_dipole_map(orig = orig, pqr = M, time_start = time_start, time_end = time_end, write_dipole_map = dip_map)
-    
+
         min_crds = [buffmaxmin[0] + 3 * resolution, buffmaxmin[2] + 3 * resolution, buffmaxmin[4] + 3 * resolution]
 
         self.get_dipole_density(dipole_map = dipoles, orig = orig, min_val = min_crds, kernel_width = kernel_width, V = spec_vol, outname = outname, T = T, P = P)
