@@ -77,7 +77,7 @@ class Molecule(Structure):
                                       "SD": "S", "SG": "S", "H": "H", "HA": "H", "HB1": "H", "HB2": "H", "HE1": "H", "HE2": "H", "HD1": "H", "HD2": "H", 
                                       "H1": "H", "H2": "H", "H3": "H", "HH11": "H", "HH12": "H", "HH21": "H", "HH22": "H", "HG1": "H", "HG2": "H", "HE21": "H", 
                                       "HE22": "H", "HD11": "H", "HD12": "H", "HD13": "H", "HD21": "H", "HD22": "H", "HG11": "H", "HG12": "H", "HG13": "H", 
-                                      "HG21": "H", "HG22": "H", "HG23": "H", "HZ2": "H", "HZ3": "H", "HZ": "H", "HA1": "H", "HA2": "H", "HB": "H", "HD3": "H", "HG": "H", "HZ1": "H", "HE3": "H", "HB3": "H", "HH1": "H", "HH2": "H", "HD23": "H", "HD13": "H", "HE": "H", "HH": "H", "OC1": "O", "OC2": "O"}
+                                      "HG21": "H", "HG22": "H", "HG23": "H", "HZ2": "H", "HZ3": "H", "HZ": "H", "HA1": "H", "HA2": "H", "HB": "H", "HD3": "H", "HG": "H", "HZ1": "H", "HE3": "H", "HB3": "H", "HH1": "H", "HH2": "H", "HD23": "H", "HD13": "H", "HE": "H", "HH": "H", "OC1": "O", "OC2": "O", "OW": "O", "HW1": "H", "HW2": "H"}
 
     def know(self, prop):
         '''
@@ -299,7 +299,7 @@ class Molecule(Structure):
             self.properties["symmetry"] = b
 
         #correctly set types of columns requiring other than string
-        self.data["resid"] = self.data["resid"].astype(int)
+        self.data["resid"] = self.data["resid"].astype(str)
         self.data["index"] = self.data["index"].astype(int)
         self.data["occupancy"] = self.data["occupancy"].astype(float)
         self.data["beta"] = self.data["beta"].astype(float)
@@ -1100,12 +1100,15 @@ class Molecule(Structure):
             else:
                 raise Exception("ERROR: requested coordinate index %s, but only %s are available" %(np.max(conformations), len(self.coordinates)))
 
+        idx = np.arange(len(idxs))
+
         # create molecule, and push created data information
         M = Molecule()
         postmp = self.coordinates[:, idxs]
         M.coordinates = postmp[frames]
         M.data = self.data.ix[idxs]
-
+        M.data = M.data.reset_index(drop=True)
+        M.data["index"] = idx
         M.current = 0
         M.points = M.coordinates[M.current]
 
