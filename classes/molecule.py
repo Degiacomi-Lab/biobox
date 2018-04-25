@@ -1527,6 +1527,9 @@ class Molecule(Structure):
         HIP = np.array(["HIP"] * 18)    # create numpy array structures to possibly reassign later
         HIE = np.array(["HIE"] * 17)    # create numpy array structures to possibly reassign later
         HID = np.array(["HID"] * 17)    # create numpy array structures to possibly reassign later
+        NHIP = np.array(["NHIP"] * 20)
+        NHIE = np.array(["NHIE"] * 19)
+        NHID = np.array(["NHID"] * 19)
 
         start_chain = self.data["resid"].iloc[0]   # This is in case we get 1 or 2 as the first chain ID start
         end_chain = self.data["resid"].iloc[-1]    #  We don't know the end chain number so we find it here
@@ -1570,7 +1573,8 @@ class Molecule(Structure):
         
         # Need to check whether it matches HIE, HID or HIP depending on what protons are present and where
         his_check = self.data["resname"] == 'HIS'  # Check if we need to do following calculation
-        if np.sum(his_check) != 0:
+        nhis_check = self.data["resname"] == 'NHIS' # Check for N termini HIS
+        if np.sum(his_check) != 0 or np.sum(nhis_check) != 0:
             print "WARNING: found residue with name HIS, checking to see what protonation state it is in and reassigning to HIP, HIE or HID.\nYou should check HIS in your pdb file is right to be sure!"          
             for ix in range(len(self.data["resname"])):
                 H_length = 17 # Set this as it is more common, and also covers the basis to capture HD1 or HE2 later if necessary (as C and O tend to be last a
@@ -1587,6 +1591,18 @@ class Molecule(Structure):
                         #print self.data.loc[ix:(ix+H_length), "resname"]
                     elif (self.data["name"][ix:(ix+H_length)] == 'HD1').any():
                         self.data.loc[ix:(ix+H_length-1), "resname"] = HID
+                elif self.data["name"][ix] == 'N' and self.data["resname"][ix] == 'NHIS':
+                    H_length = 19
+                    if (self.data["name"][ix:(ix+H_length)] == 'HE2').any() and (self.data["name"][ix:(ix+H_length)] == 'HD1').any(): # If the residue contains HE2 and HD1, it is a HIP residue
+                        H_length = 20     #   number of atoms in histdine (HIP)
+                        self.data.loc[ix:(ix+H_length-1), "resname"] = NHIP
+                    elif (self.data["name"][ix:(ix+H_length)] == 'HE2').any():
+                        #print np.shape(self.data.loc[i:(i+H_length), "resname"]), np.shape(HIE)
+                        #print self.data.loc[ix:(ix+H_length), "resname"]
+                        self.data.loc[ix:(ix+H_length-1), "resname"] = NHIE
+                        #print self.data.loc[ix:(ix+H_length), "resname"]
+                    elif (self.data["name"][ix:(ix+H_length)] == 'HD1').any():
+                        self.data.loc[ix:(ix+H_length-1), "resname"] = NHID
 
         # Move through each line in the pdb.data file and find the corresponding charge / vdw radius as supplied by the forcefield
         for i, resnames in enumerate(self.data["resname"]):
@@ -1899,9 +1915,13 @@ class Molecule(Structure):
             epsilon[np.where(epsilon < 1.0)] = 1.0
 
             # Now we want to calculate our van der waals volume based on the Claussius-Moletti relation between polarisability and permitivitty.
-            Vvdw = (kB * T * (epsilon - 1.) * 3.) / (4. * np.pi * P * (epsilon + 2.))
-            r_vdw = ((3. * Vvdw) / (4. * np.pi))**(1./3.)
+            #Vvdw = (kB * T * (epsilon - 1.) * 3.) / (4. * np.pi * P * (epsilon + 2.))
+            #r_vdw = ((3. * Vvdw) / (4. * np.pi))**(1./3.)
         
+            # BASED ON PAPER OUT END OF MARCH 2018 ON LINK VIA QM, Rvdw = 0.24 alpha^(1/7), derived from noble gases
+            r_vdw = 2.54 * (((3 * kB * T) / P) * ((epsilon - 1) / (epsilon + 2))) ** (1. / 7.)
+ 
+
             sigma = r_vdw / (2. * np.sqrt(2. * np.log(2.))) # Setting r_vdw equal to the FWHM of our gaussian / Lorentz / Slater function.
     
             pts = np.zeros((len(orig[0]), len(orig[1]), len(orig[2])))
@@ -1938,7 +1958,8 @@ class Molecule(Structure):
     
         # prepare density structure export
         pts /= pts.max()
-        
+        print np.shape(pts)
+        #epsilon = -1 * epsilon
         from biobox.classes.density import Density
         
         D = Density()
@@ -1984,7 +2005,7 @@ class Molecule(Structure):
         self.assign_atomtype()
         mass = self.get_mass_by_atom() # Returns mass in Daltons
         # den in cm3 g-1, that weird specific volume parameter that seems to have a loose definiton
-        spec_vol = den * 10**(-6) * mass / Na # Compute specific volume autmoatically (using necessay unit conversion)
+        #spec_vol = den * 10**(-6) * mass / Na # Compute specific volume autmoatically (using necessay unit conversion)
 
         # Find the maximum / minimum boundaries of our box and add buffer regions to the edges to use the desired resolution
         maxmin = []
@@ -2006,7 +2027,9 @@ class Molecule(Structure):
         x_range = np.arange(buffmaxmin[0], buffmaxmin[1]+resolution-window_size, resolution)   # From minimum of buffer to maximum of buffer + voxel shift - res. () In other words, the start site of every coordinate).
         y_range = np.arange(buffmaxmin[2], buffmaxmin[3]+resolution-window_size, resolution)   # This is for _item in the loop above, where we analyse what atoms are present between this and the next (+ res)
         z_range = np.arange(buffmaxmin[4], buffmaxmin[5]+resolution-window_size, resolution)
-    
+        
+        spec_vol = kernel_width**3 * 10**(-27)
+     
         orig = np.array([x_range, y_range, z_range]) + window_size / 2.
 
         dipoles  = self.get_dipole_map(orig = orig, pqr = M, time_start = time_start, time_end = time_end, write_dipole_map = dip_map)
