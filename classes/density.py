@@ -581,11 +581,14 @@ class Density(Structure):
             w = line.split()
             if w[0] == "#":
                 continue
-            elif len(w) == 3:
-                d.append(w[0])
-                d.append(w[1])
-                d.append(w[2])
-            # get coordinates
+            elif len(w) <= 3: #and np.array(list(w)).dtype == ('float'):
+                try:
+                    w = np.array(w).astype(float)
+                    for i in range(len(w)):
+                        d.append(w[i])
+                except Exception as e:
+                    continue
+                # get coordinates
             elif len(w) > 2 and w[0] == "object" and w[3] == "gridpositions":
                 self.properties['size'] = np.array([w[-3], w[-2], w[-1]]).astype(int)
             # get scaling factor
@@ -594,6 +597,7 @@ class Density(Structure):
             # get position of origin
             elif len(w) > 2 and w[0] == "origin":
                 self.properties['origin'] = np.array(w[1:4]).astype(float)
+
 
         # scaling factor with respect of unit cell voxels
         self.properties['delta'] = np.array(dlt).astype(float)
