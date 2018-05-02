@@ -1785,10 +1785,13 @@ class Molecule(Structure):
             dipole_snapshot = np.array(dipole_snapshot).astype(np.float32)
             dipole_snapshot = np.reshape(dipole_snapshot, (len(x_range), len(y_range), len(z_range), 3))  # Reshape as necessary size to match coordinate system
             dipole_map.append(dipole_snapshot) # Create dipole_map over time
+            #dipole_map.append(np.reshape(np.zeros((len(z_range) * len(y_range) * len(x_range), 3)).tolist(), (len(x_range), len(y_range), len(z_range), 3)))
         
         if write_dipole_map:  
             dip_avg = np.mean(np.array(dipole_map), axis=0)
-            
+            #data_file.write("materials on\n")
+            #data_file.write("material AOChalky\n")
+            #data_file.write("color blue2\n")
             for ix in range(np.shape(dip_avg)[0]):
                     for iy in range(np.shape(dip_avg)[1]):
                         for iz in range(np.shape(dip_avg)[2]):
@@ -1827,6 +1830,8 @@ class Molecule(Structure):
         '''    
         
         test = dipole_map.shape
+        polar_au = 1.6487772731 * 1E-41 # C^2 m^2 J^-1 - conversion from real to atomic units for polarisability
+        dist_au = 5.29177 * 1E-11 # m - one bohr unit, convert from real to a. u. for distance
 
         if test[0] < 2:
             raise Exception("ERROR: The number of frames in your dipole map is %i. 2 or more are required for electron density calculations."%(test[0]))
@@ -1842,24 +1847,35 @@ class Molecule(Structure):
             dipole_map = np.array(dipole_map)      
 
             p_M = np.sum(np.mean(np.power(dipole_map, 2.), axis=0) - np.power(np.mean(dipole_map, axis=0), 2), axis=3)
-        
+
             p_M = np.array(p_M).astype(np.float64) * e**2 * m**2 # Unit conversion
             
             # Now we need to define epsilon_r (the dielectric permitivitty)
             val = p_M / (3. * epsilon0 * V * kB * T)
-
+            #val = p_M / (3. * epsilon0 * (window_size * 1E-09 / kernel_width)**3 * kB * T)
+            
             epsilon_top = 1. + (val * ((2. * epsilonE) / (2. * epsilonE + 1.)))
             epsilon_bot = 1. - (val * (1. / (2. * epsilonE + 1.)))
 
             epsilon = epsilon_top / epsilon_bot
-        
+
             epsilon[np.where(epsilon < 1.0)] = 1.0
 
             # Now we want to calculate our van der waals volume based on the Claussius-Moletti relation between polarisability and permitivitty.
-            Vvdw = (kB * T * (epsilon - 1.) * 3.) / (4. * np.pi * P * (epsilon + 2.))
+            #Vvdw = (kB * T * epsilon0 * (epsilon - 1.) * 3.) / (4. * np.pi * P * (epsilon + 2.))  # Hard sphere approximation
+            #r_vdw = ((3. * Vvdw) / (4. * np.pi))**(1./3.)
+
+            # BASED ON PAPER OUT END OF MARCH 2018 ON LINK VIA QM, Rvdw = 0.24 alpha^(1/7), derived from noble gases - Quantum approximation
+            # Find polarisability and convert to atomic units - alpha = 3 eps0 / N * (eps - 1 / eps + 2)
+            #alpha_au = ((3 * epsilon0 * (window_size * 1E-09 / kernel_width)**3) * ((epsilon -1) / (epsilon + 2))) / polar_au # The window_size / kernel width is the volume of the voxel (based on resolution)
+            alpha_au = ((3 * epsilon0 * V) * ((epsilon -1) / (epsilon + 2))) / polar_au
+
+            r_au = 2.54 * alpha_au**(1. / 7.) # convert to vdw radius in a. u. based on quantum paper
+
+            r_vdw = r_au * dist_au # convert back to m
             
-            r_vdw = ((3. * Vvdw) / (4. * np.pi))**(1./3.)
-        
+            print np.max(r_vdw[np.where(r_vdw > 0)])
+
             sigma = r_vdw / (2. * np.sqrt(2. * np.log(2.))) # Setting r_vdw equal to the FWHM of our gaussian / Lorentz / Slater function.
     
             pts = np.zeros((len(orig[0]), len(orig[1]), len(orig[2])))
@@ -1869,6 +1885,7 @@ class Molecule(Structure):
             # Create 3D function kernal
 
             mesh = np.linspace(0, window_size, kernel_width) - window_size / 2.
+            print mesh
             x, y, z = np.meshgrid(mesh, mesh, mesh)
 
             # We should have a buffer (default is 2 * window_size) at the edges of our box, so should be able to sum contributing gaussians across entire system.
@@ -1878,21 +1895,21 @@ class Molecule(Structure):
                     if eqn == 'gauss':
                         gauss = np.exp(-(x * x + y * y + z * z) / (2. * sigma[sigmanonzero[0][i]][sigmanonzero[1][i]][sigmanonzero[2][i]]**2))   # Create gaussian with specific sigma from e density
                     elif eqn == 'slater':
-                        gauss = np.exp(-np.sqrt((x * x + y * y + z * z)) / (2. * sigma[sigmanonzero[0][i]][sigmanonzero[1][i]][sigmanonzero[2][i]]**2))   # Create Alater functional with specific sigma from e density
+                        gauss = np.exp(-np.sqrt((x * x + y * y + z * z)) / (2. * sigma[sigmanonzero[0][i]][sigmanonzero[1][i]][sigmanonzero[2][i]]**2))   # Create Slater functional with specific sigma from e density
                     pts_range = int(((len(mesh) + 1.) / 2.))
                     pts[sigmanonzero[0][i] - pts_range : sigmanonzero[0][i] + pts_range ,
                         sigmanonzero[1][i] - pts_range : sigmanonzero[1][i] + pts_range ,
-                        sigmanonzero[2][i] - pts_range : sigmanonzero[2][i] + pts_range ] += gauss # move 1 ahead duye to python numbering"""
+                        sigmanonzero[2][i] - pts_range : sigmanonzero[2][i] + pts_range ] += gauss # move 1 ahead duye to python numbering
             else:  # number is odd
                 for i in range(np.shape(sigmanonzero)[1]):
                     if eqn == 'gauss':
                         gauss = np.exp(-(x * x + y * y + z * z) / (2. * sigma[sigmanonzero[0][i]][sigmanonzero[1][i]][sigmanonzero[2][i]]**2))   # Create gaussian with specific sigma from e density
                     elif eqn == 'slater':
-                        gauss = np.exp(-np.sqrt((x * x + y * y + z * z)) / (2. * sigma[sigmanonzero[0][i]][sigmanonzero[1][i]][sigmanonzero[2][i]]**2))   # Create Alater functional with specific sigma from e density
+                        gauss = np.exp(-np.sqrt((x * x + y * y + z * z)) / (2. * sigma[sigmanonzero[0][i]][sigmanonzero[1][i]][sigmanonzero[2][i]]**2))   # Create Slater functional with specific sigma from e density
                     pts_range = int(((len(mesh)) / 2.))
                     pts[sigmanonzero[0][i] - pts_range : sigmanonzero[0][i] + pts_range + 1,
                         sigmanonzero[1][i] - pts_range : sigmanonzero[1][i] + pts_range + 1,
-                        sigmanonzero[2][i] - pts_range : sigmanonzero[2][i] + pts_range + 1] += gauss # move 1 ahead duye to python numbering"""
+                        sigmanonzero[2][i] - pts_range : sigmanonzero[2][i] + pts_range + 1] += gauss # move 1 ahead duye to python numbering
     
         except MemoryError:
             print("Size of protein is too large for electron density map production. Breaking calculations down into smaller chunks (may take longer, or not work if data structure too big).\n")
@@ -1915,12 +1932,17 @@ class Molecule(Structure):
             epsilon[np.where(epsilon < 1.0)] = 1.0
 
             # Now we want to calculate our van der waals volume based on the Claussius-Moletti relation between polarisability and permitivitty.
-            #Vvdw = (kB * T * (epsilon - 1.) * 3.) / (4. * np.pi * P * (epsilon + 2.))
+            #Vvdw = (kB * T * epsilon0 * (epsilon - 1.) * 3.) / (4. * np.pi * P * (epsilon + 2.))  # Hard sphere approximation
             #r_vdw = ((3. * Vvdw) / (4. * np.pi))**(1./3.)
-        
-            # BASED ON PAPER OUT END OF MARCH 2018 ON LINK VIA QM, Rvdw = 0.24 alpha^(1/7), derived from noble gases
-            r_vdw = 2.54 * (((3 * kB * T) / P) * ((epsilon - 1) / (epsilon + 2))) ** (1. / 7.)
- 
+
+            # BASED ON PAPER OUT END OF MARCH 2018 ON LINK VIA QM, Rvdw = 0.24 alpha^(1/7), derived from noble gases - Quantum approximation
+            # Find polarisability and convert to atomic units - alpha = 3 eps0 / N * (eps - 1 / eps + 2)
+            #alpha_au = ((3 * epsilon0 * (window_size * 1E-09 / kernel_width)**3) * ((epsilon -1) / (epsilon + 2))) / polar_au # The window_size / kernel width is the volume of the voxel (based on resolution)
+            alpha_au = ((3 * epsilon0 * V) * ((epsilon -1) / (epsilon + 2))) / polar_au
+            r_au = 2.54 * alpha_au**(1. / 7.) # convert to vdw radius in a. u. based on quantum paper
+            r_vdw = r_au * dist_au # convert back to m
+
+            #print np.mean(r_vdw)
 
             sigma = r_vdw / (2. * np.sqrt(2. * np.log(2.))) # Setting r_vdw equal to the FWHM of our gaussian / Lorentz / Slater function.
     
@@ -1958,19 +1980,19 @@ class Molecule(Structure):
     
         # prepare density structure export
         pts /= pts.max()
-        print np.shape(pts)
+
         #epsilon = -1 * epsilon
         from biobox.classes.density import Density
         
         D = Density()
 
-        D.properties['density'] = pts
-        D.properties['size'] = np.array(pts.shape)
+        D.properties['density'] = epsilon
+        D.properties['size'] = np.array(epsilon.shape)
         D.properties['origin'] = np.array(min_val)   
         D.properties['delta'] = np.identity(3) * window_size / kernel_width #(step size)
         D.properties['format'] = 'dx'
         D.properties['filename'] = ''
-        D.properties['sigma'] = np.std(pts)
+        D.properties['sigma'] = np.std(epsilon)
     
         D.write_dx(outname)
 
@@ -2028,12 +2050,12 @@ class Molecule(Structure):
         y_range = np.arange(buffmaxmin[2], buffmaxmin[3]+resolution-window_size, resolution)   # This is for _item in the loop above, where we analyse what atoms are present between this and the next (+ res)
         z_range = np.arange(buffmaxmin[4], buffmaxmin[5]+resolution-window_size, resolution)
         
-        spec_vol = kernel_width**3 * 10**(-27)
+        spec_vol = window_size**3 * 10**(-27)
      
         orig = np.array([x_range, y_range, z_range]) + window_size / 2.
 
-        dipoles  = self.get_dipole_map(orig = orig, pqr = M, time_start = time_start, time_end = time_end, write_dipole_map = dip_map)
+        dipoles  = self.get_dipole_map(orig = orig, pqr = M, time_start = time_start, time_end = time_end, write_dipole_map = dip_map, window_size = window_size)
 
         min_crds = [buffmaxmin[0] + 3 * resolution, buffmaxmin[2] + 3 * resolution, buffmaxmin[4] + 3 * resolution]
 
-        self.get_dipole_density(dipole_map = dipoles, orig = orig, min_val = min_crds, kernel_width = kernel_width, V = spec_vol, outname = outname, T = T, P = P)
+        self.get_dipole_density(dipole_map = dipoles, orig = orig, min_val = min_crds, kernel_width = kernel_width, V = spec_vol, outname = outname, T = T, P = P, window_size = window_size)
