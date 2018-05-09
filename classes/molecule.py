@@ -27,6 +27,7 @@ c = 3.336 * 10**(-30) # conversion from debye to e m
 Na = 6.022 * 10**(23) # Avagadros Number
 
 from biobox.classes.structure import Structure
+from biobox.lib import e_density
 
 class Molecule(Structure):
     '''
@@ -1688,7 +1689,24 @@ class Molecule(Structure):
 
         return
     
-    def get_dipole_map(self, orig, pqr, time_start = 0, time_end = 2, window_size = 3, write_dipole_map = False, fname = "dipole_map.tcl"):
+    def get_dipole_map(self, orig, pqr, time_start = 0, time_end = 2,resolution = 0.75, vox_in_window = 4, write_dipole_map = True, fname = "dipole_map.tcl"):
+        charges = pqr["charge"].values[:]
+
+        crd = self.coordinates[time_start:time_end] # cut out coordinates we're interested in 
+ 
+        time_end -= time_start # shift to compensate for cutting the coordinates earlier
+        time_start = 0
+
+        dipole_map = e_density.c_get_dipole_map(crd = crd, orig = orig, charges = charges, time_start = time_start, time_end = time_end,resolution = resolution, vox_in_window = vox_in_window, write_dipole_map = write_dipole_map, fname = fname)
+
+        return dipole_map
+
+    def get_dipole_density(self, dipole_map, orig, min_val, V, outname, vox_in_window = 4, eqn = 'gauss', T = 310.15, P = 101 * 10**3, epsilonE = 54., resolution = 0.75):
+    
+        dummy = e_density.c_get_dipole_density(dipole_map = dipole_map, orig = orig, min_val = min_val, V = V, outname = outname, vox_in_window = vox_in_window, eqn = eqn, T = T, P = P, epsilonE = epsilonE, resolution = resolution)
+
+    """
+    def get_dipole_map(self, orig, pqr, time_start = 0, time_end = 2,resolution = 0.75, vox_in_window = 4, write_dipole_map = False, fname = "dipole_map.tcl"):
         '''
         Generate a vector (x, y, z) of instantaneous dipole moments at time_val within voxels centred at orig. 
         The size of the voxels is governed by the number of orig points and the size of the system. In essence,
@@ -1708,7 +1726,7 @@ class Molecule(Structure):
         :param fname: Name of dipole_map tcl file.
         :returns: Vector map of dipoles in x, y and z in the shape of the no. or orig points in x, y and z.
         '''
-    
+        window_size = resolution * vox_in_window
         time_val = np.arange(time_start, time_end) # Create range of frames for us to explore depending on user input. (Default is just the first 2)
     
         if write_dipole_map:
@@ -1805,7 +1823,7 @@ class Molecule(Structure):
          
         return np.array(dipole_map).astype(np.float32)
 
-    def get_dipole_density(self, dipole_map, orig, min_val, kernel_width, V, outname, eqn = 'gauss', T = 310.15, P = 101 * 10**3, epsilonE = 54., window_size = 3.):
+    def get_dipole_density(self, dipole_map, orig, min_val, V, outname, vox_in_window = 4, eqn = 'gauss', T = 310.15, P = 101 * 10**3, epsilonE = 54., resolution = 0.75):
         '''
         This generates an electron density based on a dipole map obtained with get_dipole_map. It requires the same coordinate system, orig, as
         said dipole map. It is based on a paper by Pitera et al. written in 2001: 
@@ -1819,7 +1837,7 @@ class Molecule(Structure):
         :param dipole_map: Dimensions of (t, x, y, z, [v_x, v_y, v_z]) where [v_x, v_y, v_z] is the vector dipole values for points x, y, z at time t.
         :param orig: Coordinate system (x, y, z) we measure our dipole from. MUST be the same as that used in get_dipole_map
         :param min_val: Minimum coorinates (x, y, z) from which to define our origin. Wrong choice could cause a shift in real space of the density.
-        :param kernel_width: Number of voxels to define our gaussian from. Essentially given by the number of shifts possible within a window in 1 direction.
+        :param vox_in_window: Number of voxels to define our gaussian from. Essentially the number of voxels within our sliding window
         :param V: The partial specific volume for the protein (worth investigating further). Units of m^3.
         :param outname: Filename for output dx file.
         :param eqn: Type of equation used for convolution. OPtions are Gaussian, Slater or Lorentzian
@@ -1828,7 +1846,7 @@ class Molecule(Structure):
         :param epsilonE: External permitivitty outside the protein. Another variable worth investigating. Default is from 2001 paper regarding a salt water solvent.
         :param window_size: Size of the window we're calculating dipole moments for. Should account for electrostatics falling to zero and be same as get_dipole_map
         '''    
-        
+        window_size = resolution * vox_in_window
         test = dipole_map.shape
         polar_au = 1.6487772731 * 1E-41 # C^2 m^2 J^-1 - conversion from real to atomic units for polarisability
         dist_au = 5.29177 * 1E-11 # m - one bohr unit, convert from real to a. u. for distance
@@ -1849,18 +1867,18 @@ class Molecule(Structure):
             p_M = np.sum(np.mean(np.power(dipole_map, 2.), axis=0) - np.power(np.mean(dipole_map, axis=0), 2), axis=3)
 
             p_M = np.array(p_M).astype(np.float64) * e**2 * m**2 # Unit conversion
-            
+       
             # Now we need to define epsilon_r (the dielectric permitivitty)
             val = p_M / (3. * epsilon0 * V * kB * T)
             #val = p_M / (3. * epsilon0 * (window_size * 1E-09 / kernel_width)**3 * kB * T)
-            
+       
             epsilon_top = 1. + (val * ((2. * epsilonE) / (2. * epsilonE + 1.)))
             epsilon_bot = 1. - (val * (1. / (2. * epsilonE + 1.)))
 
             epsilon = epsilon_top / epsilon_bot
 
             epsilon[np.where(epsilon < 1.0)] = 1.0
-
+        
             # Now we want to calculate our van der waals volume based on the Claussius-Moletti relation between polarisability and permitivitty.
             #Vvdw = (kB * T * epsilon0 * (epsilon - 1.) * 3.) / (4. * np.pi * P * (epsilon + 2.))  # Hard sphere approximation
             #r_vdw = ((3. * Vvdw) / (4. * np.pi))**(1./3.)
@@ -1873,19 +1891,20 @@ class Molecule(Structure):
             r_au = 2.54 * alpha_au**(1. / 7.) # convert to vdw radius in a. u. based on quantum paper
 
             r_vdw = r_au * dist_au # convert back to m
-            
-            print np.max(r_vdw[np.where(r_vdw > 0)])
+           
+        
 
             sigma = r_vdw / (2. * np.sqrt(2. * np.log(2.))) # Setting r_vdw equal to the FWHM of our gaussian / Lorentz / Slater function.
-    
+            
             pts = np.zeros((len(orig[0]), len(orig[1]), len(orig[2])))
 
             sigma = sigma / m  # convert back into nm units to match with x, y, z coord used in meshgrid below
-    
+        
             # Create 3D function kernal
 
-            mesh = np.linspace(0, window_size, kernel_width) - window_size / 2.
-            print mesh
+            #mesh = np.linspace(0, window_size, vox_in_window) - window_size / 2.
+            mesh = np.arange(0, window_size+0.0001, window_size/vox_in_window) - window_size / 2.
+          
             x, y, z = np.meshgrid(mesh, mesh, mesh)
 
             # We should have a buffer (default is 2 * window_size) at the edges of our box, so should be able to sum contributing gaussians across entire system.
@@ -1966,7 +1985,7 @@ class Molecule(Structure):
                     pts_range = int(((len(mesh) + 1.) / 2.))
                     pts[sigmanonzero[0][i] - pts_range : sigmanonzero[0][i] + pts_range ,
                         sigmanonzero[1][i] - pts_range : sigmanonzero[1][i] + pts_range ,
-                        sigmanonzero[2][i] - pts_range : sigmanonzero[2][i] + pts_range ] += gauss # move 1 ahead duye to python numbering"""
+                        sigmanonzero[2][i] - pts_range : sigmanonzero[2][i] + pts_range ] += gauss # move 1 ahead duye to python numbering
             else:  # number is odd
                 for i in range(np.shape(sigmanonzero)[1]):
                     if eqn == 'gauss':
@@ -1976,27 +1995,29 @@ class Molecule(Structure):
                     pts_range = int(((len(mesh)) / 2.))
                     pts[sigmanonzero[0][i] - pts_range : sigmanonzero[0][i] + pts_range + 1,
                         sigmanonzero[1][i] - pts_range : sigmanonzero[1][i] + pts_range + 1,
-                        sigmanonzero[2][i] - pts_range : sigmanonzero[2][i] + pts_range + 1] += gauss # move 1 ahead duye to python numbering"""
+                        sigmanonzero[2][i] - pts_range : sigmanonzero[2][i] + pts_range + 1] += gauss # move 1 ahead duye to python numbering
     
         # prepare density structure export
+     
         pts /= pts.max()
-
+   
+        #pts /= pts.sum()
         #epsilon = -1 * epsilon
         from biobox.classes.density import Density
         
         D = Density()
 
-        D.properties['density'] = epsilon
-        D.properties['size'] = np.array(epsilon.shape)
-        D.properties['origin'] = np.array(min_val)   
-        D.properties['delta'] = np.identity(3) * window_size / kernel_width #(step size)
+        D.properties['density'] = pts
+        D.properties['size'] = np.array(pts.shape)
+        D.properties['origin'] = np.array(min_val)  
+        D.properties['delta'] = np.identity(3) * resolution #(step size)
         D.properties['format'] = 'dx'
         D.properties['filename'] = ''
-        D.properties['sigma'] = np.std(epsilon)
+        D.properties['sigma'] = np.std(pts)
     
         D.write_dx(outname)
 
-    def write_elec_density_from_multipdb(self, outname, time_start, time_end, den = 0.73, T = 310.15, P = 101 * 10**3, window_size = 3, resolution = 0.75, dip_map = False):
+    def write_elec_density_from_multipdb(self, outname, time_start, time_end, den = 0.73, T = 310.15, P = 101 * 10**3, vox_in_window = 4., resolution = 0.75, dip_map = False):
         '''
         This links together get_dipole_map and get_dipole_density using an all important default set of buffer parameters.
         This function serves as a means for the user not to have to define their own coordinate system, but it is quite bassic
@@ -2015,10 +2036,10 @@ class Molecule(Structure):
         if time_end != -1:
             time_end += 1 # shift by 1 to account for python counting
             
-        kernel_width = window_size / resolution
+        window_size = vox_in_window * resolution
         idxs = self.atomselect("*", "*", "*", get_index=True)[1]
 
-        """ Now we want to parse in our multipdb file """
+        ''' Now we want to parse in our multipdb file '''
         #idx = S.atomselect("*", "*", "*", get_index=True)[1]
         crds = self.coordinates[time_start:time_end, idxs]    # Skip the first 1 ns of simulation data for equilibriation (1 frame = 50 ps)
 
@@ -2037,7 +2058,7 @@ class Molecule(Structure):
         buffmaxmin = []
 
         for i in range(3):
-            """ 3 for the three cartisian coordiantes, we want do define our coordinate system and reference frame as the FIRST in the sim. """
+            ''' 3 for the three cartisian coordiantes, we want do define our coordinate system and reference frame as the FIRST in the sim. '''
             maxmin.append(np.amin(crds[:,:,i]))
             maxmin.append(np.amax(crds[:,:,i]))
             diff.append(maxmin[2*i+1] - maxmin[2*i])
@@ -2054,8 +2075,8 @@ class Molecule(Structure):
      
         orig = np.array([x_range, y_range, z_range]) + window_size / 2.
 
-        dipoles  = self.get_dipole_map(orig = orig, pqr = M, time_start = time_start, time_end = time_end, write_dipole_map = dip_map, window_size = window_size)
+        dipoles  = self.get_dipole_map(orig = orig, pqr = M, time_start = time_start, time_end = time_end, write_dipole_map = dip_map, vox_in_window = vox_in_window, resolution = resolution)
 
         min_crds = [buffmaxmin[0] + 3 * resolution, buffmaxmin[2] + 3 * resolution, buffmaxmin[4] + 3 * resolution]
 
-        self.get_dipole_density(dipole_map = dipoles, orig = orig, min_val = min_crds, kernel_width = kernel_width, V = spec_vol, outname = outname, T = T, P = P, window_size = window_size)
+        self.get_dipole_density(dipole_map = dipoles, orig = orig, min_val = min_crds, vox_in_window = vox_in_window, V = spec_vol, outname = outname, T = T, P = P, window_size = window_size)"""
