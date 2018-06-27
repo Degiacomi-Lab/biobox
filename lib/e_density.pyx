@@ -7,7 +7,7 @@ cimport numpy as np
 cimport cython
 from cpython cimport bool
 
-cpdef np.ndarray c_get_dipole_map(np.ndarray crd, np.ndarray orig, np.ndarray charges, int time_start = 0, int time_end = 2, float resolution = 0.75, float vox_in_window = 4, bool write_dipole_map = False, str fname = "dipole_map.tcl"):
+cpdef np.ndarray c_get_dipole_map(np.ndarray crd, np.ndarray orig, np.ndarray charges, int time_start = 0, int time_end = 2, float resolution = 1.0, float vox_in_window = 3, bool write_dipole_map = False, str fname = "dipole_map.tcl"):
     '''
     Generate a vector (x, y, z) of instantaneous dipole moments at time_val within voxels centred at orig. 
     The size of the voxels is governed by the number of orig points and the size of the system. In essence,
@@ -116,17 +116,20 @@ cpdef np.ndarray c_get_dipole_map(np.ndarray crd, np.ndarray orig, np.ndarray ch
         for ix in range(np.shape(dip_avg)[0]):
                 for iy in range(np.shape(dip_avg)[1]):
                     for iz in range(np.shape(dip_avg)[2]):
-                        if np.sqrt(dip_avg[ix][iy][iz][0]**2 + dip_avg[ix][iy][iz][0]**2 + dip_avg[ix][iy][iz][0]**2) > 0.6:
-                            dip_x = orig[0][ix] + dip_avg[ix][iy][iz][0]
-                            dip_y = orig[1][iy] + dip_avg[ix][iy][iz][1]
-                            dip_z = orig[2][iz] + dip_avg[ix][iy][iz][2]
+                        if np.sqrt(dip_avg[ix][iy][iz][0]**2 + dip_avg[ix][iy][iz][0]**2 + dip_avg[ix][iy][iz][0]**2) > 0.7:
+                            dip_x = orig[0][ix] + 3*dip_avg[ix][iy][iz][0]
+                            dip_y = orig[1][iy] + 3*dip_avg[ix][iy][iz][1]
+                            dip_z = orig[2][iz] + 3*dip_avg[ix][iy][iz][2]
+                            #dip_x *= 4
+                            #dip_y *= 4
+                            #dip_z *= 4 
                             data_file.write("draw cone { %f %f %f } { %f %f %f } radius 0.3\n"%(orig[0][ix], orig[1][iy], orig[2][iz], dip_x, dip_y, dip_z))
                         else:
                             continue
        
     return np.array(dipole_map).astype(np.float32)
 
-cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_val, float V, str outname, float vox_in_window = 4, str eqn = 'gauss', float T = 310.15, float P = 101 * 1E+3, float epsilonE = 54., float resolution = 0.75):
+cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_val, float V, str outname, float vox_in_window = 3., str eqn = 'gauss', float T = 310.15, float P = 101 * 1E+3, float epsilonE = 54., float resolution = 1.0):
     '''
     This generates an electron density based on a dipole map obtained with get_dipole_map. It requires the same coordinate system, orig, as
     said dipole map. It is based on a paper by Pitera et al. written in 2001: 
@@ -182,7 +185,7 @@ cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_
         # Now we need to define epsilon_r (the dielectric permitivitty)
         val = p_M / (3. * epsilon0 * V * kB * T)
   
-        #val = p_M / (3. * epsilon0 * (window_size * 1E-09 / kernel_width)**3 * kB * T)
+        #val = p_M / (3. * epsilon0 * (resolution * 1E-10)**3 * kB * T)
 
         epsilon_top = 1. + (val * ((2. * epsilonE) / (2. * epsilonE + 1.)))
         epsilon_bot = 1. - (val * (1. / (2. * epsilonE + 1.)))
