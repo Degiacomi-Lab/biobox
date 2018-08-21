@@ -49,6 +49,8 @@ Temporary Items
 # Byte-compiled / optimized / DLL files
 *.py[cod]
 
+# compiled libraries
+lib/*so
 
 # Sphinx documentation
 doc/_build/

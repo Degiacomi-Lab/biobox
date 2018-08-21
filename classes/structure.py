@@ -360,7 +360,7 @@ class Structure(object):
         for f in frames:
             
             # Build our hexidecimal array if num. of atoms > 99999
-            idx_val = np.arange(1, len(self.coordinates) + 1, 1)
+            idx_val = np.arange(1, self.coordinates.shape[1] + 1, 1)
 
             if len(idx_val) > 99999:
                 vhex = np.vectorize(hex)
