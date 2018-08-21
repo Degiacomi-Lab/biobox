@@ -299,7 +299,7 @@ class Molecule(Structure):
             self.properties["symmetry"] = b
 
         #correctly set types of columns requiring other than string
-        self.data["resid"] = self.data["resid"].astype(str)
+        self.data["resid"] = self.data["resid"].astype(int)
         self.data["index"] = self.data["index"].astype(int)
         self.data["occupancy"] = self.data["occupancy"].astype(float)
         self.data["beta"] = self.data["beta"].astype(float)
