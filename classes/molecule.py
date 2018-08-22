@@ -1386,7 +1386,7 @@ class Molecule(Structure):
                     mass += self.know('atom_mass')[atomtype]
                 except Exception as e:
                     if atomtype == "":
-                        print self.data.values[i:i+40]
+                        print(self.data.values[i:i+40])
                         raise Exception("ERROR: no atomtype found!")
                     else:
                         raise Exception("ERROR: mass for atom %s is unknown!\nInsert a key in protein\'s masses dictionary knowledge['atom_mass'] and retry!\nex.: protein.knowledge['atom_mass'][\"PI\"]=3.141592" %atomtype)
@@ -1414,8 +1414,6 @@ class Molecule(Structure):
 
         Ndata = self.data.ix[Nidx, ["chain", "resid"]].values
         Hdata = self.data.ix[Hidx, ["chain", "resid"]].values
-
-        print(Ndata)
 
         a1 = []
         a2 = []
@@ -1538,7 +1536,7 @@ class Molecule(Structure):
         
         # Need to check if first residue is actually an N-termini residue, and if so, reassign resnames if necessary
         if (self.data["name"].iloc[0:27] == 'H1').any() and (self.data["name"].iloc[0:27] == 'H2').any() and (self.data["name"].iloc[0:27] == 'H3').any() and self.data["resname"][0][0] != 'N':
-            print 'Found N-Termini, reassigning first resname to match the forcefield'
+            print('Found N-Termini, reassigning first resname to match the forcefield')
             start_index = self.data.index[self.data["resid"] == start_chain]
             for N in start_index:
                 self.data["resname"].iloc[N] = 'N' + start_res   # First chain needs to be prefixed with N-termini resname
@@ -1575,7 +1573,7 @@ class Molecule(Structure):
         his_check = self.data["resname"] == 'HIS'  # Check if we need to do following calculation
         nhis_check = self.data["resname"] == 'NHIS' # Check for N termini HIS
         if np.sum(his_check) != 0 or np.sum(nhis_check) != 0:
-            print "WARNING: found residue with name HIS, checking to see what protonation state it is in and reassigning to HIP, HIE or HID.\nYou should check HIS in your pdb file is right to be sure!"          
+            print("WARNING: found residue with name HIS, checking to see what protonation state it is in and reassigning to HIP, HIE or HID.\nYou should check HIS in your pdb file is right to be sure!")     
             for ix in range(len(self.data["resname"])):
                 H_length = 17 # Set this as it is more common, and also covers the basis to capture HD1 or HE2 later if necessary (as C and O tend to be last a
                 # N is always the first atom (use that as basis)                                                                                                                             
@@ -1612,7 +1610,7 @@ class Molecule(Structure):
             value_loc = pqr_data[values]
       
             if len(value_loc) == 0:
-                print value_loc, resnames, self.data["name"][i], self.data["resname"][i], self.data["resid"].iloc[i], self.data["index"].iloc[i]
+                print(value_loc, resnames, self.data["name"][i], self.data["resname"][i], self.data["resid"].iloc[i], self.data["index"].iloc[i])
                 raise Exception("ERROR: The atom names in your PDB file do not match the PQR file")
             else:
                 charges.append(float(value_loc.iloc[0]["charge"]))
