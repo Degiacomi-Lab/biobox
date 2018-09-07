@@ -110,19 +110,13 @@ cpdef np.ndarray c_get_dipole_map(np.ndarray crd, np.ndarray orig, np.ndarray ch
       
     if write_dipole_map:  
         dip_avg = np.mean(np.array(dipole_map), axis=0)
-        #data_file.write("materials on\n")
-        #data_file.write("material AOChalky\n")
-        #data_file.write("color blue2\n")
         for ix in range(np.shape(dip_avg)[0]):
                 for iy in range(np.shape(dip_avg)[1]):
                     for iz in range(np.shape(dip_avg)[2]):
                         if np.sqrt(dip_avg[ix][iy][iz][0]**2 + dip_avg[ix][iy][iz][0]**2 + dip_avg[ix][iy][iz][0]**2) > 0.7:
-                            dip_x = orig[0][ix] + 3*dip_avg[ix][iy][iz][0]
-                            dip_y = orig[1][iy] + 3*dip_avg[ix][iy][iz][1]
-                            dip_z = orig[2][iz] + 3*dip_avg[ix][iy][iz][2]
-                            #dip_x *= 4
-                            #dip_y *= 4
-                            #dip_z *= 4 
+                            dip_x = orig[0][ix] + dip_avg[ix][iy][iz][0]
+                            dip_y = orig[1][iy] + dip_avg[ix][iy][iz][1]
+                            dip_z = orig[2][iz] + dip_avg[ix][iy][iz][2]
                             data_file.write("draw cone { %f %f %f } { %f %f %f } radius 0.3\n"%(orig[0][ix], orig[1][iy], orig[2][iz], dip_x, dip_y, dip_z))
                         else:
                             continue
@@ -176,8 +170,6 @@ cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_
             
     # Depending on the size of the system and user RAM, we need to try two slightly different methods to avoid memory issues.
     try:
-        #dipole_map = np.array(dipole_map)      
-
         p_M = np.sum(np.mean(np.power(dipole_map, 2.), axis=0) - np.power(np.mean(dipole_map, axis=0), 2), axis=3)
         
         p_M = np.array(p_M).astype(np.float64) * e**2 * m**2 # Unit conversion
@@ -185,27 +177,20 @@ cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_
         # Now we need to define epsilon_r (the dielectric permitivitty)
         val = p_M / (3. * epsilon0 * V * kB * T)
   
-        #val = p_M / (3. * epsilon0 * (resolution * 1E-10)**3 * kB * T)
-
         epsilon_top = 1. + (val * ((2. * epsilonE) / (2. * epsilonE + 1.)))
         epsilon_bot = 1. - (val * (1. / (2. * epsilonE + 1.)))
         epsilon = epsilon_top / epsilon_bot
         epsilon[np.where(epsilon < 1.0)] = 1.0
       
         # Now we want to calculate our van der waals volume based on the Claussius-Moletti relation between polarisability and permitivitty.
-        #Vvdw = (kB * T * epsilon0 * (epsilon - 1.) * 3.) / (4. * np.pi * P * (epsilon + 2.))  # Hard sphere approximation
-        #r_vdw = ((3. * Vvdw) / (4. * np.pi))**(1./3.)
 
         # BASED ON PAPER OUT END OF MARCH 2018 ON LINK VIA QM, Rvdw = 0.24 alpha^(1/7), derived from noble gases - Quantum approximation
         # Find polarisability and convert to atomic units - alpha = 3 eps0 / N * (eps - 1 / eps + 2)
-        #alpha_au = ((3 * epsilon0 * (window_size * 1E-09 / kernel_width)**3) * ((epsilon -1) / (epsilon + 2))) / polar_au # The window_size / kernel width is the volume of the voxel (based on resolution)
         alpha_au = ((3 * epsilon0 * V) * ((epsilon -1) / (epsilon + 2))) / polar_au
 
         r_au = 2.54 * alpha_au**(1. / 7.) # convert to vdw radius in a. u. based on quantum paper
 
         r_vdw = r_au * dist_au # convert back to m
-
-        print np.max(r_vdw)
 
         sigma = r_vdw / (2. * np.sqrt(2. * np.log(2.))) # Setting r_vdw equal to the FWHM of our gaussian / Lorentz / Slater function.
     
@@ -215,7 +200,6 @@ cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_
     
         # Create 3D function kernal
 
-        #mesh = np.linspace(0, window_size, vox_in_window) - window_size / 2.
         mesh = np.arange(0, window_size+0.0001, window_size/vox_in_window) - window_size / 2.
      
         x, y, z = np.meshgrid(mesh, mesh, mesh)
@@ -255,7 +239,6 @@ cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_
         
         # Now we need to define epsilon_r (the dielectric permitivitty)
         val = p_M / (3. * epsilon0 * V * kB * T)
-        #val = p_M / (3. * epsilon0 * (window_size * 1E-09 / kernel_width)**3 * kB * T)
             
         epsilon_top = 1. + (val * ((2. * epsilonE) / (2. * epsilonE + 1.)))
         epsilon_bot = 1. - (val * (1. / (2. * epsilonE + 1.)))
@@ -268,15 +251,12 @@ cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_
 
         # BASED ON PAPER OUT END OF MARCH 2018 ON LINK VIA QM, Rvdw = 0.24 alpha^(1/7), derived from noble gases - Quantum approximation
         # Find polarisability and convert to atomic units - alpha = 3 eps0 / N * (eps - 1 / eps + 2)
-        #alpha_au = ((3 * epsilon0 * (window_size * 1E-09 / kernel_width)**3) * ((epsilon -1) / (epsilon + 2))) / polar_au # The window_size / kernel width is the volume of the voxel (based on resolution)
         alpha_au = ((3 * epsilon0 * V) * ((epsilon -1) / (epsilon + 2))) / polar_au
 
         r_au = 2.54 * alpha_au**(1. / 7.) # convert to vdw radius in a. u. based on quantum paper
 
         r_vdw = r_au * dist_au # convert back to m
             
-        #print np.max(r_vdw[np.where(r_vdw > 0)])
-
         sigma = r_vdw / (2. * np.sqrt(2. * np.log(2.))) # Setting r_vdw equal to the FWHM of our gaussian / Lorentz / Slater function.
     
         pts = np.zeros((len(orig[0]), len(orig[1]), len(orig[2])))
