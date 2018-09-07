@@ -1466,6 +1466,58 @@ class Molecule(Structure):
 
         return data, s2
 
+
+    def get_secondary_structure(self, dssp_path=''):
+        '''
+        compute the protein's secondary structure, calling DSSP
+        :param dssp_path: DSSP executable (path and filename). If not provided, the default behaviour is to seek for this information in the environment variable DSSPPATH
+        :returns: numpy array of characters, with one-letter-coded secondary sctructure according to DSSP. 
+        '''
+        #dssp="~/bin/dssp-2.0.4-linux-amd64"
+        if dssp_path == '':
+            try:
+                dssp_path = os.environ['DSSPPATH']
+            except KeyError:
+                raise Exception("DSSPPATH environment variable undefined")
+
+        # generate temporary PDB and calculate secondary structure using DSSP
+        self.write_pdb("tmp.pdb", conformations=[self.current]) 
+
+        #TMP: assign all atoms to structure
+        #subprocess.check_call('~/bin/amber16_tmp/bin/tleap -f build > /dev/null', shell=True)
+        try:
+            import subprocess
+            subprocess.check_call("%s -i tmp.pdb -o result.dssp"%dssp_path, shell=True)
+            fin=open("result.dssp","r")
+        except Exception as e:
+            raise Exception("Could not calculate secondary structure! %s"%e)
+
+        readit=False
+        secstruct=[]
+        for line in fin:
+
+            if readit:
+                try:
+                    ss = line[16]
+                    if line[16] == " ":
+                        ss = "-"
+
+                    secstruct.append(ss)
+                except:
+                    continue
+
+            if "#" in line:
+                readit=True
+
+        fin.close()
+
+        # clean temporary files
+        os.remove("result.dssp")
+        os.remove("tmp.pdb")
+
+        return np.array(secstruct[0:210])
+        
+
     def get_couples(self, idx, cutoff):
         '''
         given a list of indices, compute the all-vs-all distance and return only couples below a given cutoff distance

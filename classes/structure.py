@@ -494,71 +494,32 @@ class Structure(object):
         dist = np.array(d)
         return np.sqrt(np.sum(dist, axis=0) / (float(self.coordinates.shape[0]) * step))
 
-    def pca(self, indices=-1, project_thresh=-1):
+    def pca(self, components, indices=-1):
         '''
         compute Principal Components Analysis (PCA) on specific points within all the alternative coordinates.
 
+        :param components: eigenspace dimensions
         :param indices: points indices to be considered for PCA
-        :param project_thresh: eigenvectors energy value [0,1]. Determines how many vectors are relevant to describe the points main motions,\n
-               the higher value, the larger the amount of selected eigenvectors. Every alternative coordinate will be projected in the selected sub-eigenspace.
-        :returns: numpy array of ranked eigenvalues
-        :returns: numpy array of eigenvectors, ranked according to their eigenvalue
-        :returns: optionally returned, when project_thresh is provided as input
+        :returns: numpy array of projection of each conformation into the n-dimensional eigenspace
+        :returns: sklearn PCA object
         '''
+     
+        from sklearn.decomposition import PCA
 
-        if project_thresh != -1:
-            if project_thresh > 1 or project_thresh <= 0:
-                raise Exception("ERROR: project_thresh should be a number between 0 and 1, %s received" % project_thresh)
-
-        # compute displacement matrix (removing mean pos from atom pos in
-        # coords matrix)
-        coords = self.coordinates[:, indices].reshape(
-            (len(self.coordinates), len(indices) * 3)).transpose()
-
-        # check whether conditions for PCA analysis are good
-        # if coords.shape[1]<coords.shape[0]:
-        #    print "ERROR: found %s conformations and only %s degrees of freedom"%(coords.shape[1], coords.shape[0])
-        #    print "ERROR: conformations number should be greater than the system's degrees of freedom (3N)!"
-        #    return -1
-
-        disp = deepcopy(coords)
-        for i in range(0, len(disp), 1):
-            disp[i] -= np.mean(disp[i])
-
-        # compute covariance matrix, eigenvalues and eigenvectors
-        # print ">> computing covariance matrix..."
-        covariance = np.cov(disp)
-        # print ">> extracting eigenvalues and eigenvectors (might take few
-        # minutes)..."
-        [eigenval, eigenvec] = np.linalg.eig(covariance)
-
-        if project_thresh != -1:
-            # compute representative number of eigenvectors according to desired ratio (user provided)
-            # print "\n   nb., eigenvalue, cumulative ratio"
-            # print "   ---------------------------------"
-            cumulative = 0
-            cnt = 0
-            for i in range(0, len(eigenval), 1):
-                cumulative += eigenval[i]
-                # print "   %s, %s, %s"%(i+1, eigenval[i],
-                # cumulative/np.sum(eigenval))
-                if cumulative / np.sum(eigenval) > project_thresh:
-                    cnt = i + 1
-                    break
-
-            # compute projection of trajectory on the significant number of eigenvectors
-            # lines = n-th eigenvector component, columns = simulation frame
-            # print "\n>> projecting trajectory on %s eigenvectors..."%cnt
-            p = []
-            for i in range(0, cnt, 1):
-                p.append(np.dot(eigenvec[:, i], coords))
-
-            proj = np.array(p)
-
-            return eigenval, eigenvec, proj
-
+        # define conformational space (flatten coordinates of desired atoms
+        if indices != -1:
+            X = self.coordinates[:, indices].reshape(
+                     (len(self.coordinates), len(indices) * 3))
         else:
-            return eigenval, eigenvec
+            X = self.coordinates.reshape(
+                     (self.coordinates.shape[0], self.coordinates.shape[1]*3))
+
+        # calculate system PCA and project conformations into the eigenspace
+        pca = PCA(n_components=components)
+        pca.fit(X)
+        Xproj = pca.transform(X)
+
+        return Xproj, pca
 
     def rmsd_one_vs_all(self, ref_index, points_index=[], align=False):
         '''
