@@ -655,7 +655,7 @@ class Structure(object):
             V[:, -1] = -V[:, -1]
 
         rmsdval = E0 - (2.0 * sum(S))
-        return np.sqrt(abs(rmsdval / L))
+        return np.sqrt(abs(rmsdval / L)), np.matmul(V, Wt)
 
     def rmsd_distance_matrix(self, points_index=[], flat=False):
         '''
