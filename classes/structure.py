@@ -598,7 +598,7 @@ class Structure(object):
         self.set_current(bkpcurrent)
         return np.array(RMSD)
 
-    def rmsd(self, i, j, points_index=[]):
+    def rmsd(self, i, j, points_index=[], full=False):
         '''
         Calculate the RMSD between two structures in alternative coordinates ensemble.
         uses Kabsch alignement algorithm.
@@ -606,7 +606,8 @@ class Structure(object):
         :param i: index of the first structure
         :param j: index of the second structure
         :param points_index: if set, only specific points will be considered for comparison
-        :returns: RMSD of the two structures
+        :param full: if True, RMSD an rotation matrx are returned, RMSD only otherwise
+        :returns: RMSD of the two structures. If full is True, the rotation matrix is also returned
         '''
 
         # see: http://www.pymolwiki.org/index.php/Kabsch#The_Code
@@ -655,7 +656,10 @@ class Structure(object):
             V[:, -1] = -V[:, -1]
 
         rmsdval = E0 - (2.0 * sum(S))
-        return np.sqrt(abs(rmsdval / L)), np.matmul(V, Wt)
+        if full:
+            return np.sqrt(abs(rmsdval / L)), np.matmul(V, Wt)
+        else:
+            return np.sqrt(abs(rmsdval / L))           
 
     def rmsd_distance_matrix(self, points_index=[], flat=False):
         '''
