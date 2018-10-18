@@ -1545,6 +1545,61 @@ class Molecule(Structure):
 
         return np.array(res)
     
+    def match_residue(self, M2, sec = 5):
+        '''
+        Compares two bb.Molecule() peptide strands and returns the resids within both peptides when the two are homogenous
+        beyond a certain secondary structure threashold. The default is 5 amino acids (given by sec) in a row must be identical
+
+        Useful when aligning PDB structures that have been crystallised separately - so one may be missing the odd residue
+        or have a few extra at the end.
+
+        :param M2: The second bb.Molecule() to compare with
+        :param sec: Number of consecutive amino acids in a row that must match before resid's are recorded
+        '''
+
+        # Get residue names / unique IDs
+        M1_reslist = self.data["resname"][self.data["name"] == 'CA'].values
+        M2_reslist = M2.data["resname"][M2.data["name"] == 'CA'].values
+        M1_resid = self.data["resid"][self.data["name"] == 'CA'].values
+        M2_resid = M2.data["resid"][M2.data["name"] == 'CA'].values
+
+        M1_reskeep = []
+        M2_reskeep = []
+        M2_cnt = 0
+        M1_cnt = 0
+
+        while M1_cnt < len(M1_reslist):
+
+            # Initial check to see if we have a run of good matches (more than coincidence)
+            if np.all(M1_reslist[M1_cnt:(M1_cnt + sec)] == M2_reslist[M2_cnt:(M2_cnt + sec)]):
+        
+                while M1_reslist[M1_cnt] == M2_reslist[M2_cnt]:
+                
+                    M1_reskeep.append(M1_resid[M1_cnt])
+                    M2_reskeep.append(M2_resid[M2_cnt])
+            
+                    M2_cnt += 1
+                    M1_cnt += 1
+                
+                    # Break if we reach the maximum array length limit
+                    if M1_cnt == len(M1_reslist) or M2_cnt == len(M2_reslist):
+                        break
+        
+            # Elsewise move forward in count on second structure
+            else:
+                M2_cnt += 1
+
+            # Break if M1 and M2 have reached their ends, restart if only M2 has
+            if M2_cnt == len(M2_reslist) and M1_cnt == len(M1_reslist):
+                break
+            elif M2_cnt == len(M2_reslist):
+                M1_cnt += 1
+                M2_cnt = 0
+            else:
+                continue
+
+        return M1_reskeep, M2_reskeep
+
     def pdb2pqr(self, ff=""):
         '''
         Parses data from the pdb input into a pqr format. This uses the panda dataframe with the information
@@ -1594,16 +1649,6 @@ class Molecule(Structure):
             start_index = self.data.index[self.data["resid"] == start_chain]
             for N in start_index:
                 self.data["resname"].iloc[N] = 'N' + start_res   # First chain needs to be prefixed with N-termini resname
-
-
-        '''
-        # Now need to check if last residue is actually a C-termini residue, and if so, reassign resnames if necessary    
-        if (self.data["name"].iloc[-27:-1] == 'OC1').any() and self.data["resname"].iloc[-1][0] != 'C':
-            end_index = self.data.index[self.data["resid"] == end_chain]
-            print 'Found C-Termini, reassigning last resname to match the forcefield'
-            for C in end_index:
-                self.data["resname"].iloc[C] = 'C' + end_res   # First chain needs to be prefixed with N-termini resname
-        '''
      
         if len(ff) == 0:
             #"amber14sb.dat"
@@ -1632,27 +1677,28 @@ class Molecule(Structure):
                 H_length = 17 # Set this as it is more common, and also covers the basis to capture HD1 or HE2 later if necessary (as C and O tend to be last a
                 # N is always the first atom (use that as basis)                                                                                                                             
                 
-                if self.data["name"][ix] == 'N' and self.data["resname"][ix] == 'HIS':                                                                                         
+                if self.data["name"][ix] == 'N' and self.data["resname"][ix] == 'HIS':  
+                                                                                       
                     if (self.data["name"][ix:(ix+H_length)] == 'HE2').any() and (self.data["name"][ix:(ix+H_length)] == 'HD1').any(): # If the residue contains HE2 and HD1, it is a HIP residue
                         H_length = 18     #   number of atoms in histdine (HIP)
                         self.data.loc[ix:(ix+H_length-1), "resname"] = HIP
+
                     elif (self.data["name"][ix:(ix+H_length)] == 'HE2').any():
-                        #print np.shape(self.data.loc[i:(i+H_length), "resname"]), np.shape(HIE)
-                        #print self.data.loc[ix:(ix+H_length), "resname"]
                         self.data.loc[ix:(ix+H_length-1), "resname"] = HIE
-                        #print self.data.loc[ix:(ix+H_length), "resname"]
+
                     elif (self.data["name"][ix:(ix+H_length)] == 'HD1').any():
                         self.data.loc[ix:(ix+H_length-1), "resname"] = HID
+
                 elif self.data["name"][ix] == 'N' and self.data["resname"][ix] == 'NHIS':
                     H_length = 19
+
                     if (self.data["name"][ix:(ix+H_length)] == 'HE2').any() and (self.data["name"][ix:(ix+H_length)] == 'HD1').any(): # If the residue contains HE2 and HD1, it is a HIP residue
                         H_length = 20     #   number of atoms in histdine (HIP)
                         self.data.loc[ix:(ix+H_length-1), "resname"] = NHIP
+
                     elif (self.data["name"][ix:(ix+H_length)] == 'HE2').any():
-                        #print np.shape(self.data.loc[i:(i+H_length), "resname"]), np.shape(HIE)
-                        #print self.data.loc[ix:(ix+H_length), "resname"]
                         self.data.loc[ix:(ix+H_length-1), "resname"] = NHIE
-                        #print self.data.loc[ix:(ix+H_length), "resname"]
+
                     elif (self.data["name"][ix:(ix+H_length)] == 'HD1').any():
                         self.data.loc[ix:(ix+H_length-1), "resname"] = NHID
 
