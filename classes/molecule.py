@@ -1574,7 +1574,7 @@ class Molecule(Structure):
             if np.all(M1_reslist[M1_cnt:(M1_cnt + sec)] == M2_reslist[M2_cnt:(M2_cnt + sec)]):
         
                 while M1_reslist[M1_cnt] == M2_reslist[M2_cnt]:
-                
+
                     M1_reskeep.append(M1_resid[M1_cnt])
                     M2_reskeep.append(M2_resid[M2_cnt])
             
@@ -1584,6 +1584,19 @@ class Molecule(Structure):
                     # Break if we reach the maximum array length limit
                     if M1_cnt == len(M1_reslist) or M2_cnt == len(M2_reslist):
                         break
+
+                    # Check if we conicidently had the correct corresponding resnames
+                    if len(M1_reskeep) > 2:
+                        if M1_reskeep[-1] - M1_reskeep[-2] != 1 and M2_reskeep[-1] - M2_reskeep[-2] == 1:
+                            M1_reskeep = M1_reskeep[:-1]
+                            M2_reskeep = M2_reskeep[:-1]
+                            break
+                        elif M1_reskeep[-1] - M1_reskeep[-2] == 1 and M2_reskeep[-1] - M2_reskeep[-2] != 1:
+                            M1_reskeep = M1_reskeep[:-1]
+                            M2_reskeep = M2_reskeep[:-1]
+                            break
+                        else:
+                            continue
         
             # Elsewise move forward in count on second structure
             else:
