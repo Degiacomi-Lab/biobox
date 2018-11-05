@@ -186,9 +186,9 @@ class Molecule(Structure):
                     w = []
                     # extract ATOM/HETATM statement
                     w.append(line[0:6].strip())
-                    w.append(line[6:11].strip())  # extract atom index
+                    w.append(line[6:12].strip())  # extract atom index
                     w.append(line[12:17].strip())  # extract atomname
-                    w.append(line[17:20].strip())  # extract resname
+                    w.append(line[17:21].strip())  # extract resname
                     w.append(line[21].strip())  # extract chain name
                     w.append(line[22:26].strip())  # extract residue id
 
