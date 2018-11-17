@@ -50,7 +50,7 @@ class Multimer(Polyhedron):
             return pts
 
 
-    def atomselect(self, u, chain, resid, atom, get_index=False, use_resname=True):
+    def atomselect(self, u, chain, resid, atom, get_index=False, use_resname=False):
         '''
         ## select specific atoms in a multimer providing unit, chain, residue ID and atom name.
 
@@ -95,7 +95,6 @@ class Multimer(Polyhedron):
                 # indices of all units must be stored. If unit is not
                 # requested, return an empty array for it
                 indices.append([])
-
         if get_index:
             return [pts, indices]
         else:
