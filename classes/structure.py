@@ -58,6 +58,13 @@ class Structure(object):
                 self.data = pd.DataFrame(rad, index=idx, columns=["radius"])
                 ''' metadata about each atom (pandas Dataframe)'''
 
+    def __len__(self, dim="atoms"):
+        if dim == "atoms":
+            return len(self.points)
+
+    def __getitem__(self, key):
+        return self.coordinates[key]
+
     def set_current(self, pos):
         '''
         select current frame (place frame pointer at desired position)

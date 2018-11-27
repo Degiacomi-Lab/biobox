@@ -81,6 +81,14 @@ class Molecule(Structure):
                                       "HG": "H", "HZ1": "H", "HE3": "H", "HB3": "H", "HH1": "H", "HH2": "H", "HD23": "H", "HD13": "H", "HE": "H", "HH": "H", 
                                       "OC1": "O", "OC2": "O", "OW": "O", "HW1": "H", "HW2": "H", "CH3" : "C", "HH31" : "H", "HH32" : "H", "HH33" : "H"}
 
+    def __add__(self, other):
+        from biobox.classes.multimer import Multimer
+        M = Multimer()
+        M.load_list([self, other], ["A", "B"])
+        M2 = M.make_molecule()
+        return M2
+
+
     def know(self, prop):
         '''
         return information from knowledge base
