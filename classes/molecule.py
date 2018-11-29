@@ -42,7 +42,7 @@ class Molecule(Structure):
         '''
         At instantiation, properties associated to every individual atoms are stored in a pandas Dataframe self.data.
         The columns of the self.data have the following names:
-        atom, index, name, resname, chain, resid, beta, occupancy, atomtype, radius, charge.
+        atom, index, name, altloc, resname, chain, resid, beta, occupancy, atomtype, radius, charge.
 
         self.knowledge contains a knowledge base about atoms and residues properties. Default values are:
 
@@ -157,7 +157,7 @@ class Molecule(Structure):
                     try:
                         #building dataframe
                         data = np.array(data_in).astype(str)
-                        cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
+                        cols = ["atom", "index", "name", "altloc", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
                         idx = np.arange(len(data))
                         self.data = pd.DataFrame(data, index=idx, columns=cols)
                         # Set the index numbers to the idx values to avoid hexadecimal counts
@@ -195,7 +195,12 @@ class Molecule(Structure):
                     # extract ATOM/HETATM statement
                     w.append(line[0:6].strip())
                     w.append(line[6:12].strip())  # extract atom index
-                    w.append(line[12:17].strip())  # extract atomname
+                    w.append(line[12:16].strip())  # extract atomname
+                    altloc=line[16].strip() # extract alternate_location_indicator (altloc)
+                    if altloc == "":
+                        w.append(" ")
+                    else:
+                        w.append(altloc)
                     w.append(line[17:21].strip())  # extract resname
                     w.append(line[21].strip())  # extract chain name
                     w.append(line[22:26].strip())  # extract residue id
@@ -246,7 +251,7 @@ class Molecule(Structure):
                 try:
                     #building dataframe
                     data = np.array(data_in).astype(str)
-                    cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
+                    cols = ["atom", "index", "name", "altloc", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
                     idx = np.arange(len(data))
                     self.data = pd.DataFrame(data, index=idx, columns=cols)
                     # Set the index numbers to the idx values to avoid hexadecimal counts
@@ -1172,7 +1177,7 @@ class Molecule(Structure):
 
         Returned data is a list containing strings for points data and floats for point coordinates
         in the same order as a pdb file, i.e.
-        ATOM/HETATM, index, name, resname, chain name, residue ID, x, y, z, occupancy, beta factor, atomtype.
+        ATOM/HETATM, index, name, altloc, resname, chain name, residue ID, x, y, z, occupancy, beta factor, atomtype.
 
         :returns: list aggregated data and coordinates for every point, as string.
         '''
@@ -1183,10 +1188,17 @@ class Molecule(Structure):
         # create a list containing all infos contained in pdb (point
         # coordinates and properties)
         d = []
+
+        try:
+            altloc=self.data["altloc"].values[0]
+        except Exception as ex:
+            self.data["altloc"]=np.array([" "]*len(self.points))
+
         for i in index:
             d.append([self.data["atom"].values[i],
                       self.data["index"].values[i],
                       self.data["name"].values[i],
+                      self.data["altloc"].values[i],
                       self.data["resname"].values[i],
                       self.data["chain"].values[i],
                       self.data["resid"].values[i],
@@ -1228,25 +1240,20 @@ class Molecule(Structure):
             # get all informations from PDB (for current conformation) in a list
             self.set_current(f)
             d = self.get_pdb_data(index)
-            
+
             # Build our hexidecimal array if num. of atoms > 99999
             idx_val = np.arange(1, len(d) + 1, 1)
             if len(idx_val) > 99999:
                 vhex = np.vectorize(hex)
                 idx_val = vhex(idx_val)   # convert index values to hexidecimal
                 idx_val = [num[2:] for num in idx_val]  # remove 0x at start of hexidecimal number
-            
+
             for i in range(0, len(d), 1):
                 # create and write PDB line
-                '''
-                    This method will fail on two cases:
-                        -atoms with element symbols with >2 characters such as FE
-                        -biobox recognizes 'Alternate location indicator' as part of the atom name such that if the atom contains a Alternate location indicator and the length of atom name is equal to 4 this method will fail
-                '''
                 if len(d[i][2])==4:
-                    L = '%-6s%5s %-5s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
+                    L = '%-6s%5s %-4s%1s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], d[i][6],float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), float(d[i][11]), d[i][12])
                 else:
-                    L = '%-6s%5s  %-4s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
+                    L = '%-6s%5s  %-3s%1s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
                 f_out.write(L)
 
             f_out.write("END\n")
