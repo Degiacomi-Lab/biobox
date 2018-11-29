@@ -1011,13 +1011,10 @@ class Molecule(Structure):
         :returns: coordinates of the selected points and, if get_index is set to true, their indices in self.points array.
         '''
 
-        D = self.data.values
+        D = self.data[["chain", "resid"]].values
         l = D[index]
 
-        if len(l.shape) == 1:
-            l = l.reshape(1, len(l))
-
-        test = np.logical_and(D[:, 4] == l[:, 4], D[:, 5] == l[:, 5])
+        test = np.logical_and(D[:, 0] == l[:, 0], D[:, 1] == l[:, 1])
 
         idxs = np.where(test)[0]
         if len(idxs) > 0:
@@ -1045,7 +1042,7 @@ class Molecule(Structure):
         except Exception as e:
             idlist = [index]
 
-        D = self.data.values
+        D = self.data[["chain", "resid"]].values
         pts = []
         idxs = []
         for i in idlist:
@@ -1056,7 +1053,7 @@ class Molecule(Structure):
                 if i - j < 0:
                     done = True
 
-                elif D[i, 4] == D[i - j, 4] and D[i, 5] == D[i - j, 5]:
+                elif D[i, 0] == D[i - j, 0] and D[i, 1] == D[i - j, 1]:
 
                     if len(idxs) != 0 and i - j not in idxs:
                         pts.append(self.points[i - j])
@@ -1077,7 +1074,7 @@ class Molecule(Structure):
                 if i + j == len(self.points):
                     done = True
 
-                elif D[i, 4] == D[i + j, 4] and D[i, 5] == D[i + j, 5]:
+                elif D[i, 0] == D[i + j, 0] and D[i, 1] == D[i + j, 1]:
 
                     if len(idxs) != 0 and i + j not in idxs:
                         pts.append(self.points[i + j])
