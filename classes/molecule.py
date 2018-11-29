@@ -1250,7 +1250,7 @@ class Molecule(Structure):
                 if len(d[i][2])==4:
                     L = '%-6s%5s %-4s%1s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], d[i][6],float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), float(d[i][11]), d[i][12])
                 else:
-                    L = '%-6s%5s  %-3s%1s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
+                    L = '%-6s%5s  %-3s%1s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], d[i][6], float(d[i][7]), float(d[i][8]),float(d[i][9]), float(d[i][10]), float(d[i][11]), d[i][12])
                 f_out.write(L)
 
             f_out.write("END\n")
@@ -1297,7 +1297,7 @@ class Molecule(Structure):
             f_out.write("%s\n" % len(d))
             for i in range(0, len(d), 1):
                 # create and write .gro line
-                L = '%5d%-5s%5s%5d%8.3f%8.3f%8.3f\n' % (int(d[i][5]), d[i][3], d[i][2], int(d[i][1]), float(d[i][6]) / 10.0, float(d[i][7]) / 10.0, float(d[i][8]) / 10.0)
+                L = '%5d%1s%-4s%5s%5d%8.3f%8.3f%8.3f\n' % (int(d[i][6]), d[i][3], d[i][4], d[i][2], int(d[i][1]), float(d[i][7]) / 10.0, float(d[i][8]) / 10.0, float(d[i][9]) / 10.0)
                 f_out.write(L)
 
             if "box" in self.properties:
@@ -1802,10 +1802,10 @@ class Molecule(Structure):
             
             for i in range(0, len(d), 1):
                 # create and write PDB line
-                if d[i][2][0].isdigit():
-                    L = '%-6s%5s %-5s%-4s%1s%4s    %8.3f%8.3f%8.3f%7.4f%7.4f        %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(pqr.iloc[i]["charge"]), float(pqr.iloc[i]["radius"]), d[i][11])
+                if len(d[i][2])==4:
+                    L = '%-6s%5s %-4s%1s%-4s%1s%4s    %8.3f%8.3f%8.3f%7.4f%7.4f        %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], d[i][6], float(d[i][7]), float(d[i][8]), float(d[i][9]), float(pqr.iloc[i]["charge"]), float(pqr.iloc[i]["radius"]), d[i][12])
                 else:
-                    L = '%-6s%5s  %-4s%-4s%1s%4s    %8.3f%8.3f%8.3f%7.4f%7.4f        %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(pqr.iloc[i]["charge"]), float(pqr.iloc[i]["radius"]), d[i][11])
+                    L = '%-6s%5s  %-3s%1s%-4s%1s%4s    %8.3f%8.3f%8.3f%7.4f%7.4f        %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], d[i][6], float(d[i][7]), float(d[i][8]), float(d[i][9]), float(pqr.iloc[i]["charge"]), float(pqr.iloc[i]["radius"]), d[i][12])
                 f_out.write(L)
 
             f_out.write("END\n")
