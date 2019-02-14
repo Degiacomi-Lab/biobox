@@ -120,7 +120,8 @@ cpdef np.ndarray c_get_dipole_map(np.ndarray crd, np.ndarray orig, np.ndarray ch
                             data_file.write("draw cone { %f %f %f } { %f %f %f } radius 0.3\n"%(orig[0][ix], orig[1][iy], orig[2][iz], dip_x, dip_y, dip_z))
                         else:
                             continue
-       
+        data_file.close() 
+
     return np.array(dipole_map).astype(np.float32)
 
 cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_val, float V, str outname, float vox_in_window = 3., str eqn = 'gauss', float T = 310.15, float P = 101 * 1E+3, float epsilonE = 54., float resolution = 1.0):
