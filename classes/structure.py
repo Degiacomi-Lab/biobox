@@ -494,7 +494,7 @@ class Structure(object):
         dist = np.array(d)
         return np.sqrt(np.sum(dist, axis=0) / (float(self.coordinates.shape[0]) * step))
 
-    def pca(self, components, indices=-1):
+    def pca(self, components, indices=[]):
         '''
         compute Principal Components Analysis (PCA) on specific points within all the alternative coordinates.
 
@@ -507,7 +507,7 @@ class Structure(object):
         from sklearn.decomposition import PCA
 
         # define conformational space (flatten coordinates of desired atoms
-        if indices != -1:
+        if len(indices) != 0:
             X = self.coordinates[:, indices].reshape(
                      (len(self.coordinates), len(indices) * 3))
         else:
