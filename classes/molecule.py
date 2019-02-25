@@ -79,7 +79,17 @@ class Molecule(Structure):
                                       "HE22": "H", "HD11": "H", "HD12": "H", "HD13": "H", "HD21": "H", "HD22": "H", "HG11": "H", "HG12": "H", "HG13": "H", 
                                       "HG21": "H", "HG22": "H", "HG23": "H", "HZ2": "H", "HZ3": "H", "HZ": "H", "HA1": "H", "HA2": "H", "HB": "H", "HD3": "H", 
                                       "HG": "H", "HZ1": "H", "HE3": "H", "HB3": "H", "HH1": "H", "HH2": "H", "HD23": "H", "HD13": "H", "HE": "H", "HH": "H", 
-                                      "OC1": "O", "OC2": "O", "OW": "O", "HW1": "H", "HW2": "H", "CH3" : "C", "HH31" : "H", "HH32" : "H", "HH33" : "H"}
+                                      "OC1": "O", "OC2": "O", "OW": "O", "HW1": "H", "HW2": "H", "CH3" : "C", "HH31" : "H", "HH32" : "H", "HH33" : "H",
+                                      "C00" : "C", "C01" : "C", "C02" : "C", "C04" : "C", "C06" : "C", "C08" : "C", "H03" : "H", "H05" : "H", "H07" : "H",
+                                      "H09" : "H", "H0A" : "H", "H0B" : "H", }
+
+    def __add__(self, other):
+        from biobox.classes.multimer import Multimer
+        M = Multimer()
+        M.load_list([self, other], ["A", "B"])
+        M2 = M.make_molecule()
+        return M2
+
 
     def know(self, prop):
         '''
@@ -1563,6 +1573,22 @@ class Molecule(Structure):
         M1_resid = self.data["resid"][self.data["name"] == 'CA'].values
         M2_resid = M2.data["resid"][M2.data["name"] == 'CA'].values
 
+        # Remove C or N prefixes
+        for cnt, val in enumerate(M1_reslist):
+            if len(val) == 4:
+                M1_reslist[cnt] = val[1:]
+            else:
+                continue
+        for cnt, val in enumerate(M2_reslist):
+            if len(val) == 4:
+                M2_reslist[cnt] = val[1:]
+            else:
+                continue
+
+        # Rename residues temporararily so they match better
+        M1_reslist[np.logical_or(np.logical_or(M1_reslist == 'HIE', M1_reslist == 'HIP'), M1_reslist == 'HID')] = 'HIS'
+        M2_reslist[np.logical_or(np.logical_or(M2_reslist == 'HIE', M2_reslist == 'HIP'), M2_reslist == 'HID')] = 'HIS'
+        
         M1_reskeep = []
         M2_reskeep = []
         M2_cnt = 0
@@ -1577,10 +1603,10 @@ class Molecule(Structure):
 
                     M1_reskeep.append(M1_resid[M1_cnt])
                     M2_reskeep.append(M2_resid[M2_cnt])
-            
+
                     M2_cnt += 1
                     M1_cnt += 1
-                
+                    
                     # Break if we reach the maximum array length limit
                     if M1_cnt == len(M1_reslist) or M2_cnt == len(M2_reslist):
                         break
@@ -1603,11 +1629,12 @@ class Molecule(Structure):
                 M2_cnt += 1
 
             # Break if M1 and M2 have reached their ends, restart if only M2 has
-            if M2_cnt == len(M2_reslist) and M1_cnt == len(M1_reslist):
+            if M1_cnt == len(M1_reslist): #and M2_cnt == len(M2_reslist):
                 break
-            elif M2_cnt == len(M2_reslist):
+            # Need case so we don't recount a chain in the event of a homodimer
+            elif M2_cnt >= len(M2_reslist):
                 M1_cnt += 1
-                M2_cnt = 0
+                M2_cnt = len(M1_reskeep)
             else:
                 continue
 
@@ -1671,7 +1698,7 @@ class Molecule(Structure):
         if os.path.isfile(ff) != 1:
             raise Exception("ERROR: %s not found!" % ff)
         
-        ff = np.loadtxt(ff, skiprows=2, usecols=(0,1,2,3,4), dtype=str)
+        ff = np.loadtxt(ff, usecols=(0,1,2,3,4), dtype=str)
                         
         cols = ['resname', 'name', 'charge', 'radius', 'atomtype'] # where radius is the VdW radius in the amber file
         idx = np.arange(len(ff))

@@ -34,6 +34,14 @@ class test_structures(unittest.TestCase):
         self.M = bb.Molecule()
         self.M.import_pdb("HSP.pdb")
     
+    def test_len(self):
+        print("\n> testing magic methods")
+        print(">> atom count: %s"%len(self.M))
+        print(">> frames count: %s"%len(self.M, "frames"))
+
+        M2 = self.M + self.M
+        print(">> atom count of extension: %s"%len(M2))
+        print M2[:, 20:22]
 
     def test_xlink(self):
     
