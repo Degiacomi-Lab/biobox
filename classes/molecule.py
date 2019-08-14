@@ -1398,7 +1398,7 @@ class Molecule(Structure):
                     mass += self.know('atom_mass')[atomtype]
                 except Exception as e:
                     if atomtype == "":
-                        print(self.data.values[i:i+40])
+                        #print(self.data.values[i:i+40])
                         raise Exception("ERROR: no atomtype found!")
                     else:
                         raise Exception("ERROR: mass for atom %s is unknown!\nInsert a key in protein\'s masses dictionary knowledge['atom_mass'] and retry!\nex.: protein.knowledge['atom_mass'][\"PI\"]=3.141592" %atomtype)

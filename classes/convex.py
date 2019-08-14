@@ -330,22 +330,59 @@ class Sphere(Structure):
         '''
         return 4 * np.pi * (self.properties['r'] * self.properties['a'] * self.properties['r'] * self.properties['b'] * self.properties['r'] * self.properties['c']) / 3
 
+
+    #def ccs(self, gas=1.4):
+    #    '''
+    #    compute sphere CCS.
+    #
+    #    :returns: surface in A^2
+    #    '''
+    #    return np.pi * (self.properties['r'] + gas)**2
+
     def ccs(self, gas=1.4):
         '''
-        compute sphere CCS.
+        compute spheroid CCS.
+
+        Uses analytical approximation to surface area.
 
         :returns: surface in A^2
         '''
-        return np.pi * (self.properties['r'] + gas)**2
+        a = (self.properties['r']+ gas) * self.properties['a']
+        b = (self.properties['r']+ gas) * self.properties['b']
+        c = (self.properties['r']+ gas) * self.properties['c']
+        p = 1.6075
+        return np.pi * np.power((a**p * b**p + a**p * c**p + b**p * c**p) / 3.0, 1.0 / p)
 
-    def squeeze(self, deformation):
-        '''
-        squeeze sphere according to deformation coefficient, keeping volume (approximately) constant
 
-        :param deformation: coefficient (scales x coordinates, and corrects on y coordinate)
+    def squeeze(self, deformation, preserve_volume=True):
         '''
-        self.properties['a'] = 1.0 * float(deformation)
-        self.properties['b'] = 1.0 / float(deformation)
+        squeeze sphere according to deformation coefficient(s)
+
+        :param deformation: deformation coefficient. Can be a float (deformation of one axis), or a list of 2 or 3 floats.
+        :param preserve_volume: If true and deformation is either a float or a list of 2 floats, correct remaining axes to preserve volume.
+        '''
+
+        if isinstance(deformation, float):
+            # squeeze one axis
+            self.properties['a'] = float(deformation)
+            if preserve_volume:
+                # use the two others to correct volume
+                self.properties['b'] = 1.0 / np.sqrt(float(deformation))
+                self.properties['c'] = 1.0 / np.sqrt(float(deformation))
+
+        elif len(deformation) == 2:
+                # squeeze two axes and preserve volume correcting the third one
+                self.properties['a'] = float(deformation[0])
+                self.properties['b'] = float(deformation[1])
+                if preserve_volume:
+                    self.properties['c'] = 1.0 / float(deformation[0]*deformation[1])
+
+        else:
+                # general deformation without volume preservation
+                self.properties['a'] = float(deformation[0])
+                self.properties['b'] = float(deformation[1])
+                self.properties['c'] = float(deformation[2])
+
 
         c = self.get_center()
         self.center_to_origin()
@@ -353,6 +390,7 @@ class Sphere(Structure):
         points = self.get_xyz()
         points[:, 0] *= self.properties['a']
         points[:, 1] *= self.properties['b']
+        points[:, 2] *= self.properties['c']
         self.set_xyz(points)
 
         self.translate(c[0], c[1], c[2])
@@ -375,7 +413,7 @@ class Sphere(Structure):
 
     def get_sphericity(self):
         '''
-        compute sphericity (makes sense only for squeezed spheres, obviusly..)
+        compute sphericity (makes sense only for squeezed spheres, obviously..)
 
         :returns: shape sphericity
         '''
