@@ -84,7 +84,7 @@ class Prism(Structure):
         apothem = side / (2 * np.tan(np.pi / self.properties['n']))
         return self.properties['n'] * side * apothem / 2.0 * self.properties['h']
 
-    def ccs(self, gas=1.4):
+    def ccs(self, gas=1):
         '''
         compute prism CCS.
 
@@ -171,7 +171,7 @@ class Cylinder(Structure):
         return np.pi * self.properties['r1'] * \
             self.properties['r2'] * self.properties['h']
 
-    def ccs(self, gas=1.4):
+    def ccs(self, gas=1):
         '''
         Compute cylinder CCS.
 
@@ -251,7 +251,7 @@ class Cone(Structure):
         '''
         return np.pi * self.properties['r']**2 * self.properties['h'] / 3
 
-    def ccs(self, gas=1.4):
+    def ccs(self, gas=1):
         '''
         compute cone CCS (use analytical solution using surface and gas effect)
 
@@ -288,10 +288,15 @@ class Sphere(Structure):
 
         super(Sphere, self).__init__(p=np.array(pts) * rad, r=np.ones(n_sphere_point)*radius)
 
-        self.properties['a'] = 1.0  # squeezing coeff on x axis
-        self.properties['b'] = 1.0  # squeezing coeff on y axis
-        self.properties['c'] = 1.0  # squeezing coeff on z axis
+        self.properties['p1'] = 1.0  # squeezing coeff on x axis
+        self.properties['p2'] = 1.0  # squeezing coeff on y axis
+        self.properties['p3'] = 1.0  # squeezing coeff on z axis
         self.properties['r'] = rad
+        self.properties['a'] = rad  # length of first axis (initially like overall radius)
+        self.properties['b'] = rad  # length of second axis (initially like overall radius)
+        self.properties['c'] = rad  # length of third axis (initially like overall radius)
+
+        self.properties['pt_radius'] = radius  # squeezing coeff on x axis
 
        
     def _old_get_surface(self):
@@ -331,7 +336,7 @@ class Sphere(Structure):
         return 4 * np.pi * (self.properties['r'] * self.properties['a'] * self.properties['r'] * self.properties['b'] * self.properties['r'] * self.properties['c']) / 3
 
 
-    #def ccs(self, gas=1.4):
+    #def ccs(self, gas=1):
     #    '''
     #    compute sphere CCS.
     #
@@ -339,7 +344,7 @@ class Sphere(Structure):
     #    '''
     #    return np.pi * (self.properties['r'] + gas)**2
 
-    def ccs(self, gas=1.4):
+    def ccs(self, gas=1):
         '''
         compute spheroid CCS.
 
@@ -347,9 +352,9 @@ class Sphere(Structure):
 
         :returns: surface in A^2
         '''
-        a = (self.properties['r']+ gas) * self.properties['a']
-        b = (self.properties['r']+ gas) * self.properties['b']
-        c = (self.properties['r']+ gas) * self.properties['c']
+        a = (self.properties['r']+ gas + 2*self.properties["pt_radius"]) * self.properties['p1']
+        b = (self.properties['r']+ gas + 2*self.properties["pt_radius"]) * self.properties['p2']
+        c = (self.properties['r']+ gas + 2*self.properties["pt_radius"]) * self.properties['p3']
         p = 1.6075
         return np.pi * np.power((a**p * b**p + a**p * c**p + b**p * c**p) / 3.0, 1.0 / p)
 
@@ -364,33 +369,41 @@ class Sphere(Structure):
 
         if isinstance(deformation, float):
             # squeeze one axis
-            self.properties['a'] = float(deformation)
+            self.properties["p1"] = float(deformation)
+            self.properties['a'] = self.properties["r"]*self.properties["p1"]
             if preserve_volume:
                 # use the two others to correct volume
-                self.properties['b'] = 1.0 / np.sqrt(float(deformation))
-                self.properties['c'] = 1.0 / np.sqrt(float(deformation))
+                self.properties['p2'] = 1.0 / np.sqrt(float(deformation))
+                self.properties['p3'] = 1.0 / np.sqrt(float(deformation))
+                self.properties['b'] = self.properties["r"]*self.properties["p2"]
+                self.properties['c'] = self.properties["r"]*self.properties["p3"]
 
         elif len(deformation) == 2:
                 # squeeze two axes and preserve volume correcting the third one
-                self.properties['a'] = float(deformation[0])
-                self.properties['b'] = float(deformation[1])
+                self.properties["p1"] = float(deformation[0])
+                self.properties["p2"] = float(deformation[1])
+                self.properties['a'] = self.properties["r"]*self.properties["p1"]
+                self.properties['b'] = self.properties["r"]* self.properties["p2"]
                 if preserve_volume:
-                    self.properties['c'] = 1.0 / float(deformation[0]*deformation[1])
+                    self.properties['p3'] = 1.0 / float(deformation[0]*deformation[1])
+                    self.properties['c'] = self.properties["r"]*self.properties["p3"]
 
         else:
                 # general deformation without volume preservation
-                self.properties['a'] = float(deformation[0])
-                self.properties['b'] = float(deformation[1])
-                self.properties['c'] = float(deformation[2])
-
+                self.properties["p1"] = float(deformation[0])
+                self.properties["p2"] = float(deformation[1])
+                self.properties["p3"] = float(deformation[2])
+                self.properties['a'] = self.properties["r"]*self.properties["p1"]
+                self.properties['b'] = self.properties["r"]*self.properties["p2"]
+                self.properties['c'] = self.properties["r"]*self.properties["p3"]
 
         c = self.get_center()
         self.center_to_origin()
 
         points = self.get_xyz()
-        points[:, 0] *= self.properties['a']
-        points[:, 1] *= self.properties['b']
-        points[:, 2] *= self.properties['c']
+        points[:, 0] *= self.properties['p1']
+        points[:, 1] *= self.properties['p2']
+        points[:, 2] *= self.properties['p3']
         self.set_xyz(points)
 
         self.translate(c[0], c[1], c[2])
@@ -459,6 +472,9 @@ class Ellipsoid(Structure):
 
         self.center_to_origin()
 
+        self.properties['pt_radius'] = radius  # squeezing coeff on x axis
+
+
     def check_inclusion(self, p):
         '''
         count how many points in the array p are included in the ellipsoid.
@@ -503,7 +519,7 @@ class Ellipsoid(Structure):
 
         return (np.pi**(1. / 3) * (6 * self.get_volume()) ** (2. / 3)) / self.get_surface()
 
-    def ccs(self, gas=1.4):
+    def ccs(self, gas=1):
         '''
         compute ellipsoid CCS.
 
@@ -511,8 +527,8 @@ class Ellipsoid(Structure):
 
         :returns: surface in A^2
         '''
-        a = self.properties['a'] + gas
-        b = self.properties['b'] + gas
-        c = self.properties['c'] + gas
+        a = self.properties['a'] + gas + self.properties["pt_radius"]
+        b = self.properties['b'] + gas + self.properties["pt_radius"]
+        c = self.properties['c'] + gas + self.properties["pt_radius"]
         p = 1.6075
         return np.pi * np.power((a**p * b**p + a**p * c**p + b**p * c**p) / 3.0, 1.0 / p)
