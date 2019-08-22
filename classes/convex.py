@@ -321,9 +321,9 @@ class Sphere(Structure):
 
         :returns: surface in A^2
         '''
-        a = self.properties['r'] * self.properties['a']
-        b = self.properties['r'] * self.properties['b']
-        c = self.properties['r'] * self.properties['c']
+        a = (self.properties['r']+self.properties["pt_radius"]) * self.properties['p1']
+        b = (self.properties['r']+self.properties["pt_radius"]) * self.properties['p2']
+        c = (self.properties['r']+self.properties["pt_radius"]) * self.properties['p3']
         p = 1.6075
         return 4 * np.pi * np.power((a**p * b**p + a**p * c**p + b**p * c**p) / 3.0, 1.0 / p)
 
@@ -352,9 +352,10 @@ class Sphere(Structure):
 
         :returns: surface in A^2
         '''
-        a = (self.properties['r']+ gas + 2*self.properties["pt_radius"]) * self.properties['p1']
-        b = (self.properties['r']+ gas + 2*self.properties["pt_radius"]) * self.properties['p2']
-        c = (self.properties['r']+ gas + 2*self.properties["pt_radius"]) * self.properties['p3']
+
+        a = (self.properties['r']+self.properties["pt_radius"]) * self.properties['p1'] + gas
+        b = (self.properties['r']+self.properties["pt_radius"]) * self.properties['p2'] + gas
+        c = (self.properties['r']+self.properties["pt_radius"]) * self.properties['p3'] + gas
         p = 1.6075
         return np.pi * np.power((a**p * b**p + a**p * c**p + b**p * c**p) / 3.0, 1.0 / p)
 
@@ -527,8 +528,8 @@ class Ellipsoid(Structure):
 
         :returns: surface in A^2
         '''
-        a = self.properties['a'] + gas + self.properties["pt_radius"]
-        b = self.properties['b'] + gas + self.properties["pt_radius"]
-        c = self.properties['c'] + gas + self.properties["pt_radius"]
+        a = self.properties['a'] + self.properties["pt_radius"] + gas
+        b = self.properties['b'] + self.properties["pt_radius"] + gas
+        c = self.properties['c'] + self.properties["pt_radius"] + gas
         p = 1.6075
         return np.pi * np.power((a**p * b**p + a**p * c**p + b**p * c**p) / 3.0, 1.0 / p)
