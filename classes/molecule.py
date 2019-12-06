@@ -248,7 +248,7 @@ class Molecule(Structure):
                 try:
                     #building dataframe
                     data = np.array(data_in).astype(str)
-                    cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
+                    cols = ["atom", "index", "name", "resname", "chain", "resid", "occupancy", "beta", "atomtype"]
                     idx = np.arange(len(data))
                     self.data = pd.DataFrame(data, index=idx, columns=cols)
                     # Set the index numbers to the idx values to avoid hexadecimal counts
@@ -354,7 +354,7 @@ class Molecule(Structure):
                     try:
                         #building dataframe
                         data = np.array(data_in).astype(str)
-                        cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
+                        cols = ["atom", "index", "name", "resname", "chain", "resid", "occupancy", "beta", "atomtype"]
                         idx = np.arange(len(data))
                         self.data = pd.DataFrame(data, index=idx, columns=cols)
                         self.data["index"] = idx # convert to internal numbering system
@@ -444,7 +444,7 @@ class Molecule(Structure):
                 try:
                     #building dataframe
                     data = np.array(data_in).astype(str)
-                    cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
+                    cols = ["atom", "index", "name", "resname", "chain", "resid", "occupancy", "beta", "atomtype"]
                     idx = np.arange(len(data))
                     self.data = pd.DataFrame(data, index=idx, columns=cols)
                     self.data["index"] = idx # convert to internal numbering system
@@ -721,7 +721,7 @@ class Molecule(Structure):
 
         indices = np.linspace(1, len(data), len(data)).astype(int)
         idx = vhex(indices)
-        cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
+        cols = ["atom", "index", "name", "resname", "chain", "resid", "occupancy", "beta", "atomtype"]
 
         M2 = Molecule()
         M2.coordinates = np.array([xyzall])
@@ -804,7 +804,7 @@ class Molecule(Structure):
 
         #building dataframe
         data = np.array(d_data).astype(str)
-        cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
+        cols = ["atom", "index", "name", "resname", "chain", "resid", "occupancy", "beta", "atomtype"]
         idx = np.arange(len(data))
         self.data = pd.DataFrame(data, index=idx, columns=cols)
 
@@ -1143,7 +1143,7 @@ class Molecule(Structure):
 
         # identify different chains
         intervals = [0]
-
+        gaps = []
         if not use_backbone:
             for i in range(len(self.coordinates[0]) - 1):
                 dist = np.sqrt(np.dot(self.points[i] - self.points[i + 1], self.points[i] - self.points[i + 1]))
@@ -1154,10 +1154,15 @@ class Molecule(Structure):
             #aminoacids start with N. Find where a C is too far from the next N.
             posN, idxN = self.atomselect("*", "*", "N", get_index=True)
             posC = self.atomselect("*", "*", "C")
+
+            if len(posN) != len(posC):
+                raise Exception("mismatch in N and C count")
+
             for i in range(len(idxN)-1):
                 dist = np.sqrt(np.dot(posC[i] - posN[i+1], posC[i] - posN[i+1]))
                 if dist > distance:
                     intervals.append(idxN[i+1])
+                    gaps.append(dist)
 
         intervals.append(len(self.coordinates[0]))
 
@@ -1166,7 +1171,7 @@ class Molecule(Structure):
             thepos = i % len(self.chain_names)
             self.data.loc[intervals[i]:intervals[i + 1], "chain"] = self.chain_names[thepos]
 
-        return len(intervals) - 1, intervals
+        return len(intervals) - 1, intervals, np.round(np.array(gaps), decimals=3)
 
     def get_pdb_data(self, index=[]):
         '''
