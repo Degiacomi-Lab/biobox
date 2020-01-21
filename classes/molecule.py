@@ -248,7 +248,7 @@ class Molecule(Structure):
                 try:
                     #building dataframe
                     data = np.array(data_in).astype(str)
-                    cols = ["atom", "index", "name", "resname", "chain", "resid", "occupancy", "beta", "atomtype"]
+                    cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
                     idx = np.arange(len(data))
                     self.data = pd.DataFrame(data, index=idx, columns=cols)
                     # Set the index numbers to the idx values to avoid hexadecimal counts
@@ -354,7 +354,7 @@ class Molecule(Structure):
                     try:
                         #building dataframe
                         data = np.array(data_in).astype(str)
-                        cols = ["atom", "index", "name", "resname", "chain", "resid", "occupancy", "beta", "atomtype"]
+                        cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
                         idx = np.arange(len(data))
                         self.data = pd.DataFrame(data, index=idx, columns=cols)
                         self.data["index"] = idx # convert to internal numbering system
@@ -444,7 +444,7 @@ class Molecule(Structure):
                 try:
                     #building dataframe
                     data = np.array(data_in).astype(str)
-                    cols = ["atom", "index", "name", "resname", "chain", "resid", "occupancy", "beta", "atomtype"]
+                    cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
                     idx = np.arange(len(data))
                     self.data = pd.DataFrame(data, index=idx, columns=cols)
                     self.data["index"] = idx # convert to internal numbering system
@@ -721,7 +721,7 @@ class Molecule(Structure):
 
         indices = np.linspace(1, len(data), len(data)).astype(int)
         idx = vhex(indices)
-        cols = ["atom", "index", "name", "resname", "chain", "resid", "occupancy", "beta", "atomtype"]
+        cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
 
         M2 = Molecule()
         M2.coordinates = np.array([xyzall])
@@ -804,7 +804,7 @@ class Molecule(Structure):
 
         #building dataframe
         data = np.array(d_data).astype(str)
-        cols = ["atom", "index", "name", "resname", "chain", "resid", "occupancy", "beta", "atomtype"]
+        cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
         idx = np.arange(len(data))
         self.data = pd.DataFrame(data, index=idx, columns=cols)
 
@@ -1143,7 +1143,7 @@ class Molecule(Structure):
 
         # identify different chains
         intervals = [0]
-        gaps = []
+
         if not use_backbone:
             for i in range(len(self.coordinates[0]) - 1):
                 dist = np.sqrt(np.dot(self.points[i] - self.points[i + 1], self.points[i] - self.points[i + 1]))
@@ -1154,15 +1154,10 @@ class Molecule(Structure):
             #aminoacids start with N. Find where a C is too far from the next N.
             posN, idxN = self.atomselect("*", "*", "N", get_index=True)
             posC = self.atomselect("*", "*", "C")
-
-            if len(posN) != len(posC):
-                raise Exception("mismatch in N and C count")
-
             for i in range(len(idxN)-1):
                 dist = np.sqrt(np.dot(posC[i] - posN[i+1], posC[i] - posN[i+1]))
                 if dist > distance:
                     intervals.append(idxN[i+1])
-                    gaps.append(dist)
 
         intervals.append(len(self.coordinates[0]))
 
@@ -1171,7 +1166,7 @@ class Molecule(Structure):
             thepos = i % len(self.chain_names)
             self.data.loc[intervals[i]:intervals[i + 1], "chain"] = self.chain_names[thepos]
 
-        return len(intervals) - 1, intervals, np.round(np.array(gaps), decimals=3)
+        return len(intervals) - 1, intervals
 
     def get_pdb_data(self, index=[]):
         '''
@@ -1248,7 +1243,7 @@ class Molecule(Structure):
                 if d[i][2][0].isdigit():
                     L = '%-6s%5s %-5s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
                 else:
-                    L = '%-6s%5s  %-4s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
+                    L = '%-6s%5s %-4s %-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
                 f_out.write(L)
 
             f_out.write("END\n")
@@ -1403,7 +1398,7 @@ class Molecule(Structure):
                     mass += self.know('atom_mass')[atomtype]
                 except Exception as e:
                     if atomtype == "":
-                        #print(self.data.values[i:i+40])
+                        print(self.data.values[i:i+40])
                         raise Exception("ERROR: no atomtype found!")
                     else:
                         raise Exception("ERROR: mass for atom %s is unknown!\nInsert a key in protein\'s masses dictionary knowledge['atom_mass'] and retry!\nex.: protein.knowledge['atom_mass'][\"PI\"]=3.141592" %atomtype)
@@ -1532,7 +1527,7 @@ class Molecule(Structure):
         os.remove("result.dssp")
         os.remove("tmp.pdb")
 
-        return np.array(secstruct[0:210])
+        return np.array(secstruct) #(secstruct[0:210])
         
 
     def get_couples(self, idx, cutoff):
@@ -1567,6 +1562,27 @@ class Molecule(Structure):
 
         Useful when aligning PDB structures that have been crystallised separately - so one may be missing the odd residue
         or have a few extra at the end.
+
+        :param M2: The second bb.Molecule() to compare with
+        :param sec: Number of consecutive amino acids in a row that must match before resid's are recorded
+        '''
+        # First run the match residue using the expected inputs
+        M1_res, M2_res = self._match_residue_maths(M2, sec = sec)
+
+        # Import a check to see if we've correctly counted the residues (e.g. in homodimer case)
+        if np.shape(np.unique(M1_res)) != np.shape(np.unique(M2_res)):
+            M2_res, M1_res = M2._match_residue_maths(self, sec = sec)
+
+        return M1_res, M2_res
+
+
+    def _match_residue_maths(self, M2, sec):
+        '''
+        Does the maths for match_residue. The reason for this additional step is that sometimes
+        if the numbering is a bit off between the different proteins (i.e. a shift in the initial
+        starting residues) and the protein is a homodimer, we can end up only adding the second
+        monomer unit, and sometimes add it twice. Therefore we can compare two runs of this
+        for an answer.
 
         :param M2: The second bb.Molecule() to compare with
         :param sec: Number of consecutive amino acids in a row that must match before resid's are recorded
@@ -1636,6 +1652,10 @@ class Molecule(Structure):
             # Break if M1 and M2 have reached their ends, restart if only M2 has
             if M1_cnt == len(M1_reslist): #and M2_cnt == len(M2_reslist):
                 break
+            # break if the length of residues in M2 we are counting to now are longer than
+            # the possible max number of saved residues in M2
+            elif len(M2_reskeep) >= len(M2_reslist):
+                break
             # Need case so we don't recount a chain in the event of a homodimer
             elif M2_cnt >= len(M2_reslist):
                 M1_cnt += 1
@@ -1682,6 +1702,9 @@ class Molecule(Structure):
         NHIP = np.array(["NHIP"] * 20)
         NHIE = np.array(["NHIE"] * 19)
         NHID = np.array(["NHID"] * 19)
+        CHIP = np.array(["CHIP"] * 20)
+        CHIE = np.array(["CHIE"] * 18)
+        CHID = np.array(["CHID"] * 19)
 
         start_chain = self.data["resid"].iloc[0]   # This is in case we get 1 or 2 as the first chain ID start
         end_chain = self.data["resid"].iloc[-1]    #  We don't know the end chain number so we find it here
@@ -1716,7 +1739,8 @@ class Molecule(Structure):
         # Need to check whether it matches HIE, HID or HIP depending on what protons are present and where
         his_check = self.data["resname"] == 'HIS'  # Check if we need to do following calculation
         nhis_check = self.data["resname"] == 'NHIS' # Check for N termini HIS
-        if np.sum(his_check) != 0 or np.sum(nhis_check) != 0:
+        chis_check = self.data["resname"] == 'CHIS'
+        if np.sum(his_check) != 0 or np.sum(nhis_check) != 0 or np.sum(chis_check) != 0:
             print("WARNING: found residue with name HIS, checking to see what protonation state it is in and reassigning to HIP, HIE or HID.\nYou should check HIS in your pdb file is right to be sure!")     
             for ix in range(len(self.data["resname"])):
                 H_length = 17 # Set this as it is more common, and also covers the basis to capture HD1 or HE2 later if necessary (as C and O tend to be last a
@@ -1746,6 +1770,20 @@ class Molecule(Structure):
 
                     elif (self.data["name"][ix:(ix+H_length)] == 'HD1').any():
                         self.data.loc[ix:(ix+H_length-1), "resname"] = NHID
+
+                elif self.data["name"][ix] == 'N' and self.data["resname"][ix] == 'CHIS':
+                    H_length = 19
+
+                    if (self.data["name"][ix:(ix+H_length)] == 'HE2').any() and (self.data["name"][ix:(ix+H_length)] == 'HD1').any(): # If the residue contains HE2 and HD1, it is a HIP residue
+                        H_length = 20     #   number of atoms in histdine (HIP)
+                        self.data.loc[ix:(ix+H_length-1), "resname"] = CHIP
+
+                    elif (self.data["name"][ix:(ix+H_length)] == 'HE2').any():
+                        H_length = 18
+                        self.data.loc[ix:(ix+H_length-1), "resname"] = CHIE
+
+                    elif (self.data["name"][ix:(ix+H_length)] == 'HD1').any():
+                        self.data.loc[ix:(ix+H_length-1), "resname"] = CHID
 
         # Move through each line in the pdb.data file and find the corresponding charge / vdw radius as supplied by the forcefield
         for i, resnames in enumerate(self.data["resname"]):
