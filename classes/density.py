@@ -413,7 +413,8 @@ class Density(Structure):
 
         .. note:: in proteins, an average value of 1.3 g/cm^3 (0.782878356 Da/A^3) can be assumed. Alternatively, the relation density=1.410+0.145*exp(-mass(kDa)/13) can be used.
 
-        .. note:: 1 Da/A^3=0.602214120 g/cm^3mod2_WT_roomtemp_emd_2289.mrc
+        .. note:: 1 Da/A^3=1.660538946 g/cm^3
+        .. note:: 1 g/cm^3=0.602214120 Da/A^3
 
         :param mass: target mass in Da
         :param density: target density in Da/A^3

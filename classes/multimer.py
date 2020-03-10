@@ -65,7 +65,7 @@ class Multimer(Polyhedron):
 
         # extract id of units of interest
         if u == '*':
-            unit_id = self.unit_labels.values()
+            unit_id = list(self.unit_labels.values())
         else:
             if isinstance(u, str) or isinstance(u, int):
                 try:

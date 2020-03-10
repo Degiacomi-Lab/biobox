@@ -1,0 +1,159 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>BiobOx’s documentation &#8212; biobox 1.0 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Single Structures" href="structure.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="structure.html" title="Single Structures"
+             accesskey="N">next</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">biobox 1.0 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="biobox-s-documentation">
+<h1>BiobOx’s documentation<a class="headerlink" href="#biobox-s-documentation" title="Permalink to this headline">¶</a></h1>
+<p>BiobOx provides a collection of data structures and methods for loading, manipulating and analyzing atomistic and pseudo-atomistic structures.</p>
+<p>BiobOx main features:</p>
+<ul class="simple">
+<li>importing of PDB, PQR and GRO files, possibly containing multiple conformations (e.g. multi PDB, gro trajectory)</li>
+<li>generation of coarse grain shapes composed of specific arrangements of pseudoatoms</li>
+<li>loading and manipulation of density maps, including their transformation into a solid object upon isovalue definition</li>
+<li>assemblies of any points arrangement can be produced (i.e. densities converted in solid and geometric shapes can be equally treated).</li>
+</ul>
+<p>allowed operations on structures include:</p>
+<ul class="simple">
+<li>rototranslation and alignment on principal axes</li>
+<li>on ensembles: RMSD, RMSF, PCA and clustering</li>
+<li>calculation of CCS, SAXS, SASA, convex hull, s2 (for molecules), mass and volume estimation</li>
+<li>atomselect for molecules and assemblies of molecules</li>
+<li>shortest physical paths between atoms on molecule using Theta* (or A*)</li>
+<li>density map simulation</li>
+</ul>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="structure.html">Single Structures</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="structure.html#module-structure">Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="structure.html#module-molecule">Molecule</a></li>
+<li class="toctree-l2"><a class="reference internal" href="structure.html#convex-point-clouds">Convex Point Clouds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="structure.html#module-density">Density</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="assembly.html">Assemblies</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="assembly.html#module-assembly">Assembly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assembly.html#module-polyhedron">Polyhedron</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assembly.html#module-multimer">Multimer</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="measures.html">Measures</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="measures.html#module-biobox.measures.calculators">measuring characteristics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="measures.html#measuring-distances">measuring distances</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#selecting-atoms-from-a-multi-pdb">Selecting atoms from a (multi)PDB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#protein-conformations-clustering">protein conformations clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#protein-polyhedral-assemblies">protein polyhedral assemblies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#super-coarse-grain-modelling">super coarse-grain modelling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#density-map-cutoff-via-collision-cross-section">density map cutoff via Collision Cross Section</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#lipids-density-around-protein">lipids density around protein</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#calculating-cross-linking-distance">calculating cross-linking distance</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Next topic</h4>
+  <p class="topless"><a href="structure.html"
+                        title="next chapter">Single Structures</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="structure.html" title="Single Structures"
+             >next</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">biobox 1.0 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Matteo Degiacomi.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

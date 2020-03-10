@@ -1,0 +1,318 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>multimer &#8212; biobox 1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">biobox 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for multimer</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2014-2017 Matteo Degiacomi</span>
+<span class="c1">#</span>
+<span class="c1"># BiobOx is free software ;</span>
+<span class="c1"># you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;</span>
+<span class="c1"># either version 2 of the License, or (at your option) any later version.</span>
+<span class="c1"># BiobOx is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;</span>
+<span class="c1"># without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</span>
+<span class="c1"># See the GNU General Public License for more details.</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along with BiobOx ;</span>
+<span class="c1"># if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.</span>
+<span class="c1">#</span>
+<span class="c1"># Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">biobox.classes.polyhedron</span> <span class="k">import</span> <span class="n">Polyhedron</span>
+<span class="kn">from</span> <span class="nn">biobox.classes.molecule</span> <span class="k">import</span> <span class="n">Molecule</span>
+
+
+<div class="viewcode-block" id="Multimer"><a class="viewcode-back" href="../assembly.html#multimer.Multimer">[docs]</a><span class="k">class</span> <span class="nc">Multimer</span><span class="p">(</span><span class="n">Polyhedron</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Construct and manipulate a protein assembly composed of several :func:`Molecule &lt;molecule.Molecule&gt;` instances. Subclass of :func:`Polyhedron &lt;polyhedron.Polyhedron&gt;`.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+<div class="viewcode-block" id="Multimer.query"><a class="viewcode-back" href="../assembly.html#multimer.Multimer.query">[docs]</a>    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query_text</span><span class="p">,</span> <span class="n">get_index</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        ## select specific atoms in a multimer un the basis of a text query.</span>
+
+<span class="sd">        :param query_text: string selecting atoms of interest. Uses the pandas query syntax, can access all columns in the dataframe self.data.</span>
+<span class="sd">        :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)</span>
+<span class="sd">        :returns: coordinates of the selected points (in a unique array) and, if get_index is set to true, a list of their indices in subunits&#39; self.points array.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">query_text</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="c1">#this is a new sliced dataframe</span>
+        <span class="n">targets</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">ix</span><span class="p">[:,</span> <span class="p">[</span><span class="s2">&quot;unit&quot;</span><span class="p">,</span> <span class="s2">&quot;unit_index&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+
+        <span class="c1"># append the coordinates of every unit within the query</span>
+        <span class="n">pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">targets</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]):</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="n">targets</span><span class="p">[</span><span class="n">targets</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">u</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">this_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit_labels</span><span class="p">[</span><span class="n">u</span><span class="p">]</span>
+            <span class="n">pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">pts</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">this_unit</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">pos</span><span class="p">]))</span>
+
+        <span class="k">if</span> <span class="n">get_index</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">pts</span><span class="p">,</span> <span class="n">idx</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pts</span></div>
+
+
+<div class="viewcode-block" id="Multimer.atomselect"><a class="viewcode-back" href="../assembly.html#multimer.Multimer.atomselect">[docs]</a>    <span class="k">def</span> <span class="nf">atomselect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">chain</span><span class="p">,</span> <span class="n">resid</span><span class="p">,</span> <span class="n">atom</span><span class="p">,</span> <span class="n">get_index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_resname</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        ## select specific atoms in a multimer providing unit, chain, residue ID and atom name.</span>
+
+<span class="sd">        :param u: number of desired unit to select in the multimer</span>
+<span class="sd">        :param chain: selection of a specific chain name (accepts &#39;*&#39; as wildcard). Can also be a list or numpy array of strings.</span>
+<span class="sd">        :param resid: residue ID of desired atoms (accepts &#39;*&#39; as wildcard). Can also be a list or numpy array of of int.</span>
+<span class="sd">        :param atom: name of desired atom (accepts &#39;*&#39; as wildcard). Can also be a list or numpy array of strings.</span>
+<span class="sd">        :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)</span>
+<span class="sd">        :param use_resname: if set to True, consider information in &quot;res&quot; variable as resnames, and not resids</span>
+<span class="sd">        :returns: coordinates of the selected points (in a unique array) and, if get_index is set to true, a list of their indices in subunits&#39; self.points array.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># extract id of units of interest</span>
+        <span class="k">if</span> <span class="n">u</span> <span class="o">==</span> <span class="s1">&#39;*&#39;</span><span class="p">:</span>
+            <span class="n">unit_id</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit_labels</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">unit_id</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">unit_labels</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">u</span><span class="p">)]]</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;ERROR: unit </span><span class="si">%s</span><span class="s2"> not found!&quot;</span> <span class="o">%</span> <span class="n">u</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">u</span><span class="p">)</span><span class="o">.</span><span class="vm">__module__</span> <span class="o">==</span> <span class="s1">&#39;numpy&#39;</span><span class="p">:</span>
+                <span class="n">unit_id</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">u</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">unit_id</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit_labels</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="n">c</span><span class="p">])])</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;ERROR: unit </span><span class="si">%s</span><span class="s2"> not found!&quot;</span> <span class="o">%</span> <span class="n">u</span><span class="p">[</span><span class="n">c</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;ERROR: wrong type for unit selection. Should be str, int, list, or numpy&quot;</span><span class="p">)</span>
+
+        <span class="c1"># initialize storage for indices and coordinates</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">unit_id</span><span class="p">:</span>
+                <span class="p">[</span><span class="n">pts_tmp</span><span class="p">,</span> <span class="n">index_tmp</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">atomselect</span><span class="p">(</span><span class="n">chain</span><span class="p">,</span> <span class="n">resid</span><span class="p">,</span> <span class="n">atom</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">use_resname</span><span class="o">=</span><span class="n">use_resname</span><span class="p">)</span>
+                <span class="n">pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">pts</span><span class="p">,</span> <span class="n">pts_tmp</span><span class="p">))</span>
+                <span class="n">indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">index_tmp</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># indices of all units must be stored. If unit is not</span>
+                <span class="c1"># requested, return an empty array for it</span>
+                <span class="n">indices</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+        <span class="k">if</span> <span class="n">get_index</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">pts</span><span class="p">,</span> <span class="n">indices</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pts</span></div>
+
+<div class="viewcode-block" id="Multimer.make_molecule"><a class="viewcode-back" href="../assembly.html#multimer.Multimer.make_molecule">[docs]</a>    <span class="k">def</span> <span class="nf">make_molecule</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Return a :func:`Molecule &lt;molecule.Molecule&gt;` object containing all the points of the assembly. Chain will indicate different units, original chain value is pushed in segment entry.</span>
+
+<span class="sd">        :returns: :func:`Molecule &lt;molecule.Molecule&gt;` object</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># create new data entry (renumber indices, reassign chain name)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">9</span><span class="p">])</span>
+
+        <span class="n">atom_ccs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">skipcharge</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">data_tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[[</span>
+                <span class="s2">&quot;atom&quot;</span><span class="p">,</span> <span class="s2">&quot;index&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;resname&quot;</span><span class="p">,</span> <span class="s2">&quot;chain&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;resid&quot;</span><span class="p">,</span> <span class="s2">&quot;beta&quot;</span><span class="p">,</span> <span class="s2">&quot;occupancy&quot;</span><span class="p">,</span> <span class="s2">&quot;atomtype&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span>
+
+            <span class="n">data_tmp</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain_names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">data</span><span class="p">,</span> <span class="n">data_tmp</span><span class="p">))</span>
+
+            <span class="c1"># merge knowledge about CCS acquired by different molecules</span>
+            <span class="n">atom_ccs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">knowledge</span><span class="p">[</span><span class="s1">&#39;atom_ccs&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">atom_ccs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">knowledge</span><span class="p">[</span><span class="s1">&#39;atom_ccs&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;radius&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">r</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;radius&#39;</span><span class="p">]))</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;charge&#39;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">c</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;charge&#39;</span><span class="p">]))</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                <span class="n">skipcharge</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">continue</span>
+
+        <span class="n">data</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;atom&quot;</span><span class="p">,</span> <span class="s2">&quot;index&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;resname&quot;</span><span class="p">,</span> <span class="s2">&quot;chain&quot;</span><span class="p">,</span> <span class="s2">&quot;resid&quot;</span><span class="p">,</span> <span class="s2">&quot;beta&quot;</span><span class="p">,</span> <span class="s2">&quot;occupancy&quot;</span><span class="p">,</span> <span class="s2">&quot;atomtype&quot;</span><span class="p">]</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+
+        <span class="c1"># create molecule, and push created data information</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">Molecule</span><span class="p">()</span>
+        <span class="n">M</span><span class="o">.</span><span class="n">add_xyz</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_all_xyz</span><span class="p">())</span>
+        <span class="n">M</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">cols</span><span class="p">)</span>
+        <span class="n">M</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s1">&#39;center&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">get_center</span><span class="p">()</span>
+        <span class="n">M</span><span class="o">.</span><span class="n">knowledge</span><span class="p">[</span><span class="s1">&#39;atom_ccs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">atom_ccs</span>
+        <span class="n">M</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">skipcharge</span><span class="p">:</span>
+            <span class="n">M</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;charge&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span>
+
+
+
+        <span class="k">return</span> <span class="n">M</span></div>
+
+    <span class="c1">#def rmsd(self, ref_index, u=&quot;*&quot;, chain=&quot;*&quot;, resid=&quot;*&quot;, atom=&quot;*&quot;, align=False):</span>
+    <span class="c1">#    &#39;&#39;&#39;</span>
+    <span class="c1">#    Calculate the RMSD between atoms of interest in all structure with respect of a reference structure.</span>
+
+    <span class="c1">#    supposes that all multimer subunits contain the same amount of alternative coordiantes.</span>
+    <span class="c1">#    These are considered as representations of monomers conformations in a possible multimer.</span>
+
+    <span class="c1">#    :param u: number of desired unit to select in the multimer</span>
+    <span class="c1">#    :param chain: selection of a specific chain name (accepts &#39;*&#39; as wildcard). Can also be a list or numpy array of strings.</span>
+    <span class="c1">#    :param resid: residue ID of desired atoms (accepts &#39;*&#39; as wildcard). Can also be a list or numpy array of of int.</span>
+    <span class="c1">#    :param atom: name of desired atom (accepts &#39;*&#39; as wildcard). Can also be a list or numpy array of strings.</span>
+    <span class="c1">#    :param ref_index: index of reference structure in conformations database</span>
+    <span class="c1">#    :param align: if True, structures will all be aligned (cannot be undone)</span>
+    <span class="c1">#    :returns: RMSD of all structures with respect of reference structure (in a numpy array)</span>
+    <span class="c1">#    &#39;&#39;&#39;</span>
+    <span class="c1">#</span>
+    <span class="c1">#    if ref_index &gt;= self.unit[0].coordinates.shape[0]:</span>
+    <span class="c1">#        raise Exception(&quot;ERROR: requested frame %s as reference, but only %s frames are available!&quot; %(ref_index, self.unit[0].coordinates.shape[0]))</span>
+
+    <span class="c1">#    # select indices of atoms of interest and call overloaded method</span>
+    <span class="c1">#    indices = self.atomselect(u, chain, resid, atom, get_index=True)[1]</span>
+    <span class="c1">#    return super(Multimer, self).rmsd(ref_index, points_indices=indices, align=align)</span>
+
+<div class="viewcode-block" id="Multimer.get_data"><a class="viewcode-back" href="../assembly.html#multimer.Multimer.get_data">[docs]</a>    <span class="k">def</span> <span class="nf">get_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">columns</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Return information about atom of interest (i.e., slice the data DataFrame)</span>
+
+<span class="sd">        :param indices: list of indices</span>
+<span class="sd">        :param columns: list of columns (e.g. [&quot;resname&quot;, &quot;resid&quot;, &quot;chain&quot;])</span>
+<span class="sd">        :returns: slice of molecule&#39;s data DataFrame</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">indices</span><span class="p">,</span> <span class="n">columns</span><span class="p">]</span><span class="o">.</span><span class="n">values</span></div>
+
+<div class="viewcode-block" id="Multimer.write_pdb"><a class="viewcode-back" href="../assembly.html#multimer.Multimer.write_pdb">[docs]</a>    <span class="k">def</span> <span class="nf">write_pdb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outname</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Write a pdb of the multimeric assembly.</span>
+
+<span class="sd">        :param outname: name of PDB file to generate</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="n">f_out</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">outname</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">coordinates</span><span class="p">)):</span>
+
+            <span class="n">cnt</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="c1"># set current state to new frame</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="c1"># get data about points and their properties from the desired</span>
+            <span class="c1"># protein structure</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">get_pdb_data</span><span class="p">()</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="c1"># create and write PDB lin</span>
+                <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+                    <span class="n">L</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%-6s%5i</span><span class="s1"> </span><span class="si">%-5s%-4s%1s%4i</span><span class="s1">    </span><span class="si">%8.3f%8.3f%8.3f%6.2f%6.2f</span><span class="s1">          </span><span class="si">%2s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">cnt</span><span class="p">,</span> <span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span> <span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">3</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain_names</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">5</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">6</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">7</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">8</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">9</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">10</span><span class="p">]),</span> <span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">11</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">L</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%-6s%5i</span><span class="s1">  </span><span class="si">%-4s%-4s%1s%4i</span><span class="s1">    </span><span class="si">%8.3f%8.3f%8.3f%6.2f%6.2f</span><span class="s1">          </span><span class="si">%2s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">cnt</span><span class="p">,</span> <span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span> <span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">3</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain_names</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">5</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">6</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">7</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">8</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">9</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">10</span><span class="p">]),</span> <span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">11</span><span class="p">])</span>
+                <span class="c1">#L=&#39;%-6s%5i  %-4s%-4s%1s%4i    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n&#39;%(d[i][0], cnt, d[i][2], d[i][3], self.chain_names[j], d[i][5], d[i][6], d[i][7], d[i][8], d[i][9], d[i][10], d[i][11])</span>
+                <span class="n">f_out</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+                <span class="n">cnt</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="n">f_out</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;TER</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">f_out</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;END</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f_out</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">biobox 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Matteo Degiacomi.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

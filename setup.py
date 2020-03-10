@@ -6,6 +6,9 @@
 # gcc -shared -pthread -fPIC -fwrapv -O2 -Wall -fno-strict-aliasing -I/usr/include/python2.6 -o graph.so graph.c
 # cython -a fastmath.pyx
 # gcc -shared -pthread -fPIC -fwrapv -O3 -Wall -fno-strict-aliasing -I/usr/include/python2.6 -o fastmath.so fastmath.c
+#
+# to build documentation:
+# sphinx-build -b html doc doc/html
 
 import os
 import shutil

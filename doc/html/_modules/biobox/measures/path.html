@@ -1,0 +1,1078 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>biobox.measures.path &#8212; biobox 1.0 documentation</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">biobox 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for biobox.measures.path</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2014-2017 Matteo Degiacomi</span>
+<span class="c1">#</span>
+<span class="c1"># BiobOx is free software ;</span>
+<span class="c1"># you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;</span>
+<span class="c1"># either version 2 of the License, or (at your option) any later version.</span>
+<span class="c1"># BiobOx is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;</span>
+<span class="c1"># without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</span>
+<span class="c1"># See the GNU General Public License for more details.</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along with BiobOx ;</span>
+<span class="c1"># if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.</span>
+<span class="c1">#</span>
+<span class="c1"># Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com</span>
+
+<span class="kn">import</span> <span class="nn">heapq</span>
+<span class="kn">import</span> <span class="nn">scipy.spatial.distance</span> <span class="k">as</span> <span class="nn">SD</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">sklearn.cluster</span> <span class="k">import</span> <span class="n">DBSCAN</span>
+
+<span class="kn">import</span> <span class="nn">biobox.lib.fastmath</span> <span class="k">as</span> <span class="nn">FM</span> <span class="c1"># cythonized</span>
+<span class="kn">from</span> <span class="nn">biobox.lib.graph</span> <span class="k">import</span> <span class="n">Graph</span> <span class="c1"># cythonized</span>
+
+<span class="kn">from</span> <span class="nn">biobox.classes.structure</span> <span class="k">import</span> <span class="n">Structure</span>
+<span class="kn">from</span> <span class="nn">biobox.classes.convex</span> <span class="k">import</span> <span class="n">Sphere</span>
+
+
+<span class="k">class</span> <span class="nc">PriorityQueue</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Queue for shortest path algorithms in Graph class.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">elements</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">empty</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        clear priority queue</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">priority</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        add element in priority queue&quot;</span>
+
+<span class="sd">        :param item: item to add in queue</span>
+<span class="sd">        :param priority: item&#39;s priority</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">heapq</span><span class="o">.</span><span class="n">heappush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">,</span> <span class="p">(</span><span class="n">priority</span><span class="p">,</span> <span class="n">item</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        pop top priority element from queue</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">heapq</span><span class="o">.</span><span class="n">heappop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="Path"><a class="viewcode-back" href="../../../measures.html#biobox.measures.path.Path">[docs]</a><span class="k">class</span> <span class="nc">Path</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Methods for finding shortest paths between points in a point cloud (typically a :func:`Structure &lt;structure.Structure&gt;` object).</span>
+
+<span class="sd">    Two algorithms are implemented: A* and Theta*.</span>
+<span class="sd">    In order to deal with lists of links within the same dataset, two methodologies are offered, global or local.</span>
+
+<span class="sd">    * global builds a grid around the whole ensemble of points once, and every subsequent distance measure is performed on the same grid.</span>
+<span class="sd">    * local a local grid is displaced to surround the points to be linked.</span>
+
+<span class="sd">    Global take longer to initialize, and is more memory intensive, but subsequent measures are quick.</span>
+<span class="sd">    Local takes less memory, but individual measures take more time to be performed.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        An accessibility graph must be initially created around the provided points cloud.</span>
+<span class="sd">        This is a mesh where none of its nodes clashes with any of the provided point in the cloud.</span>
+<span class="sd">        After instantiation, :func:`setup_local_search &lt;path.Path.setup_local_search&gt;` or :func:`setup_global_search &lt;path.Path.setup_global_search&gt;` must first be called (depending on whether one wants to generate a single grid encompassing all the protein, or a smaller, moving grid).</span>
+
+<span class="sd">        :param points: points for representing obstacles.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span>
+
+<div class="viewcode-block" id="Path.setup_local_search"><a class="viewcode-back" href="../../../measures.html#biobox.measures.path.Path.setup_local_search">[docs]</a>    <span class="k">def</span> <span class="nf">setup_local_search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">maxdist</span><span class="o">=</span><span class="mi">28</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        setup Path to perform path search using the local grid method.</span>
+<span class="sd">        This method (or :func:`setup_global_search &lt;path.Path.setup_global_search&gt;`) must be called before and path detection can be launched with :func:`search_path &lt;path.Path.search_path&gt;`.</span>
+
+<span class="sd">        :param step: grid step size</span>
+<span class="sd">        :param maxdist: clash detection threshold</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">make_grid</span><span class="p">(</span><span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span> <span class="n">maxdist</span><span class="o">=</span><span class="n">maxdist</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxdist</span> <span class="o">=</span> <span class="n">maxdist</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">=</span> <span class="s2">&quot;local&quot;</span></div>
+
+<div class="viewcode-block" id="Path.setup_global_search"><a class="viewcode-back" href="../../../measures.html#biobox.measures.path.Path.setup_global_search">[docs]</a>    <span class="k">def</span> <span class="nf">setup_global_search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">maxdist</span><span class="o">=</span><span class="mi">34</span><span class="p">,</span> <span class="n">use_hull</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">boundaries</span><span class="o">=</span><span class="p">[],</span> <span class="n">cloud</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> <span class="n">params</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        setup Path to perform path search using the a global grid wrapping all the obtacles region.</span>
+<span class="sd">        This method (or :func:`setup_local_search &lt;path.Path.setup_local_search&gt;`) must be called before and path detection can be lauched with :func:`search_path &lt;path.Path.search_path&gt;`.</span>
+
+<span class="sd">        :param step: grid step size.</span>
+<span class="sd">        :param maxdist: clash detection threshold</span>
+<span class="sd">        :param use_hull: if True, points not laying within the convex hull wrapping around obtacles will be excluded</span>
+<span class="sd">        :param boundaries: build a grid within the desired box boundaries (if defined, maxdist parameter is ignored)</span>
+<span class="sd">        :param cloud: build a grid using a points cloud as extrema for the construction of the box. If defined, maxdist and boundaries parameters are ignored.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># if len(boundaries) == 0:</span>
+        <span class="c1">#    smax=np.max(self.graph.prot_points, axis=0)+self.graph.step</span>
+        <span class="c1">#    smin=np.min(self.graph.prot_points, axis=0)-self.graph.step</span>
+        <span class="c1">#    boundaries=np.array([smin, smax]).T</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">make_global_grid</span><span class="p">(</span><span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span> <span class="n">use_hull</span><span class="o">=</span><span class="n">use_hull</span><span class="p">,</span> <span class="n">boundaries</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">boundaries</span><span class="p">),</span> <span class="n">cloud</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cloud</span><span class="p">),</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxdist</span> <span class="o">=</span> <span class="n">maxdist</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">=</span> <span class="s2">&quot;global&quot;</span></div>
+
+
+<div class="viewcode-block" id="Path.search_path"><a class="viewcode-back" href="../../../measures.html#biobox.measures.path.Path.search_path">[docs]</a>    <span class="k">def</span> <span class="nf">search_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;theta&quot;</span><span class="p">,</span> <span class="n">get_path</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">update_grid</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">test_los</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Find the shortest accessible path between two points.</span>
+
+<span class="sd">        :param start: coordinates of starting point</span>
+<span class="sd">        :param end: coordinates of target point</span>
+<span class="sd">        :param method: can be theta or astar</span>
+<span class="sd">        :param get_path: return full path (not only waypoints)</span>
+<span class="sd">        :param update_grid: if True, grid will be recalculated (for local search only)</span>
+<span class="sd">        :param test_los: if true, a line of sight postprocessing will be performed to make paths straighter</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1">###INITIALIZE PATH SEARCH###</span>
+        <span class="n">euclidean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">start</span> <span class="o">-</span> <span class="n">end</span><span class="p">,</span> <span class="n">start</span> <span class="o">-</span> <span class="n">end</span><span class="p">))</span>
+
+        <span class="c1"># if euclidean path is requested, don&#39;t go any futher</span>
+        <span class="c1"># not the fastest way (when dealing with spheres, would be better to calculate pairwise distances in distance_matrix)</span>
+        <span class="c1"># this said, though, we keep distance method selection packed in the</span>
+        <span class="c1"># same function</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;euclidean&quot;</span><span class="p">:</span>
+            <span class="n">waypoints</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">get_path</span><span class="p">:</span>
+                <span class="n">waypoints</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_trails</span><span class="p">(</span><span class="n">waypoints</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">euclidean</span><span class="p">,</span> <span class="n">waypoints</span>
+
+        <span class="c1"># if points are too far, skip it</span>
+        <span class="k">if</span> <span class="n">euclidean</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxdist</span><span class="p">:</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+
+        <span class="c1"># specify grid search type (local or global)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;local&quot;</span> <span class="ow">and</span> <span class="n">update_grid</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">place_local_grid</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s2">&quot;global&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s2">&quot;local&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s2">&quot;setup_local_search or setup_global_search must first be called&quot;</span><span class="p">)</span>
+
+        <span class="n">connect_thresh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxdist</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">step</span>
+
+        <span class="c1"># get indices of closest graph neighbors in graph, corresponding to points to connect</span>
+        <span class="c1"># in this case start and end will be picked within the same ensemble of coordinates</span>
+        <span class="c1"># first, check if atoms are accessible, exit if likely to be buried</span>
+        <span class="n">dists</span><span class="p">,</span> <span class="n">idx_3d_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">get_closest_nodes</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">start</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="n">dists</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">connect_thresh</span><span class="p">:</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+
+        <span class="n">dists</span><span class="p">,</span> <span class="n">idx_3d_end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">get_closest_nodes</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">end</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="n">dists</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">connect_thresh</span><span class="p">:</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+
+        <span class="n">idx_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">get_flat_index</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">idx_3d_start</span><span class="o">.</span><span class="n">T</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">idx_end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">get_flat_index</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">idx_3d_end</span><span class="o">.</span><span class="n">T</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># if start and end see each other, do not run shortest path algorithms</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_line_of_sight</span><span class="p">(</span><span class="n">idx_3d_start</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">idx_3d_end</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">waypoints</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">get_points_from_idx_flat</span><span class="p">(</span><span class="n">idx_start</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">get_points_from_idx_flat</span><span class="p">(</span><span class="n">idx_end</span><span class="p">),</span> <span class="n">end</span><span class="p">])</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1">###COMPUTE CURVED DISTANCE###</span>
+
+            <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;old_theta&quot;</span><span class="p">:</span>  <span class="c1"># original theta* algorithm</span>
+                <span class="n">came_from</span><span class="p">,</span> <span class="n">cost_so_far</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta_star</span><span class="p">(</span><span class="n">idx_start</span><span class="p">,</span> <span class="n">idx_end</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;astar&quot;</span><span class="p">:</span>  <span class="c1"># A* algorithm</span>
+                <span class="n">came_from</span><span class="p">,</span> <span class="n">cost_so_far</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_star</span><span class="p">(</span><span class="n">idx_start</span><span class="p">,</span> <span class="n">idx_end</span><span class="p">)</span>
+            <span class="c1"># lazy theta* algorithm, more lightweight than the original</span>
+            <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;lazytheta&quot;</span> <span class="ow">or</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;theta&quot;</span><span class="p">:</span>
+                <span class="n">came_from</span><span class="p">,</span> <span class="n">cost_so_far</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lazy_theta_star</span><span class="p">(</span>
+                    <span class="n">idx_start</span><span class="p">,</span> <span class="n">idx_end</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: search method </span><span class="si">%s</span><span class="s2"> unknown.&quot;</span> <span class="o">%</span> <span class="n">method</span><span class="p">)</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+
+            <span class="c1"># get waypoints using path dictionary, end node index and target</span>
+            <span class="c1"># endpoint (prepended to resulting path)</span>
+            <span class="n">waypoints</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_waypoints</span><span class="p">(</span><span class="n">came_from</span><span class="p">,</span> <span class="n">idx_start</span><span class="p">,</span> <span class="n">idx_end</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">clean_lineofsight</span><span class="o">=</span><span class="n">test_los</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">waypoints</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># points are disconnected</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">waypoints</span>
+
+        <span class="c1"># measure path length</span>
+        <span class="n">dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_measure_path</span><span class="p">(</span><span class="n">waypoints</span><span class="p">)</span>
+
+        <span class="c1"># on request, get full path</span>
+        <span class="k">if</span> <span class="n">get_path</span><span class="p">:</span>
+            <span class="n">waypoints</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_trails</span><span class="p">(</span><span class="n">waypoints</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">dist</span><span class="p">,</span> <span class="n">waypoints</span></div>
+
+    <span class="c1"># interpret shortest path algorithm output</span>
+    <span class="k">def</span> <span class="nf">_get_waypoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">came_from</span><span class="p">,</span> <span class="n">idx_start</span><span class="p">,</span> <span class="n">best_end_idx</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">clean_lineofsight</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+        <span class="c1"># build path form search algorithm output and compute cost</span>
+        <span class="c1"># flattened indices (start with graph endpoint)</span>
+        <span class="n">pts_idx</span> <span class="o">=</span> <span class="p">[</span><span class="n">best_end_idx</span><span class="p">]</span>
+        <span class="c1"># points coordinates (start with best position within endpoints)</span>
+        <span class="n">pts_crd</span> <span class="o">=</span> <span class="p">[</span><span class="n">endpoint</span><span class="p">]</span>
+        <span class="n">pts_crd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">get_points_from_idx_flat</span><span class="p">(</span><span class="n">best_end_idx</span><span class="p">))</span>  <span class="c1"># points coordinates</span>
+
+        <span class="n">cnt</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># safety mechanism, regions of start and end point are disconnected</span>
+        <span class="k">while</span> <span class="n">cnt</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">access_grid</span><span class="p">):</span>
+
+            <span class="c1"># extract previous point, and continue if not null</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">pred</span> <span class="o">=</span> <span class="n">came_from</span><span class="p">[</span><span class="n">pts_idx</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
+
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+
+            <span class="k">if</span> <span class="n">pred</span> <span class="o">==</span> <span class="n">idx_start</span><span class="p">:</span>
+                <span class="k">break</span>
+
+            <span class="c1"># coordinates of previous point</span>
+            <span class="n">predpt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">get_points_from_idx_flat</span><span class="p">(</span><span class="n">pred</span><span class="p">)</span>
+            <span class="c1"># print predpt</span>
+
+            <span class="c1"># extend path, and compute distance (store waypoints)</span>
+            <span class="n">pts_crd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">predpt</span><span class="p">)</span>
+            <span class="n">pts_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pred</span><span class="p">)</span>
+
+            <span class="n">cnt</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">cnt</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">access_grid</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+
+        <span class="n">pts_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idx_start</span><span class="p">)</span>  <span class="c1"># start points indices</span>
+
+        <span class="n">pts_crd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">get_points_from_idx_flat</span><span class="p">(</span><span class="n">idx_start</span><span class="p">))</span>
+        <span class="n">pts_crd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>  <span class="c1"># start points coordinates</span>
+
+        <span class="c1"># if no waypoint cleaning is required, return obtained path</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">clean_lineofsight</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pts_crd</span><span class="p">)</span>
+
+        <span class="c1"># clear waypoints located between two points &quot;seeing eachother&quot;</span>
+        <span class="n">test</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pts_crd</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+
+        <span class="n">w</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pts_idx</span><span class="p">:</span>
+            <span class="n">p3d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">get_3d_index</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+            <span class="n">w</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p3d</span><span class="p">)</span>
+
+        <span class="n">waypoints</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+
+        <span class="c1"># forward</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">waypoints</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">test</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># if point is visible</span>
+
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">waypoints</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                    <span class="c1"># test from end to second neighbor</span>
+                    <span class="k">if</span> <span class="n">test</span><span class="p">[</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">v</span> <span class="o">=</span> <span class="n">waypoints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                        <span class="n">w</span> <span class="o">=</span> <span class="n">waypoints</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_line_of_sight</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">):</span>
+                            <span class="n">test</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">:</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+                            <span class="k">break</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pts_crd</span><span class="p">)[</span><span class="n">test</span><span class="p">]</span>
+
+    <span class="c1"># fill intermediate regions between waypoints with points</span>
+    <span class="c1"># points are separated with steps of 1A (or less)</span>
+    <span class="k">def</span> <span class="nf">_get_trails</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">waypoints</span><span class="p">):</span>
+
+        <span class="n">wpts</span> <span class="o">=</span> <span class="p">[</span><span class="n">waypoints</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">waypoints</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+
+            <span class="c1"># add points in interval between old and new point</span>
+            <span class="n">vec</span> <span class="o">=</span> <span class="n">waypoints</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">waypoints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">distance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="n">vec</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">distance</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span> <span class="c1">#was 0.01A</span>
+                <span class="k">continue</span>
+
+            <span class="n">vec</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>
+            <span class="n">start_here</span> <span class="o">=</span> <span class="n">waypoints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">distance</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">distance</span><span class="p">)):</span>
+                <span class="n">pt</span> <span class="o">=</span> <span class="n">start_here</span> <span class="o">+</span> <span class="n">a</span> <span class="o">*</span> <span class="n">vec</span>
+                <span class="n">wpts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span>
+
+            <span class="n">wpts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">waypoints</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">wpts</span><span class="p">)</span>
+
+    <span class="c1"># measure the length of a path, provided as waypoints</span>
+    <span class="k">def</span> <span class="nf">_measure_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">waypoints</span><span class="p">):</span>
+
+        <span class="c1"># distance initialized with distance between best starting point and</span>
+        <span class="c1"># closes graph node</span>
+        <span class="n">dist</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">waypoints</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">dist</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">waypoints</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">waypoints</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">waypoints</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">waypoints</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="n">dist</span>
+
+    <span class="c1"># line-of-sight test. Draw line between two points using Bresenham algorithm.</span>
+    <span class="c1"># line-of-sight established if all voxels are true in</span>
+    <span class="c1"># self.graph.access_grid</span>
+    <span class="k">def</span> <span class="nf">_line_of_sight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">FM</span><span class="o">.</span><span class="n">c_line_of_sight</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">access_grid</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+
+    <span class="c1"># def _heuristic(self, a, b):</span>
+    <span class="c1"># return self.graph.heuristic(a, b)</span>
+    <span class="c1">#a1 = np.array(self.graph.get_3d_index(a.T)).astype(float)</span>
+    <span class="c1">#b1 = np.array(self.graph.get_3d_index(b.T)).astype(float)</span>
+    <span class="c1"># return np.dot(b1-a1, b1-a1) #manhattan!</span>
+
+<div class="viewcode-block" id="Path.a_star"><a class="viewcode-back" href="../../../measures.html#biobox.measures.path.Path.a_star">[docs]</a>    <span class="k">def</span> <span class="nf">a_star</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">goal</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        A* algorithm, find path connecting two points in the graph.</span>
+
+<span class="sd">        :param start: starting point (flattened coordinate of a graph grid point).</span>
+<span class="sd">        :param goal: end point (flattened coordinate of a graph grid point).</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">frontier</span> <span class="o">=</span> <span class="n">PriorityQueue</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frontier</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">came_from</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">came_from</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">=</span> <span class="n">start</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">frontier</span><span class="o">.</span><span class="n">empty</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">frontier</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">==</span> <span class="n">goal</span><span class="p">:</span>
+                <span class="k">break</span>
+
+            <span class="k">for</span> <span class="n">thenext</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+
+                <span class="n">new_cost</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">cost</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">,</span> <span class="n">thenext</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">thenext</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span> <span class="ow">or</span> <span class="n">new_cost</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span><span class="p">[</span><span class="n">thenext</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span><span class="p">[</span><span class="n">thenext</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_cost</span>
+                    <span class="n">priority</span> <span class="o">=</span> <span class="n">new_cost</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">heuristic</span><span class="p">(</span><span class="n">goal</span><span class="p">,</span> <span class="n">thenext</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">frontier</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">thenext</span><span class="p">,</span> <span class="n">priority</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">came_from</span><span class="p">[</span><span class="n">thenext</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">came_from</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span></div>
+
+
+<div class="viewcode-block" id="Path.theta_star"><a class="viewcode-back" href="../../../measures.html#biobox.measures.path.Path.theta_star">[docs]</a>    <span class="k">def</span> <span class="nf">theta_star</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">goal</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Theta* algorithm, find path connecting two points in the accessibility graph.</span>
+
+<span class="sd">        :param start: starting point (flattened coordinate of a graph grid point).</span>
+<span class="sd">        :param goal: end point (flattened coordinate of a graph grid point).</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">frontier</span> <span class="o">=</span> <span class="n">PriorityQueue</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frontier</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">came_from</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">came_from</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">=</span> <span class="n">start</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">frontier</span><span class="o">.</span><span class="n">empty</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">frontier</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">==</span> <span class="n">goal</span><span class="p">:</span>
+                <span class="k">break</span>
+
+            <span class="k">for</span> <span class="n">thenext</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+
+                <span class="n">new_cost</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">cost</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">,</span> <span class="n">thenext</span><span class="p">)</span>
+
+                <span class="c1"># test line-of-sight between predecessor of current, and thenext</span>
+                <span class="c1"># node.</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">came_from</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">]</span> <span class="o">!=</span> <span class="n">start</span><span class="p">:</span>
+                    <span class="n">a1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">get_3d_index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">came_from</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">]))</span>
+                    <span class="n">b1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">get_3d_index</span><span class="p">(</span><span class="n">thenext</span><span class="p">))</span>
+                    <span class="n">visible</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_line_of_sight</span><span class="p">(</span><span class="n">a1</span><span class="p">,</span> <span class="n">b1</span><span class="p">)</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">visible</span> <span class="o">=</span> <span class="kc">False</span>
+
+                <span class="c1"># if visible, current node is useless and can be ignored.</span>
+                <span class="k">if</span> <span class="n">visible</span><span class="p">:</span>
+
+                    <span class="n">newcost</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">came_from</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">]]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">cost</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">came_from</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">],</span> <span class="n">thenext</span><span class="p">)</span>
+
+                    <span class="k">if</span> <span class="n">thenext</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span> <span class="ow">or</span> <span class="n">newcost</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span><span class="p">[</span><span class="n">thenext</span><span class="p">]:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">came_from</span><span class="p">[</span><span class="n">thenext</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">came_from</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span><span class="p">[</span><span class="n">thenext</span><span class="p">]</span> <span class="o">=</span> <span class="n">newcost</span>
+                        <span class="n">priority</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span><span class="p">[</span><span class="n">thenext</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">heuristic</span><span class="p">(</span><span class="n">goal</span><span class="p">,</span> <span class="n">thenext</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">frontier</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">thenext</span><span class="p">,</span> <span class="n">priority</span><span class="p">)</span>
+
+                <span class="k">elif</span> <span class="n">thenext</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span> <span class="ow">or</span> <span class="n">new_cost</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span><span class="p">[</span><span class="n">thenext</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span><span class="p">[</span><span class="n">thenext</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_cost</span>
+                    <span class="n">priority</span> <span class="o">=</span> <span class="n">new_cost</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">heuristic</span><span class="p">(</span><span class="n">goal</span><span class="p">,</span> <span class="n">thenext</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">frontier</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">thenext</span><span class="p">,</span> <span class="n">priority</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">came_from</span><span class="p">[</span><span class="n">thenext</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">came_from</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span></div>
+
+
+<div class="viewcode-block" id="Path.lazy_theta_star"><a class="viewcode-back" href="../../../measures.html#biobox.measures.path.Path.lazy_theta_star">[docs]</a>    <span class="k">def</span> <span class="nf">lazy_theta_star</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">goal</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Lazy Theta* algorithm (better than Theta* in terms of amount of line-of-sight tests), find path connecting two points in the graph.</span>
+
+<span class="sd">        :param start: starting point (flattened coordinate of a graph grid point).</span>
+<span class="sd">        :param goal: end point (flattened coordinate of a graph grid point).</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">frontier</span> <span class="o">=</span> <span class="n">PriorityQueue</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frontier</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">came_from</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">came_from</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">=</span> <span class="n">start</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">frontier</span><span class="o">.</span><span class="n">empty</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">frontier</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+
+            <span class="c1"># test line-of-sight between predecessor of current, and current</span>
+            <span class="c1"># (test if line_of_sight guess was right)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">!=</span> <span class="n">start</span><span class="p">:</span>
+                <span class="n">a1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">get_3d_index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">came_from</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">]))</span>
+                <span class="n">b1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">get_3d_index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">))</span>
+                <span class="n">visible</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_line_of_sight</span><span class="p">(</span><span class="n">a1</span><span class="p">,</span> <span class="n">b1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">visible</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="c1"># if not visible, select closest visible neighbor</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">visible</span><span class="p">:</span>
+                <span class="n">min_pos</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="n">min_cost</span> <span class="o">=</span> <span class="mi">10000000</span>
+                <span class="k">for</span> <span class="n">thenext</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">thenext</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span> <span class="ow">and</span> <span class="n">thenext</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">came_from</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">]:</span>
+                        <span class="n">new_cost</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span><span class="p">[</span><span class="n">thenext</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">cost</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">,</span> <span class="n">thenext</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">new_cost</span> <span class="o">&lt;</span> <span class="n">min_cost</span><span class="p">:</span>
+                            <span class="n">min_cost</span> <span class="o">=</span> <span class="n">new_cost</span>
+                            <span class="n">min_pos</span> <span class="o">=</span> <span class="n">thenext</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">came_from</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">]</span> <span class="o">=</span> <span class="n">min_pos</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">]</span> <span class="o">=</span> <span class="n">min_cost</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">==</span> <span class="n">goal</span><span class="p">:</span>
+                <span class="k">break</span>
+
+            <span class="k">for</span> <span class="n">thenext</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+
+                <span class="n">parentpos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">came_from</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">]</span>
+                <span class="n">test_cost</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span><span class="p">[</span><span class="n">parentpos</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">cost</span><span class="p">(</span><span class="n">parentpos</span><span class="p">,</span> <span class="n">thenext</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">thenext</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span> <span class="ow">or</span> <span class="n">test_cost</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span><span class="p">[</span><span class="n">thenext</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">came_from</span><span class="p">[</span><span class="n">thenext</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">came_from</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span><span class="p">[</span><span class="n">thenext</span><span class="p">]</span> <span class="o">=</span> <span class="n">test_cost</span>
+                    <span class="n">priority</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span><span class="p">[</span><span class="n">thenext</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">heuristic</span><span class="p">(</span><span class="n">goal</span><span class="p">,</span> <span class="n">thenext</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">frontier</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">thenext</span><span class="p">,</span> <span class="n">priority</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">came_from</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_so_far</span></div>
+
+
+<div class="viewcode-block" id="Path.smooth"><a class="viewcode-back" href="../../../measures.html#biobox.measures.path.Path.smooth">[docs]</a>    <span class="k">def</span> <span class="nf">smooth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chain</span><span class="p">,</span> <span class="n">move_angle_thresh</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Utility method aimed at smoothing a chain produced by A* or Theta*, to make it less angular.</span>
+
+<span class="sd">        :param chain: numpy array containing the list of points composing the path</span>
+<span class="sd">        :param move_angle_thresh: if angle between three consecutive points is greater than this threshold, smoothing is performed</span>
+<span class="sd">        :returns: smoothed chain (3xN numpy array)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># if chain is too short, return</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">chain</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">chain</span>
+
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">chain</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">chain</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">chain</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">chain</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">chain</span><span class="p">[</span><span class="mi">0</span><span class="p">])),</span> <span class="n">chain</span>
+
+        <span class="n">angles_test</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">chain</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="c1"># first test: scan all angles, and pinpoint the ones to check</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">chain</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+
+            <span class="n">mod1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">chain</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">chain</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">mod2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">chain</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">chain</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="n">mod1</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">mod2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">angles_test</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">continue</span>
+
+            <span class="n">a1</span> <span class="o">=</span> <span class="p">(</span><span class="n">chain</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">chain</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="n">mod1</span>
+            <span class="n">a2</span> <span class="o">=</span> <span class="p">(</span><span class="n">chain</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">chain</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">/</span> <span class="n">mod2</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">a1</span> <span class="o">!=</span> <span class="n">a2</span><span class="p">):</span>
+                <span class="k">continue</span>
+
+            <span class="n">dd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">dd</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">:</span>
+                <span class="n">dd</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+            <span class="c1"># if an angle is not close to straight, flag it for straightening</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">degrees</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">dd</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">move_angle_thresh</span><span class="p">:</span>
+                <span class="n">angles_test</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c1"># for every flagged angle, try to straighten</span>
+        <span class="k">while</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">angles_test</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">angles_test</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="c1"># if an angle is not (almost) straight, try to straighten it</span>
+                <span class="k">if</span> <span class="n">angles_test</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+
+                    <span class="c1"># angle i involves atoms i, i+1 (center to be displaced)</span>
+                    <span class="c1"># and i+2</span>
+                    <span class="n">point</span> <span class="o">=</span> <span class="p">(</span><span class="n">chain</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">chain</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">/</span> <span class="mf">2.0</span>
+                    <span class="n">chain</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">point</span><span class="p">[:]</span>
+
+                    <span class="n">angles_test</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                    <span class="c1"># if angle has been moved, tag for angle check its</span>
+                    <span class="c1"># neighbors</span>
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">angles_test</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                        <span class="n">angles_test</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">angles_test</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">angles_test</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                        <span class="n">angles_test</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">dist</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">chain</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">dist</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">chain</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">chain</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="n">chain</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">chain</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="n">dist</span><span class="p">,</span> <span class="n">chain</span></div>
+
+
+<div class="viewcode-block" id="Path.write_grid"><a class="viewcode-back" href="../../../measures.html#biobox.measures.path.Path.write_grid">[docs]</a>    <span class="k">def</span> <span class="nf">write_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;grid.pdb&quot;</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Write the accessibility graph to a PBB file</span>
+
+<span class="sd">        :param filename: output file name</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># it is not in graph, to keep cython as clean as possible</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">access_grid</span><span class="p">))</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">pts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">get_points_from_idx</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+        <span class="n">S</span> <span class="o">=</span> <span class="n">Structure</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="n">pts</span><span class="p">)</span>
+        <span class="n">S</span><span class="o">.</span><span class="n">write_pdb</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span></div></div>
+
+
+
+<div class="viewcode-block" id="Xlink"><a class="viewcode-back" href="../../../measures.html#biobox.measures.path.Xlink">[docs]</a><span class="k">class</span> <span class="nc">Xlink</span><span class="p">(</span><span class="n">Path</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    subclass of :func:`Path &lt;path.Path&gt;`, measure cross-linking distance between atom pairs in a molecule.</span>
+
+<span class="sd">    * after instantiation, call first :func:`set_clashing_atoms &lt;path.Xlink.set_clashing_atoms&gt;` to define molecule&#39;s atoms of interest for clash detection.</span>
+<span class="sd">    * Subsequently, call either :func:`setup_local_search &lt;path.Xlink.setup_local_search&gt;` or :func:`setup_local_search &lt;path.Xlink.setup_global_search&gt;` to prepare the points grid used for path detection.</span>
+<span class="sd">    * Physical distances between a list of atom indices can be finally computed with :func:`distance_matrix &lt;path.Xlink.distance_matrix&gt;` or, between two atoms only, with :func:`search_path &lt;path.Path.search_path&gt;`.</span>
+
+<span class="sd">    If molecule contains multiple conformations, conformation i can be chosen by calling Xlink.molecule.set_current(i) before performing the procedure described in superclass.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">molecule</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        :param molecule: :func:`Molecule &lt;molecule.Molecule&gt;` instance</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">molecule</span> <span class="o">=</span> <span class="n">molecule</span>
+
+
+<div class="viewcode-block" id="Xlink.set_clashing_atoms"><a class="viewcode-back" href="../../../measures.html#biobox.measures.path.Xlink.set_clashing_atoms">[docs]</a>    <span class="k">def</span> <span class="nf">set_clashing_atoms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="o">=</span><span class="p">[],</span> <span class="n">densify</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">atoms_vdw</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">points</span><span class="o">=</span><span class="p">[]):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        define atoms to consider for clash detection.</span>
+
+<span class="sd">        :param atoms: atomnames to consider for clash detection. If undefined, protein backbone and C beta will be considered.</span>
+<span class="sd">        :param densify: if True, all atoms not solvent exposed will be considered for clash detection.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">atoms</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">]</span>
+
+        <span class="c1"># if true, consider all atoms in molecule&#39;s core as obstacles (make</span>
+        <span class="c1"># protein core denser)</span>
+        <span class="k">if</span> <span class="n">densify</span><span class="p">:</span>
+
+            <span class="c1"># get indices of surface atoms</span>
+            <span class="kn">from</span> <span class="nn">biobox.measures.calculators</span> <span class="k">import</span> <span class="n">sasa</span>
+            <span class="n">surf_id</span> <span class="o">=</span> <span class="n">sasa</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">molecule</span><span class="p">,</span> <span class="n">n_sphere_point</span><span class="o">=</span><span class="mi">300</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span>
+
+            <span class="n">remove_id</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">surf_id</span><span class="p">:</span>
+                <span class="c1"># if point is surface atom, and not backbone or CB, flag for</span>
+                <span class="c1"># removal</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">molecule</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">atoms</span><span class="p">:</span>
+                    <span class="n">remove_id</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+            <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">molecule</span><span class="o">.</span><span class="n">get_xyz</span><span class="p">()</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+            <span class="n">mask</span><span class="p">[</span><span class="n">remove_id</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">idxs</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+            <span class="n">points</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="n">idxs</span><span class="p">]</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">points</span><span class="p">,</span> <span class="n">idxs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">molecule</span><span class="o">.</span><span class="n">atomselect</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">,</span> <span class="s2">&quot;*&quot;</span><span class="p">,</span> <span class="n">atoms</span><span class="p">,</span> <span class="n">get_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">atoms_vdw</span><span class="p">:</span>
+            <span class="c1"># if no atomype is present, guess it</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">molecule</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;atomtype&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">molecule</span><span class="o">.</span><span class="n">assign_atomtype</span><span class="p">()</span>
+
+            <span class="c1"># knowledge base: define points standard deviations</span>
+            <span class="n">atomdata</span> <span class="o">=</span> <span class="p">[[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="mf">1.7</span><span class="p">,</span> <span class="mf">1.455</span><span class="p">,</span> <span class="mf">0.51</span><span class="p">],</span>
+                        <span class="p">[</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="mf">0.72</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">],</span>
+                        <span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="mf">1.52</span><span class="p">,</span> <span class="mf">1.15</span><span class="p">,</span> <span class="mf">0.42</span><span class="p">],</span>
+                        <span class="p">[</span><span class="s2">&quot;S&quot;</span><span class="p">,</span> <span class="mf">1.8</span><span class="p">,</span> <span class="mf">1.62</span><span class="p">,</span> <span class="mf">0.54</span><span class="p">],</span>
+                        <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="mf">1.55</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="mf">0.44</span><span class="p">]]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">),</span> <span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>  <span class="c1"># set defaults</span>
+            <span class="n">a_cnt</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">atomdata</span><span class="p">:</span>
+                <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">molecule</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;atomtype&quot;</span><span class="p">][</span><span class="n">idxs</span><span class="p">]</span> <span class="o">==</span> <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">pos</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">a_cnt</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">pos</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>  <span class="c1"># *2.0</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">pos</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+                <span class="n">a_cnt</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+
+        <span class="c1"># graph containing a grid of clash-free points</span>
+        <span class="c1"># here, clashing points are provided, grid definition will come in a</span>
+        <span class="c1"># second step, since two methods to do so are available</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+        <span class="c1"># grid building method, can be &quot;local&quot; or &quot;global&quot;.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span>
+
+        <span class="k">return</span> <span class="n">idxs</span></div>
+
+
+<div class="viewcode-block" id="Xlink.setup_local_search"><a class="viewcode-back" href="../../../measures.html#biobox.measures.path.Xlink.setup_local_search">[docs]</a>    <span class="k">def</span> <span class="nf">setup_local_search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">maxdist</span><span class="o">=</span><span class="mi">28</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        setup Path to perform path search using the local grid method.</span>
+
+<span class="sd">        This method (or :func:`setup_global_search &lt;path.Path.setup_global_search&gt;`) must be called before and path detection can be launched with :func:`search_path &lt;path.Path.search_path&gt;`.</span>
+
+<span class="sd">        :param step: grid step size</span>
+<span class="sd">        :param maxdist: clash detection threshold</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Xlink</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">setup_local_search</span><span class="p">(</span><span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span> <span class="n">maxdist</span><span class="o">=</span><span class="n">maxdist</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Xlink.setup_global_search"><a class="viewcode-back" href="../../../measures.html#biobox.measures.path.Xlink.setup_global_search">[docs]</a>    <span class="k">def</span> <span class="nf">setup_global_search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">maxdist</span><span class="o">=</span><span class="mi">28</span><span class="p">,</span> <span class="n">use_hull</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">boundaries</span><span class="o">=</span><span class="p">[],</span> <span class="n">cloud</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        setup Path to perform path search using the a global grid wrapping all the obtacles region.</span>
+<span class="sd">        This method (or :func:`setup_local_search &lt;path.Path.setup_local_search&gt;`) must be called before and path detection can be lauched with :func:`search_path &lt;path.Path.search_path&gt;`.</span>
+
+<span class="sd">        :param step: grid step size.</span>
+<span class="sd">        :param maxdist: clash detection threshold</span>
+<span class="sd">        :param use_hull: if True, points not laying within the convex hull wrapping around obtacles will be excluded</span>
+<span class="sd">        :param boundaries: build a grid within the desired box boundaries (if defined, maxdist parameter is ignored)</span>
+<span class="sd">        :param cloud: build a grid using a points cloud as extrema for the construction of the box. If defined, maxdist and boundaries parameters are ignored.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">Xlink</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">setup_global_search</span><span class="p">(</span><span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span> <span class="n">maxdist</span><span class="o">=</span><span class="n">maxdist</span><span class="p">,</span> <span class="n">use_hull</span><span class="o">=</span><span class="n">use_hull</span><span class="p">,</span> <span class="n">boundaries</span><span class="o">=</span><span class="n">boundaries</span><span class="p">,</span> <span class="n">cloud</span><span class="o">=</span><span class="n">cloud</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Xlink.write_protein_points"><a class="viewcode-back" href="../../../measures.html#biobox.measures.path.Xlink.write_protein_points">[docs]</a>    <span class="k">def</span> <span class="nf">write_protein_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;protein_points.pdb&quot;</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Write the points selected for clash detection into a pdb file</span>
+
+<span class="sd">        :param filename: output file name</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">S</span> <span class="o">=</span> <span class="n">Structure</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">prot_points</span><span class="p">)</span>
+        <span class="n">S</span><span class="o">.</span><span class="n">write_pdb</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Xlink.distance_matrix"><a class="viewcode-back" href="../../../measures.html#biobox.measures.path.Xlink.distance_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">distance_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;theta&quot;</span><span class="p">,</span> <span class="n">get_path</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">smooth</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">test_los</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">flexible_sidechain</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sphere_pts_surf</span><span class="o">=</span><span class="mf">4.0</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        compute distance matrix between provided indices.</span>
+
+<span class="sd">        :param indices: atoms indices (within the data structure, not the original pdb file). Get the indices via molecule.atomselect(...) command.</span>
+<span class="sd">        :param method: can be &quot;theta&quot; or &quot;astar&quot;.</span>
+<span class="sd">        :param get_path: if true, a list containing all the paths is also returned</span>
+<span class="sd">        :param smooth: if True, path will be refined to make turns less angular.</span>
+<span class="sd">        :param verbose: if True, the algorithm will dump text in console</span>
+<span class="sd">        :param sphere_pts_surf: surface occupied per sphere point, in A2. The smaller, the higher the points density</span>
+<span class="sd">        :param test_los: if true, a line of sight postprocessing will be performed to make paths straighter</span>
+<span class="sd">        :param flexible_sidechain: if True, the selected atoms will be rotated around their associated CA, in order to scan for alternative sidechain arrangements. A sphere of clash-free alternative conformations is generated, and the shortest distance accounting for all these different possibilities is returned. Note that this method is computationally expensive.</span>
+<span class="sd">        :returns: distance matrix (numpy 2d array). matrix will contain -1 if atoms are too far, and -2 if one of the two atoms is buried. If get_path is True, a list of paths is also returned (format: [[id1, id2], [path]]).</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># if flexible sidechain is needed</span>
+        <span class="k">if</span> <span class="n">flexible_sidechain</span><span class="p">:</span>
+            <span class="n">spheres</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                <span class="c1">#s = self._get_sphere(i)</span>
+                    <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_half_sphere</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">pts_surf</span><span class="o">=</span><span class="n">sphere_pts_surf</span><span class="p">)</span>
+
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
+
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">spheres</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+
+                    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt; made sphere with </span><span class="si">%s</span><span class="s2"> points&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
+                        <span class="n">Sph</span> <span class="o">=</span> <span class="n">Structure</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="n">s</span><span class="p">)</span>
+                        <span class="n">Sph</span><span class="o">.</span><span class="n">write_pdb</span><span class="p">(</span><span class="s2">&quot;sphere</span><span class="si">%s</span><span class="s2">.pdb&quot;</span> <span class="o">%</span> <span class="n">i</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">spheres</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;less than 2 atoms available for linkage, cannot compute distance matrix!&quot;</span><span class="p">)</span>
+
+        <span class="c1"># find indices corresponding coordinates</span>
+        <span class="n">pts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">pts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">molecule</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;could not find index </span><span class="si">%s</span><span class="s2"> in molecule!&quot;</span> <span class="o">%</span> <span class="n">i</span><span class="p">)</span>
+
+        <span class="c1"># allocate distance matrix</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)))</span>
+
+        <span class="k">if</span> <span class="n">get_path</span><span class="p">:</span>
+            <span class="n">paths</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># iterate over every pair</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+
+                <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">j</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># extract atom&#39;s residue information, in case</span>
+                <span class="c1"># verbosity is requested             </span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">l1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">molecule</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;resname&quot;</span><span class="p">,</span> <span class="s2">&quot;chain&quot;</span><span class="p">,</span> <span class="s2">&quot;resid&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span>
+                    <span class="n">l2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">molecule</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;resname&quot;</span><span class="p">,</span> <span class="s2">&quot;chain&quot;</span><span class="p">,</span> <span class="s2">&quot;resid&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span>
+
+                <span class="c1"># if sidechain flexibility is needed, launch ensemble of</span>
+                <span class="c1"># measures on spheres</span>
+                <span class="k">if</span> <span class="n">flexible_sidechain</span><span class="p">:</span>
+
+                    <span class="n">bestdist</span> <span class="o">=</span> <span class="mi">1000000</span>
+                    <span class="n">bestpath</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">update_grid</span> <span class="o">=</span> <span class="kc">True</span>
+
+                    <span class="c1"># get euclidean distance matrix</span>
+                    <span class="n">dist_sph</span> <span class="o">=</span> <span class="n">SD</span><span class="o">.</span><span class="n">cdist</span><span class="p">(</span><span class="n">spheres</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">spheres</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+
+                    <span class="c1"># halting condition identifying spheres contact (useless to</span>
+                    <span class="c1"># continue with point by point comparison)</span>
+                    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">dist_sph</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">step</span><span class="p">:</span>
+                        <span class="n">bestdist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">step</span>
+
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># sort measures order from shortest to longest,</span>
+                        <span class="c1"># according to euclidean distance</span>
+                        <span class="n">idxs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unravel_index</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">dist_sph</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span> <span class="n">dist_sph</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+                        <span class="c1"># in case both spheres contain just one point</span>
+                        <span class="c1">#if dist_sph.shape[0] == 1 and dist_sph.shape[1] == 1:</span>
+                        <span class="c1">#    idxs = idxs[0]</span>
+                        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">idxs</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+
+                            <span class="c1"># stop if euclidean distance is greater than max</span>
+                            <span class="c1"># distance threshold</span>
+                            <span class="k">if</span> <span class="n">dist_sph</span><span class="p">[</span><span class="n">idxs</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">idxs</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxdist</span><span class="p">:</span>
+                                <span class="n">pts_crd</span> <span class="o">=</span> <span class="p">[]</span>
+                                <span class="k">break</span>
+ 
+                            <span class="c1"># stop if euclidean distance is greater than best</span>
+                            <span class="c1"># curved path found up to now</span>
+                            <span class="k">if</span> <span class="n">dist_sph</span><span class="p">[</span><span class="n">idxs</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">idxs</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]</span> <span class="o">&gt;</span> <span class="n">bestdist</span><span class="p">:</span>
+                                <span class="n">pts_crd</span> <span class="o">=</span> <span class="p">[]</span>
+                                <span class="k">break</span>
+
+                            <span class="n">dist_tmp</span><span class="p">,</span> <span class="n">pts_crd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_path</span><span class="p">(</span><span class="n">spheres</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">idxs</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">]],</span> <span class="n">spheres</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">idxs</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span> <span class="n">get_path</span><span class="o">=</span><span class="n">get_path</span><span class="p">,</span> <span class="n">test_los</span><span class="o">=</span><span class="n">test_los</span><span class="p">,</span> <span class="n">update_grid</span><span class="o">=</span><span class="n">update_grid</span><span class="p">)</span>
+                            <span class="c1"># update_grid = False #for testing, this is</span>
+                            <span class="c1"># commented out</span>
+
+                            <span class="c1"># dist = -1: sites are too far, dist == -2: one of</span>
+                            <span class="c1"># the two targets is buried</span>
+                            <span class="k">if</span> <span class="n">dist_tmp</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                                <span class="k">continue</span>
+
+                            <span class="k">if</span> <span class="n">smooth</span><span class="p">:</span>
+                                <span class="n">dist_tmp</span><span class="p">,</span> <span class="n">pts_crd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">smooth</span><span class="p">(</span>
+                                    <span class="n">pts_crd</span><span class="p">,</span> <span class="n">move_angle_thresh</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+                            <span class="k">if</span> <span class="n">dist_tmp</span> <span class="o">&lt;</span> <span class="n">bestdist</span><span class="p">:</span>
+                                <span class="n">bestdist</span> <span class="o">=</span> <span class="n">dist_tmp</span>
+                                <span class="n">bestpath</span> <span class="o">=</span> <span class="n">pts_crd</span>
+
+                    <span class="c1"># best resolution equal to grid size</span>
+                    <span class="k">if</span> <span class="n">bestdist</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">step</span><span class="p">:</span>
+                        <span class="n">bestdist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">step</span>
+                        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt; </span><span class="si">%s%s</span><span class="s2">_</span><span class="si">%s</span><span class="s2"> and </span><span class="si">%s%s</span><span class="s2">_</span><span class="si">%s</span><span class="s2"> can get in contact!&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">l1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">l1</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">l1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">l2</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">l2</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">l2</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+                    <span class="c1"># if no connection found, indicate failure</span>
+                    <span class="k">if</span> <span class="n">bestdist</span> <span class="o">==</span> <span class="mi">1000000</span><span class="p">:</span>
+                        <span class="n">dist</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt; </span><span class="si">%s%s</span><span class="s2">_</span><span class="si">%s</span><span class="s2"> and </span><span class="si">%s%s</span><span class="s2">_</span><span class="si">%s</span><span class="s2"> cannot be linked!&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">l1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">l1</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">l1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">l2</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">l2</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">l2</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">dist</span> <span class="o">=</span> <span class="n">bestdist</span>
+                        <span class="n">pts_crd</span> <span class="o">=</span> <span class="n">bestpath</span>
+
+                <span class="c1"># if rigid sidechain, compute distance directly on atoms of</span>
+                <span class="c1"># interest</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># launch search on atoms of interest</span>
+                    <span class="n">dist</span><span class="p">,</span> <span class="n">pts_crd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_path</span><span class="p">(</span>
+                        <span class="n">pts</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">pts</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span> <span class="n">get_path</span><span class="o">=</span><span class="n">get_path</span><span class="p">,</span> <span class="n">test_los</span><span class="o">=</span><span class="n">test_los</span><span class="p">)</span>
+
+                    <span class="c1"># if verbosity requested, report on failed measures</span>
+                    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">dist</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt; </span><span class="si">%s%s</span><span class="s2">_</span><span class="si">%s</span><span class="s2"> and </span><span class="si">%s%s</span><span class="s2">_</span><span class="si">%s</span><span class="s2"> are too far!&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">l1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">l1</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">l1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">l2</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">l2</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">l2</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+                        <span class="k">if</span> <span class="n">dist</span> <span class="o">==</span> <span class="o">-</span><span class="mi">2</span><span class="p">:</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt; </span><span class="si">%s%s</span><span class="s2">_</span><span class="si">%s</span><span class="s2"> vs </span><span class="si">%s%s</span><span class="s2">_</span><span class="si">%s</span><span class="s2"> : likely buried targets&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">l1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">l1</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">l1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">l2</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">l2</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">l2</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+                    <span class="c1"># dist = -1: sites are too far, dist == -2: one of the two</span>
+                    <span class="c1"># targets is buried</span>
+                    <span class="k">if</span> <span class="n">dist</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">distance</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">dist</span>
+                        <span class="n">distance</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dist</span>
+                        <span class="k">continue</span>
+
+                    <span class="k">if</span> <span class="n">smooth</span><span class="p">:</span>
+                        <span class="n">dist</span><span class="p">,</span> <span class="n">pts_crd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">smooth</span><span class="p">(</span><span class="n">pts_crd</span><span class="p">,</span> <span class="n">move_angle_thresh</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+                <span class="n">distance</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">dist</span>
+                <span class="n">distance</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dist</span>
+
+                <span class="c1"># if verbosity requested, report obtaiend distance</span>
+                <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">dist</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt; </span><span class="si">%s%s</span><span class="s2">_</span><span class="si">%s</span><span class="s2"> vs </span><span class="si">%s%s</span><span class="s2">_</span><span class="si">%s</span><span class="s2">: </span><span class="si">%5.2f</span><span class="s2">A&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">l1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">l1</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">l1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">l2</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">l2</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">l2</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dist</span><span class="p">))</span>
+
+                <span class="k">if</span> <span class="n">get_path</span><span class="p">:</span>
+                    <span class="n">path_data</span> <span class="o">=</span> <span class="p">[[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]]</span>
+                    <span class="n">path_data</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">pts_crd</span><span class="p">)</span>
+                    <span class="n">paths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">path_data</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">get_path</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">distance</span><span class="p">,</span> <span class="n">paths</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">distance</span></div>
+
+    <span class="c1"># build sphere around a sidechain atom</span>
+    <span class="k">def</span> <span class="nf">_get_sphere</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">thresh</span><span class="o">=</span><span class="mf">2.0</span><span class="p">):</span>
+
+        <span class="n">D</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">molecule</span><span class="o">.</span><span class="n">data</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="n">D</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;CA&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s2">&quot;For flexible mode, a side chain atom must be provided!&quot;</span><span class="p">)</span>
+
+        <span class="c1"># extract position of alpha carbon associated to provided side chain</span>
+        <span class="c1"># atom</span>
+        <span class="n">test1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">D</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="n">l</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">D</span><span class="p">[:,</span> <span class="mi">5</span><span class="p">]</span> <span class="o">==</span> <span class="n">l</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+        <span class="n">test2</span> <span class="o">=</span> <span class="n">D</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;CA&quot;</span>
+        <span class="n">test</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">test1</span><span class="p">,</span> <span class="n">test2</span><span class="p">)</span>
+
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">test</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">molecule</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">test</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="c1"># build sphere</span>
+        <span class="n">side</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">molecule</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">radius</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">side</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">side</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">))</span>
+        <span class="c1"># allow a surface of 4 A^2 to every point</span>
+        <span class="n">n_sphere_point</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">4.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="n">radius</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="mf">4.0</span><span class="p">)</span>
+        <span class="n">Sph</span> <span class="o">=</span> <span class="n">Sphere</span><span class="p">(</span><span class="n">radius</span><span class="p">,</span> <span class="n">n_sphere_point</span><span class="o">=</span><span class="n">n_sphere_point</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">Sph</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">alpha</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">alpha</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">alpha</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+        <span class="c1"># return only clash free points in sphere</span>
+        <span class="n">dist</span> <span class="o">=</span> <span class="n">SD</span><span class="o">.</span><span class="n">cdist</span><span class="p">(</span><span class="n">Sph</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">molecule</span><span class="o">.</span><span class="n">points</span><span class="p">)</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[</span><span class="n">side</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="c1"># keep sphere points at more than 1A from all neighbors</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">dist</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">thresh</span><span class="p">):</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Sph</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+    <span class="c1"># build sphere around a sidechain atom. List of radii is valid for lysine</span>
+    <span class="k">def</span> <span class="nf">_get_half_sphere</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">pts_surf</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">thresh</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">radii</span><span class="o">=</span><span class="p">[</span><span class="mf">6.3</span><span class="p">,</span> <span class="mf">5.9</span><span class="p">,</span> <span class="mf">5.4</span><span class="p">,</span> <span class="mf">4.8</span><span class="p">]):</span>
+
+        <span class="n">D</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">molecule</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="n">D</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;CA&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;For flexible mode, a side chain atom must be provided!&quot;</span><span class="p">)</span>
+
+        <span class="n">pts</span><span class="p">,</span> <span class="n">idxs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">molecule</span><span class="o">.</span><span class="n">same_residue_unique</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">get_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">resdata</span> <span class="o">=</span> <span class="n">D</span><span class="p">[</span><span class="n">idxs</span><span class="p">]</span>
+
+        <span class="n">posCA</span> <span class="o">=</span> <span class="n">pts</span><span class="p">[</span><span class="n">resdata</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;CA&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># if a list of radii for concentric spheres is not provided, guess a</span>
+        <span class="c1"># single radius on the basis of distance of linkage atom from CA</span>
+        <span class="n">side</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">molecule</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">radii</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">radii</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">side</span> <span class="o">-</span> <span class="n">posCA</span><span class="p">,</span> <span class="n">side</span> <span class="o">-</span> <span class="n">posCA</span><span class="p">))]</span>
+
+        <span class="c1"># build concentric spheres</span>
+        <span class="c1"># allow a surface of pts_den A^2 to every point</span>
+        <span class="n">n_sphere_point</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">4.0</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="p">(</span><span class="n">radii</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">pts_surf</span><span class="p">))</span>
+        <span class="n">to_test</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_sphere_point</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">pts_dist</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">pts_dist_test</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">radius</span> <span class="ow">in</span> <span class="n">radii</span><span class="p">:</span>
+            <span class="n">Sph</span> <span class="o">=</span> <span class="n">Sphere</span><span class="p">(</span><span class="n">radius</span><span class="p">,</span> <span class="n">n_sphere_point</span><span class="o">=</span><span class="n">n_sphere_point</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+            <span class="n">Sph</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">posCA</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">posCA</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">posCA</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">pts_dist_test</span><span class="p">:</span>
+                <span class="n">dsts</span> <span class="o">=</span> <span class="n">SD</span><span class="o">.</span><span class="n">cdist</span><span class="p">(</span><span class="n">Sph</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="n">Sph</span><span class="o">.</span><span class="n">points</span><span class="p">)</span>
+                <span class="n">pts_dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">dsts</span><span class="p">[</span><span class="n">dsts</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">])</span>
+                <span class="n">pts_dist_test</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="c1"># accept only clash free points in sphere.</span>
+            <span class="c1"># unacceptable positions will be retested in the next smaller sphere</span>
+            <span class="n">dist</span> <span class="o">=</span> <span class="n">SD</span><span class="o">.</span><span class="n">cdist</span><span class="p">(</span><span class="n">Sph</span><span class="o">.</span><span class="n">points</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">molecule</span><span class="o">.</span><span class="n">points</span><span class="p">)</span>
+            <span class="n">new_to_test</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">dist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">1</span><span class="p">):</span>
+                <span class="c1">#keep sphere points at more than threshold from all neighbors</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">dist</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">&lt;</span><span class="n">thresh</span><span class="p">)</span> <span class="ow">and</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">to_test</span><span class="p">:</span>
+                    <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Sph</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+
+                <span class="k">elif</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">to_test</span><span class="p">:</span>
+                    <span class="n">new_to_test</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+
+            <span class="n">to_test</span> <span class="o">=</span> <span class="n">new_to_test</span>
+
+        <span class="c1"># accept only points in same half sphere of side chain</span>
+        <span class="n">posCB</span> <span class="o">=</span> <span class="n">pts</span><span class="p">[</span><span class="n">resdata</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;CB&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">posO</span> <span class="o">=</span> <span class="n">pts</span><span class="p">[</span><span class="n">resdata</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;O&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">posC</span> <span class="o">=</span> <span class="n">pts</span><span class="p">[</span><span class="n">resdata</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;C&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">posN</span> <span class="o">=</span> <span class="n">pts</span><span class="p">[</span><span class="n">resdata</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;N&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># compute residue plane</span>
+        <span class="n">plane_vec1</span> <span class="o">=</span> <span class="n">posC</span><span class="o">-</span><span class="n">posN</span>
+        <span class="n">plane_vec2</span> <span class="o">=</span> <span class="n">posC</span><span class="o">-</span><span class="n">posO</span>
+        <span class="n">xprod</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">plane_vec1</span><span class="p">,</span> <span class="n">plane_vec2</span><span class="p">)</span>
+        <span class="n">xprod</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">xprod</span><span class="p">)</span>
+
+        <span class="c1"># compute angle of CB with respect of plane normal</span>
+        <span class="n">side_vec</span> <span class="o">=</span> <span class="n">posCB</span><span class="o">-</span><span class="n">posCA</span>
+        <span class="n">side_vec</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">side_vec</span><span class="p">)</span>
+        <span class="n">angle1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rad2deg</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">xprod</span><span class="p">,</span> <span class="n">side_vec</span><span class="p">)))</span>
+
+        <span class="n">res2</span> <span class="o">=</span> <span class="p">[</span><span class="n">side</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">res</span><span class="p">:</span>
+            <span class="n">side_vec2</span> <span class="o">=</span> <span class="n">p</span><span class="o">-</span><span class="n">posCA</span>
+            <span class="n">side_vec2</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">side_vec2</span><span class="p">)</span>
+            <span class="n">angle2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rad2deg</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">xprod</span><span class="p">,</span> <span class="n">side_vec2</span><span class="p">)))</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="n">angle1</span><span class="o">&gt;</span><span class="mi">90</span> <span class="ow">and</span> <span class="n">angle2</span><span class="o">&gt;</span><span class="mi">90</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">angle1</span><span class="o">&lt;</span><span class="mi">90</span> <span class="ow">and</span> <span class="n">angle2</span><span class="o">&lt;</span><span class="mi">90</span><span class="p">):</span>
+                <span class="n">res2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+
+        <span class="n">res3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">res2</span><span class="p">)</span>
+
+        <span class="c1">#select only points reachable from the actual available coordinate</span>
+        <span class="n">rds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">radii</span><span class="p">))</span> <span class="c1">#sorted radii list</span>
+        <span class="n">dists</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">rds</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">rds</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">rds</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)])</span> <span class="c1">#distances between adjacent spherical shells</span>
+      
+        <span class="n">step</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">([</span><span class="n">pts_dist</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">dists</span><span class="p">),</span> <span class="mf">3.0</span><span class="p">])</span>
+        <span class="n">db</span> <span class="o">=</span> <span class="n">DBSCAN</span><span class="p">(</span><span class="n">eps</span><span class="o">=</span><span class="n">step</span><span class="p">,</span> <span class="n">min_samples</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">res3</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">db</span><span class="o">.</span><span class="n">labels_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">R</span> <span class="o">=</span> <span class="n">res3</span><span class="p">[</span><span class="n">db</span><span class="o">.</span><span class="n">labels_</span> <span class="o">==</span> <span class="n">db</span><span class="o">.</span><span class="n">labels_</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">res3</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+        
+        <span class="k">return</span> <span class="n">R</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">biobox 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Matteo Degiacomi.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>
