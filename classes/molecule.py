@@ -316,6 +316,57 @@ class Molecule(Structure):
         self.data["occupancy"] = self.data["occupancy"].astype(float)
         self.data["beta"] = self.data["beta"].astype(float)
 
+    def import_md(self, fname):
+        '''
+        put comments here
+        '''
+
+        import itertools
+        energy_skip = 7 # number of lines to skip between blocks of info.
+        f_in = open(fname, "r")
+
+        
+        name = []
+        atomtype = []
+        label = []
+        cols = ["name", "atomlabel", "atomtype"]
+        line_no = 0
+        for line in f_in:
+            if line[-2] == "R":
+                name.append(line[1:3].replace(" ", ""))
+                atomtype.append(line[1:3].replace(" ", ""))
+                label.append(line[1:18].replace(" ", ""))
+            elif line[-2] == "V":
+                break
+            line_no += 1
+
+        no_atoms = len(name)
+        header = line_no - no_atoms
+        f_in.close()
+
+        self.data = pd.DataFrame(np.array((np.asarray(name), np.asarray(label), np.asarray(atomtype))).T, columns=cols)
+
+        p = []  # collects coordinates for every model
+        coords = []
+        counter = 1
+        with open(fname) as f_in:
+            for line in itertools.islice(f_in, header, header+no_atoms):
+                p.append([float(line[21:45]), float(line[48:72]), float(line[75:99])])
+            coords.append(p)
+            p_record = p[-1]
+            for line in itertools.islice(f_in, 0, 2*no_atoms+energy_skip):
+                pass
+            while len(p) != 0:
+                p = []
+                for line in itertools.islice(f_in, 0, no_atoms):
+                    p.append([float(line[21:45]), float(line[48:72]), float(line[75:99])])
+                for line in itertools.islice(f_in, 0, 2*no_atoms+energy_skip):
+                    pass
+                coords.append(p)
+
+        coords = coords[:-1]
+        coords_xyz = np.array(coords).astype(float)
+        self.add_xyz(coords_xyz)
 
     def import_pqr(self, pqr, include_hetatm=False):
         '''
@@ -1241,9 +1292,11 @@ class Molecule(Structure):
             for i in range(0, len(d), 1):
                 # create and write PDB line
                 if d[i][2][0].isdigit():
-                    L = '%-6s%5s %-5s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
-                else:
                     L = '%-6s%5s %-4s %-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
+                elif len(d[i][2]) == 4:
+                    L = '%-6s%5s  %-4s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
+                else:
+                    L = '%-6s%5s  %-3s %-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
                 f_out.write(L)
 
             f_out.write("END\n")
@@ -1510,11 +1563,14 @@ class Molecule(Structure):
 
             if readit:
                 try:
-                    ss = line[16]
-                    if line[16] == " ":
-                        ss = "-"
+                    if line[13:15] == '!*':
+                        continue
+                    else:
+                        ss = line[16]
+                        if line[16] == " ":
+                            ss = "-"
 
-                    secstruct.append(ss)
+                        secstruct.append(ss)
                 except:
                     continue
 
