@@ -1563,7 +1563,7 @@ class Molecule(Structure):
 
             if readit:
                 try:
-                    if line[13:15] == '!*':
+                    if line[13:15] == '!*' or line[13] == '!':
                         continue
                     else:
                         ss = line[16]
