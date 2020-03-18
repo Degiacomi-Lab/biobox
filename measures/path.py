@@ -191,6 +191,7 @@ class Path(object):
         if len(waypoints) == 0:  # points are disconnected
             return -1, waypoints
 
+
         # measure path length
         dist = self._measure_path(waypoints)
 
@@ -201,7 +202,7 @@ class Path(object):
         return dist, waypoints
 
     # interpret shortest path algorithm output
-    def _get_waypoints(self, came_from, idx_start, best_end_idx, endpoint, start, clean_lineofsight=False):
+    def _get_waypoints(self, came_from, idx_start, best_end_idx, endpoint, start, clean_lineofsight=True):
 
         # build path form search algorithm output and compute cost
         # flattened indices (start with graph endpoint)
@@ -226,7 +227,7 @@ class Path(object):
 
             # coordinates of previous point
             predpt = self.graph.get_points_from_idx_flat(pred)
-            # print predpt
+            # print(predpt)
 
             # extend path, and compute distance (store waypoints)
             pts_crd.append(predpt)
@@ -258,18 +259,20 @@ class Path(object):
 
         # forward
         i = 1
-        while i < len(waypoints) - 1:
+        while i < len(waypoints):
 
-            if test[i + 1] == 1:  # if point is visible
+            if test[i] == 1:  # if point is visible
 
-                for j in range(len(waypoints) - 2, i + 1, -1):
+                for j in range(i+1, len(waypoints)):
+                    #for j in range(len(waypoints)-1, i + 1, -1):
                     # test from end to second neighbor
-                    if test[j + 1] == 1:
+                    if test[j] == 1:
                         v = waypoints[i].copy()
                         w = waypoints[j].copy()
                         if self._line_of_sight(v, w):
-                            test[i + 2:j + 1] = False
-                            break
+                            #print(i, j)
+                            test[i + 1:j+1] = False
+                            #break
             i += 1
 
         return np.array(pts_crd)[test]
