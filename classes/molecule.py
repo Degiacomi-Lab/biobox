@@ -159,7 +159,7 @@ class Molecule(Structure):
                     try:
                         #building dataframe
                         data = np.array(data_in).astype(str)
-                        cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
+                        cols = ["atom", "index", "name", "resname", "chain", "resid", "occupancy", "beta", "atomtype"]
                         idx = np.arange(len(data))
                         self.data = pd.DataFrame(data, index=idx, columns=cols)
                         # Set the index numbers to the idx values to avoid hexadecimal counts
@@ -248,7 +248,7 @@ class Molecule(Structure):
                 try:
                     #building dataframe
                     data = np.array(data_in).astype(str)
-                    cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
+                    cols = ["atom", "index", "name", "resname", "chain", "resid", "occupancy", "beta", "atomtype"]
                     idx = np.arange(len(data))
                     self.data = pd.DataFrame(data, index=idx, columns=cols)
                     # Set the index numbers to the idx values to avoid hexadecimal counts
@@ -327,24 +327,29 @@ class Molecule(Structure):
 
         
         name = []
-        atomtype = []
         label = []
-        cols = ["name", "atomlabel", "atomtype"]
+        cols = ["atom", "index", "name", "resname", "chain", "resid", "occupancy", "beta", "atomtype"]
         line_no = 0
         for line in f_in:
             if line[-2] == "R":
                 name.append(line[1:3].replace(" ", ""))
-                atomtype.append(line[1:3].replace(" ", ""))
                 label.append(line[1:18].replace(" ", ""))
             elif line[-2] == "V":
                 break
             line_no += 1
 
         no_atoms = len(name)
+        atom = ["ATOM"] * no_atoms
+        resname = ["TMP"] * no_atoms
+        chain = ["X"] * no_atoms
+        resid = [0] * no_atoms
+        occupancy = [1.0] * no_atoms
+        beta = [0.0] * no_atoms
+        index = np.arange(no_atoms)
         header = line_no - no_atoms
         f_in.close()
 
-        self.data = pd.DataFrame(np.array((np.asarray(name), np.asarray(label), np.asarray(atomtype))).T, columns=cols)
+        self.data = pd.DataFrame(np.array((np.asarray(atom), index, np.asarray(name), np.asarray(resname), np.asarray(chain), np.asarray(resid), np.asarray(occupancy), np.asarray(beta), np.asarray(name))).T, columns=cols)
 
         p = []  # collects coordinates for every model
         coords = []
@@ -405,7 +410,7 @@ class Molecule(Structure):
                     try:
                         #building dataframe
                         data = np.array(data_in).astype(str)
-                        cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
+                        cols = ["atom", "index", "name", "resname", "chain", "resid", "occupancy", "beta", "atomtype"]
                         idx = np.arange(len(data))
                         self.data = pd.DataFrame(data, index=idx, columns=cols)
                         self.data["index"] = idx # convert to internal numbering system
@@ -495,7 +500,7 @@ class Molecule(Structure):
                 try:
                     #building dataframe
                     data = np.array(data_in).astype(str)
-                    cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
+                    cols = ["atom", "index", "name", "resname", "chain", "resid", "occupancy", "beta", "atomtype"]
                     idx = np.arange(len(data))
                     self.data = pd.DataFrame(data, index=idx, columns=cols)
                     self.data["index"] = idx # convert to internal numbering system
@@ -772,7 +777,7 @@ class Molecule(Structure):
 
         indices = np.linspace(1, len(data), len(data)).astype(int)
         idx = vhex(indices)
-        cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
+        cols = ["atom", "index", "name", "resname", "chain", "resid", "occupancy", "beta", "atomtype"]
 
         M2 = Molecule()
         M2.coordinates = np.array([xyzall])
@@ -855,7 +860,7 @@ class Molecule(Structure):
 
         #building dataframe
         data = np.array(d_data).astype(str)
-        cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
+        cols = ["atom", "index", "name", "resname", "chain", "resid", "occupancy", "beta", "atomtype"]
         idx = np.arange(len(data))
         self.data = pd.DataFrame(data, index=idx, columns=cols)
 
@@ -1144,14 +1149,20 @@ class Molecule(Structure):
         else:
             return np.array(pts)
 
-    def get_subset(self, idxs, conformations=[]):
+    def get_subset(self, idxs, conformations=[], flip = False):
         '''
         Return a :func:`Molecule <molecule.Molecule>` object containing only the selected atoms and frames
 
         :param ixds: atoms to extract
         :param conformations: frames to extract (by default, all)
+        :param flip: If true, extract atoms that DON'T match idxs (default is False)
         :returns: :func:`Molecule <molecule.Molecule>` object
         '''
+
+        if flip:
+            self_index = set(self.data["index"])
+            idxs_flip = set(idxs)
+            idxs = np.asarray(list(self_index - idxs_flip) + list(idxs_flip - self_index)) # replace idxs with new keep list
 
         # if a subset of all available frames is requested to be written,
         # select them first
@@ -1195,6 +1206,7 @@ class Molecule(Structure):
         # identify different chains
         intervals = [0]
 
+        gaps = []
         if not use_backbone:
             for i in range(len(self.coordinates[0]) - 1):
                 dist = np.sqrt(np.dot(self.points[i] - self.points[i + 1], self.points[i] - self.points[i + 1]))
@@ -1205,10 +1217,15 @@ class Molecule(Structure):
             #aminoacids start with N. Find where a C is too far from the next N.
             posN, idxN = self.atomselect("*", "*", "N", get_index=True)
             posC = self.atomselect("*", "*", "C")
+
+            if len(posN) != len(posC):
+                raise Exception("mismatch in N and C count")
+
             for i in range(len(idxN)-1):
                 dist = np.sqrt(np.dot(posC[i] - posN[i+1], posC[i] - posN[i+1]))
                 if dist > distance:
                     intervals.append(idxN[i+1])
+                    gaps.append(dist)
 
         intervals.append(len(self.coordinates[0]))
 
@@ -1217,7 +1234,7 @@ class Molecule(Structure):
             thepos = i % len(self.chain_names)
             self.data.loc[intervals[i]:intervals[i + 1], "chain"] = self.chain_names[thepos]
 
-        return len(intervals) - 1, intervals
+        return len(intervals) - 1, intervals, np.round(np.array(gaps), decimals=3)
 
     def get_pdb_data(self, index=[]):
         '''
@@ -1292,7 +1309,7 @@ class Molecule(Structure):
             for i in range(0, len(d), 1):
                 # create and write PDB line
                 if d[i][2][0].isdigit():
-                    L = '%-6s%5s %-4s %-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
+                    L = '%-6s%5s  %-4s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
                 elif len(d[i][2]) == 4:
                     L = '%-6s%5s  %-4s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
                 else:
@@ -1925,6 +1942,84 @@ class Molecule(Structure):
 
         return
     
+    def clean(self, path='~/biobox/classes/remove_alt_conf.sh'):
+        '''
+        clean up a PDB files from alt conformations and ligands. Requires subprocess to be installed.
+        This removes residues with the least certainty (based on beta factor). 
+        If no beta factor is present, it removes all residue conformations after the first
+
+        :param path: Path to the removing alt conf. bash script (in current folder by default)
+        :returns: Returns a new Molecule object that has been cleaned
+        '''
+        import subprocess
+
+        self.write_pdb("tmp2.pdb")
+        subprocess.call(path + " tmp2.pdb", shell=True)
+
+        A = Molecule()
+        A.import_pdb("clean_tmp2.pdb")
+        
+        # Get residues with strings in
+        # Find our what first numbers are (i.e. remove strings) so we have all conformations and the non string version
+        # Then check what avg beta factor is, if it's zero, chop off all string conformations
+        A_idxs = A.atomselect("*", "*", "CA", get_index=True)[1]
+        resid = np.asarray(A.data['resid'][A_idxs])
+        repeat = []
+
+        # get indices of repeat residues
+        for i in range(1, len(resid)):
+            if resid[i-1] == resid[i]:
+                repeat.append(i)
+            else:
+                continue
+        
+        #get relevent chains
+        chains = np.unique(A.data["chain"][A_idxs[repeat]])
+        # keep a record of indices to keep and all of the ones we explore
+        keep_res_idx = []
+        all_repeat_idx = []
+        for c in chains:
+            chain_idx = A_idxs[repeat][A.data["chain"][A_idxs[repeat]] == c]
+
+            # loop through repeat residues and calculate beta factors for removal
+            for r in np.unique(A.data['resid'][chain_idx]):
+                A_repeat_idx = A.atomselect(c, r, "*", get_index=True)[1]
+                all_repeat_idx.extend(A_repeat_idx)
+                A_subset = A.get_subset(A_repeat_idx)
+
+                beta = []
+                A_CAs = np.where(A_subset.data['name'] == "CA")[0]
+
+                # First do a quick check in case we have any zero betas (to skip loop below)
+                if np.any(np.asarray(A_subset.data['beta']) == 0.0):
+                    keep_res_idx.extend(A_repeat_idx[A_CAs[0]-1 : A_CAs[1] -1])
+                else:
+                    # loop through each residue in the same residue set
+                    for i in range(len(A_CAs)):
+                        # Always an N preceding a CA
+                        if i < len(A_CAs) -1:
+                            beta.append(np.mean(A_subset.data['beta'][A_CAs[i] - 1 : A_CAs[i+1] - 1]))
+                        else: 
+                            beta.append(np.mean(A_subset.data['beta'][A_CAs[i] - 1 : 1 + np.asarray(A_subset.data['index'])[-1]]))
+
+                    # only select residue with lowest beta
+                    min_res = A_CAs[np.argmin(beta)]
+                    if np.argmin(beta) + 1 == len(A_CAs):
+                        keep_res_idx.extend(A_repeat_idx[min_res-1 : 1 + np.asarray(A_subset.data['index'])[-1]])
+                    else:
+                        keep_res_idx.extend(A_repeat_idx[min_res-1 : A_CAs[np.argmin(beta) + 1] - 1])
+
+        # Now just pull the indices we want to remove
+        all_res_set = set(all_repeat_idx)
+        keep_res_set = set(keep_res_idx)
+        idx_remove = np.asarray(list(all_res_set - keep_res_set) + list(keep_res_set - all_res_set))
+
+        # clean files
+        os.remove("clean_tmp2.pdb")
+        os.remove("tmp2.pdb")
+
+        return A.get_subset(idx_remove, flip=True)
+
     def get_dipole_map(self, orig, pqr, time_start = 0, time_end = 2,resolution = 1., vox_in_window = 3., write_dipole_map = True, fname = "dipole_map.tcl"):
         '''
         Method for generating dipole maps to be used for electron density map generation. Also prints a dipole map as a result (and if desired). It calls a cython code in lib.
