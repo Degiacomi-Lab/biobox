@@ -81,7 +81,8 @@ class Molecule(Structure):
                                       "HG": "H", "HZ1": "H", "HE3": "H", "HB3": "H", "HH1": "H", "HH2": "H", "HD23": "H", "HD13": "H", "HE": "H", "HH": "H", 
                                       "OC1": "O", "OC2": "O", "OW": "O", "HW1": "H", "HW2": "H", "CH3" : "C", "HH31" : "H", "HH32" : "H", "HH33" : "H",
                                       "C00" : "C", "C01" : "C", "C02" : "C", "C04" : "C", "C06" : "C", "C08" : "C", "H03" : "H", "H05" : "H", "H07" : "H",
-                                      "H09" : "H", "H0A" : "H", "H0B" : "H", }
+                                      "H09" : "H", "H0A" : "H", "H0B" : "H", "N01" : "N", "C03": "C", "C05": "C", "O06": "O", "H08": "H", "H0C": "H", "H0D": "H", 
+                                      "H0E": "H", "H0F": "H", "O03": "O", "H04": "H", "H06": "H", "OD": "O", "O02" : "O", "HO" : "H", "OT" : "O", "O1" : "O", "O2" : "O"}
 
     def __add__(self, other):
         from biobox.classes.multimer import Multimer
@@ -1180,7 +1181,7 @@ class Molecule(Structure):
         M = Molecule()
         postmp = self.coordinates[:, idxs]
         M.coordinates = postmp[frames]
-        M.data = self.data.ix[idxs]
+        M.data = self.data.loc[idxs]
         M.data = M.data.reset_index(drop=True)
         M.data["index"] = idx
         M.current = 0
@@ -1306,15 +1307,36 @@ class Molecule(Structure):
                 idx_val = vhex(idx_val)   # convert index values to hexidecimal
                 idx_val = [num[2:] for num in idx_val]  # remove 0x at start of hexidecimal number
             
-            for i in range(0, len(d), 1):
-                # create and write PDB line
-                if d[i][2][0].isdigit():
-                    L = '%-6s%5s  %-4s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
-                elif len(d[i][2]) == 4:
-                    L = '%-6s%5s  %-4s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
-                else:
-                    L = '%-6s%5s  %-3s %-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
-                f_out.write(L)
+            # prep for termination lines
+            no, split, _ = self.guess_chain_split()
+            split = np.asarray(split[1:]) -1 # don't need starting atom, and we want to shift down to end of last residue
+
+            if no == 1:
+                for i in range(0, len(d), 1):
+                    # create and write PDB line
+                    if d[i][2][0].isdigit():
+                        L = '%-6s%5s  %-4s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
+                    elif len(d[i][2]) == 4:
+                        L = '%-6s%5s  %-4s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
+                    else:
+                        L = '%-6s%5s  %-3s %-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
+                    f_out.write(L)
+            else:
+                for i in range(0, len(d), 1):
+                    # create and write PDB line
+                    if d[i][2][0].isdigit():
+                        L = '%-6s%5s  %-4s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
+                    elif len(d[i][2]) == 4:
+                        L = '%-6s%5s  %-4s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
+                    else:
+                        L = '%-6s%5s  %-3s %-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
+                
+                    f_out.write(L)
+
+                    # Terminate chain if applicable
+                    if np.any(i == split):
+                        L = 'TER   %5s      %-4s%1s%4s\n' % (idx_val[i], d[i][3], d[i][4], d[i][5])
+                        f_out.write(L)
 
             f_out.write("END\n")
 
@@ -1494,8 +1516,8 @@ class Molecule(Structure):
         if len(Hidx) == 0:
             raise Exception("ERROR: no atom name %s found!"%atomname2)
 
-        Ndata = self.data.ix[Nidx, ["chain", "resid"]].values
-        Hdata = self.data.ix[Hidx, ["chain", "resid"]].values
+        Ndata = self.data.loc[Nidx, ["chain", "resid"]].values
+        Hdata = self.data.loc[Hidx, ["chain", "resid"]].values
 
         a1 = []
         a2 = []
@@ -1738,7 +1760,7 @@ class Molecule(Structure):
 
         return M1_reskeep, M2_reskeep
 
-    def pdb2pqr(self, ff=""):
+    def pdb2pqr(self, ff="", amber_convert=True):
         '''
         Parses data from the pdb input into a pqr format. This uses the panda dataframe with the information
         regarding atom indexes, types etc. in the self.data files.
@@ -1746,51 +1768,101 @@ class Molecule(Structure):
         The default is the amber14sb forcefield file held within the classes/ folder.
         
         :param ff: name of forcefield text file input that needs to be read to read charges / vdw radii.
+        :param amber_convert: If True, will assume forcefield is amber and convert resnames as necessary
         '''
 
-        _, intervals = self.guess_chain_split()     
-        # patch naming of C-termini
-        for i in intervals[1:]:
-            idxs = self.same_residue(i-1, get_index=True)[1]   
-            names = self.data.loc[idxs, ["name"]].values
-            if np.any(names == "OC1") or np.any(names == "OXT"):
-                resname = self.data.loc[idxs[0], ["resname"]].values[0]
-                newresnames = np.array(["C"+resname]*len(idxs))
-                self.data.loc[idxs, ["resname"]] = newresnames
+        intervals = self.guess_chain_split()[1]
 
-        # patch naming of N-termini
-        for i in intervals[0:-1]:
-            idxs = self.same_residue(i, get_index=True)[1]   
-            names = self.data.loc[idxs, ["name"]].values
-            if np.any(names == "H1") and np.any(names == "H2"):
-                resname = self.data.loc[idxs[0], ["resname"]].values[0]
-                newresnames = np.array(["N"+resname]*len(idxs))
-                self.data.loc[idxs, ["resname"]] = newresnames
+        if amber_convert:
+            # patch naming of C-termini
+            for i in intervals[1:]:
+                idxs = self.same_residue(i-1, get_index=True)[1]   
+                names = self.data.loc[idxs, ["name"]].values
+                if np.any(names == "OC1") or np.any(names == "OXT"):
+                    resname = self.data.loc[idxs[0], ["resname"]].values[0]
+                    newresnames = np.array(["C"+resname]*len(idxs))
+                    self.data.loc[idxs, ["resname"]] = newresnames
+    
+            # patch naming of N-termini
+            for i in intervals[0:-1]:
+                idxs = self.same_residue(i, get_index=True)[1]   
+                names = self.data.loc[idxs, ["name"]].values
+                if np.any(names == "H1") and np.any(names == "H2"):
+                    resname = self.data.loc[idxs[0], ["resname"]].values[0]
+                    newresnames = np.array(["N"+resname]*len(idxs))
+                    self.data.loc[idxs, ["resname"]] = newresnames
+    
+            HIP = np.array(["HIP"] * 18)    # create numpy array structures to possibly reassign later
+            HIE = np.array(["HIE"] * 17)    # create numpy array structures to possibly reassign later
+            HID = np.array(["HID"] * 17)    # create numpy array structures to possibly reassign later
+            NHIP = np.array(["NHIP"] * 20)
+            NHIE = np.array(["NHIE"] * 19)
+            NHID = np.array(["NHID"] * 19)
+            CHIP = np.array(["CHIP"] * 20)
+            CHIE = np.array(["CHIE"] * 18)
+            CHID = np.array(["CHID"] * 19)
 
+            start_chain = self.data["resid"].iloc[0]   # This is in case we get 1 or 2 as the first chain ID start
+            end_chain = self.data["resid"].iloc[-1]    #  We don't know the end chain number so we find it here
+            start_res = self.data["resname"].iloc[0] 
+            end_res = self.data["resname"].iloc[-1] 
+            
+            # Need to check if first residue is actually an N-termini residue, and if so, reassign resnames if necessary
+            if (self.data["name"].iloc[0:27] == 'H1').any() and (self.data["name"].iloc[0:27] == 'H2').any() and (self.data["name"].iloc[0:27] == 'H3').any() and self.data["resname"][0][0] != 'N':
+                print('Found N-Termini, reassigning first resname to match the forcefield')
+                start_index = self.data.index[self.data["resid"] == start_chain]
+                for N in start_index:
+                    self.data["resname"].iloc[N] = 'N' + start_res   # First chain needs to be prefixed with N-termini resname
 
+             # Need to check whether it matches HIE, HID or HIP depending on what protons are present and where
+            his_check = self.data["resname"] == 'HIS'  # Check if we need to do following calculation
+            nhis_check = self.data["resname"] == 'NHIS' # Check for N termini HIS
+            chis_check = self.data["resname"] == 'CHIS'
+            if np.sum(his_check) != 0 or np.sum(nhis_check) != 0 or np.sum(chis_check) != 0:
+                print("WARNING: found residue with name HIS, checking to see what protonation state it is in and reassigning to HIP, HIE or HID.\nYou should check HIS in your pdb file is right to be sure!")     
+                for ix in range(len(self.data["resname"])):
+                    H_length = 17 # Set this as it is more common, and also covers the basis to capture HD1 or HE2 later if necessary (as C and O tend to be last a
+                    # N is always the first atom (use that as basis)                                                                                                                             
+                    
+                    if self.data["name"][ix] == 'N' and self.data["resname"][ix] == 'HIS':  
+                                                                                           
+                        if (self.data["name"][ix:(ix+H_length)] == 'HE2').any() and (self.data["name"][ix:(ix+H_length)] == 'HD1').any(): # If the residue contains HE2 and HD1, it is a HIP residue
+                            H_length = 18     #   number of atoms in histdine (HIP)
+                            self.data.loc[ix:(ix+H_length-1), "resname"] = HIP
+    
+                        elif (self.data["name"][ix:(ix+H_length)] == 'HE2').any():
+                            self.data.loc[ix:(ix+H_length-1), "resname"] = HIE
+    
+                        elif (self.data["name"][ix:(ix+H_length)] == 'HD1').any():
+                            self.data.loc[ix:(ix+H_length-1), "resname"] = HID
+    
+                    elif self.data["name"][ix] == 'N' and self.data["resname"][ix] == 'NHIS':
+                        H_length = 19
+    
+                        if (self.data["name"][ix:(ix+H_length)] == 'HE2').any() and (self.data["name"][ix:(ix+H_length)] == 'HD1').any(): # If the residue contains HE2 and HD1, it is a HIP residue
+                            H_length = 20     #   number of atoms in histdine (HIP)
+                            self.data.loc[ix:(ix+H_length-1), "resname"] = NHIP
+    
+                        elif (self.data["name"][ix:(ix+H_length)] == 'HE2').any():
+                            self.data.loc[ix:(ix+H_length-1), "resname"] = NHIE
+    
+                        elif (self.data["name"][ix:(ix+H_length)] == 'HD1').any():
+                            self.data.loc[ix:(ix+H_length-1), "resname"] = NHID
+    
+                    elif self.data["name"][ix] == 'N' and self.data["resname"][ix] == 'CHIS':
+                        H_length = 19
+    
+                        if (self.data["name"][ix:(ix+H_length)] == 'HE2').any() and (self.data["name"][ix:(ix+H_length)] == 'HD1').any(): # If the residue contains HE2 and HD1, it is a HIP residue
+                            H_length = 20     #   number of atoms in histdine (HIP)
+                            self.data.loc[ix:(ix+H_length-1), "resname"] = CHIP
+    
+                        elif (self.data["name"][ix:(ix+H_length)] == 'HE2').any():
+                            H_length = 18
+                            self.data.loc[ix:(ix+H_length-1), "resname"] = CHIE
+    
+                        elif (self.data["name"][ix:(ix+H_length)] == 'HD1').any():
+                            self.data.loc[ix:(ix+H_length-1), "resname"] = CHID
 
-        HIP = np.array(["HIP"] * 18)    # create numpy array structures to possibly reassign later
-        HIE = np.array(["HIE"] * 17)    # create numpy array structures to possibly reassign later
-        HID = np.array(["HID"] * 17)    # create numpy array structures to possibly reassign later
-        NHIP = np.array(["NHIP"] * 20)
-        NHIE = np.array(["NHIE"] * 19)
-        NHID = np.array(["NHID"] * 19)
-        CHIP = np.array(["CHIP"] * 20)
-        CHIE = np.array(["CHIE"] * 18)
-        CHID = np.array(["CHID"] * 19)
-
-        start_chain = self.data["resid"].iloc[0]   # This is in case we get 1 or 2 as the first chain ID start
-        end_chain = self.data["resid"].iloc[-1]    #  We don't know the end chain number so we find it here
-        start_res = self.data["resname"].iloc[0] 
-        end_res = self.data["resname"].iloc[-1] 
-        
-        # Need to check if first residue is actually an N-termini residue, and if so, reassign resnames if necessary
-        if (self.data["name"].iloc[0:27] == 'H1').any() and (self.data["name"].iloc[0:27] == 'H2').any() and (self.data["name"].iloc[0:27] == 'H3').any() and self.data["resname"][0][0] != 'N':
-            print('Found N-Termini, reassigning first resname to match the forcefield')
-            start_index = self.data.index[self.data["resid"] == start_chain]
-            for N in start_index:
-                self.data["resname"].iloc[N] = 'N' + start_res   # First chain needs to be prefixed with N-termini resname
-     
         if len(ff) == 0:
             #"amber14sb.dat"
             folder = os.path.dirname(os.path.realpath(__file__))
@@ -1808,55 +1880,6 @@ class Molecule(Structure):
         charges = []
         radius = []
         atomtypes = []
-        
-        # Need to check whether it matches HIE, HID or HIP depending on what protons are present and where
-        his_check = self.data["resname"] == 'HIS'  # Check if we need to do following calculation
-        nhis_check = self.data["resname"] == 'NHIS' # Check for N termini HIS
-        chis_check = self.data["resname"] == 'CHIS'
-        if np.sum(his_check) != 0 or np.sum(nhis_check) != 0 or np.sum(chis_check) != 0:
-            print("WARNING: found residue with name HIS, checking to see what protonation state it is in and reassigning to HIP, HIE or HID.\nYou should check HIS in your pdb file is right to be sure!")     
-            for ix in range(len(self.data["resname"])):
-                H_length = 17 # Set this as it is more common, and also covers the basis to capture HD1 or HE2 later if necessary (as C and O tend to be last a
-                # N is always the first atom (use that as basis)                                                                                                                             
-                
-                if self.data["name"][ix] == 'N' and self.data["resname"][ix] == 'HIS':  
-                                                                                       
-                    if (self.data["name"][ix:(ix+H_length)] == 'HE2').any() and (self.data["name"][ix:(ix+H_length)] == 'HD1').any(): # If the residue contains HE2 and HD1, it is a HIP residue
-                        H_length = 18     #   number of atoms in histdine (HIP)
-                        self.data.loc[ix:(ix+H_length-1), "resname"] = HIP
-
-                    elif (self.data["name"][ix:(ix+H_length)] == 'HE2').any():
-                        self.data.loc[ix:(ix+H_length-1), "resname"] = HIE
-
-                    elif (self.data["name"][ix:(ix+H_length)] == 'HD1').any():
-                        self.data.loc[ix:(ix+H_length-1), "resname"] = HID
-
-                elif self.data["name"][ix] == 'N' and self.data["resname"][ix] == 'NHIS':
-                    H_length = 19
-
-                    if (self.data["name"][ix:(ix+H_length)] == 'HE2').any() and (self.data["name"][ix:(ix+H_length)] == 'HD1').any(): # If the residue contains HE2 and HD1, it is a HIP residue
-                        H_length = 20     #   number of atoms in histdine (HIP)
-                        self.data.loc[ix:(ix+H_length-1), "resname"] = NHIP
-
-                    elif (self.data["name"][ix:(ix+H_length)] == 'HE2').any():
-                        self.data.loc[ix:(ix+H_length-1), "resname"] = NHIE
-
-                    elif (self.data["name"][ix:(ix+H_length)] == 'HD1').any():
-                        self.data.loc[ix:(ix+H_length-1), "resname"] = NHID
-
-                elif self.data["name"][ix] == 'N' and self.data["resname"][ix] == 'CHIS':
-                    H_length = 19
-
-                    if (self.data["name"][ix:(ix+H_length)] == 'HE2').any() and (self.data["name"][ix:(ix+H_length)] == 'HD1').any(): # If the residue contains HE2 and HD1, it is a HIP residue
-                        H_length = 20     #   number of atoms in histdine (HIP)
-                        self.data.loc[ix:(ix+H_length-1), "resname"] = CHIP
-
-                    elif (self.data["name"][ix:(ix+H_length)] == 'HE2').any():
-                        H_length = 18
-                        self.data.loc[ix:(ix+H_length-1), "resname"] = CHIE
-
-                    elif (self.data["name"][ix:(ix+H_length)] == 'HD1').any():
-                        self.data.loc[ix:(ix+H_length-1), "resname"] = CHID
 
         # Move through each line in the pdb.data file and find the corresponding charge / vdw radius as supplied by the forcefield
         for i, resnames in enumerate(self.data["resname"]):
@@ -1942,22 +1965,38 @@ class Molecule(Structure):
 
         return
     
-    def clean(self, path='~/biobox/classes/remove_alt_conf.sh'):
+    def clean(self, path='~/biobox/classes/remove_alt_conf.sh', remove_non_amino=True):
         '''
         clean up a PDB files from alt conformations and ligands. Requires subprocess to be installed.
+        (For now) requires input to be a protein, so will remove all ligands etc.
         This removes residues with the least certainty (based on beta factor). 
         If no beta factor is present, it removes all residue conformations after the first
 
         :param path: Path to the removing alt conf. bash script (in current folder by default)
+        :param remove_non_amino: Remove all non-standard amino acids (including water, metals etc. which are defined as ATOMS)
         :returns: Returns a new Molecule object that has been cleaned
         '''
         import subprocess
 
+        # all amino acids (in case we want to remove non-standard residues). Also includes N and C prefixs
+        amino = ['ILE','GLN', 'GLY', 'MSE', 'GLU', 'CYS', 'ASP', 'SER', 'HSD', 'HSE', 'PRO', 'CYX', 'HSP', 'HID', 'HIE', 'ASN', 
+                'HIP', 'VAL', 'THR', 'HIS', 'TRP', 'LYS', 'PHE', 'ALA', 'MET', 'LEU', 'ARG', 'TYR', 'NILE', 'NGLN', 'NGLY',
+                'NMSE', 'NGLU', 'NCYS', 'NASP', 'NSER', 'NHSD', 'NHSE', 'NPRO', 'NCYX', 'NHSP', 'NHID', 'NHIE', 'NASN', 'NHIP', 
+                'NVAL', 'NTHR',  'NHIS','NTRP', 'NLYS', 'NPHE', 'NALA', 'NMET', 'NLEU', 'NARG', 'NTYR', 'CILE', 'CGLN', 'CGLY', 
+                'CMSE', 'CGLU', 'CCYS', 'CASP', 'CSER', 'CHSD', 'CHSE', 'CPRO', 'CCYX', 'CHSP', 'CHID', 'CHIE', 'CASN', 'CHIP', 
+                'CVAL', 'CTHR', 'CHIS', 'CTRP', 'CLYS', 'CPHE', 'CALA', 'CMET', 'CLEU', 'CARG', 'CTYR'] 
+
         self.write_pdb("tmp2.pdb")
         subprocess.call(path + " tmp2.pdb", shell=True)
 
-        A = Molecule()
-        A.import_pdb("clean_tmp2.pdb")
+        if remove_non_amino:
+            B = Molecule()
+            B.import_pdb("clean_tmp2.pdb")
+            B_idxs = B.atomselect("*", amino, "*", get_index=True, use_resname=True)[1]
+            A = B.get_subset(B_idxs)
+        else:
+            A = Molecule()
+            A.import_pdb("clean_tmp2.pdb")
         
         # Get residues with strings in
         # Find our what first numbers are (i.e. remove strings) so we have all conformations and the non string version
