@@ -297,7 +297,7 @@ class Molecule(Structure):
             if np.mod(len(biomt), 3):
                 raise Exception('ERROR: found %s BIOMT entries. A multiple of 3 is expected'%len(biomt))
 
-            b = np.array(biomt).astype(float).reshape((len(biomt) / 3, 3, 4))
+            b = np.array(biomt).astype(float).reshape((int(len(biomt) / 3), 3, 4))
             self.properties["biomatrix"] = b
 
         # if symmetry information is provided, create entry in properties
@@ -308,7 +308,7 @@ class Molecule(Structure):
             if np.mod(len(symm), 3):
                 raise Exception('ERROR: found %s SMTRY entries. A multiple of 3 is expected'%len(symm))
 
-            b = np.array(symm).astype(float).reshape((len(symm) / 3, 3, 4))
+            b = np.array(symm).astype(float).reshape((int(len(symm) / 3), 3, 4))
             self.properties["symmetry"] = b
 
         #correctly set types of columns requiring other than string
@@ -319,7 +319,8 @@ class Molecule(Structure):
 
     def import_md(self, fname):
         '''
-        put comments here
+        Import a .md structure file, as output by CASTEP
+        :param fname: The filename of the md file
         '''
 
         import itertools
@@ -1215,8 +1216,12 @@ class Molecule(Structure):
                     intervals.append(i + 1)
 
         else:
-            #aminoacids start with N. Find where a C is too far from the next N.
-            posN, idxN = self.atomselect("*", "*", "N", get_index=True)
+            #ACE doesn't start with an N, so we need to count from methyl group instead
+            if self.data['resname'][0] == 'ACE':
+                posN, idxN = self.atomselect("*", "*", ["CH3", "N"], get_index=True)
+            else:
+                #aminoacids start with N. Find where a C is too far from the next N.
+                posN, idxN = self.atomselect("*", "*", "N", get_index=True)
             posC = self.atomselect("*", "*", "C")
 
             if len(posN) != len(posC):
@@ -1295,8 +1300,9 @@ class Molecule(Structure):
 
         f_out = open(outname, "w")
 
-        for f in frames:
+        for cnt, f in enumerate(frames):
             # get all informations from PDB (for current conformation) in a list
+            f_out.write("MODEL        %i\n"%(cnt+1))
             self.set_current(f)
             d = self.get_pdb_data(index)
             
@@ -1338,7 +1344,7 @@ class Molecule(Structure):
                         L = 'TER   %5s      %-4s%1s%4s\n' % (idx_val[i], d[i][3], d[i][4], d[i][5])
                         f_out.write(L)
 
-            f_out.write("END\n")
+            f_out.write("ENDMDL\n")
 
         f_out.close()
 
@@ -1650,7 +1656,7 @@ class Molecule(Structure):
 
         return np.array(res)
     
-    def match_residue(self, M2, sec = 5):
+    def match_residue(self, M2, sec = 3):
         '''
         Compares two bb.Molecule() peptide strands and returns the resids within both peptides when the two are homogenous
         beyond a certain secondary structure threashold. The default is 5 amino acids (given by sec) in a row must be identical

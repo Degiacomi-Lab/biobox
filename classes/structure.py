@@ -170,9 +170,10 @@ class Structure(object):
         self.properties['center'][1] += y
         self.properties['center'][2] += z
 
-        self.points[:, 0] += x
-        self.points[:, 1] += y
-        self.points[:, 2] += z
+        # move every frame with first :
+        self.coordinates[:, :, 0] += x
+        self.coordinates[:, :, 1] += y
+        self.coordinates[:, :, 2] += z
 
     def rotate(self, x, y, z):
         '''
