@@ -850,10 +850,10 @@ class Molecule(Structure):
             return self.data[columns].values
 
         elif len(indices) != 0 and len(columns) == 0:
-            return self.data.ix[indices].values
+            return self.data.loc[indices].values
 
         else:
-            return self.data.ix[indices, columns].values   
+            return self.data.loc[indices, columns].values   
 
 
     def set_data(self, value, indices=[], columns=[]):
@@ -1118,7 +1118,7 @@ class Molecule(Structure):
         M = Molecule()
         postmp = self.coordinates[:, idxs]
         M.coordinates = postmp[frames]
-        M.data = self.data.ix[idxs]
+        M.data = self.data.loc[idxs]
         M.data = M.data.reset_index(drop=True)
         M.data["index"] = idx
         M.current = 0
@@ -1424,8 +1424,8 @@ class Molecule(Structure):
         if len(Hidx) == 0:
             raise Exception("ERROR: no atom name %s found!"%atomname2)
 
-        Ndata = self.data.ix[Nidx, ["chain", "resid"]].values
-        Hdata = self.data.ix[Hidx, ["chain", "resid"]].values
+        Ndata = self.data.loc[Nidx, ["chain", "resid"]].values
+        Hdata = self.data.loc[Hidx, ["chain", "resid"]].values
 
         a1 = []
         a2 = []
