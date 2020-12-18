@@ -13,13 +13,11 @@
 
 
 import numpy as np
-from matplotlib.mlab import dist
 cimport numpy as np
 from cpython cimport bool
 import scipy.spatial.distance as S
 import scipy.signal
 from scipy.spatial import Delaunay
-
 
 
 cdef class Graph(object):
