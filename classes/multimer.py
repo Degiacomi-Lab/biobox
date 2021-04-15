@@ -119,7 +119,7 @@ class Multimer(Polyhedron):
                 "atom", "index", "name", "resname", "chain",
                 "resid", "beta", "occupancy", "atomtype"]].values
 
-            data_tmp[:, 4] = self.chain_names[i]
+            #data_tmp[:, 4] = self.chain_names[i] # avoid renaming the chains
             data = np.concatenate((data, data_tmp))
 
             # merge knowledge about CCS acquired by different molecules
