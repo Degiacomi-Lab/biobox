@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2017 Matteo Degiacomi
+# Copyright (c) 2014-2021 Matteo Degiacomi
 #
 # BiobOx is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
@@ -9,7 +9,7 @@
 # You should have received a copy of the GNU General Public License along with BiobOx ;
 # if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #
-# Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com
+# Author : Matteo Degiacomi, matteo.degiacomi@gmail.com
 
 
 # CYTHON CALLS FOR HEAVY-DUTY METHODS IN PATH CLASS
@@ -78,7 +78,7 @@ cdef cython_line_of_sight(np.ndarray access_grid, np.ndarray a, np.ndarray b):
     if l >= m and l >= n:
         err_1 = dy2 - l
         err_2 = dz2 - l
-        for i in xrange(0, l, 1):
+        for i in range(0, l, 1):
     
             if err_1 > 0:
                 point[1] += y_inc
@@ -99,7 +99,7 @@ cdef cython_line_of_sight(np.ndarray access_grid, np.ndarray a, np.ndarray b):
     elif m >= l and m >= n:
         err_1 = dx2 - m
         err_2 = dz2 - m
-        for i in xrange(0, m, 1):
+        for i in range(0, m, 1):
     
             if err_1 > 0:
                 point[0] += x_inc
@@ -119,7 +119,7 @@ cdef cython_line_of_sight(np.ndarray access_grid, np.ndarray a, np.ndarray b):
     else:
         err_1 = dy2 - m
         err_2 = dx2 - m
-        for i in xrange(0, n, 1):
+        for i in range(0, n, 1):
     
             if err_1 > 0:
                 point[1] += y_inc
@@ -177,7 +177,7 @@ cpdef cython_get_surface(np.ndarray points, np.ndarray radii, float probe, int n
     surface_atoms=[]
     mesh_pts=[]
     #compute accessible surface for every atom
-    for i in xrange(0,len(points),1):
+    for i in range(0,len(points),1):
 
             #place mesh points around atom of choice
             mesh=sphere_points*(radii[i]+probe)+points[i]
