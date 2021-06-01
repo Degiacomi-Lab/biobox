@@ -1,33 +1,22 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>polyhedron &#8212; biobox 1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/classic.css" />
     
-    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
     
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../',
-        VERSION:     '1.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
-  </head>
-  <body role="document">
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -38,7 +27,8 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">biobox 1.0 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Module code</a> &#187;</li> 
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">polyhedron</a></li> 
       </ul>
     </div>  
 
@@ -48,24 +38,24 @@
           <div class="body" role="main">
             
   <h1>Source code for polyhedron</h1><div class="highlight"><pre>
-<span class="c"># Copyright (c) 2014-2017 Matteo Degiacomi</span>
-<span class="c">#</span>
-<span class="c"># BiobOx is free software ;</span>
-<span class="c"># you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;</span>
-<span class="c"># either version 2 of the License, or (at your option) any later version.</span>
-<span class="c"># BiobOx is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;</span>
-<span class="c"># without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</span>
-<span class="c"># See the GNU General Public License for more details.</span>
-<span class="c"># You should have received a copy of the GNU General Public License along with BiobOx ;</span>
-<span class="c"># if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.</span>
-<span class="c">#</span>
-<span class="c"># Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com</span>
+<span></span><span class="c1"># Copyright (c) 2014-2017 Matteo Degiacomi</span>
+<span class="c1">#</span>
+<span class="c1"># BiobOx is free software ;</span>
+<span class="c1"># you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;</span>
+<span class="c1"># either version 2 of the License, or (at your option) any later version.</span>
+<span class="c1"># BiobOx is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;</span>
+<span class="c1"># without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</span>
+<span class="c1"># See the GNU General Public License for more details.</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along with BiobOx ;</span>
+<span class="c1"># if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.</span>
+<span class="c1">#</span>
+<span class="c1"># Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">biobox.classes.structure</span> <span class="k">import</span> <span class="n">Structure</span>
-<span class="kn">from</span> <span class="nn">biobox.classes.assembly</span> <span class="k">import</span> <span class="n">Assembly</span>
+<span class="kn">from</span> <span class="nn">biobox.classes.structure</span> <span class="kn">import</span> <span class="n">Structure</span>
+<span class="kn">from</span> <span class="nn">biobox.classes.assembly</span> <span class="kn">import</span> <span class="n">Assembly</span>
 
 
 <div class="viewcode-block" id="Polyhedron"><a class="viewcode-back" href="../assembly.html#polyhedron.Polyhedron">[docs]</a><span class="k">class</span> <span class="nc">Polyhedron</span><span class="p">(</span><span class="n">Assembly</span><span class="p">):</span>
@@ -74,7 +64,7 @@
 <span class="sd">    After instantiation, the first method to be called is :func:`setup_polyhedron &lt;polyhedron.Polyhedron.setup_polyhedron&gt;`</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 
-<div class="viewcode-block" id="Polyhedron.setup_polyhedron"><a class="viewcode-back" href="../assembly.html#polyhedron.Polyhedron.setup_polyhedron">[docs]</a>    <span class="k">def</span> <span class="nf">setup_polyhedron</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">polyname</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">dbfilename</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">):</span>
+<div class="viewcode-block" id="Polyhedron.setup_polyhedron"><a class="viewcode-back" href="../assembly.html#polyhedron.Polyhedron.setup_polyhedron">[docs]</a>    <span class="k">def</span> <span class="nf">setup_polyhedron</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">polyname</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">dbfilename</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        load information for the generation of a polyhedral assembly.</span>
 
@@ -96,40 +86,40 @@
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dbfilename</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="c">#&quot;polyhedron_database.dat&quot;</span>
-            <span class="n">folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">__file__</span><span class="p">))</span>
-            <span class="n">dbfilename</span> <span class="o">=</span> <span class="s">&quot;%s/polyhedron_database.dat&quot;</span> <span class="o">%</span> <span class="n">folder</span>
+            <span class="c1">#&quot;polyhedron_database.dat&quot;</span>
+            <span class="n">folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+            <span class="n">dbfilename</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/polyhedron_database.dat&quot;</span> <span class="o">%</span> <span class="n">folder</span>
 
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">dbfilename</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: %s not found!&quot;</span> <span class="o">%</span> <span class="n">dbfilename</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;ERROR: </span><span class="si">%s</span><span class="s2"> not found!&quot;</span> <span class="o">%</span> <span class="n">dbfilename</span><span class="p">)</span>
 
-        <span class="c"># name of file containing polyhedra database</span>
+        <span class="c1"># name of file containing polyhedra database</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dbfilename</span> <span class="o">=</span> <span class="n">dbfilename</span>
-        <span class="c"># name of polyhedron</span>
+        <span class="c1"># name of polyhedron</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">polyname</span> <span class="o">=</span> <span class="n">polyname</span>
 
-        <span class="c"># search information in new format database about desired polimer</span>
+        <span class="c1"># search information in new format database about desired polimer</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_search_database</span><span class="p">(</span><span class="n">polyname</span><span class="p">,</span> <span class="n">dbfilename</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dbfilename</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;%s&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
 
-        <span class="c"># monomeric subunit for polyhedron construction (instance of class</span>
-        <span class="c"># Molecule)</span>
+        <span class="c1"># monomeric subunit for polyhedron construction (instance of class</span>
+        <span class="c1"># Molecule)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">building_block</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">building_block</span><span class="o">.</span><span class="n">align_axes</span><span class="p">()</span>
 
-        <span class="c"># box size</span>
+        <span class="c1"># box size</span>
         <span class="n">dimensions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">building_block</span><span class="o">.</span><span class="n">get_size</span><span class="p">()</span>
-        <span class="c"># box size along major axis (length)</span>
+        <span class="c1"># box size along major axis (length)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="n">dimensions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="c"># box size along second axis (width)</span>
+        <span class="c1"># box size along second axis (width)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">W</span> <span class="o">=</span> <span class="n">dimensions</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="c"># box size along third axis (height)</span>
+        <span class="c1"># box size along third axis (height)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">H</span> <span class="o">=</span> <span class="n">dimensions</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
 
-        <span class="c"># deformation database: [edge_id class x y z]. Edges having the same class will be scaled by the same coefficient.</span>
-        <span class="c">#@todo insert information about deformations directly into database. At the moment, it has to be explicitely provided via add_deformation method.</span>
+        <span class="c1"># deformation database: [edge_id class x y z]. Edges having the same class will be scaled by the same coefficient.</span>
+        <span class="c1">#@todo insert information about deformations directly into database. At the moment, it has to be explicitely provided via add_deformation method.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">deform</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span></div>
 
 <div class="viewcode-block" id="Polyhedron.add_deformation"><a class="viewcode-back" href="../assembly.html#polyhedron.Polyhedron.add_deformation">[docs]</a>    <span class="k">def</span> <span class="nf">add_deformation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">vector</span><span class="o">=</span><span class="p">[]):</span>
@@ -140,38 +130,38 @@
 <span class="sd">        :param vector: axis along which deformation should take place. If not given, radial deformation will be assumed.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
-        <span class="c"># determine index for new entry in database</span>
+        <span class="c1"># determine index for new entry in database</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deform</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">idx</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deform</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
 
-        <span class="c"># transform integer into list, in case an interger only is provided</span>
+        <span class="c1"># transform integer into list, in case an interger only is provided</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">edges</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">e</span> <span class="o">=</span> <span class="p">[</span><span class="n">edges</span><span class="p">]</span>
             <span class="n">edges</span> <span class="o">=</span> <span class="n">e</span>
 
-        <span class="c"># iterate over all edges and create new entries for database</span>
+        <span class="c1"># iterate over all edges and create new entries for database</span>
         <span class="n">tmp</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
 
-            <span class="c"># add deformation axis, if given</span>
+            <span class="c1"># add deformation axis, if given</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
                 <span class="n">vector</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span>
                 <span class="n">tmp</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">i</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">vector</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">vector</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">vector</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span>
 
-            <span class="c"># axis not given, assume radial deformation</span>
+            <span class="c1"># axis not given, assume radial deformation</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">ax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
                 <span class="n">tmp</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">i</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ax</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span>
 
-        <span class="c"># update deformation database</span>
+        <span class="c1"># update deformation database</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deform</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">deform</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">deform</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">tmp</span><span class="p">)))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">deform</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Polyhedron.generate_polyhedron"><a class="viewcode-back" href="../assembly.html#polyhedron.Polyhedron.generate_polyhedron">[docs]</a>    <span class="k">def</span> <span class="nf">generate_polyhedron</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">phone</span><span class="p">,</span> <span class="n">fag</span><span class="p">,</span> <span class="n">pen</span><span class="p">,</span> <span class="n">deformation</span><span class="o">=</span><span class="p">[],</span> <span class="n">add_conformation</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
+<div class="viewcode-block" id="Polyhedron.generate_polyhedron"><a class="viewcode-back" href="../assembly.html#polyhedron.Polyhedron.generate_polyhedron">[docs]</a>    <span class="k">def</span> <span class="nf">generate_polyhedron</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">phone</span><span class="p">,</span> <span class="n">fag</span><span class="p">,</span> <span class="n">pen</span><span class="p">,</span> <span class="n">deformation</span><span class="o">=</span><span class="p">[],</span> <span class="n">add_conformation</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Given polyhedron information previously loaded (using setup_polyhedron), generate an appropriate symmetry figure.</span>
 
@@ -185,47 +175,47 @@
 <span class="sd">                If False, old polyhedron coordianates will be substituted.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
-        <span class="c"># if deformation coefficients are given, check first that they match</span>
-        <span class="c"># the number of classes in deformation database</span>
+        <span class="c1"># if deformation coefficients are given, check first that they match</span>
+        <span class="c1"># the number of classes in deformation database</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">deformation</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">deformation</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deform</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])):</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: %s deformation coefficients expected, but %s found&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">deformation</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deform</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])))</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;ERROR: </span><span class="si">%s</span><span class="s2"> deformation coefficients expected, but </span><span class="si">%s</span><span class="s2"> found&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">deformation</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deform</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nu</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">circumradius</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">midradius</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_polyhedron_properties</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">add_conformation</span><span class="p">:</span>
-            <span class="c"># clear any previous polyhedron and load anew</span>
+            <span class="c1"># clear any previous polyhedron and load anew</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">building_block</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="c"># add structure to existing units as alternative conformation</span>
-            <span class="c"># (initially all identical)</span>
+            <span class="c1"># add structure to existing units as alternative conformation</span>
+            <span class="c1"># (initially all identical)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">add_xyz</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">building_block</span><span class="o">.</span><span class="n">get_xyz</span><span class="p">())</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">)</span>
 
-        <span class="c"># test type consistency: if arrays are provided, length should be equal</span>
-        <span class="c"># to the amount of different types in conn_type</span>
-        <span class="k">if</span> <span class="s">&#39;ndarray&#39;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">phone</span><span class="p">)):</span>
+        <span class="c1"># test type consistency: if arrays are provided, length should be equal</span>
+        <span class="c1"># to the amount of different types in conn_type</span>
+        <span class="k">if</span> <span class="s1">&#39;ndarray&#39;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">phone</span><span class="p">)):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">phone</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">fag</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">phone</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pen</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">phone</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn_type</span><span class="p">)):</span>
-                    <span class="nb">print</span> <span class="s">&quot;ERROR: inconsistent length in provided angle arrays&quot;</span>
-                    <span class="nb">print</span> <span class="s">&quot;&gt; received the following angles: %s, %s, %s&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">phone</span><span class="p">,</span> <span class="n">fag</span><span class="p">,</span> <span class="n">pen</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: inconsistent length in provided angle arrays&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt; received the following angles: </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">phone</span><span class="p">,</span> <span class="n">fag</span><span class="p">,</span> <span class="n">pen</span><span class="p">))</span>
                     <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: all angle arrays should have length %s&quot;</span> <span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn_type</span><span class="p">))))</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;ERROR: all angle arrays should have length </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn_type</span><span class="p">))))</span>
 
-        <span class="c"># generate desired polyhedral coordinates (note: internally we work in</span>
-        <span class="c"># radians, not degrees)</span>
+        <span class="c1"># generate desired polyhedral coordinates (note: internally we work in</span>
+        <span class="c1"># radians, not degrees)</span>
         <span class="n">poly_xyz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_polycalc_core</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">W</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">H</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nu</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">phone</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">fag</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">pen</span><span class="p">),</span> <span class="n">deformation</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
             <span class="n">coords</span> <span class="o">=</span> <span class="n">poly_xyz</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
 
-            <span class="c"># if add_conformation:</span>
-            <span class="c">#    self.unit[x].add_xyz(coords)</span>
-            <span class="c"># else:</span>
+            <span class="c1"># if add_conformation:</span>
+            <span class="c1">#    self.unit[x].add_xyz(coords)</span>
+            <span class="c1"># else:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="o">.</span><span class="n">set_xyz</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Polyhedron.set_current"><a class="viewcode-back" href="../assembly.html#polyhedron.Polyhedron.set_current">[docs]</a>    <span class="k">def</span> <span class="nf">set_current</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
@@ -235,7 +225,7 @@
 
 <span class="sd">        :param index: number of alternative conformation (starting from 0)</span>
 <span class="sd">        &#39;&#39;&#39;</span>
-        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">index</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Polyhedron.delete_xyz"><a class="viewcode-back" href="../assembly.html#polyhedron.Polyhedron.delete_xyz">[docs]</a>    <span class="k">def</span> <span class="nf">delete_xyz</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
@@ -246,7 +236,7 @@
 <span class="sd">        :param index: alternative coordinates set to remove (starting from zero)</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
-        <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">u</span><span class="p">]</span><span class="o">.</span><span class="n">delete_xyz</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -263,20 +253,20 @@
 <span class="sd">        :returns: RMSD of all structures with respect of reference structure (in a numpy array)</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
-        <span class="c"># this method exploits the RMSD method implemented in Structure class.</span>
+        <span class="c1"># this method exploits the RMSD method implemented in Structure class.</span>
         <span class="n">S</span> <span class="o">=</span> <span class="n">Structure</span><span class="p">()</span>
 
-        <span class="c"># all alternative coordinates are accumulated in a Structure instance</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="c1"># all alternative coordinates are accumulated in a Structure instance</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
 
-            <span class="c"># if specific coordinates are requested, load only those</span>
+            <span class="c1"># if specific coordinates are requested, load only those</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">points_indices</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">pts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_xyz</span><span class="p">()</span>
-                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
                     <span class="n">pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">pts</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_xyz</span><span class="p">()[</span><span class="n">points_indices</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="p">:]))</span>
 
-            <span class="c"># otherwise, load everything</span>
+            <span class="c1"># otherwise, load everything</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">pts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_xyz</span><span class="p">()</span>
 
@@ -284,7 +274,7 @@
 
         <span class="k">return</span> <span class="n">S</span><span class="o">.</span><span class="n">rmsd_distance_matrix</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="Polyhedron.write_poly_architecture"><a class="viewcode-back" href="../assembly.html#polyhedron.Polyhedron.write_poly_architecture">[docs]</a>    <span class="k">def</span> <span class="nf">write_poly_architecture</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">deformation</span><span class="o">=</span><span class="p">[],</span> <span class="n">colors</span><span class="o">=</span><span class="p">[]):</span>
+<div class="viewcode-block" id="Polyhedron.write_poly_architecture"><a class="viewcode-back" href="../assembly.html#polyhedron.Polyhedron.write_poly_architecture">[docs]</a>    <span class="k">def</span> <span class="nf">write_poly_architecture</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">deformation</span><span class="o">=</span><span class="p">[],</span> <span class="n">colors</span><span class="o">=</span><span class="p">[]):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        dump PDB file and tcl script loadable in VMD showing the loaded polyhedral scaffold.</span>
 
@@ -296,48 +286,48 @@
 <span class="sd">        :param output: name of output files (without extension. .pdb and .tcl will be automatically added). By default, the name will be the polyhedron name.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
-        <span class="k">if</span> <span class="n">output</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">output</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
             <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">polyname</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">colors</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;blue&#39;</span><span class="p">,</span> <span class="s">&#39;red&#39;</span><span class="p">,</span> <span class="s">&#39;gray&#39;</span><span class="p">,</span> <span class="s">&#39;orange&#39;</span><span class="p">,</span> <span class="s">&#39;yellow&#39;</span><span class="p">,</span> <span class="s">&#39;tan&#39;</span><span class="p">,</span> <span class="s">&#39;silver&#39;</span><span class="p">,</span> <span class="s">&#39;green&#39;</span><span class="p">,</span> <span class="s">&#39;white&#39;</span><span class="p">,</span> <span class="s">&#39;pink&#39;</span><span class="p">,</span> <span class="s">&#39;cyan&#39;</span><span class="p">,</span> <span class="s">&#39;purple&#39;</span><span class="p">,</span> <span class="s">&#39;lime&#39;</span><span class="p">,</span>
-                      <span class="s">&#39;mauve&#39;</span><span class="p">,</span> <span class="s">&#39;ochre&#39;</span><span class="p">,</span> <span class="s">&#39;iceblue&#39;</span><span class="p">,</span> <span class="s">&#39;black&#39;</span><span class="p">,</span> <span class="s">&#39;yellow2&#39;</span><span class="p">,</span> <span class="s">&#39;green2&#39;</span><span class="p">,</span> <span class="s">&#39;cyan2&#39;</span><span class="p">,</span> <span class="s">&#39;blue2&#39;</span><span class="p">,</span> <span class="s">&#39;violet&#39;</span><span class="p">,</span> <span class="s">&#39;magenta&#39;</span><span class="p">,</span> <span class="s">&#39;red2&#39;</span><span class="p">,</span> <span class="s">&#39;orange2&#39;</span><span class="p">]</span>
+            <span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="s1">&#39;gray&#39;</span><span class="p">,</span> <span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="s1">&#39;yellow&#39;</span><span class="p">,</span> <span class="s1">&#39;tan&#39;</span><span class="p">,</span> <span class="s1">&#39;silver&#39;</span><span class="p">,</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span> <span class="s1">&#39;white&#39;</span><span class="p">,</span> <span class="s1">&#39;pink&#39;</span><span class="p">,</span> <span class="s1">&#39;cyan&#39;</span><span class="p">,</span> <span class="s1">&#39;purple&#39;</span><span class="p">,</span> <span class="s1">&#39;lime&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;mauve&#39;</span><span class="p">,</span> <span class="s1">&#39;ochre&#39;</span><span class="p">,</span> <span class="s1">&#39;iceblue&#39;</span><span class="p">,</span> <span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="s1">&#39;yellow2&#39;</span><span class="p">,</span> <span class="s1">&#39;green2&#39;</span><span class="p">,</span> <span class="s1">&#39;cyan2&#39;</span><span class="p">,</span> <span class="s1">&#39;blue2&#39;</span><span class="p">,</span> <span class="s1">&#39;violet&#39;</span><span class="p">,</span> <span class="s1">&#39;magenta&#39;</span><span class="p">,</span> <span class="s1">&#39;red2&#39;</span><span class="p">,</span> <span class="s1">&#39;orange2&#39;</span><span class="p">]</span>
 
         <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">*</span> <span class="n">scale</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">deformation</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deform</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: %s deformation coefficients provided, but no deformation axis found!&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">deformation</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;ERROR: </span><span class="si">%s</span><span class="s2"> deformation coefficients provided, but no deformation axis found!&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">deformation</span><span class="p">))</span>
 
-        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">deformation</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deform</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]):</span>
-            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">deform</span><span class="p">:</span>
-                <span class="n">pos</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span> <span class="o">+=</span> <span class="n">deformation</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span> <span class="o">*</span> <span class="n">d</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">5</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">deformation</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deform</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]):</span>
+                <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">deform</span><span class="p">:</span>
+                    <span class="n">pos</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span> <span class="o">+=</span> <span class="n">deformation</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span> <span class="o">*</span> <span class="n">d</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">5</span><span class="p">]</span>
 
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: %s deformation coefficients expected, but %s found&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">deformation</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deform</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;ERROR: </span><span class="si">%s</span><span class="s2"> deformation coefficients expected, but </span><span class="si">%s</span><span class="s2"> found&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">deformation</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deform</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])))</span>
 
-        <span class="c"># output vertices coordinates</span>
+        <span class="c1"># output vertices coordinates</span>
         <span class="n">S</span> <span class="o">=</span> <span class="n">Structure</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
-        <span class="n">S</span><span class="o">.</span><span class="n">write_pdb</span><span class="p">(</span><span class="s">&quot;%s.pdb&quot;</span> <span class="o">%</span> <span class="n">output</span><span class="p">)</span>
+        <span class="n">S</span><span class="o">.</span><span class="n">write_pdb</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">.pdb&quot;</span> <span class="o">%</span> <span class="n">output</span><span class="p">)</span>
 
-        <span class="c"># output VMD script loading the structure and drawing colored cylinders</span>
-        <span class="c"># between them if a connection exists</span>
-        <span class="n">fout</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">&quot;%s.tcl&quot;</span> <span class="o">%</span> <span class="n">output</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">)</span>
-        <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;mol new %s.pdb</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">output</span><span class="p">)</span>
-        <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;mol modstyle 0 top VDW 1.000000 12.000000</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="c1"># output VMD script loading the structure and drawing colored cylinders</span>
+        <span class="c1"># between them if a connection exists</span>
+        <span class="n">fout</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">.tcl&quot;</span> <span class="o">%</span> <span class="n">output</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+        <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;mol new </span><span class="si">%s</span><span class="s2">.pdb</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">output</span><span class="p">)</span>
+        <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;mol modstyle 0 top VDW 1.000000 12.000000</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
 
             <span class="n">i</span> <span class="o">=</span> <span class="n">pos</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span>
             <span class="n">j</span> <span class="o">=</span> <span class="n">pos</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">1</span><span class="p">]]</span>
 
             <span class="n">clr</span> <span class="o">=</span> <span class="n">colors</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">conn_type</span><span class="p">[</span><span class="n">k</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">colors</span><span class="p">)]]</span>
-            <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;draw color %s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">clr</span><span class="p">)</span>
-            <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;draw cylinder {%s %s %s} {%s %s %s} radius 0.5</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">i</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">j</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">j</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">j</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+            <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;draw color </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">clr</span><span class="p">)</span>
+            <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;draw cylinder {</span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">} {</span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">} radius 0.5</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">i</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">j</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">j</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">j</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
 
         <span class="n">fout</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="Polyhedron.get_neighbors"><a class="viewcode-back" href="../assembly.html#polyhedron.Polyhedron.get_neighbors">[docs]</a>    <span class="k">def</span> <span class="nf">get_neighbors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">return_chain_names</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
+<div class="viewcode-block" id="Polyhedron.get_neighbors"><a class="viewcode-back" href="../assembly.html#polyhedron.Polyhedron.get_neighbors">[docs]</a>    <span class="k">def</span> <span class="nf">get_neighbors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">return_chain_names</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        create dictionary defining neighborhood relationships, i.e. edges having a vertex in common (key=edge chain name, value: numpy array of neighboring chains)</span>
 
@@ -345,12 +335,12 @@
 <span class="sd">        :returns: dictionary containing neighborhood information</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
-        <span class="c"># create dictionary with neighbors (key: chain name, values: numpy</span>
-        <span class="c"># array of neighboring chains)</span>
+        <span class="c1"># create dictionary with neighbors (key: chain name, values: numpy</span>
+        <span class="c1"># array of neighboring chains)</span>
         <span class="n">neigh_dict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
             <span class="n">neighs</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">j</span><span class="p">:</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
                         <span class="k">if</span> <span class="n">return_chain_names</span><span class="p">:</span>
@@ -365,17 +355,17 @@
 
             <span class="k">return</span> <span class="n">neigh_dict</span></div>
 
-    <span class="k">def</span> <span class="nf">_search_database</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">polyname</span><span class="p">,</span> <span class="n">dbfilename</span><span class="o">=</span><span class="s">&quot;polyhedron_database_complete.dat&quot;</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_search_database</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">polyname</span><span class="p">,</span> <span class="n">dbfilename</span><span class="o">=</span><span class="s2">&quot;polyhedron_database_complete.dat&quot;</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        search new style database (with plain formatting and containing connectivity information)</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
-        <span class="c"># check polyhedra database existence</span>
+        <span class="c1"># check polyhedra database existence</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dbfilename</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;ERROR: file %s not found!&#39;</span> <span class="o">%</span> <span class="n">dbfilename</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;ERROR: file </span><span class="si">%s</span><span class="s1"> not found!&#39;</span> <span class="o">%</span> <span class="n">dbfilename</span><span class="p">)</span>
 
-        <span class="c"># look for desired polyhedron in database</span>
-        <span class="n">fin</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">dbfilename</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+        <span class="c1"># look for desired polyhedron in database</span>
+        <span class="n">fin</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">dbfilename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
         <span class="n">v</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">conn</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">conn_type</span> <span class="o">=</span> <span class="p">[]</span>
@@ -386,18 +376,18 @@
                 <span class="n">vert</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">linetosave</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
                 <span class="n">edges</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">linetosave</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
 
-                <span class="c"># prepare vertices list</span>
+                <span class="c1"># prepare vertices list</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">vert</span><span class="p">):</span>
                     <span class="n">v</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="nb">float</span><span class="p">(</span><span class="n">linetosave</span><span class="p">[</span><span class="mi">3</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">3</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">linetosave</span><span class="p">[</span><span class="mi">3</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">linetosave</span><span class="p">[</span><span class="mi">3</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">2</span><span class="p">])))</span>
 
-                <span class="c"># prepare connectivity list (could add feature that</span>
-                <span class="c"># connectivity is computed, if does not exist)</span>
+                <span class="c1"># prepare connectivity list (could add feature that</span>
+                <span class="c1"># connectivity is computed, if does not exist)</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">edges</span><span class="p">):</span>
                     <span class="n">conn</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="nb">int</span><span class="p">(</span><span class="n">linetosave</span><span class="p">[</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">vert</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">2</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">linetosave</span><span class="p">[</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">vert</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])))</span>
 
-                <span class="c"># prepare connection type information</span>
+                <span class="c1"># prepare connection type information</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">linetosave</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">vert</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">edges</span><span class="p">:</span>
-                    <span class="nb">print</span> <span class="s">&quot;WARNING: database contains no connection type for %s. Supposing all edges have same connection type.&quot;</span> <span class="o">%</span> <span class="n">polyname</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;WARNING: database contains no connection type for </span><span class="si">%s</span><span class="s2">. Supposing all edges have same connection type.&quot;</span> <span class="o">%</span> <span class="n">polyname</span><span class="p">)</span>
                     <span class="n">conn_type</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">edges</span><span class="p">)</span>
 
                 <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">linetosave</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">vert</span> <span class="o">+</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">edges</span><span class="p">:</span>
@@ -405,14 +395,14 @@
                         <span class="n">conn_type</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">linetosave</span><span class="p">[</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">vert</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">edges</span> <span class="o">+</span> <span class="n">i</span><span class="p">]))</span>
 
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: database inconsistency for connectivity type information in polyhedron %s&quot;</span> <span class="o">%</span> <span class="n">polyname</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;ERROR: database inconsistency for connectivity type information in polyhedron </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">polyname</span><span class="p">)</span>
 
                 <span class="k">break</span>
 
         <span class="n">fin</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: polyhedron %s not found in database %s!&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">polyname</span><span class="p">,</span> <span class="n">dbfilename</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;ERROR: polyhedron </span><span class="si">%s</span><span class="s2"> not found in database </span><span class="si">%s</span><span class="s2">!&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">polyname</span><span class="p">,</span> <span class="n">dbfilename</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">edges</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">conn</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">conn_type</span><span class="p">)</span>
 
@@ -421,38 +411,38 @@
 <span class="sd">        retrieve polyhedron properties</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
-        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span> <span class="o">*</span> <span class="mf">1.0</span>  <span class="c"># x=number of edges</span>
-        <span class="n">y</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.0</span>  <span class="c"># y=average connectvity</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span> <span class="o">*</span> <span class="mf">1.0</span>  <span class="c1"># x=number of edges</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.0</span>  <span class="c1"># y=average connectvity</span>
         <span class="n">gamma</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">y</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">x</span><span class="p">)</span>
-        <span class="n">phi</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">y</span>  <span class="c"># average facial angle</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">y</span>  <span class="c1"># average facial angle</span>
 
-        <span class="n">top</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">gamma</span><span class="p">)</span>  <span class="c"># numerator</span>
-        <span class="n">bot</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>  <span class="c"># denominator</span>
-        <span class="n">nu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">top</span> <span class="o">/</span> <span class="n">bot</span><span class="p">))</span>  <span class="c"># tangent curvature angle</span>
+        <span class="n">top</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">gamma</span><span class="p">)</span>  <span class="c1"># numerator</span>
+        <span class="n">bot</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>  <span class="c1"># denominator</span>
+        <span class="n">nu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">top</span> <span class="o">/</span> <span class="n">bot</span><span class="p">))</span>  <span class="c1"># tangent curvature angle</span>
 
-        <span class="n">circumradius</span> <span class="o">=</span> <span class="n">S</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">nu</span><span class="p">))</span>  <span class="c"># circumradius</span>
-        <span class="n">midradius</span> <span class="o">=</span> <span class="n">circumradius</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">nu</span><span class="p">)</span>  <span class="c"># mid radius</span>
+        <span class="n">circumradius</span> <span class="o">=</span> <span class="n">S</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">nu</span><span class="p">))</span>  <span class="c1"># circumradius</span>
+        <span class="n">midradius</span> <span class="o">=</span> <span class="n">circumradius</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">nu</span><span class="p">)</span>  <span class="c1"># mid radius</span>
 
         <span class="k">return</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">nu</span><span class="p">,</span> <span class="n">circumradius</span><span class="p">,</span> <span class="n">midradius</span></div>
 
-    <span class="k">def</span> <span class="nf">_polycalc_core</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">nu</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">phone</span><span class="p">,</span> <span class="n">fag</span><span class="p">,</span> <span class="n">pen</span><span class="p">,</span> <span class="n">deformation</span><span class="o">=</span><span class="p">[],</span> <span class="n">get_box_edges</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_polycalc_core</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">nu</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">phone</span><span class="p">,</span> <span class="n">fag</span><span class="p">,</span> <span class="n">pen</span><span class="p">,</span> <span class="n">deformation</span><span class="o">=</span><span class="p">[],</span> <span class="n">get_box_edges</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        launch polyhedron assembly using polymake functions</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
-        <span class="n">kay</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">H</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">nu</span><span class="p">)</span> <span class="o">+</span> <span class="n">W</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">phi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">nu</span><span class="p">)))</span> <span class="o">/</span> <span class="n">L</span> <span class="o">+</span> <span class="mi">1</span>  <span class="c"># scaling factor for truncation</span>
-        <span class="n">scale</span> <span class="o">=</span> <span class="n">kay</span> <span class="o">*</span> <span class="n">S</span>  <span class="c"># factor to adjust polyhedron</span>
-        <span class="n">vscale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">*</span> <span class="n">scale</span>  <span class="c"># rescale polyhedron</span>
+        <span class="n">kay</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">H</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">nu</span><span class="p">)</span> <span class="o">+</span> <span class="n">W</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">phi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">nu</span><span class="p">)))</span> <span class="o">/</span> <span class="n">L</span> <span class="o">+</span> <span class="mi">1</span>  <span class="c1"># scaling factor for truncation</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">kay</span> <span class="o">*</span> <span class="n">S</span>  <span class="c1"># factor to adjust polyhedron</span>
+        <span class="n">vscale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">*</span> <span class="n">scale</span>  <span class="c1"># rescale polyhedron</span>
 
-        <span class="c"># if needed, apply edges deformation</span>
+        <span class="c1"># if needed, apply edges deformation</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">deformation</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">deform</span><span class="p">:</span>
                 <span class="n">vscale</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span> <span class="o">+=</span> <span class="n">deformation</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span> <span class="o">*</span> <span class="n">d</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">5</span><span class="p">]</span>
 
-        <span class="c"># build bounding box vertices</span>
+        <span class="c1"># build bounding box vertices</span>
         <span class="n">vrecty</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rectanglify</span><span class="p">(</span><span class="n">vscale</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">kay</span><span class="p">)</span>
 
-        <span class="c"># iterate over all edges</span>
+        <span class="c1"># iterate over all edges</span>
         <span class="n">v_cubody_data</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">if</span> <span class="n">get_box_edges</span><span class="p">:</span>
@@ -460,12 +450,12 @@
 
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">)):</span>
 
-            <span class="c"># cube located where the protein will have to be displaced</span>
+            <span class="c1"># cube located where the protein will have to be displaced</span>
             <span class="n">vcuby</span> <span class="o">=</span> <span class="p">[]</span>
 
-            <span class="c"># dig out all 8 vertices for each new rectanglified edge (4 on each</span>
-            <span class="c"># end). Distinguish the &#39;outer&#39; 4 vertices from the &#39;inner&#39; 4</span>
-            <span class="c"># vertices</span>
+            <span class="c1"># dig out all 8 vertices for each new rectanglified edge (4 on each</span>
+            <span class="c1"># end). Distinguish the &#39;outer&#39; 4 vertices from the &#39;inner&#39; 4</span>
+            <span class="c1"># vertices</span>
             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">vrecty</span><span class="p">)):</span>
                 <span class="k">if</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">vrecty</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">vrecty</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">1</span><span class="p">]):</span>
                     <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
@@ -481,23 +471,23 @@
             <span class="k">if</span> <span class="n">get_box_edges</span><span class="p">:</span>
                 <span class="n">boxes_edges</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">vcuby</span><span class="p">)</span>
 
-            <span class="c"># find the angles required to rotate the central pdb file, to align</span>
-            <span class="c"># it with the box (previously was also returning vtbox)</span>
-            <span class="k">if</span> <span class="s">&#39;ndarray&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">phone</span><span class="p">)):</span>
+            <span class="c1"># find the angles required to rotate the central pdb file, to align</span>
+            <span class="c1"># it with the box (previously was also returning vtbox)</span>
+            <span class="k">if</span> <span class="s1">&#39;ndarray&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">phone</span><span class="p">)):</span>
                 <span class="n">vtdata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cuboid_adjust</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vcuby</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_xyz</span><span class="p">(),</span> <span class="n">phone</span><span class="p">,</span> <span class="n">fag</span><span class="p">,</span> <span class="n">pen</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">conntype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn_type</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
                 <span class="n">vtdata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cuboid_adjust</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vcuby</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_xyz</span><span class="p">(),</span> <span class="n">phone</span><span class="p">[</span><span class="n">conntype</span><span class="p">],</span> <span class="n">fag</span><span class="p">[</span><span class="n">conntype</span><span class="p">],</span> <span class="n">pen</span><span class="p">[</span><span class="n">conntype</span><span class="p">],</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
 
-            <span class="c"># append vertex array with pdb file</span>
+            <span class="c1"># append vertex array with pdb file</span>
             <span class="n">v_cubody_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vtdata</span><span class="p">)</span>
 
-        <span class="c"># protein enclosing boxes</span>
+        <span class="c1"># protein enclosing boxes</span>
         <span class="k">if</span> <span class="n">get_box_edges</span><span class="p">:</span>
             <span class="n">Str</span> <span class="o">=</span> <span class="n">Structure</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">boxes_edges</span><span class="p">))</span>
-            <span class="n">Str</span><span class="o">.</span><span class="n">write_pdb</span><span class="p">(</span><span class="s">&quot;edges.pdb&quot;</span><span class="p">)</span>
+            <span class="n">Str</span><span class="o">.</span><span class="n">write_pdb</span><span class="p">(</span><span class="s2">&quot;edges.pdb&quot;</span><span class="p">)</span>
 
-        <span class="c"># return atoms coordinates</span>
+        <span class="c1"># return atoms coordinates</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">v_cubody_data</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_rectanglify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vscale</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">kay</span><span class="p">):</span>
@@ -506,42 +496,42 @@
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="n">vrecty</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">vscale</span><span class="p">)):</span>  <span class="c"># for each individual vertex position</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">vscale</span><span class="p">)):</span>  <span class="c1"># for each individual vertex position</span>
             <span class="n">v1</span> <span class="o">=</span> <span class="n">vscale</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
 
-            <span class="c"># scroll through the other vertices...</span>
+            <span class="c1"># scroll through the other vertices...</span>
             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">vscale</span><span class="p">)):</span>
 
-                <span class="c">#tt = self._conn_find(i,j)</span>
-                <span class="n">tst</span> <span class="o">=</span> <span class="k">False</span>
+                <span class="c1">#tt = self._conn_find(i,j)</span>
+                <span class="n">tst</span> <span class="o">=</span> <span class="kc">False</span>
                 <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">)):</span>
                     <span class="k">if</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">i</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">j</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">i</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">j</span><span class="p">):</span>
-                        <span class="n">tst</span> <span class="o">=</span> <span class="k">True</span>
+                        <span class="n">tst</span> <span class="o">=</span> <span class="kc">True</span>
                         <span class="k">break</span>
 
-                <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">j</span> <span class="ow">and</span> <span class="n">tst</span><span class="p">:</span>  <span class="c"># if the two are connected then get to work!</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">j</span> <span class="ow">and</span> <span class="n">tst</span><span class="p">:</span>  <span class="c1"># if the two are connected then get to work!</span>
 
-                    <span class="n">v2</span> <span class="o">=</span> <span class="n">vscale</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>  <span class="c"># get the vector to the second vertex</span>
-                    <span class="c"># get normalised edge vector</span>
+                    <span class="n">v2</span> <span class="o">=</span> <span class="n">vscale</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>  <span class="c1"># get the vector to the second vertex</span>
+                    <span class="c1"># get normalised edge vector</span>
                     <span class="n">v2n</span> <span class="o">=</span> <span class="p">(</span><span class="n">v2</span> <span class="o">-</span> <span class="n">v1</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v2</span> <span class="o">-</span> <span class="n">v1</span><span class="p">)</span>
-                    <span class="n">v3c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">v1</span><span class="p">,</span> <span class="n">v2</span><span class="p">)</span>  <span class="c"># get perpendicular to edge</span>
+                    <span class="n">v3c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">v1</span><span class="p">,</span> <span class="n">v2</span><span class="p">)</span>  <span class="c1"># get perpendicular to edge</span>
                     <span class="n">v3</span> <span class="o">=</span> <span class="n">v3c</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v3c</span><span class="p">)</span>
 
-                    <span class="c"># walk short distance from corner to rectangle face</span>
+                    <span class="c1"># walk short distance from corner to rectangle face</span>
                     <span class="n">i2</span> <span class="o">=</span> <span class="n">v2n</span> <span class="o">*</span> <span class="p">(</span><span class="n">kay</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">L</span> <span class="o">/</span> <span class="mf">2.0</span>
-                    <span class="n">i3</span> <span class="o">=</span> <span class="n">v3</span> <span class="o">*</span> <span class="n">W</span> <span class="o">/</span> <span class="mf">2.0</span>  <span class="c"># half width step perpendicular to edge</span>
+                    <span class="n">i3</span> <span class="o">=</span> <span class="n">v3</span> <span class="o">*</span> <span class="n">W</span> <span class="o">/</span> <span class="mf">2.0</span>  <span class="c1"># half width step perpendicular to edge</span>
 
-                    <span class="n">temp1</span> <span class="o">=</span> <span class="n">v1</span> <span class="o">+</span> <span class="n">i2</span>  <span class="c"># vector to face of rectangle from corner down edge</span>
-                    <span class="n">temp2</span> <span class="o">=</span> <span class="n">temp1</span> <span class="o">+</span> <span class="n">i3</span>  <span class="c"># vector to side of rectangle face</span>
-                    <span class="n">temp3</span> <span class="o">=</span> <span class="n">temp1</span> <span class="o">-</span> <span class="n">i3</span>  <span class="c"># vector to other side of rectangle face</span>
+                    <span class="n">temp1</span> <span class="o">=</span> <span class="n">v1</span> <span class="o">+</span> <span class="n">i2</span>  <span class="c1"># vector to face of rectangle from corner down edge</span>
+                    <span class="n">temp2</span> <span class="o">=</span> <span class="n">temp1</span> <span class="o">+</span> <span class="n">i3</span>  <span class="c1"># vector to side of rectangle face</span>
+                    <span class="n">temp3</span> <span class="o">=</span> <span class="n">temp1</span> <span class="o">-</span> <span class="n">i3</span>  <span class="c1"># vector to other side of rectangle face</span>
 
-                    <span class="c"># vector perpendicular to edge and width</span>
+                    <span class="c1"># vector perpendicular to edge and width</span>
                     <span class="n">v4c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">v2n</span><span class="p">,</span> <span class="n">v3</span><span class="p">)</span>
                     <span class="n">v4</span> <span class="o">=</span> <span class="n">v4c</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v4c</span><span class="p">)</span>
-                    <span class="n">temp4</span> <span class="o">=</span> <span class="n">temp2</span> <span class="o">-</span> <span class="n">v4</span> <span class="o">*</span> <span class="n">H</span>  <span class="c"># step off outside edge by the height #1</span>
-                    <span class="n">temp5</span> <span class="o">=</span> <span class="n">temp3</span> <span class="o">-</span> <span class="n">v4</span> <span class="o">*</span> <span class="n">H</span>  <span class="c"># step off outside edge by heigh #2</span>
+                    <span class="n">temp4</span> <span class="o">=</span> <span class="n">temp2</span> <span class="o">-</span> <span class="n">v4</span> <span class="o">*</span> <span class="n">H</span>  <span class="c1"># step off outside edge by the height #1</span>
+                    <span class="n">temp5</span> <span class="o">=</span> <span class="n">temp3</span> <span class="o">-</span> <span class="n">v4</span> <span class="o">*</span> <span class="n">H</span>  <span class="c1"># step off outside edge by heigh #2</span>
 
-                    <span class="c"># take the rectangle face, indexed by vertex into recty array</span>
+                    <span class="c1"># take the rectangle face, indexed by vertex into recty array</span>
                     <span class="n">vrecty</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">temp2</span><span class="p">,</span> <span class="n">temp3</span><span class="p">,</span> <span class="n">temp4</span><span class="p">,</span> <span class="n">temp5</span><span class="p">])</span>
 
         <span class="k">return</span> <span class="n">vrecty</span>
@@ -552,110 +542,110 @@
 <span class="sd">        ii parameter: if second element not 0, indicates the number of elements per ring (second half rotated by 180 degrees)</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
-        <span class="n">lim</span> <span class="o">=</span> <span class="mi">1</span><span class="n">E</span><span class="o">-</span><span class="mi">7</span>
+        <span class="n">lim</span> <span class="o">=</span> <span class="mf">1E-7</span>
 
-        <span class="c"># move vertices to centre of mass</span>
+        <span class="c1"># move vertices to centre of mass</span>
         <span class="n">com_cuby</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">vcuby</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">vt</span> <span class="o">=</span> <span class="n">vcuby</span> <span class="o">-</span> <span class="n">com_cuby</span>
 
         <span class="k">if</span> <span class="n">ii</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="c"># for the double rings, work out what the fag=0 position is based</span>
-            <span class="c"># on the centre of face vector</span>
+            <span class="c1"># for the double rings, work out what the fag=0 position is based</span>
+            <span class="c1"># on the centre of face vector</span>
             <span class="n">e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">vt</span><span class="p">[[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">]],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-            <span class="c"># work out what centre of face vector makes with Z axis</span>
+            <span class="c1"># work out what centre of face vector makes with Z axis</span>
             <span class="n">fagZero</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
-            <span class="c"># correct to make sure fag is offset by this much</span>
+            <span class="c1"># correct to make sure fag is offset by this much</span>
             <span class="n">fag</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">-</span> <span class="n">fagZero</span><span class="p">)</span> <span class="o">+</span> <span class="n">fag</span>
 
-        <span class="n">tusk</span> <span class="o">=</span> <span class="mf">5.0</span>  <span class="c"># These random rotations make sure that we don&#39;t get stuck in an initially bad position</span>
-        <span class="c"># perform a random rotation 1</span>
+        <span class="n">tusk</span> <span class="o">=</span> <span class="mf">5.0</span>  <span class="c1"># These random rotations make sure that we don&#39;t get stuck in an initially bad position</span>
+        <span class="c1"># perform a random rotation 1</span>
         <span class="n">vt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poly_rotate</span><span class="p">(</span><span class="n">vt</span><span class="p">,</span> <span class="n">tusk</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-        <span class="c"># perform a random rotation 2</span>
+        <span class="c1"># perform a random rotation 2</span>
         <span class="n">vt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poly_rotate</span><span class="p">(</span><span class="n">vt</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">tusk</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-        <span class="c"># perform a random rotation 3</span>
+        <span class="c1"># perform a random rotation 3</span>
         <span class="n">vt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poly_rotate</span><span class="p">(</span><span class="n">vt</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">tusk</span><span class="p">)</span>
 
-        <span class="c"># find angle of (x,y) component of vector from origin to centre of face</span>
-        <span class="c"># (0,1,2,3) makes with positive x axis</span>
+        <span class="c1"># find angle of (x,y) component of vector from origin to centre of face</span>
+        <span class="c1"># (0,1,2,3) makes with positive x axis</span>
         <span class="n">e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">vt</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">4</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span>
-                <span class="n">e</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>  <span class="c"># exception in the case where the &#39;face&#39; vector is NOT along the +/- z axis</span>
-            <span class="c"># theta1=vec_ang((e[0],e[1],0.0),(1.0,0.0,0.0))</span>
+                <span class="n">e</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># exception in the case where the &#39;face&#39; vector is NOT along the +/- z axis</span>
+            <span class="c1"># theta1=vec_ang((e[0],e[1],0.0),(1.0,0.0,0.0))</span>
             <span class="n">e</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
             <span class="n">theta1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
 
             <span class="k">if</span> <span class="n">e</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">theta1</span> <span class="o">=</span> <span class="n">theta1</span> <span class="o">*</span> <span class="o">-</span><span class="mf">1.0</span>
-        <span class="k">else</span><span class="p">:</span>  <span class="c"># in the case where the face vector IS along the +/- z axis</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># in the case where the face vector IS along the +/- z axis</span>
             <span class="n">theta1</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-        <span class="c"># perform the z rotation</span>
+        <span class="c1"># perform the z rotation</span>
         <span class="n">vt2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poly_rotate</span><span class="p">(</span><span class="n">vt</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">theta1</span><span class="p">)</span>
 
-        <span class="c"># find angle of (z, x) component of vector from origin to centre of</span>
-        <span class="c"># face (0, 1, 2, 3) makes with positive x axis</span>
+        <span class="c1"># find angle of (z, x) component of vector from origin to centre of</span>
+        <span class="c1"># face (0, 1, 2, 3) makes with positive x axis</span>
         <span class="n">e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">vt2</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">4</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">e</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">e</span><span class="p">[</span>
-                <span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>  <span class="c"># exception for when the face vector is along the +/- y axis</span>
-            <span class="c">#theta2=vec_ang((e[0], 0.0, e[2]), (1.0, 0.0, 0.0))</span>
+                <span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># exception for when the face vector is along the +/- y axis</span>
+            <span class="c1">#theta2=vec_ang((e[0], 0.0, e[2]), (1.0, 0.0, 0.0))</span>
             <span class="n">e</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
             <span class="n">theta2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
 
             <span class="k">if</span> <span class="n">e</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">theta2</span> <span class="o">=</span> <span class="n">theta2</span> <span class="o">*</span> <span class="o">-</span><span class="mf">1.0</span>
-        <span class="c"># do this if the vector is along the +/- y axis (TETRAHEDRON WANTS</span>
-        <span class="c"># ZERO. SO DOES OCTAHEDRON)</span>
+        <span class="c1"># do this if the vector is along the +/- y axis (TETRAHEDRON WANTS</span>
+        <span class="c1"># ZERO. SO DOES OCTAHEDRON)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">theta2</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-        <span class="c"># perform the &#39;phone&#39; lateral rotation</span>
+        <span class="c1"># perform the &#39;phone&#39; lateral rotation</span>
         <span class="n">vt2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poly_rotate</span><span class="p">(</span><span class="n">vt2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">theta2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
 
-        <span class="c"># find angle of (y, z) compoent of vector from origin to centre of face</span>
-        <span class="c"># (0, 1, 2, 3) makes with positive x axis</span>
+        <span class="c1"># find angle of (y, z) compoent of vector from origin to centre of face</span>
+        <span class="c1"># (0, 1, 2, 3) makes with positive x axis</span>
         <span class="n">e</span> <span class="o">=</span> <span class="n">vt2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">vt2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
-        <span class="c"># perform the z rotation</span>
-        <span class="c">#theta3 = vec_ang((0.0, e[1], e[2]), (0.0, 1.0, 0.0))</span>
+        <span class="c1"># perform the z rotation</span>
+        <span class="c1">#theta3 = vec_ang((0.0, e[1], e[2]), (0.0, 1.0, 0.0))</span>
         <span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="n">theta3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="n">e</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">theta3</span> <span class="o">=</span> <span class="n">theta3</span> <span class="o">*</span> <span class="o">-</span><span class="mf">1.0</span>
-        <span class="n">vt2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poly_rotate</span><span class="p">(</span><span class="n">vt2</span><span class="p">,</span> <span class="n">theta3</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>  <span class="c"># perform an x rotation</span>
+        <span class="n">vt2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poly_rotate</span><span class="p">(</span><span class="n">vt2</span><span class="p">,</span> <span class="n">theta3</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>  <span class="c1"># perform an x rotation</span>
 
-        <span class="c"># test for convergence problems</span>
+        <span class="c1"># test for convergence problems</span>
         <span class="n">e</span> <span class="o">=</span> <span class="n">vt2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">vt2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="n">lim</span><span class="p">:</span>
             <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
 
-        <span class="c"># PERFORM THE REVERSE ROTATIONS AND TRANSLATION</span>
+        <span class="c1"># PERFORM THE REVERSE ROTATIONS AND TRANSLATION</span>
         <span class="n">vrd</span> <span class="o">=</span> <span class="n">v_data</span>
-        <span class="k">if</span> <span class="n">ii</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">ii</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">and</span> <span class="n">ii</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>  <span class="c"># DO THIS FOR DOUBLE RINGS</span>
-            <span class="n">vrd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poly_rotate</span><span class="p">(</span><span class="n">vrd</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>  <span class="c"># 180 about y</span>
+        <span class="k">if</span> <span class="n">ii</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">ii</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">and</span> <span class="n">ii</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># DO THIS FOR DOUBLE RINGS</span>
+            <span class="n">vrd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poly_rotate</span><span class="p">(</span><span class="n">vrd</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>  <span class="c1"># 180 about y</span>
             <span class="n">fag</span> <span class="o">=</span> <span class="n">fag</span> <span class="o">*</span> <span class="o">-</span><span class="mf">1.0</span>
 
-        <span class="c"># perform the &#39;fag&#39; edge rotation</span>
+        <span class="c1"># perform the &#39;fag&#39; edge rotation</span>
         <span class="n">vrd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poly_rotate</span><span class="p">(</span><span class="n">vrd</span><span class="p">,</span> <span class="n">fag</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-        <span class="c"># perform the &#39;phone&#39; lateral rotation</span>
+        <span class="c1"># perform the &#39;phone&#39; lateral rotation</span>
         <span class="n">vrd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poly_rotate</span><span class="p">(</span><span class="n">vrd</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">phone</span><span class="p">)</span>
-        <span class="c"># perform the &#39;pen&#39; lateral rotation</span>
+        <span class="c1"># perform the &#39;pen&#39; lateral rotation</span>
         <span class="n">vrd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poly_rotate</span><span class="p">(</span><span class="n">vrd</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">pen</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-        <span class="n">vrd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poly_rotate</span><span class="p">(</span><span class="n">vrd</span><span class="p">,</span> <span class="o">-</span><span class="n">theta3</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>  <span class="c"># x rotation by theta3</span>
-        <span class="n">vrd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poly_rotate</span><span class="p">(</span><span class="n">vrd</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="n">theta2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>  <span class="c"># y rotation by theta2</span>
-        <span class="n">vrd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poly_rotate</span><span class="p">(</span><span class="n">vrd</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="n">theta1</span><span class="p">)</span>  <span class="c"># z rotation by theta1</span>
-        <span class="c"># perform the reverse random rotation 1</span>
+        <span class="n">vrd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poly_rotate</span><span class="p">(</span><span class="n">vrd</span><span class="p">,</span> <span class="o">-</span><span class="n">theta3</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>  <span class="c1"># x rotation by theta3</span>
+        <span class="n">vrd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poly_rotate</span><span class="p">(</span><span class="n">vrd</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="n">theta2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>  <span class="c1"># y rotation by theta2</span>
+        <span class="n">vrd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poly_rotate</span><span class="p">(</span><span class="n">vrd</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="n">theta1</span><span class="p">)</span>  <span class="c1"># z rotation by theta1</span>
+        <span class="c1"># perform the reverse random rotation 1</span>
         <span class="n">vrd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poly_rotate</span><span class="p">(</span><span class="n">vrd</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="n">tusk</span><span class="p">)</span>
-        <span class="c"># perform the reverse random rotation 2</span>
+        <span class="c1"># perform the reverse random rotation 2</span>
         <span class="n">vrd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poly_rotate</span><span class="p">(</span><span class="n">vrd</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="n">tusk</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-        <span class="c"># perform the reverse random rotation 3</span>
+        <span class="c1"># perform the reverse random rotation 3</span>
         <span class="n">vrd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poly_rotate</span><span class="p">(</span><span class="n">vrd</span><span class="p">,</span> <span class="o">-</span><span class="n">tusk</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
 
-        <span class="c"># perform the reverse of the translation on the structure return</span>
-        <span class="c"># coordinates</span>
+        <span class="c1"># perform the reverse of the translation on the structure return</span>
+        <span class="c1"># coordinates</span>
         <span class="k">return</span> <span class="n">vrd</span> <span class="o">+</span> <span class="n">com_cuby</span>
 
     <span class="k">def</span> <span class="nf">_poly_rotate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v_in</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
@@ -693,21 +683,22 @@
             <span class="k">return</span> <span class="n">v</span></div>
 </pre></div>
 
+            <div class="clearer"></div>
           </div>
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
     </form>
+    </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -722,12 +713,13 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">biobox 1.0 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="index.html" >Module code</a> &#187;</li> 
+          <li class="nav-item nav-item-1"><a href="index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">polyhedron</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2017, Matteo Degiacomi.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+        &#169; Copyright 2021, Matteo Degiacomi.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.0.2.
     </div>
   </body>
 </html>

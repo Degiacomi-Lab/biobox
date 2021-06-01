@@ -1,33 +1,22 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>assembly &#8212; biobox 1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/classic.css" />
     
-    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
     
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../',
-        VERSION:     '1.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
-  </head>
-  <body role="document">
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -38,7 +27,8 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">biobox 1.0 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Module code</a> &#187;</li> 
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">assembly</a></li> 
       </ul>
     </div>  
 
@@ -48,23 +38,23 @@
           <div class="body" role="main">
             
   <h1>Source code for assembly</h1><div class="highlight"><pre>
-<span class="c"># Copyright (c) 2014-2017 Matteo Degiacomi</span>
-<span class="c">#</span>
-<span class="c"># BiobOx is free software ;</span>
-<span class="c"># you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;</span>
-<span class="c"># either version 2 of the License, or (at your option) any later version.</span>
-<span class="c"># BiobOx is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;</span>
-<span class="c"># without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</span>
-<span class="c"># See the GNU General Public License for more details.</span>
-<span class="c"># You should have received a copy of the GNU General Public License along with BiobOx ;</span>
-<span class="c"># if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.</span>
-<span class="c">#</span>
-<span class="c"># Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com</span>
+<span></span><span class="c1"># Copyright (c) 2014-2017 Matteo Degiacomi</span>
+<span class="c1">#</span>
+<span class="c1"># BiobOx is free software ;</span>
+<span class="c1"># you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;</span>
+<span class="c1"># either version 2 of the License, or (at your option) any later version.</span>
+<span class="c1"># BiobOx is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;</span>
+<span class="c1"># without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</span>
+<span class="c1"># See the GNU General Public License for more details.</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along with BiobOx ;</span>
+<span class="c1"># if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.</span>
+<span class="c1">#</span>
+<span class="c1"># Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">biobox.classes.structure</span> <span class="k">import</span> <span class="n">Structure</span>
+<span class="kn">from</span> <span class="nn">biobox.classes.structure</span> <span class="kn">import</span> <span class="n">Structure</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 
@@ -73,29 +63,29 @@
 <span class="sd">    Construct and manipulate assemblies of multiple :func:`Structure &lt;structure.Structure&gt;` instances.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 
-    <span class="c"># labels for chain names (will be assigned to individual members of the</span>
-    <span class="c"># assembly upon PDB creation).</span>
-    <span class="n">chain_names</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;A&#39;</span><span class="p">,</span> <span class="s">&#39;B&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;D&#39;</span><span class="p">,</span> <span class="s">&#39;E&#39;</span><span class="p">,</span> <span class="s">&#39;F&#39;</span><span class="p">,</span> <span class="s">&#39;G&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;I&#39;</span><span class="p">,</span> <span class="s">&#39;J&#39;</span><span class="p">,</span> <span class="s">&#39;K&#39;</span><span class="p">,</span> <span class="s">&#39;L&#39;</span><span class="p">,</span> <span class="s">&#39;M&#39;</span><span class="p">,</span> <span class="s">&#39;N&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;P&#39;</span><span class="p">,</span> <span class="s">&#39;Q&#39;</span><span class="p">,</span> <span class="s">&#39;R&#39;</span><span class="p">,</span> <span class="s">&#39;S&#39;</span><span class="p">,</span> <span class="s">&#39;T&#39;</span><span class="p">,</span>
-                   <span class="s">&#39;U&#39;</span><span class="p">,</span> <span class="s">&#39;V&#39;</span><span class="p">,</span> <span class="s">&#39;W&#39;</span><span class="p">,</span> <span class="s">&#39;X&#39;</span><span class="p">,</span> <span class="s">&#39;Y&#39;</span><span class="p">,</span> <span class="s">&#39;Z&#39;</span><span class="p">,</span> <span class="s">&#39;1&#39;</span><span class="p">,</span> <span class="s">&#39;2&#39;</span><span class="p">,</span> <span class="s">&#39;3&#39;</span><span class="p">,</span> <span class="s">&#39;4&#39;</span><span class="p">,</span> <span class="s">&#39;5&#39;</span><span class="p">,</span> <span class="s">&#39;6&#39;</span><span class="p">,</span> <span class="s">&#39;7&#39;</span><span class="p">,</span> <span class="s">&#39;8&#39;</span><span class="p">,</span> <span class="s">&#39;9&#39;</span><span class="p">,</span> <span class="s">&#39;0&#39;</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">,</span> <span class="s">&#39;d&#39;</span><span class="p">,</span>
-                   <span class="s">&#39;e&#39;</span><span class="p">,</span> <span class="s">&#39;f&#39;</span><span class="p">,</span> <span class="s">&#39;g&#39;</span><span class="p">,</span> <span class="s">&#39;h&#39;</span><span class="p">,</span> <span class="s">&#39;i&#39;</span><span class="p">,</span> <span class="s">&#39;j&#39;</span><span class="p">,</span> <span class="s">&#39;k&#39;</span><span class="p">,</span> <span class="s">&#39;l&#39;</span><span class="p">,</span> <span class="s">&#39;m&#39;</span><span class="p">,</span> <span class="s">&#39;n&#39;</span><span class="p">,</span> <span class="s">&#39;o&#39;</span><span class="p">,</span> <span class="s">&#39;p&#39;</span><span class="p">,</span> <span class="s">&#39;q&#39;</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="s">&#39;s&#39;</span><span class="p">,</span> <span class="s">&#39;t&#39;</span><span class="p">,</span> <span class="s">&#39;u&#39;</span><span class="p">,</span> <span class="s">&#39;v&#39;</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">,</span> <span class="s">&#39;x&#39;</span><span class="p">,</span>
-                   <span class="s">&#39;y&#39;</span><span class="p">,</span> <span class="s">&#39;z&#39;</span><span class="p">,</span> <span class="s">&#39;1&#39;</span><span class="p">,</span> <span class="s">&#39;2&#39;</span><span class="p">,</span> <span class="s">&#39;3&#39;</span><span class="p">,</span> <span class="s">&#39;4&#39;</span><span class="p">,</span> <span class="s">&#39;5&#39;</span><span class="p">,</span> <span class="s">&#39;6&#39;</span><span class="p">,</span> <span class="s">&#39;7&#39;</span><span class="p">,</span> <span class="s">&#39;8&#39;</span><span class="p">,</span> <span class="s">&#39;9&#39;</span><span class="p">,</span> <span class="s">&#39;0&#39;</span><span class="p">)</span>
+    <span class="c1"># labels for chain names (will be assigned to individual members of the</span>
+    <span class="c1"># assembly upon PDB creation).</span>
+    <span class="n">chain_names</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">,</span> <span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="s1">&#39;G&#39;</span><span class="p">,</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;I&#39;</span><span class="p">,</span> <span class="s1">&#39;J&#39;</span><span class="p">,</span> <span class="s1">&#39;K&#39;</span><span class="p">,</span> <span class="s1">&#39;L&#39;</span><span class="p">,</span> <span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">,</span> <span class="s1">&#39;P&#39;</span><span class="p">,</span> <span class="s1">&#39;Q&#39;</span><span class="p">,</span> <span class="s1">&#39;R&#39;</span><span class="p">,</span> <span class="s1">&#39;S&#39;</span><span class="p">,</span> <span class="s1">&#39;T&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;U&#39;</span><span class="p">,</span> <span class="s1">&#39;V&#39;</span><span class="p">,</span> <span class="s1">&#39;W&#39;</span><span class="p">,</span> <span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">,</span> <span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="s1">&#39;4&#39;</span><span class="p">,</span> <span class="s1">&#39;5&#39;</span><span class="p">,</span> <span class="s1">&#39;6&#39;</span><span class="p">,</span> <span class="s1">&#39;7&#39;</span><span class="p">,</span> <span class="s1">&#39;8&#39;</span><span class="p">,</span> <span class="s1">&#39;9&#39;</span><span class="p">,</span> <span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="s1">&#39;h&#39;</span><span class="p">,</span> <span class="s1">&#39;i&#39;</span><span class="p">,</span> <span class="s1">&#39;j&#39;</span><span class="p">,</span> <span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="s1">&#39;l&#39;</span><span class="p">,</span> <span class="s1">&#39;m&#39;</span><span class="p">,</span> <span class="s1">&#39;n&#39;</span><span class="p">,</span> <span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">,</span> <span class="s1">&#39;q&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">,</span> <span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="s1">&#39;u&#39;</span><span class="p">,</span> <span class="s1">&#39;v&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="s1">&#39;4&#39;</span><span class="p">,</span> <span class="s1">&#39;5&#39;</span><span class="p">,</span> <span class="s1">&#39;6&#39;</span><span class="p">,</span> <span class="s1">&#39;7&#39;</span><span class="p">,</span> <span class="s1">&#39;8&#39;</span><span class="p">,</span> <span class="s1">&#39;9&#39;</span><span class="p">,</span> <span class="s1">&#39;0&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        An Assembly is composed of several building blocks (instances of Structure class) referred to as &quot;unit&quot;, and stored in the self.unit list.</span>
 <span class="sd">        User-friendly names for these unites are stored in the self.unit_labels list. If no name is provided, a number will be assigned (as a string, starting from 0).</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
-        <span class="c"># list of Structure instances (or subclasses).</span>
+        <span class="c1"># list of Structure instances (or subclasses).</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">unit</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="c"># labels assigned to every structure. The length of this dictionary is</span>
-        <span class="c"># equal to that of unit.</span>
+        <span class="c1"># labels assigned to every structure. The length of this dictionary is</span>
+        <span class="c1"># equal to that of unit.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">unit_labels</span> <span class="o">=</span> <span class="p">{}</span>
 
-        <span class="c"># current conformation selected from conformational database</span>
+        <span class="c1"># current conformation selected from conformational database</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 
-        <span class="c">#metadata associated to every point</span>
+        <span class="c1">#metadata associated to every point</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="p">[],</span> <span class="n">columns</span><span class="o">=</span><span class="p">[])</span>
 
 
@@ -103,7 +93,7 @@
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        remove all elements loaded in the assembly.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
-        <span class="c"># restart arrays</span>
+        <span class="c1"># restart arrays</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">unit</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">unit_labels</span> <span class="o">=</span> <span class="p">{}</span></div>
 
@@ -115,17 +105,17 @@
 <span class="sd">        :param struct: object of class Structure (or subclasses)</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="n">dfs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">+</span> <span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">+</span> <span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
             <span class="n">e</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">struct</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">unit_labels</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">i</span>
 
-            <span class="c">#add labeling to structures tables, prior concatenation</span>
-            <span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;unit&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-            <span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;unit_index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span>
+            <span class="c1">#add labeling to structures tables, prior concatenation</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;unit&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;unit_index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span>
             <span class="n">dfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
 
-        <span class="c">#create dataframe collecting information from all structures</span>
+        <span class="c1">#create dataframe collecting information from all structures</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">dfs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
         
@@ -139,11 +129,11 @@
 <span class="sd">        :param n: number if instances of assembly to merge (only one by default)</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="n">atmp</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">assembly</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">atmp</span><span class="o">.</span><span class="n">unit</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Assembly.append"><a class="viewcode-back" href="../assembly.html#assembly.Assembly.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">structure</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">):</span>
+<div class="viewcode-block" id="Assembly.append"><a class="viewcode-back" href="../assembly.html#assembly.Assembly.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">structure</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        append a new :func:`Structure &lt;structure.Structure&gt;` instance into an existing assembly</span>
 
@@ -152,20 +142,20 @@
 <span class="sd">        :returns: label assigned to the new Structure in the assembly</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
-        <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">unit_labels</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">structure</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">label</span> <span class="o">!=</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">label</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">label</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit_labels</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">unit_labels</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">structure</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: label %s already existing in multimer!&quot;</span> <span class="o">%</span><span class="n">label</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;ERROR: label </span><span class="si">%s</span><span class="s2"> already existing in multimer!&quot;</span> <span class="o">%</span><span class="n">label</span><span class="p">)</span>
 
 
-        <span class="c">#append structure to dataframe</span>
-        <span class="n">structure</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;unit&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">label</span>
-        <span class="n">structure</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;unit_index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">structure</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span>
+        <span class="c1">#append structure to dataframe</span>
+        <span class="n">structure</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;unit&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">label</span>
+        <span class="n">structure</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;unit_index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">structure</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">structure</span><span class="o">.</span><span class="n">data</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
 
@@ -178,13 +168,13 @@
 <span class="sd">        :param new_assembly: :func:`Assembly &lt;assembly.Assembly&gt;` object to be appended as alternative conformation</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_assembly</span><span class="o">.</span><span class="n">unit</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: expecting %s subunits, found %s!&quot;</span> <span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_assembly</span><span class="o">.</span><span class="n">unit</span><span class="p">)))</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;ERROR: expecting </span><span class="si">%s</span><span class="s2"> subunits, found </span><span class="si">%s</span><span class="s2">!&quot;</span> <span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_assembly</span><span class="o">.</span><span class="n">unit</span><span class="p">)))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">+=</span> <span class="mi">1</span>
 
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">new_assembly</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
-                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: subunit %s conformation should have %s atoms, but %s found!&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">new_assembly</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;ERROR: subunit </span><span class="si">%s</span><span class="s2"> conformation should have </span><span class="si">%s</span><span class="s2"> atoms, but </span><span class="si">%s</span><span class="s2"> found!&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">new_assembly</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">add_xyz</span><span class="p">(</span><span class="n">new_assembly</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_xyz</span><span class="p">())</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">)</span></div>
@@ -197,26 +187,26 @@
 <span class="sd">        :param labels: user-friendly names used to identify every structure. If empty, simple incremental integers are used.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
-        <span class="c"># check labels consistency</span>
+        <span class="c1"># check labels consistency</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">struct_list</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
-                    <span class="s">&quot;ERROR: structures and labels lists have different length!&quot;</span><span class="p">)</span>
+                    <span class="s2">&quot;ERROR: structures and labels lists have different length!&quot;</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">labels</span><span class="p">)))</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
-                    <span class="s">&quot;ERROR: duplicate label found in provided list!&quot;</span><span class="p">)</span>
+                    <span class="s2">&quot;ERROR: duplicate label found in provided list!&quot;</span><span class="p">)</span>
 
-            <span class="c"># check that labels are all different, and that they don&#39;t already</span>
-            <span class="c"># exist in the list</span>
+            <span class="c1"># check that labels are all different, and that they don&#39;t already</span>
+            <span class="c1"># exist in the list</span>
             <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">l</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit_labels</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: label %s already exists!&quot;</span> <span class="o">%</span> <span class="n">l</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;ERROR: label </span><span class="si">%s</span><span class="s2"> already exists!&quot;</span> <span class="o">%</span> <span class="n">l</span><span class="p">)</span>
 
-        <span class="c"># append new structures to old ones</span>
+        <span class="c1"># append new structures to old ones</span>
         <span class="n">dfs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">struct_list</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="c"># create dictionary with neighbors</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">struct_list</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="c1"># create dictionary with neighbors</span>
             <span class="n">e</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">struct_list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 
@@ -227,12 +217,12 @@
 
             <span class="bp">self</span><span class="o">.</span><span class="n">unit_labels</span><span class="p">[</span><span class="n">lbl</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
 
-            <span class="c">#add labeling to structures tables, prior concatenation</span>
-            <span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;unit&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lbl</span>
-            <span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;unit_index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span>
+            <span class="c1">#add labeling to structures tables, prior concatenation</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;unit&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lbl</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;unit_index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span>
             <span class="n">dfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
 
-        <span class="c">#create dataframe collecting information from all structures</span>
+        <span class="c1">#create dataframe collecting information from all structures</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">dfs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">))</span></div>
 
@@ -255,27 +245,27 @@
 <span class="sd">                       If unset, every object is independently moved.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
-        <span class="c"># if no group has been selected, every subunit forms a group by itself</span>
+        <span class="c1"># if no group has been selected, every subunit forms a group by itself</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">groups</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
                 <span class="n">groups</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">i</span><span class="p">])</span>
 
-        <span class="c"># keep track of the position of previous member of chain</span>
+        <span class="c1"># keep track of the position of previous member of chain</span>
         <span class="n">last_center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
 
-        <span class="c"># print groups, len(self.unit), len(groups)</span>
+        <span class="c1"># print groups, len(self.unit), len(groups)</span>
 
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">groups</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="c"># get group center, will be used to center it to the origin</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">groups</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="c1"># get group center, will be used to center it to the origin</span>
             <span class="n">pts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">groups</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">get_xyz</span><span class="p">()</span>
-            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">groups</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">groups</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="mi">1</span><span class="p">):</span>
                 <span class="n">pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">pts</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">groups</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]]</span><span class="o">.</span><span class="n">get_xyz</span><span class="p">()))</span>
 
             <span class="n">current_center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-            <span class="c"># center group, rotate it, and send it to designated area (element</span>
-            <span class="c"># by element)</span>
-            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">groups</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="c1"># center group, rotate it, and send it to designated area (element</span>
+            <span class="c1"># by element)</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">groups</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="mi">1</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">groups</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]]</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="o">-</span><span class="n">current_center</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="n">current_center</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="n">current_center</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">groups</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]]</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">angle</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span><span class="p">))</span>
 
@@ -283,10 +273,10 @@
                 <span class="n">y</span> <span class="o">=</span> <span class="n">last_center</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">dist</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">angle</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span><span class="p">)))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">groups</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]]</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
 
-            <span class="c"># compute group center after rototranslation, and store it for next</span>
-            <span class="c"># iteration</span>
+            <span class="c1"># compute group center after rototranslation, and store it for next</span>
+            <span class="c1"># iteration</span>
             <span class="n">pts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">groups</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">get_xyz</span><span class="p">()</span>
-            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">groups</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">groups</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="mi">1</span><span class="p">):</span>
                 <span class="n">pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">pts</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">groups</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]]</span><span class="o">.</span><span class="n">get_xyz</span><span class="p">()))</span>
 
             <span class="n">last_center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
@@ -299,16 +289,16 @@
 <span class="sd">        :param radius: radial displacement with respect of the origin (along x axis)</span>
 <span class="sd">        :param displacement: tangential displacement</span>
 <span class="sd">        &#39;&#39;&#39;</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
 
-            <span class="c"># get the extreme point on the x axis and move the atom corresponding to it to the origin</span>
-            <span class="c"># add to the translation a displacement along the x axis</span>
-            <span class="c"># corresponding to the requested radius</span>
+            <span class="c1"># get the extreme point on the x axis and move the atom corresponding to it to the origin</span>
+            <span class="c1"># add to the translation a displacement along the x axis</span>
+            <span class="c1"># corresponding to the requested radius</span>
             <span class="n">xyzMaxIndex</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="n">maxAtom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">xyzMaxIndex</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="o">-</span><span class="n">maxAtom</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">radius</span><span class="p">,</span> <span class="o">-</span><span class="n">maxAtom</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">displacement</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
 
-            <span class="c"># number of degrees to rotate</span>
+            <span class="c1"># number of degrees to rotate</span>
             <span class="n">angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="p">(</span><span class="mf">360.0</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">))))</span>
             <span class="n">Rz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">),</span> <span class="o">-</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)),</span> <span class="mi">0</span><span class="p">],</span>
                            <span class="p">[(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)),</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">)),</span> <span class="mi">0</span><span class="p">],</span>
@@ -325,18 +315,18 @@
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;cannot build polyhedron, need an even number of units!&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;cannot build polyhedron, need an even number of units!&quot;</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
 
-            <span class="c"># rotate the second half of subunits upside down</span>
+            <span class="c1"># rotate the second half of subunits upside down</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="mf">180.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">))</span>
 
-            <span class="c"># move the subunits</span>
+            <span class="c1"># move the subunits</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">radius</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">radius</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">))</span>
 
-            <span class="c"># number of degree to rotate</span>
+            <span class="c1"># number of degree to rotate</span>
             <span class="n">angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="p">(</span><span class="mf">360.0</span> <span class="o">/</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">))))</span>
             <span class="n">Rz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">),</span> <span class="o">-</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)),</span> <span class="mi">0</span><span class="p">],</span>
                            <span class="p">[(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)),</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">)),</span> <span class="mi">0</span><span class="p">],</span>
@@ -358,22 +348,22 @@
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: cannot build polyhedron, need an even number of units!&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;ERROR: cannot build polyhedron, need an even number of units!&quot;</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
 
-            <span class="c"># rotate the second half of subunits upside down</span>
+            <span class="c1"># rotate the second half of subunits upside down</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="mf">180.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">))</span>
 
-            <span class="c"># rotate everything by desired angles</span>
+            <span class="c1"># rotate everything by desired angles</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="o">-</span><span class="n">a</span><span class="p">,</span> <span class="o">-</span><span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">))</span>
 
-            <span class="c"># move the subunits</span>
+            <span class="c1"># move the subunits</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">radius</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">radius</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">))</span>
 
-            <span class="c"># number of degree to rotate</span>
+            <span class="c1"># number of degree to rotate</span>
             <span class="n">angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="p">(</span><span class="mf">360.0</span> <span class="o">/</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">))))</span>
             <span class="n">Rz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">),</span> <span class="o">-</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)),</span> <span class="mi">0</span><span class="p">],</span>
                            <span class="p">[(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)),</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">)),</span> <span class="mi">0</span><span class="p">],</span>
@@ -392,11 +382,11 @@
 <span class="sd">        :param unit: list of labels indicating which units to rotate (string or integer also accepted, for a single subunit). If undefind, all units will be rotated.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">unit</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-            <span class="c"># rotate everything</span>
+            <span class="c1"># rotate everything</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unit</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
-            <span class="c"># rotate desired units</span>
+            <span class="c1"># rotate desired units</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">unit</span><span class="p">:</span>
                     <span class="n">label</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit_labels</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">u</span><span class="p">)]</span>
@@ -407,7 +397,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: unit keyword should be integer, float, list or numpy array!&quot;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;ERROR: unit keyword should be integer, float, list or numpy array!&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Assembly.translate"><a class="viewcode-back" href="../assembly.html#assembly.Assembly.translate">[docs]</a>    <span class="k">def</span> <span class="nf">translate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="p">[]):</span>
         <span class="sd">&#39;&#39;&#39;</span>
@@ -420,11 +410,11 @@
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">unit</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-            <span class="c"># translate everything</span>
+            <span class="c1"># translate everything</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unit</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
-            <span class="c"># translate desired units</span>
+            <span class="c1"># translate desired units</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">unit</span><span class="p">:</span>
                     <span class="n">label</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit_labels</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">u</span><span class="p">)]</span>
@@ -435,7 +425,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ERROR: unit keyword should be integer, float, list or numpy array!&quot;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;ERROR: unit keyword should be integer, float, list or numpy array!&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Assembly.center_subunit"><a class="viewcode-back" href="../assembly.html#assembly.Assembly.center_subunit">[docs]</a>    <span class="k">def</span> <span class="nf">center_subunit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unit</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
@@ -445,7 +435,7 @@
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="k">if</span> <span class="n">unit</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">center_to_origin</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">u</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit_labels</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">unit</span><span class="p">)]</span>
@@ -466,7 +456,7 @@
 <span class="sd">        :returns: collapsed version of assembly&#39;s atoms coordinates.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="n">pts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_xyz</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
             <span class="n">pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">pts</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_xyz</span><span class="p">()))</span>
 
         <span class="k">return</span> <span class="n">pts</span></div>
@@ -478,7 +468,7 @@
 <span class="sd">        :returns: list of units coordinates.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="n">pts</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
             <span class="n">pts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_xyz</span><span class="p">())</span>
 
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pts</span><span class="p">)</span></div>
@@ -510,14 +500,14 @@
 <span class="sd">        :returns: buried_surface in A^2</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
-        <span class="kn">from</span> <span class="nn">biobox.measures.calculators</span> <span class="k">import</span> <span class="n">sasa</span>
+        <span class="kn">from</span> <span class="nn">biobox.measures.calculators</span> <span class="kn">import</span> <span class="n">sasa</span>
         
-        <span class="c"># sum asa of individual components</span>
+        <span class="c1"># sum asa of individual components</span>
         <span class="n">asa</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
             <span class="n">asa</span> <span class="o">+=</span> <span class="n">sasa</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
 
-        <span class="c"># subtract assembly asa</span>
+        <span class="c1"># subtract assembly asa</span>
         <span class="n">asa</span> <span class="o">-=</span> <span class="n">sasa</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">asa</span></div>
 
@@ -528,35 +518,356 @@
 <span class="sd">        :param filename: name of pdb file to be produced</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
-        <span class="n">fout</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">)</span>
+        <span class="n">fout</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">99999</span><span class="p">:</span>
+                    <span class="n">idx_val</span> <span class="o">=</span> <span class="nb">hex</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">*</span> <span class="n">j</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># remove 0x at start of hexadecimal number</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">idx_val</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">*</span> <span class="n">j</span>
 
-            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
-                <span class="n">l</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span> <span class="o">*</span> <span class="n">j</span><span class="p">,</span> <span class="s">&quot;SPH&quot;</span><span class="p">,</span> <span class="s">&quot;SPH&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain_names</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">l</span> <span class="o">=</span> <span class="p">(</span><span class="n">idx_val</span><span class="p">,</span> <span class="s2">&quot;SPH&quot;</span><span class="p">,</span> <span class="s2">&quot;SPH&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain_names</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
                      <span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
-                     <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;radius&quot;</span><span class="p">][</span><span class="n">j</span><span class="p">],</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s">&quot;C&quot;</span><span class="p">)</span>
-                <span class="n">L</span> <span class="o">=</span> <span class="s">&#39;ATOM  %5i  %-4s%-4s%1s%4i    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">l</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;radius&quot;</span><span class="p">][</span><span class="n">j</span><span class="p">],</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">)</span>
+                <span class="n">L</span> <span class="o">=</span> <span class="s1">&#39;ATOM  </span><span class="si">%5s</span><span class="s1">  </span><span class="si">%-4s%-4s%1s%4i</span><span class="s1">    </span><span class="si">%8.3f%8.3f%8.3f%6.2f%6.2f</span><span class="s1">          </span><span class="si">%2s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">l</span>
                 <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
 
-        <span class="n">fout</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div></div>
+        <span class="n">fout</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+    <span class="o">@</span> <span class="nb">staticmethod</span>
+    <span class="k">def</span> <span class="nf">_components</span><span class="p">(</span><span class="n">fibertype</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">fibertype</span> <span class="o">==</span> <span class="s1">&#39;pmm&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="s1">&#39;p2&#39;</span><span class="p">,</span> <span class="s1">&#39;pm&#39;</span><span class="p">]</span>
+
+        <span class="c1"># TODO</span>
+        <span class="k">elif</span> <span class="n">fibertype</span> <span class="o">==</span> <span class="s1">&#39;cmm&#39;</span><span class="p">:</span>
+
+            <span class="k">return</span> <span class="p">[</span><span class="s1">&#39;p2&#39;</span><span class="p">,</span> <span class="s1">&#39;cm&#39;</span><span class="p">]</span>
+        <span class="c1"># TODO</span>
+        <span class="k">elif</span> <span class="n">fibertype</span> <span class="o">==</span> <span class="s1">&#39;pmg&#39;</span><span class="p">:</span>
+
+            <span class="k">return</span>
+        
+        <span class="c1"># TODO</span>
+        <span class="k">elif</span> <span class="n">fibertype</span> <span class="o">==</span> <span class="s1">&#39;pgg&#39;</span><span class="p">:</span>
+
+            <span class="k">return</span>
+
+        <span class="c1"># TODO</span>
+        <span class="k">elif</span> <span class="n">fibertype</span> <span class="o">==</span> <span class="s1">&#39;p31m&#39;</span><span class="p">:</span>
+
+            <span class="k">return</span>
+
+        <span class="c1"># TODO</span>
+        <span class="k">elif</span> <span class="n">fibertype</span> <span class="o">==</span> <span class="s1">&#39;p3m1&#39;</span><span class="p">:</span>
+
+            <span class="k">return</span>
+
+        <span class="c1"># TODO</span>
+        <span class="k">elif</span> <span class="n">fibertype</span> <span class="o">==</span> <span class="s1">&#39;p4g&#39;</span><span class="p">:</span>
+
+            <span class="k">return</span>
+
+        <span class="c1"># TODO</span>
+        <span class="k">elif</span> <span class="n">fibertype</span> <span class="o">==</span> <span class="s1">&#39;p4m&#39;</span><span class="p">:</span>
+
+            <span class="k">return</span>
+
+        <span class="c1"># TODO</span>
+        <span class="k">elif</span> <span class="n">fibertype</span> <span class="o">==</span> <span class="s1">&#39;p6m&#39;</span><span class="p">:</span>
+
+            <span class="k">return</span>
+        
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">fibertype</span><span class="p">]</span>
+
+<div class="viewcode-block" id="Assembly.num_units_fiber"><a class="viewcode-back" href="../assembly.html#assembly.Assembly.num_units_fiber">[docs]</a>    <span class="o">@</span> <span class="nb">staticmethod</span>
+    <span class="k">def</span> <span class="nf">num_units_fiber</span><span class="p">(</span><span class="n">Lpx</span><span class="p">,</span> <span class="n">Lpy</span><span class="p">,</span> <span class="n">min_height</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">fibertype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        calculate number of repeting units to be used to form a fiber.</span>
+
+<span class="sd">        :param Lpx: distance of the partner (point that will be superimposed to the origin) along x as number of steps in a 2D tiling.</span>
+<span class="sd">        :param Lpy: distance of the partner (point that will be superimposed to the origin) along y as number of steps in a 2D tiling.</span>
+<span class="sd">        :param min_height: optional, minimal height (number of repeting units along y) of the fiber (if min_height &lt; Lpy, Lpy will be used as height of the fiber). Default is 10.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="n">Nx</span> <span class="o">=</span> <span class="n">Lpx</span>
+        <span class="n">Ny</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">min_height</span><span class="p">,</span> <span class="n">Lpy</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">fibertype</span><span class="p">:</span>
+            <span class="n">components</span> <span class="o">=</span> <span class="n">Assembly</span><span class="o">.</span><span class="n">_components</span><span class="p">(</span><span class="n">fibertype</span><span class="p">)</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">components</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">n</span> <span class="o">*</span> <span class="n">Nx</span><span class="p">,</span> <span class="n">Ny</span></div>
+
+<div class="viewcode-block" id="Assembly.make_fiber"><a class="viewcode-back" href="../assembly.html#assembly.Assembly.make_fiber">[docs]</a>    <span class="k">def</span> <span class="nf">make_fiber</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vx</span><span class="p">,</span> <span class="n">Lpx</span><span class="p">,</span> <span class="n">Lpy</span><span class="p">,</span> <span class="n">vy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">gamma</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">v</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">min_height</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">fibertype</span><span class="o">=</span><span class="s1">&#39;p1oblique&#39;</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        create a fiber, seen as the rolling of a plane with (vx, vy) tiling such that the repeating unit in position (Lpx, Lpy) will be overlapped to the origin.</span>
+
+<span class="sd">        :param vx: distance between two first neighbors along x in a 2D tiling.</span>
+<span class="sd">        :param Lpx: distance of the partner (point that will be superimposed to the origin) along x as number of steps in a 2D tiling.</span>
+<span class="sd">        :param Lpy: distance of the partner (point that will be superimposed to the origin) along y as number of steps in a 2D tiling.</span>
+<span class="sd">        :param vy: optional, distance between two first neighbors along y in a 2D tiling (needed for &#39;p1oblique&#39;, &#39;p1rectangular&#39;, &#39;pm&#39;, &#39;pg&#39;, &#39;p2&#39;, ... fiber types).</span>
+<span class="sd">        :param gamma: optional, angle between vx and vy in rad, needed for &#39;p1oblique&#39; fiber type and ignored for other fiber types (default is pi/2 - equivalent to p1rectangular).</span>
+<span class="sd">        :param min_height: optional, minimal height (number of repeting units along y) of the fiber (if min_height &lt; Lpy, Lpy will be used as height of the fiber). Default is 2.</span>
+<span class="sd">        :param fibertype: optional, can be &#39;p1rectangular&#39;, &#39;p1hexagonal&#39;, &#39;p1oblique&#39;, pm&#39;, &#39;pg&#39;, &#39;cm&#39;, ... (default is &#39;p1oblique&#39;).</span>
+<span class="sd">        :param v: optional, additional parameter needed for &#39;pm&#39;, &#39;pg&#39;, &#39;cm&#39;, &#39;p2&#39;, ... fiber types (default is None). List for composite fibertypes.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">==</span> <span class="nb">int</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">==</span> <span class="nb">float</span><span class="p">:</span>
+            <span class="n">vlist</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vlist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">fibertype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;p1rectangular&#39;</span><span class="p">,</span> <span class="s1">&#39;p1oblique&#39;</span><span class="p">,</span> <span class="s1">&#39;p1hexagonal&#39;</span><span class="p">,</span> <span class="s1">&#39;pm&#39;</span><span class="p">,</span> <span class="s1">&#39;pg&#39;</span><span class="p">,</span> <span class="s1">&#39;cm&#39;</span><span class="p">,</span> <span class="s1">&#39;p2&#39;</span><span class="p">,</span> <span class="s1">&#39;p3&#39;</span><span class="p">,</span> <span class="s1">&#39;p4&#39;</span><span class="p">,</span> <span class="s1">&#39;p6&#39;</span><span class="p">,</span> <span class="s1">&#39;pmm&#39;</span><span class="p">,</span> <span class="s1">&#39;cmm&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;fibertype </span><span class="si">%s</span><span class="s2"> not valid.&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">fibertype</span><span class="p">))</span>
+
+        <span class="k">def</span> <span class="nf">lvalue</span><span class="p">(</span><span class="n">Lx</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">Lx</span> <span class="o">*</span> <span class="n">vx</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">Ly</span> <span class="o">*</span> <span class="n">vy</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">thetavalue</span><span class="p">(</span><span class="n">Lx</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">Ly</span> <span class="o">*</span> <span class="n">vy</span> <span class="p">,</span> <span class="n">Lx</span> <span class="o">*</span> <span class="n">vx</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ZeroDivisionError</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">Ly</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span>
+
+        <span class="k">def</span> <span class="nf">phivalue</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">thetap</span><span class="p">,</span> <span class="n">Lp</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">L</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span> <span class="o">-</span> <span class="n">thetap</span><span class="p">)</span> <span class="o">/</span> <span class="n">Lp</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+            <span class="c1"># return (2 * np.pi * L * np.cos(theta - thetap) / Lp)</span>
+
+
+        <span class="k">def</span> <span class="nf">coords_in_fiber</span><span class="p">(</span><span class="n">Lx</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">,</span> <span class="n">Lp</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">z0</span><span class="p">,</span> <span class="n">thetap</span><span class="p">):</span>
+            <span class="n">L</span> <span class="o">=</span> <span class="n">lvalue</span><span class="p">(</span><span class="n">Lx</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">)</span>
+            <span class="n">theta</span> <span class="o">=</span> <span class="n">thetavalue</span><span class="p">(</span><span class="n">Lx</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">)</span>
+            <span class="n">phi</span> <span class="o">=</span> <span class="n">phivalue</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">thetap</span><span class="p">,</span> <span class="n">Lp</span><span class="p">)</span>
+            <span class="n">Lp2pi</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">Lp</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+            <span class="n">x2</span> <span class="o">=</span> <span class="p">(</span><span class="n">Lp2pi</span> <span class="o">+</span> <span class="n">x0</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">+</span> <span class="n">z0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="o">-</span> <span class="p">(</span><span class="n">Lp2pi</span> <span class="o">+</span> <span class="n">x0</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">+</span> <span class="n">z0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x2</span> <span class="o">+</span> <span class="n">Lp2pi</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">L</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span> <span class="o">-</span> <span class="n">thetap</span><span class="p">)</span> <span class="o">+</span> <span class="n">y0</span>
+            
+            <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span>
+            
+
+        <span class="n">transformations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_components</span><span class="p">(</span><span class="n">fibertype</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">vlist</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">transformations</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> parameters needed for </span><span class="si">%s</span><span class="s2"> fiber but only </span><span class="si">%s</span><span class="s2"> passed.&quot;</span> <span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">transformations</span><span class="p">),</span> <span class="n">fibertype</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">vlist</span><span class="p">)))</span>
+
+        <span class="n">psi</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">nunitsdict</span> <span class="o">=</span><span class="p">{</span><span class="s1">&#39;p1oblique&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s1">&#39;p1rectangular&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s1">&#39;p1hexagonal&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s1">&#39;p2&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="s1">&#39;p3&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="s1">&#39;p4&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="s1">&#39;p6&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+        <span class="s1">&#39;pm&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="s1">&#39;pg&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s1">&#39;cm&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span> <span class="c1"># or cm 1?</span>
+
+        <span class="n">nunits</span> <span class="o">=</span> <span class="p">[</span><span class="n">nunitsdict</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">transformations</span><span class="p">]</span>
+        <span class="n">nunits_tot</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">nunits</span><span class="p">)</span>
+        <span class="n">t_order</span> <span class="o">=</span> <span class="p">[[(</span><span class="n">t</span><span class="p">,</span> <span class="n">v</span><span class="p">)]</span> <span class="o">*</span> <span class="n">n</span> <span class="k">for</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">transformations</span><span class="p">,</span> <span class="n">vlist</span><span class="p">,</span> <span class="n">nunits</span><span class="p">)]</span>
+        <span class="n">t_order</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">sublist</span> <span class="ow">in</span> <span class="n">t_order</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sublist</span><span class="p">]</span>
+
+
+        <span class="k">if</span> <span class="n">Lpx</span> <span class="o">%</span> <span class="n">nunits_tot</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s2">&quot;ERROR: Lpx must be a multiple of </span><span class="si">%s</span><span class="s2"> when doing a </span><span class="si">%s</span><span class="s2"> tiling!&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">nunits_tot</span><span class="p">,</span> <span class="n">fibertype</span><span class="p">))</span>
+
+
+        <span class="k">if</span> <span class="s1">&#39;p1hexagonal&#39;</span> <span class="ow">in</span> <span class="n">transformations</span> <span class="ow">or</span> <span class="s1">&#39;p2&#39;</span> <span class="ow">in</span> <span class="n">transformations</span> <span class="ow">or</span> <span class="s1">&#39;p3&#39;</span> <span class="ow">in</span> <span class="n">transformations</span> <span class="ow">or</span> <span class="s1">&#39;p4&#39;</span> <span class="ow">in</span> <span class="n">transformations</span> <span class="ow">or</span> <span class="s1">&#39;p6&#39;</span> <span class="ow">in</span> <span class="n">transformations</span> <span class="ow">or</span> <span class="s1">&#39;pg&#39;</span> <span class="ow">in</span> <span class="n">transformations</span> <span class="ow">or</span> <span class="s1">&#39;pm&#39;</span> <span class="ow">in</span> <span class="n">transformations</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">Lpy</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s2">&quot;ERROR: Lpy must be even when doing a </span><span class="si">%s</span><span class="s2"> tiling!&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">fibertype</span><span class="p">))</span>
+            <span class="n">vy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">vx</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="k">if</span> <span class="s1">&#39;p6&#39;</span> <span class="ow">in</span> <span class="n">transformations</span><span class="p">:</span>
+                <span class="n">vy</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">vy</span>
+
+        <span class="k">if</span> <span class="s1">&#39;p1oblique&#39;</span> <span class="ow">in</span> <span class="n">transformations</span><span class="p">:</span>
+            <span class="n">vy</span> <span class="o">=</span> <span class="n">vy</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">gamma</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="s1">&#39;p2&#39;</span> <span class="ow">in</span> <span class="n">transformations</span><span class="p">:</span>
+            <span class="n">psi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">vy</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">vx</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">vy</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="s1">&#39;p4&#39;</span> <span class="ow">in</span> <span class="n">transformations</span> <span class="ow">or</span> <span class="s1">&#39;cm&#39;</span> <span class="ow">in</span> <span class="n">transformations</span><span class="p">:</span>
+            <span class="n">vy</span> <span class="o">=</span> <span class="n">vx</span>
+
+        <span class="n">Lp</span> <span class="o">=</span> <span class="n">lvalue</span><span class="p">(</span><span class="n">Lpx</span><span class="p">,</span> <span class="n">Lpy</span><span class="p">,</span> <span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">)</span>
+        <span class="n">thetap</span> <span class="o">=</span> <span class="n">thetavalue</span><span class="p">(</span><span class="n">Lpx</span><span class="p">,</span> <span class="n">Lpy</span><span class="p">,</span> <span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">)</span>
+        <span class="n">Nx</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">Assembly</span><span class="o">.</span><span class="n">num_units_fiber</span><span class="p">(</span><span class="n">Lpx</span><span class="p">,</span> <span class="n">Lpy</span><span class="p">,</span> <span class="n">min_height</span><span class="o">=</span><span class="n">min_height</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">basic_transform</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">Lx</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">fibertype</span><span class="p">,</span> <span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">psi</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">fibertype</span> <span class="o">==</span> <span class="s1">&#39;p1hexagonal&#39;</span> <span class="ow">and</span> <span class="n">Ly</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">Lx</span> <span class="o">+=</span> <span class="mf">.5</span>
+            
+            <span class="k">elif</span> <span class="n">fibertype</span> <span class="o">==</span> <span class="s1">&#39;p1oblique&#39;</span> <span class="ow">and</span> <span class="n">Ly</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">Lx</span> <span class="o">+=</span> <span class="n">vy</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">gamma</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="n">fibertype</span> <span class="o">==</span> <span class="s1">&#39;p2&#39;</span><span class="p">:</span>
+                <span class="n">odd</span> <span class="o">=</span> <span class="p">(</span><span class="n">Ly</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">Lx</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">u</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="mi">180</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c1"># why around x on not z??</span>
+                    <span class="n">Lx</span> <span class="o">+=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">psi</span><span class="p">)</span> <span class="o">/</span> <span class="n">vx</span>
+                    <span class="n">Ly</span> <span class="o">-=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">psi</span><span class="p">)</span> <span class="o">/</span> <span class="n">vy</span>
+                    <span class="n">Lx</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">Lx</span> <span class="o">-=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">psi</span><span class="p">)</span> <span class="o">/</span> <span class="n">vx</span>
+                    <span class="n">Ly</span> <span class="o">+=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">psi</span><span class="p">)</span> <span class="o">/</span> <span class="n">vy</span>
+                <span class="k">if</span> <span class="n">odd</span><span class="p">:</span>
+                    <span class="n">Lx</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="k">elif</span> <span class="n">fibertype</span> <span class="o">==</span> <span class="s1">&#39;p3&#39;</span><span class="p">:</span>
+                <span class="n">odd</span> <span class="o">=</span> <span class="p">(</span><span class="n">Ly</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">Lx</span> <span class="o">%</span> <span class="mi">3</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">u</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="o">-</span><span class="mi">120</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c1"># why around x on not z??</span>
+                    <span class="n">Lx</span> <span class="o">-=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">6</span><span class="p">)</span> <span class="o">/</span> <span class="n">vx</span>
+                    <span class="n">Ly</span> <span class="o">-=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">6</span><span class="p">)</span> <span class="o">/</span> <span class="n">vy</span>
+                    <span class="n">Lx</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="k">elif</span> <span class="n">Lx</span> <span class="o">%</span> <span class="mi">3</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">u</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="mi">120</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c1"># why around x on not z??</span>
+                    <span class="n">Lx</span> <span class="o">+=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">6</span><span class="p">)</span> <span class="o">/</span> <span class="n">vx</span>
+                    <span class="n">Ly</span> <span class="o">-=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">6</span><span class="p">)</span> <span class="o">/</span> <span class="n">vy</span>
+                    <span class="n">Lx</span> <span class="o">-=</span> <span class="mi">2</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">Ly</span> <span class="o">+=</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">/</span> <span class="n">vy</span>
+                <span class="k">if</span> <span class="n">odd</span><span class="p">:</span>
+                    <span class="n">Lx</span> <span class="o">+=</span> <span class="mf">1.5</span>
+
+            <span class="k">elif</span> <span class="n">fibertype</span> <span class="o">==</span> <span class="s1">&#39;p4&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">Lx</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">Ly</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">u</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="o">-</span><span class="mi">90</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                        <span class="n">Lx</span> <span class="o">-=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">/</span> <span class="n">vx</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">u</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="mi">180</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                        <span class="n">Lx</span> <span class="o">+=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">/</span> <span class="n">vx</span>
+                        <span class="n">Lx</span> <span class="o">-=</span> <span class="mi">1</span>
+                                       
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">Ly</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">u</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="mi">90</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                        <span class="n">Lx</span> <span class="o">+=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">/</span> <span class="n">vx</span>
+                        <span class="n">Lx</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">Lx</span> <span class="o">-=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">/</span> <span class="n">vx</span>
+                    <span class="n">Ly</span> <span class="o">-=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">/</span> <span class="n">vy</span> 
+            
+            <span class="k">elif</span> <span class="n">fibertype</span> <span class="o">==</span> <span class="s1">&#39;p6&#39;</span><span class="p">:</span>
+                <span class="n">odd</span> <span class="o">=</span> <span class="p">(</span><span class="n">Ly</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">Lx</span> <span class="o">%</span> <span class="mi">6</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">u</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="o">-</span><span class="mi">60</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c1"># why around x on not z??</span>
+                    <span class="n">Lx</span> <span class="o">+=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">6</span><span class="p">)</span> <span class="o">/</span> <span class="n">vx</span>
+                    <span class="n">Ly</span> <span class="o">+=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">6</span><span class="p">)</span> <span class="o">/</span> <span class="n">vy</span>
+                    <span class="n">Lx</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="k">elif</span> <span class="n">Lx</span> <span class="o">%</span> <span class="mi">6</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">u</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="o">-</span><span class="mi">120</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c1"># why around x on not z??</span>
+                    <span class="n">Lx</span> <span class="o">+=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">6</span><span class="p">)</span> <span class="o">/</span> <span class="n">vx</span>
+                    <span class="n">Ly</span> <span class="o">-=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">6</span><span class="p">)</span> <span class="o">/</span> <span class="n">vy</span>
+                    <span class="n">Lx</span> <span class="o">-=</span> <span class="mi">2</span>
+                <span class="k">elif</span> <span class="n">Lx</span> <span class="o">%</span> <span class="mi">6</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">u</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="o">-</span><span class="mi">180</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c1"># why around x on not z??</span>
+                    <span class="n">Ly</span> <span class="o">-=</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">/</span> <span class="n">vy</span>
+                    <span class="n">Lx</span> <span class="o">-=</span> <span class="mi">3</span>
+                <span class="k">elif</span> <span class="n">Lx</span> <span class="o">%</span> <span class="mi">6</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+                    <span class="n">u</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="o">-</span><span class="mi">240</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c1"># why around x on not z??</span>
+                    <span class="n">Lx</span> <span class="o">-=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">6</span><span class="p">)</span> <span class="o">/</span> <span class="n">vx</span>
+                    <span class="n">Ly</span> <span class="o">-=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">6</span><span class="p">)</span> <span class="o">/</span> <span class="n">vy</span>
+                    <span class="n">Lx</span> <span class="o">-=</span> <span class="mi">4</span>
+                <span class="k">elif</span> <span class="n">Lx</span> <span class="o">%</span> <span class="mi">6</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span>
+                    <span class="n">u</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="o">-</span><span class="mi">300</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c1"># why around x on not z??</span>
+                    <span class="n">Lx</span> <span class="o">-=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">6</span><span class="p">)</span> <span class="o">/</span> <span class="n">vx</span>
+                    <span class="n">Ly</span> <span class="o">+=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">6</span><span class="p">)</span> <span class="o">/</span> <span class="n">vy</span>
+                    <span class="n">Lx</span> <span class="o">-=</span> <span class="mi">5</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">Ly</span> <span class="o">+=</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">/</span> <span class="n">vy</span>
+                <span class="k">if</span> <span class="n">odd</span><span class="p">:</span>
+                    <span class="n">Lx</span> <span class="o">+=</span> <span class="mi">3</span>
+
+            <span class="k">elif</span>  <span class="n">fibertype</span> <span class="o">==</span> <span class="s1">&#39;pm&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">Lx</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">Lx</span> <span class="o">+=</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">/</span> <span class="n">vx</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">u</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                    <span class="n">Lx</span> <span class="o">-=</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">/</span> <span class="n">vx</span>
+
+            <span class="k">elif</span> <span class="n">fibertype</span> <span class="o">==</span> <span class="s1">&#39;pg&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">Ly</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">Lx</span> <span class="o">+=</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">/</span> <span class="n">vx</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">u</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                    <span class="n">Lx</span> <span class="o">-=</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">/</span> <span class="n">vx</span>
+
+            <span class="k">elif</span> <span class="n">fibertype</span> <span class="o">==</span> <span class="s1">&#39;cm&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">Lx</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">Lx</span> <span class="o">+=</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">/</span> <span class="n">vx</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">u</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                    <span class="n">Lx</span> <span class="o">-=</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">/</span> <span class="n">vx</span>
+                <span class="k">if</span> <span class="n">Ly</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">Lx</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="k">return</span> <span class="n">Lx</span><span class="p">,</span> <span class="n">Ly</span>
+
+        <span class="c1"># print(zip(transformations, vlist))</span>
+
+        <span class="n">composite</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">transformations</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">composite</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">transformations</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">vlist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">u</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">):</span>
+                <span class="n">Ly</span> <span class="o">=</span> <span class="n">n</span> <span class="o">/</span> <span class="n">Nx</span>
+                <span class="n">Lx</span> <span class="o">=</span> <span class="n">n</span> <span class="o">%</span> <span class="n">Nx</span>
+                <span class="n">Lx</span><span class="p">,</span> <span class="n">Ly</span> <span class="o">=</span> <span class="n">basic_transform</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">Lx</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">psi</span><span class="p">)</span>
+                <span class="n">coords_fiber</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">coords_in_fiber</span><span class="p">(</span><span class="n">Lx</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">,</span> <span class="n">Lp</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">z0</span><span class="p">,</span> <span class="n">thetap</span><span class="p">)</span> <span class="k">for</span> <span class="p">[</span><span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">z0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">u</span><span class="o">.</span><span class="n">get_xyz</span><span class="p">()])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">set_xyz</span><span class="p">(</span><span class="n">coords_fiber</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">u</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">):</span>
+                <span class="n">Ly</span> <span class="o">=</span> <span class="n">n</span> <span class="o">/</span> <span class="n">Nx</span>
+                <span class="n">Lx</span> <span class="o">=</span> <span class="n">n</span> <span class="o">%</span> <span class="n">Nx</span>
+
+                <span class="n">Lx1</span> <span class="o">=</span> <span class="n">Lx</span>
+                <span class="n">Ly1</span> <span class="o">=</span> <span class="n">Ly</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">transformations</span><span class="p">,</span> <span class="n">vlist</span><span class="p">)):</span>
+                    <span class="n">nu</span> <span class="o">=</span> <span class="n">nunitsdict</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;=</span> <span class="n">nu</span> <span class="o">*</span> <span class="n">i</span><span class="p">:</span>
+                        <span class="n">Lxt</span><span class="p">,</span> <span class="n">Lyt</span> <span class="o">=</span> <span class="n">basic_transform</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">Lx</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">psi</span><span class="p">)</span>
+                        <span class="n">Lx1</span> <span class="o">+=</span> <span class="n">Lxt</span>
+                        <span class="n">Lyt</span> <span class="o">+=</span> <span class="n">Lyt</span>
+
+                <span class="n">Lx</span> <span class="o">=</span> <span class="n">Lx1</span>
+                <span class="n">Ly</span> <span class="o">=</span> <span class="n">Ly1</span>
+                <span class="n">coords_fiber</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">coords_in_fiber</span><span class="p">(</span><span class="n">Lx</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">,</span> <span class="n">Lp</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">z0</span><span class="p">,</span> <span class="n">thetap</span><span class="p">)</span> <span class="k">for</span> <span class="p">[</span><span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">z0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">u</span><span class="o">.</span><span class="n">get_xyz</span><span class="p">()])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">set_xyz</span><span class="p">(</span><span class="n">coords_fiber</span><span class="p">)</span></div></div>
+
+
+
+        
 </pre></div>
 
+            <div class="clearer"></div>
           </div>
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
     </form>
+    </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -571,12 +882,13 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">biobox 1.0 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="index.html" >Module code</a> &#187;</li> 
+          <li class="nav-item nav-item-1"><a href="index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">assembly</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2017, Matteo Degiacomi.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+        &#169; Copyright 2021, Matteo Degiacomi.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.0.2.
     </div>
   </body>
 </html>
