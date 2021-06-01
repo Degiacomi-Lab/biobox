@@ -67,3 +67,7 @@ doc/_templates/
 
 # files generated during testing
 test/params
+
+# cython-generated files
+lib/*.c
+*.c
