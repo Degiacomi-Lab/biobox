@@ -32,8 +32,6 @@ Optional external software:
 * CCS calculation relies on a call to IMPACT (requires IMPACTPATH environment variable)
 * SAXS simulations rely on a call to crysol, from ATSAS suite (requires ATSASPATH environment variable)
 
-## CREDITS
+## CITATION
 
-* Importing of MRC format maps adapted from [CHIMERA](https://www.cgl.ucsf.edu/chimera/)
-* Kabsch algorithm for RMSD calculation adapted from [Pymol](https://www.pymol.org/)
-* A* implementation from [redblobgames](http://www.redblobgames.com)
+A publication is currently in preparation. If you use BiobOx in your work, please cite this repository.
