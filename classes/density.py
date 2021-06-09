@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2017 Matteo Degiacomi
+# Copyright (c) 2014-2021 Matteo Degiacomi
 #
 # BiobOx is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
@@ -9,7 +9,7 @@
 # You should have received a copy of the GNU General Public License along with BiobOx ;
 # if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #
-# Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com
+# Author : Matteo Degiacomi, matteo.degiacomi@gmail.com
 
 import os
 
@@ -266,13 +266,12 @@ class Density(Structure):
 
             self.add_xyz(pts2)
 
-
         else:
             self.add_xyz(points)
 
-        #update radii list (useful for instance for CCS calculation)
+        # update radii list (useful for instance for CCS calculation)
         idx = np.arange(len(self.points))
-        self.data = pd.DataFrame(idx, index=idx, columns=["radius"])
+        self.data = pd.DataFrame(self.properties["radius"], index=idx, columns=["radius"])
 
         # self.get_center()
 
@@ -330,7 +329,7 @@ class Density(Structure):
             try:
                 self.place_points(thresh, noise_filter)
                 vol = self.get_volume()
-                ccs = bb.ccs(self, scale=False)
+                ccs = bb.ccs(self)
             except Exception as ex:
                 vol = 0
                 ccs = 0
@@ -345,6 +344,7 @@ class Density(Structure):
         else:
             return self.properties['scan'][
                 np.argmin(np.abs(self.properties['scan'][:, 0] - sigma))]
+
 
     def find_data_from_volume(self, vol):
         '''
@@ -385,9 +385,8 @@ class Density(Structure):
         for thresh in np.linspace(low, high, num=sampling_points):
             try:
                 self.place_points(thresh, noise_filter=noise_filter)
-                print("placed!")
                 vol = self.get_volume()
-                ccs = bb.ccs(self, scale=False)
+                ccs = bb.ccs(self)
             except Exception as ex:
                 vol = 0
                 ccs = 0
@@ -639,6 +638,7 @@ class Density(Structure):
         except Exception as e:
             raise Exception("%s" % e)
 
+
     def get_volume(self):
         '''
         compute density map volume. This is done by counting the points, and multiplying that by voxels' volume.
@@ -658,10 +658,10 @@ if __name__ == "__main__":
     print("loading density...")
     D = bb.Density()
     D.import_map("..\\test\\EMD-1080.mrc", "mrc")
+
+    print(D.properties["density"].shape)
     
-    print("placing points...")
-    D.place_points(6, noise_filter=0)
+    D.place_points(4)
     
-    
-    print("one point of CCS calculation...")
-    D.threshold_vol_ccs(sampling_points=1, append=False, noise_filter=0)
+    #print("one point of CCS calculation...")
+    D.threshold_vol_ccs(sampling_points=10, append=False)#, noise_filter=1)

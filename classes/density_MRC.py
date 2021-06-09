@@ -978,7 +978,7 @@ data_cache = Data_Cache(size = 0)
 
 if __name__=="__main__":
 
-    filename="EMD-1080.mrc"
+    filename = "..\\test\\EMD-1080.mrc"
     
     #try:
     [density,data] = read_density(filename, 'mrc')
