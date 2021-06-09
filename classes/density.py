@@ -275,6 +275,76 @@ class Density(Structure):
 
         # self.get_center()
 
+    def predict_ccs_from_mass(self, resolution, mass, density=0.84, x0=2.51911893, y0=-1.06481492, c=2.7018764, k=0.44084821):
+
+        '''
+        given target mass and map resolution, predict CCS. Mass threshold is rescaled using the fitting function c / (1 + exp(-k*(resolution-x0))) + y0.
+        
+        :param resolution: map resolution in 1/Angstrom
+        :param mass: protein mass in kDa
+        :param density: protein density in Da/A3
+        :param x0: sigmoid parameter
+        :param y0: sigmoid parameter
+        :param c: sigmoid parameter
+        :param k: sigmoid parameter
+        :returns CCS estimated from mass and density map resolution
+        '''        
+
+        if 'scan' not in list(self.properties):
+            raise IOError("no threshold to volume to CCS relationship loaded yet. Please execute thresh_vol_ccs method.")
+        
+        data=self.properties['scan'].copy()
+        data[:,1]*=density
+        data[:,1]/=1000.0
+
+        #get mass threshold
+        dtest1=np.argmin(np.abs(data[:,1]-mass))
+        thresh=data[dtest1,0]
+        
+        #rescale mass threshold
+        scaling= c / (1 + np.exp(-k*(resolution-x0))) + y0
+        calibrated_thresh=thresh/scaling
+        
+        #get associated CCS
+        dtest1=np.argmin(np.abs(data[:,0]-calibrated_thresh))
+        return data[dtest1,2], data[dtest1,0]
+        
+        
+
+    def predict_mass_from_ccs(self, resolution, ccs, density=0.84, x0=2.51911893, y0=-1.06481492, c=2.7018764, k=0.44084821):
+        '''
+        given target mass and map resolution, predict CCS. Mass threshold is rescaled using the fitting function c / (1 + exp(-k*(resolution-x0))) + y0.
+    
+        :param resolution: map resolution in 1/Angstrom
+        :param mass: protein mass in kDa
+        :param density: protein density in Da/A3
+        :param x0: sigmoid parameter
+        :param y0: sigmoid parameter
+        :param c: sigmoid parameter
+        :param k: sigmoid parameter
+        :returns CCS estimated from mass and density map resolution
+        '''
+        
+        if 'scan' not in list(self.properties):
+            raise IOError("no threshold to volume to CCS relationship loaded yet. Please execute thresh_vol_ccs method.")
+        
+        data=self.properties['scan'].copy()
+        data[:,1]*=density
+        data[:,1]/=1000.0
+
+        #get mass threshold
+        dtest1=np.argmin(np.abs(data[:,2]-ccs))
+        thresh=data[dtest1,0]
+        
+        #rescale mass threshold
+        scaling= c / (1 + np.exp(-k*(resolution-x0))) + y0
+        calibrated_thresh=thresh*scaling
+        
+        #get associated CCS
+        dtest1=np.argmin(np.abs(data[:,0]-calibrated_thresh))
+        return data[dtest1,1], data[dtest1,0]
+
+
     def scan_threshold(self, mass, density=0.782878356, sampling_points=1000):
         '''
         if mass and density of object are known, filter the map on a linear scale of threshold values, and compare the obtained mass to the experimental one.
