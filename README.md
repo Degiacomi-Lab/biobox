@@ -15,7 +15,7 @@ Allowed operations on structures incude:
 * shortest solvent accessible path between atoms on molecule (using lazy Theta* or A*)
 * density map simulation, 
 
-See full documentation and examples [here](https://degiacom.github.io/biobox/).
+See full documentation and examples [here](https://degiacom.github.io/biobox/). A Jupyter notebook presenting BiobOx's main functionalities is available [here](https://github.com/degiacom/biobox_notebook).
 
 ## INSTALLATION AND REQUIREMENTS
 
