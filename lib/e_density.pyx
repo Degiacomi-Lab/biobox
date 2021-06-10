@@ -214,6 +214,8 @@ cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_
                 elif eqn == 'slater':
                     gauss = np.exp(-np.sqrt((x * x + y * y + z * z)) / (2. * sigma[sigmanonzero[0][i]][sigmanonzero[1][i]][sigmanonzero[2][i]]**2))   # Create Slater functional with specific sigma from e density
                 pts_range = int(((len(mesh) + 1.) / 2.))
+                # an error of 'operands could not be broadcast together with shapes (4,3,4) (4,4,4) (4,3,4) ' etc. indicates a lack of buffer zone in the coordinates
+                # so fix in build_maps.py
                 pts[sigmanonzero[0][i] - pts_range : sigmanonzero[0][i] + pts_range ,
                     sigmanonzero[1][i] - pts_range : sigmanonzero[1][i] + pts_range ,
                     sigmanonzero[2][i] - pts_range : sigmanonzero[2][i] + pts_range ] += gauss # move 1 ahead duye to python numbering
@@ -302,16 +304,14 @@ cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_
         
     D = Density()
 
-    D.properties['density'] = pts
-    D.properties['size'] = np.array(pts.shape)
+    D.properties['density'] = pts #epsilon #pts 
+    D.properties['size'] = np.array(pts.shape) #epsilon.shape #np.array(pts.shape) 
     D.properties['origin'] = np.array(min_val)  
     D.properties['delta'] = np.identity(3) * resolution #(step size)
     D.properties['format'] = 'dx'
     D.properties['filename'] = ''
-    D.properties['sigma'] = np.std(pts)
+    D.properties['sigma'] = np.std(pts) #np.std(epsilon) #np.std(pts) 
     
     D.write_dx(outname)
 
     return 0
-
-

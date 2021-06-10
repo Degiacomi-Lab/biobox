@@ -170,9 +170,10 @@ class Structure(object):
         self.properties['center'][1] += y
         self.properties['center'][2] += z
 
-        self.points[:, 0] += x
-        self.points[:, 1] += y
-        self.points[:, 2] += z
+        # move every frame with first :
+        self.coordinates[:, :, 0] += x
+        self.coordinates[:, :, 1] += y
+        self.coordinates[:, :, 2] += z
 
     def rotate(self, x, y, z):
         '''
@@ -317,6 +318,9 @@ class Structure(object):
         # set I [draw principalaxes $sel]           <--- recalc principal axes
         # to check
 
+        # this align axes has been modified to allow us to backmap a structure after alignment
+        c = self.get_center()
+
         # center the Structure
         self.center_to_origin()
 
@@ -329,8 +333,8 @@ class Structure(object):
         cosine = np.dot(axes[0], np.array([1, 0, 0]))
         angle = np.arctan2(sine, cosine)  # angle to rotate around axis
 
-        rotmatrix = self.rotation_matrix(rotvec, angle)
-        self.apply_transformation(rotmatrix)
+        rotmatrix0 = self.rotation_matrix(rotvec, angle)
+        self.apply_transformation(rotmatrix0)
 
         # compute new principal axes (after previous rotation)
         axes = self.get_principal_axes()
@@ -341,8 +345,12 @@ class Structure(object):
         cosine = np.dot(axes[1], np.array([0, 1, 0]))
         angle = np.arctan2(sine, cosine)  # angle to rotate around axis
 
-        rotmatrix = self.rotation_matrix(rotvec, angle)
-        self.apply_transformation(rotmatrix)
+        rotmatrix1 = self.rotation_matrix(rotvec, angle)
+        self.apply_transformation(rotmatrix1)
+
+        # return the center and matrix for backmapping
+        # do the opposite of these transformations
+        return c, rotmatrix0, rotmatrix1
 
     def write_pdb(self, filename, index=[]):
         '''
@@ -501,7 +509,7 @@ class Structure(object):
         dist = np.array(d)
         return np.sqrt(np.sum(dist, axis=0) / (float(self.coordinates.shape[0]) * step))
 
-    def pca(self, components, indices=[]):
+    def pca(self, components, indices=-1):
         '''
         compute Principal Components Analysis (PCA) on specific points within all the alternative coordinates.
 
@@ -514,7 +522,7 @@ class Structure(object):
         from sklearn.decomposition import PCA
 
         # define conformational space (flatten coordinates of desired atoms
-        if len(indices) != 0:
+        if indices != -1:
             X = self.coordinates[:, indices].reshape(
                      (len(self.coordinates), len(indices) * 3))
         else:
