@@ -51,7 +51,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'biobox'
-copyright = u'2017, Matteo Degiacomi'
+copyright = u'2021, Matteo Degiacomi'
 author = u'Matteo Degiacomi'
 
 # The version info for the project you're documenting, acts as replacement for

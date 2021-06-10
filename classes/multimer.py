@@ -35,7 +35,7 @@ class Multimer(Polyhedron):
         idx = self.data.query(query_text).index.values
 
         res = self.data.iloc[idx] #this is a new sliced dataframe
-        targets = np.array(res.ix[:, ["unit", "unit_index"]].values)
+        targets = np.array(res.loc[:, ["unit", "unit_index"]].values)
 
         # append the coordinates of every unit within the query
         pts = np.empty([0, 3])
@@ -65,7 +65,7 @@ class Multimer(Polyhedron):
 
         # extract id of units of interest
         if u == '*':
-            unit_id = self.unit_labels.values()
+            unit_id = list(self.unit_labels.values())
         else:
             if isinstance(u, str) or isinstance(u, int):
                 try:
@@ -192,7 +192,7 @@ class Multimer(Polyhedron):
         :returns: slice of molecule's data DataFrame
         '''
 
-        return self.data.ix[indices, columns].values
+        return self.data.loc[indices, columns].values
 
     def write_pdb(self, outname):
         '''

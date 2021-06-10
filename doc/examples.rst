@@ -132,7 +132,8 @@ To see how your scaffold looks like, a pdb file containing the vertices and an a
 This will generate two files architecture.pdb and architecture.tcl.
 The initial unit-sized scaffold will scaled by 10, and the first vertex moved away radially.
 
-.. seealso:: Protein polyhedral assemblies consistent with experimental data were generated in `Elisabeth's papers <http://awesome_link.com>`_
+.. seealso:: this method was used to build polyhedral assemblies consistent with experimental data in `I. Santhanagopalan I. et al., It takes a dimer to tango: Oligomeric small heat shock proteins dissociate to capture substrate, Journal of Biological Chemisty, 2018 <https://www.jbc.org/content/293/51/19511.long>`_
+
 
 
 super coarse-grain modelling 
@@ -286,4 +287,10 @@ We will use a lazy Theta* method, with flexible side chains, and path smoothing 
 distance_mat is the distance matrix between all lysines, sorted according to idx.
 It will contain -1 for lysine's linking atoms too far to be encompassed by the moving grid, and -2 for failed path detection (e.g. because a linking atom is buried).
 
-.. seealso:: this method is presented and benchmarked in `M. T. Degiacomi et al., Accommodating protein dynamics in the analysis of chemical cross-links, nice journal, 2017 <http://awesome_link.com>`_
+.. seealso:: this method is presented and benchmarked in `M. T. Degiacomi et al., Accommodating protein dynamics in the analysis of chemical cross-links, Structure, 2017 <https://www.sciencedirect.com/science/article/pii/S0969212617302915?via%3Dihub>`_
+
+
+
+
+
+

@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2017 Matteo Degiacomi
+# Copyright (c) 2014-2021 Matteo Degiacomi
 #
 # BiobOx is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
@@ -9,7 +9,7 @@
 # You should have received a copy of the GNU General Public License along with BiobOx ;
 # if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #
-# Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com
+# Author : Matteo Degiacomi, matteo.degiacomi@gmail.com
 
 import os
 
@@ -266,15 +266,84 @@ class Density(Structure):
 
             self.add_xyz(pts2)
 
-
         else:
             self.add_xyz(points)
 
-        #update radii list (useful for instance for CCS calculation)
+        # update radii list (useful for instance for CCS calculation)
         idx = np.arange(len(self.points))
-        self.data = pd.DataFrame(idx, index=idx, columns=["radius"])
+        self.data = pd.DataFrame(self.properties["radius"], index=idx, columns=["radius"])
 
         # self.get_center()
+
+    def predict_ccs_from_mass(self, resolution, mass, density=0.84, x0=2.51911893, y0=-1.06481492, c=2.7018764, k=0.44084821):
+
+        '''
+        given target mass and map resolution, predict CCS. Mass threshold is rescaled using the fitting function c / (1 + exp(-k*(resolution-x0))) + y0.
+        
+        :param resolution: map resolution in 1/Angstrom
+        :param mass: protein mass in kDa
+        :param density: protein density in Da/A3
+        :param x0: sigmoid parameter
+        :param y0: sigmoid parameter
+        :param c: sigmoid parameter
+        :param k: sigmoid parameter
+        :returns CCS estimated from mass and density map resolution
+        '''        
+
+        if 'scan' not in list(self.properties):
+            raise IOError("no threshold to volume to CCS relationship loaded yet. Please execute thresh_vol_ccs method.")
+        
+        data=self.properties['scan'].copy()
+        data[:,1]*=density
+        data[:,1]/=1000.0
+
+        #get mass threshold
+        dtest1=np.argmin(np.abs(data[:,1]-mass))
+        thresh=data[dtest1,0]
+        
+        #rescale mass threshold
+        scaling= c / (1 + np.exp(-k*(resolution-x0))) + y0
+        calibrated_thresh=thresh/scaling
+        
+        #get associated CCS
+        dtest1=np.argmin(np.abs(data[:,0]-calibrated_thresh))
+        return data[dtest1,2], data[dtest1,0]
+        
+        
+
+    def predict_mass_from_ccs(self, resolution, ccs, density=0.84, x0=2.51911893, y0=-1.06481492, c=2.7018764, k=0.44084821):
+        '''
+        given target mass and map resolution, predict CCS. Mass threshold is rescaled using the fitting function c / (1 + exp(-k*(resolution-x0))) + y0.
+    
+        :param resolution: map resolution in 1/Angstrom
+        :param mass: protein mass in kDa
+        :param density: protein density in Da/A3
+        :param x0: sigmoid parameter
+        :param y0: sigmoid parameter
+        :param c: sigmoid parameter
+        :param k: sigmoid parameter
+        :returns CCS estimated from mass and density map resolution
+        '''
+        
+        if 'scan' not in list(self.properties):
+            raise IOError("no threshold to volume to CCS relationship loaded yet. Please execute thresh_vol_ccs method.")
+        
+        data=self.properties['scan'].copy()
+        data[:,1]*=density
+        data[:,1]/=1000.0
+
+        #get mass threshold
+        dtest1=np.argmin(np.abs(data[:,2]-ccs))
+        thresh=data[dtest1,0]
+        
+        #rescale mass threshold
+        scaling= c / (1 + np.exp(-k*(resolution-x0))) + y0
+        calibrated_thresh=thresh*scaling
+        
+        #get associated CCS
+        dtest1=np.argmin(np.abs(data[:,0]-calibrated_thresh))
+        return data[dtest1,1], data[dtest1,0]
+
 
     def scan_threshold(self, mass, density=0.782878356, sampling_points=1000):
         '''
@@ -330,7 +399,7 @@ class Density(Structure):
             try:
                 self.place_points(thresh, noise_filter)
                 vol = self.get_volume()
-                ccs = bb.ccs(self, scale=False)
+                ccs = bb.ccs(self)
             except Exception as ex:
                 vol = 0
                 ccs = 0
@@ -345,6 +414,7 @@ class Density(Structure):
         else:
             return self.properties['scan'][
                 np.argmin(np.abs(self.properties['scan'][:, 0] - sigma))]
+
 
     def find_data_from_volume(self, vol):
         '''
@@ -385,9 +455,8 @@ class Density(Structure):
         for thresh in np.linspace(low, high, num=sampling_points):
             try:
                 self.place_points(thresh, noise_filter=noise_filter)
-                print("placed!")
                 vol = self.get_volume()
-                ccs = bb.ccs(self, scale=False)
+                ccs = bb.ccs(self)
             except Exception as ex:
                 vol = 0
                 ccs = 0
@@ -413,7 +482,8 @@ class Density(Structure):
 
         .. note:: in proteins, an average value of 1.3 g/cm^3 (0.782878356 Da/A^3) can be assumed. Alternatively, the relation density=1.410+0.145*exp(-mass(kDa)/13) can be used.
 
-        .. note:: 1 Da/A^3=0.602214120 g/cm^3mod2_WT_roomtemp_emd_2289.mrc
+        .. note:: 1 Da/A^3=1.660538946 g/cm^3
+        .. note:: 1 g/cm^3=0.602214120 Da/A^3
 
         :param mass: target mass in Da
         :param density: target density in Da/A^3
@@ -638,6 +708,7 @@ class Density(Structure):
         except Exception as e:
             raise Exception("%s" % e)
 
+
     def get_volume(self):
         '''
         compute density map volume. This is done by counting the points, and multiplying that by voxels' volume.
@@ -657,10 +728,10 @@ if __name__ == "__main__":
     print("loading density...")
     D = bb.Density()
     D.import_map("..\\test\\EMD-1080.mrc", "mrc")
+
+    print(D.properties["density"].shape)
     
-    print("placing points...")
-    D.place_points(6, noise_filter=0)
+    D.place_points(4)
     
-    
-    print("one point of CCS calculation...")
-    D.threshold_vol_ccs(sampling_points=1, append=False, noise_filter=0)
+    #print("one point of CCS calculation...")
+    D.threshold_vol_ccs(sampling_points=10, append=False)#, noise_filter=1)

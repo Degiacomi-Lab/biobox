@@ -74,11 +74,11 @@ class Molecule(Structure):
                                       "CD": "C", "CE": "C", "CE1": "C", "CE2": "C", "CE3": "C", "CZ2": "C", "CZ3": "C", "CH2": "C",
                                       "N": "N", "NH1": "N", "NH2": "N", "NZ": "N", "NE": "N", "NE1": "N", "NE2": "N", "ND1": "N", "ND2": "N",
                                       "O": "O", "OG": "O", "OG1": "O", "OG2": "O", "OD1": "O", "OD2": "O", "OE1": "O", "OE2": "O", "OH": "O", "OXT": "O",
-                                      "SD": "S", "SG": "S", "H": "H", "HA": "H", "HB1": "H", "HB2": "H", "HE1": "H", "HE2": "H", "HD1": "H", "HD2": "H", 
-                                      "H1": "H", "H2": "H", "H3": "H", "HH11": "H", "HH12": "H", "HH21": "H", "HH22": "H", "HG1": "H", "HG2": "H", "HE21": "H", 
-                                      "HE22": "H", "HD11": "H", "HD12": "H", "HD13": "H", "HD21": "H", "HD22": "H", "HG11": "H", "HG12": "H", "HG13": "H", 
-                                      "HG21": "H", "HG22": "H", "HG23": "H", "HZ2": "H", "HZ3": "H", "HZ": "H", "HA1": "H", "HA2": "H", "HB": "H", "HD3": "H", 
-                                      "HG": "H", "HZ1": "H", "HE3": "H", "HB3": "H", "HH1": "H", "HH2": "H", "HD23": "H", "HD13": "H", "HE": "H", "HH": "H", 
+                                      "SD": "S", "SG": "S", "H": "H", "HA": "H", "HB1": "H", "HB2": "H", "HE1": "H", "HE2": "H", "HD1": "H", "HD2": "H",
+                                      "H1": "H", "H2": "H", "H3": "H", "HH11": "H", "HH12": "H", "HH21": "H", "HH22": "H", "HG1": "H", "HG2": "H", "HE21": "H",
+                                      "HE22": "H", "HD11": "H", "HD12": "H", "HD13": "H", "HD21": "H", "HD22": "H", "HG11": "H", "HG12": "H", "HG13": "H",
+                                      "HG21": "H", "HG22": "H", "HG23": "H", "HZ2": "H", "HZ3": "H", "HZ": "H", "HA1": "H", "HA2": "H", "HB": "H", "HD3": "H",
+                                      "HG": "H", "HZ1": "H", "HE3": "H", "HB3": "H", "HH1": "H", "HH2": "H", "HD23": "H", "HD13": "H", "HE": "H", "HH": "H",
                                       "OC1": "O", "OC2": "O", "OW": "O", "HW1": "H", "HW2": "H", "CH3" : "C", "HH31" : "H", "HH32" : "H", "HH33" : "H",
                                       "C00" : "C", "C01" : "C", "C02" : "C", "C04" : "C", "C06" : "C", "C08" : "C", "H03" : "H", "H05" : "H", "H07" : "H",
                                       "H09" : "H", "H0A" : "H", "H0B" : "H", "N01" : "N", "C03": "C", "C05": "C", "O06": "O", "H08": "H", "H0C": "H", "H0D": "H", 
@@ -548,7 +548,7 @@ class Molecule(Structure):
         '''
         guess atomtype from atom names
         '''
-        
+
         a_type = []
         for i in range(0, len(self.data), 1):
             atom = self.data["name"].values[i]
@@ -840,7 +840,7 @@ class Molecule(Structure):
             d_data = []
             while cnt < atoms:
                 w = fin.readline()
-                # Read array as defined by .gro style characters (res int, res, atomtype, int, x_coord, y_coord, z_coord) 
+                # Read array as defined by .gro style characters (res int, res, atomtype, int, x_coord, y_coord, z_coord)
                 w = [w[0:5].strip(), w[5:10].strip(), w[10:15].strip(), w[15:20].strip(), w[20:28].strip(), w[28:36].strip(), w[36:44].strip()]
                 resname = w[1]; resnumber=w[0]
 
@@ -908,10 +908,10 @@ class Molecule(Structure):
             return self.data[columns].values
 
         elif len(indices) != 0 and len(columns) == 0:
-            return self.data.ix[indices].values
+            return self.data.loc[indices].values
 
         else:
-            return self.data.ix[indices, columns].values   
+            return self.data.loc[indices, columns].values
 
 
     def set_data(self, value, indices=[], columns=[]):
@@ -971,7 +971,7 @@ class Molecule(Structure):
                 chain_query = np.array([True] * len(self.points))
             else:
                 chain_query = self.data["chain"].values == chain
-                
+
         elif isinstance(chain, list) or type(chain).__module__ == 'numpy':
             chain_query = self.data["chain"].values == chain[0]
             for c in range(1, len(chain), 1):
@@ -1305,14 +1305,14 @@ class Molecule(Structure):
             f_out.write("MODEL        %i\n"%(cnt+1))
             self.set_current(f)
             d = self.get_pdb_data(index)
-            
+
             # Build our hexidecimal array if num. of atoms > 99999
             idx_val = np.arange(1, len(d) + 1, 1)
             if len(idx_val) > 99999:
                 vhex = np.vectorize(hex)
                 idx_val = vhex(idx_val)   # convert index values to hexidecimal
                 idx_val = [num[2:] for num in idx_val]  # remove 0x at start of hexidecimal number
-            
+
             # prep for termination lines
             no, split, _ = self.guess_chain_split()
             split = np.asarray(split[1:]) -1 # don't need starting atom, and we want to shift down to end of last residue
@@ -1581,7 +1581,7 @@ class Molecule(Structure):
         '''
         compute the protein's secondary structure, calling DSSP
         :param dssp_path: DSSP executable (path and filename). If not provided, the default behaviour is to seek for this information in the environment variable DSSPPATH
-        :returns: numpy array of characters, with one-letter-coded secondary sctructure according to DSSP. 
+        :returns: numpy array of characters, with one-letter-coded secondary sctructure according to DSSP.
         '''
         #dssp="~/bin/dssp-2.0.4-linux-amd64"
         if dssp_path == '':
@@ -1591,7 +1591,7 @@ class Molecule(Structure):
                 raise Exception("DSSPPATH environment variable undefined")
 
         # generate temporary PDB and calculate secondary structure using DSSP
-        self.write_pdb("tmp.pdb", conformations=[self.current]) 
+        self.write_pdb("tmp.pdb", conformations=[self.current])
 
         #TMP: assign all atoms to structure
         #subprocess.check_call('~/bin/amber16_tmp/bin/tleap -f build > /dev/null', shell=True)
@@ -1629,7 +1629,7 @@ class Molecule(Structure):
         os.remove("tmp.pdb")
 
         return np.array(secstruct) #(secstruct[0:210])
-        
+
 
     def get_couples(self, idx, cutoff):
         '''
@@ -1655,6 +1655,7 @@ class Molecule(Structure):
                 res.append([idx[c[0]], idx[c[1]], dist[c[0], c[1]]])
 
         return np.array(res)
+
     
     def match_residue(self, M2, sec = 3):
         '''
@@ -1710,7 +1711,7 @@ class Molecule(Structure):
         # Rename residues temporararily so they match better
         M1_reslist[np.logical_or(np.logical_or(M1_reslist == 'HIE', M1_reslist == 'HIP'), M1_reslist == 'HID')] = 'HIS'
         M2_reslist[np.logical_or(np.logical_or(M2_reslist == 'HIE', M2_reslist == 'HIP'), M2_reslist == 'HID')] = 'HIS'
-        
+
         M1_reskeep = []
         M2_reskeep = []
         M2_cnt = 0
@@ -1720,7 +1721,7 @@ class Molecule(Structure):
 
             # Initial check to see if we have a run of good matches (more than coincidence)
             if np.all(M1_reslist[M1_cnt:(M1_cnt + sec)] == M2_reslist[M2_cnt:(M2_cnt + sec)]):
-        
+
                 while M1_reslist[M1_cnt] == M2_reslist[M2_cnt]:
 
                     M1_reskeep.append(M1_resid[M1_cnt])
@@ -1728,7 +1729,7 @@ class Molecule(Structure):
 
                     M2_cnt += 1
                     M1_cnt += 1
-                    
+
                     # Break if we reach the maximum array length limit
                     if M1_cnt == len(M1_reslist) or M2_cnt == len(M2_reslist):
                         break
@@ -1745,7 +1746,7 @@ class Molecule(Structure):
                             break
                         else:
                             continue
-        
+
             # Elsewise move forward in count on second structure
             else:
                 M2_cnt += 1
@@ -1772,11 +1773,11 @@ class Molecule(Structure):
         regarding atom indexes, types etc. in the self.data files.
         It outputs a panda dataframe with the pqr equivilent information. It requires a datafile forcefield input.
         The default is the amber14sb forcefield file held within the classes/ folder.
-        
+
         :param ff: name of forcefield text file input that needs to be read to read charges / vdw radii.
         :param amber_convert: If True, will assume forcefield is amber and convert resnames as necessary
         '''
-
+        
         intervals = self.guess_chain_split()[1]
 
         if amber_convert:
@@ -1873,45 +1874,45 @@ class Molecule(Structure):
             #"amber14sb.dat"
             folder = os.path.dirname(os.path.realpath(__file__))
             ff = "%s/amber14sb.dat" % folder
-            
+
         if os.path.isfile(ff) != 1:
             raise Exception("ERROR: %s not found!" % ff)
-        
+
         ff = np.loadtxt(ff, usecols=(0,1,2,3,4), dtype=str)
-                        
+
         cols = ['resname', 'name', 'charge', 'radius', 'atomtype'] # where radius is the VdW radius in the amber file
         idx = np.arange(len(ff))
         pqr_data = pd.DataFrame(ff, index=idx, columns=cols)
-    
+
         charges = []
         radius = []
         atomtypes = []
 
         # Move through each line in the pdb.data file and find the corresponding charge / vdw radius as supplied by the forcefield
         for i, resnames in enumerate(self.data["resname"]):
-            values_res = pqr_data["resname"] == resnames 
+            values_res = pqr_data["resname"] == resnames
             values_name = pqr_data["name"] == self.data["name"][i]
             values = np.logical_and(values_res, values_name)
             value_loc = pqr_data[values]
-      
+
             if len(value_loc) == 0:
                 print(value_loc, resnames, self.data["name"][i], self.data["resname"][i], self.data["resid"].iloc[i], self.data["index"].iloc[i])
                 raise Exception("ERROR: The atom names in your PDB file do not match the PQR file")
             else:
                 charges.append(float(value_loc.iloc[0]["charge"]))
                 radius.append(float(value_loc.iloc[0]["radius"]))
-                atomtypes.append(value_loc.iloc[0]["atomtype"]) 
-        
-        # Drop the beta factor / occupancy data to be replaced with charge / vdw radius numbers    
+                atomtypes.append(value_loc.iloc[0]["atomtype"])
+
+        # Drop the beta factor / occupancy data to be replaced with charge / vdw radius numbers
         pqr = self.data.drop(['atomtype', 'radius', 'charge'], axis=1) #  remove obselete data
         pqr['atomtype'] = atomtypes  # Replace with Amber derived data for each atom
         pqr['radius'] = radius
         pqr['charge'] = charges
-    
+
         print("Conversion Complete")
-    
+
         return pqr
-    
+
     def write_pqr(self, outname, conformations=[], index=[]):
         '''
         overload superclass method for writing (multi)pqr.
@@ -1924,7 +1925,7 @@ class Molecule(Structure):
         # store current frame, so it will be reestablished after file output is
         # complete
         currentbkp = self.current
-        
+
         # if a subset of all available frames is requested to be written,
         # select them first
         if len(conformations) == 0:
@@ -1944,17 +1945,17 @@ class Molecule(Structure):
             # get all informations from PDB (for current conformation) in a list
             self.set_current(f)
             d = self.get_pdb_data(index)
-            
-            # Get our 
-            
-            
+
+            # Get our
+
+
             # Build our hexidecimal array if num. of atoms > 99999
             idx_val = np.arange(1, len(d) + 1, 1)
             if len(idx_val) > 99999:
                 vhex = np.vectorize(hex)
                 idx_val = vhex(idx_val)   # convert index values to hexidecimal
                 idx_val = [num[2:] for num in idx_val]  # remove 0x at start of hexidecimal number
-            
+
             for i in range(0, len(d), 1):
                 # create and write PDB line
                 if d[i][2][0].isdigit():
@@ -2065,6 +2066,7 @@ class Molecule(Structure):
 
         return A.get_subset(idx_remove, flip=True)
 
+
     def get_dipole_map(self, orig, pqr, time_start = 0, time_end = 2,resolution = 1., vox_in_window = 3., write_dipole_map = True, fname = "dipole_map.tcl"):
         '''
         Method for generating dipole maps to be used for electron density map generation. Also prints a dipole map as a result (and if desired). It calls a cython code in lib.
@@ -2081,8 +2083,8 @@ class Molecule(Structure):
 
         charges = pqr["charge"].values[:]
 
-        crd = self.coordinates[time_start:time_end] # cut out coordinates we're interested in 
- 
+        crd = self.coordinates[time_start:time_end] # cut out coordinates we're interested in
+
         time_end -= time_start # shift to compensate for cutting the coordinates earlier
         time_start = 0
 
@@ -2108,4 +2110,3 @@ class Molecule(Structure):
         '''
 
         dummy = e_density.c_get_dipole_density(dipole_map = dipole_map, orig = orig, min_val = min_val, V = V, outname = outname, vox_in_window = vox_in_window, eqn = eqn, T = T, P = P, epsilonE = epsilonE, resolution = resolution)
-

@@ -235,7 +235,7 @@ def ccs(M, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMod
     elif this_inst in ["Assembly", "Polyhedra"]:
         M = M.make_structure()
 
-    elif this_inst == "Molecule" and "atoms_ccs" not in M.data.columns:
+    elif this_inst == "Molecule" and "atom_ccs" not in M.data.columns:
         M.assign_atomtype()
         M.get_atoms_ccs()
 
