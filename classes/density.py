@@ -723,15 +723,21 @@ class Density(Structure):
 
 if __name__ == "__main__":
 
+    import os
     import biobox as bb
-    
+
     print("loading density...")
     D = bb.Density()
-    D.import_map("..\\test\\EMD-1080.mrc", "mrc")
+    D.import_map("..%stest%sEMD-1080.mrc"%(os.sep, os.sep), "mrc")
 
-    print(D.properties["density"].shape)
-    
+    print("origin: %s"%np.array(D.properties["origin"]))
+    print("shape: %s"%np.array(D.properties["density"].shape))
+    print("delta: %s"%(D.properties["delta"]))
+
+    # test points placement
     D.place_points(4)
     
-    #print("one point of CCS calculation...")
-    D.threshold_vol_ccs(sampling_points=10, append=False)#, noise_filter=1)
+    # test CCS calculation and prediction
+    D.threshold_vol_ccs(sampling_points=50, append=False)#, noise_filter=1)
+    ccs = D.predict_ccs_from_mass(11.5, 801)
+    print(ccs)

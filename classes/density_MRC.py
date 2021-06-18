@@ -19,7 +19,7 @@
 import numpy as np
 import os.path
 from functools import reduce, cmp_to_key
-from density import Structure
+#from density import Structure
 
 def cmp(a, b):
     return (a > b) - (a < b)
@@ -480,14 +480,40 @@ class MRC_Data:
             if lbl.startswith(b'Chimera rotation: '):
                 ax,ay,az,angle = map(float, lbl.rstrip('\0').split()[2:])
                 
-                S = Structure()
-                r = S.rotation_matrix([ax, ay, az], angle)
+                #S = Structure()
+                r = self.rotation_matrix([ax, ay, az], angle)
                 #r = Matrix.rotation_from_axis_angle((ax,ay,az), angle)
                 
         self.rotation = r
         
         self.min_intensity = v['amin']
         self.max_intensity = v['amax']
+
+
+
+    def rotation_matrix(self, axis, theta):
+        '''
+        compute matrix needed to rotate the system around an arbitrary axis (using Euler-Rodrigues formula).
+
+        :param axis: 3d vector (numpy array), representing the axis around which to rotate
+        :param theta: desired rotation angle
+        :returns: 3x3 rotation matrix
+        '''
+
+        # if rotation angle is equal to zero, no rotation is needed
+        if theta == 0:
+            return np.identity(3)
+
+        # method taken from
+        # http://stackoverflow.com/questions/6802577/python-rotation-of-3d-vector
+        axis = axis / np.sqrt(np.dot(axis, axis))
+        a = np.cos(theta / 2)
+        b, c, d = -axis * np.sin(theta / 2)
+        return np.array([[a * a + b * b - c * c - d * d, 2 * (b * c - a * d), 2 * (b * d + a * c)],
+                         [2 * (b * c + a * d), a * a + c * c - b * b - d * d, 2 * (c * d - a * b)],
+                         [2 * (b * d - a * c), 2 * (c * d + a * b), a * a + d * d - b * b - c * c]])
+
+
 
 
     # Format derived from C header file mrc.h.
@@ -978,7 +1004,8 @@ data_cache = Data_Cache(size = 0)
 
 if __name__=="__main__":
 
-    filename = "..\\test\\EMD-1080.mrc"
+    import os
+    filename = "..%stest%sEMD-1080.mrc"%(os.sep, os.sep)
     
     #try:
     [density,data] = read_density(filename, 'mrc')
