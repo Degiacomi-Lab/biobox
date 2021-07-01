@@ -474,7 +474,7 @@ class Structure(object):
         D = Density()
         D.properties['density'] = b
         D.properties['size'] = np.array(b.shape)
-        D.properties['origin'] = np.mean(self.points, axis=0) - step * np.array(b.shape) / 2.0
+        D.properties['origin'] = np.min(self.points, axis=0) - kernel_half_width / 2.0 + step #np.mean(self.points, axis=0) - step * np.array(b.shape) / 2.0
         D.properties['delta'] = np.identity(3) * step
         D.properties['format'] = 'dx'
         D.properties['filename'] = ''

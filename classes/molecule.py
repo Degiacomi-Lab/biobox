@@ -689,7 +689,8 @@ class Molecule(Structure):
         D = Density()
         D.properties['density'] = dens
         D.properties['size'] = np.array(dens.shape)
-        D.properties['origin'] = np.mean(pts, axis=0) - step * np.array(dens.shape) / 2.0
+        # still appears to be some small error (but is dependent on molecule), perhaps discretisation of space?
+        D.properties['origin'] = np.min(self.points, axis=0) - (kernel_half_width) / 2. + step #np.mean(pts, axis=0) - step * np.array(dens.shape) / 2.0
         D.properties['delta'] = np.identity(3) * step
         D.properties['format'] = 'dx'
         D.properties['filename'] = ''
