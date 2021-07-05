@@ -1305,13 +1305,14 @@ class Molecule(Structure):
 
         return d
 
-    def write_pdb(self, outname, conformations=[], index=[]):
+    def write_pdb(self, outname, conformations=[], index=[], split_struc=True):
         '''
         overload superclass method for writing (multi)pdb.
 
         :param outname: name of pdb file to be generated.
         :param index: indices of atoms to write to file. If empty, all atoms are returned. Index values obtaineable with a call like: index=molecule.atomselect("A", [1, 2, 3], "CA", True)[1]
         :param conformations: list of conformation indices to write to file. By default, a multipdb with all conformations will be produced.
+        :param split_struc: Guess chain split on structure being written. Default: True. Set to False if protein is broken, but should retain chain lettering and doesn't have chain breaks.
         '''
 
         # store current frame, so it will be reestablished after file output is
@@ -1343,9 +1344,12 @@ class Molecule(Structure):
                 idx_val = vhex(idx_val)   # convert index values to hexidecimal
                 idx_val = [num[2:] for num in idx_val]  # remove 0x at start of hexidecimal number
 
-            # prep for termination lines
-            no, split, _ = self.guess_chain_split()
-            split = np.asarray(split[1:]) -1 # don't need starting atom, and we want to shift down to end of last residue
+            # prep for termination lines - turn off split? (just skip below steps)
+            if split_struc:
+                no, split, _ = self.guess_chain_split()
+                split = np.asarray(split[1:]) -1 # don't need starting atom, and we want to shift down to end of last residue
+            else:
+                no = 1
 
             if no == 1:
                 for i in range(0, len(d), 1):
