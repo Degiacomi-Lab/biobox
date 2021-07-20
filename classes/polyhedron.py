@@ -1,12 +1,12 @@
-# Copyright (c) 2014-2017 Matteo Degiacomi
+# Copyright (c) 2014-2021 Matteo Degiacomi
 #
-# BiobOx is free software ;
+# Biobox is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
 # either version 2 of the License, or (at your option) any later version.
-# BiobOx is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;
+# Biobox is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 # See the GNU General Public License for more details.
-# You should have received a copy of the GNU General Public License along with BiobOx ;
+# You should have received a copy of the GNU General Public License along with Biobox ;
 # if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #
 # Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com
@@ -121,14 +121,14 @@ class Polyhedron(Assembly):
         else:
             self.deform = np.array(tmp)
 
-    def generate_polyhedron(self, S, phone, fag, pen, deformation=[], add_conformation=False):
+    def generate_polyhedron(self, S, alpha, beta, gamma, deformation=[], add_conformation=False):
         '''
         Given polyhedron information previously loaded (using setup_polyhedron), generate an appropriate symmetry figure.
 
         :param S: polyhedron size (radius of mean sphere).
-        :param phone: rotation on molecule's first principal axis.
-        :param fag: rotation on molecule's second principal axis.
-        :param pen: rotation on molecule's third principal axis.
+        :param alpha: rotation on molecule's first principal axis.
+        :param beta: rotation on molecule's second principal axis.
+        :param gamma: rotation on molecule's third principal axis.
         :param deformation: if list is provided, deformations will be applied according to self.deformation database.\n
                deformation list length should be equal to the amount of deformation classes)
         :param add_conformation: if True, the coordinates of the new poyhedron will be added to the conformational database as a new alternative conformation.\n
@@ -140,7 +140,7 @@ class Polyhedron(Assembly):
         if len(deformation) > 0 and len(deformation) != len(np.unique(self.deform[:, 1])):
             raise Exception("ERROR: %s deformation coefficients expected, but %s found" % (len(deformation), np.unique(self.deform[:, 1])))
 
-        self.gamma, self.phi, self.nu, self.circumradius, self.midradius = self.get_polyhedron_properties(S)
+        self.psi, self.phi, self.nu, self.circumradius, self.midradius = self.get_polyhedron_properties(S)
 
         if not add_conformation:
             # clear any previous polyhedron and load anew
@@ -157,18 +157,18 @@ class Polyhedron(Assembly):
 
         # test type consistency: if arrays are provided, length should be equal
         # to the amount of different types in conn_type
-        if 'ndarray' in str(type(phone)):
+        if 'ndarray' in str(type(alpha)):
             try:
-                if len(phone) != len(fag) or len(phone) != len(pen) or len(phone) != len(np.unique(self.conn_type)):
+                if len(alpha) != len(beta) or len(alpha) != len(gamma) or len(alpha) != len(np.unique(self.conn_type)):
                     print("ERROR: inconsistent length in provided angle arrays")
-                    print("> received the following angles: %s, %s, %s" % (phone, fag, pen))
+                    print("> received the following angles: %s, %s, %s" % (alpha, beta, gamma))
                     return -1
             except Exception as e:
                 raise Exception("ERROR: all angle arrays should have length %s" %(len(np.unique(self.conn_type))))
 
         # generate desired polyhedral coordinates (note: internally we work in
         # radians, not degrees)
-        poly_xyz = self._polycalc_core(self.W, self.L, self.H, S, self.nu, self.phi, np.radians(phone), np.radians(fag), np.radians(pen), deformation)
+        poly_xyz = self._polycalc_core(self.W, self.L, self.H, S, self.nu, self.phi, np.radians(alpha), np.radians(beta), np.radians(gamma), deformation)
 
         for x in range(0, len(self.unit), 1):
             coords = poly_xyz[x, :, :].squeeze()
@@ -373,21 +373,21 @@ class Polyhedron(Assembly):
 
         x = self.edges * 1.0  # x=number of edges
         y = 2 * self.edges / len(self.v) * 1.0  # y=average connectvity
-        gamma = 2 * np.pi * (1 / y - 1 / x)
+        psi = 2 * np.pi * (1 / y - 1 / x)
         phi = 2 * np.pi / y  # average facial angle
 
-        top = 1 - np.cos(gamma)  # numerator
+        top = 1 - np.cos(psi)  # numerator
         bot = 1 - np.cos(phi)  # denominator
         nu = np.arccos(np.sqrt(top / bot))  # tangent curvature angle
 
         circumradius = S / (2 * np.sin(nu))  # circumradius
         midradius = circumradius * np.cos(nu)  # mid radius
 
-        return gamma, phi, nu, circumradius, midradius
+        return psi, phi, nu, circumradius, midradius
 
-    def _polycalc_core(self, W, L, H, S, nu, phi, phone, fag, pen, deformation=[], get_box_edges=False):
+    def _polycalc_core(self, W, L, H, S, nu, phi, alpha, beta, gamma, deformation=[], get_box_edges=False):
         '''
-        launch polyhedron assembly using polymake functions
+        launch polyhedron assembly
         '''
 
         kay = (2 * H * np.tan(nu) + W / (np.tan(phi / 2) * np.cos(nu))) / L + 1  # scaling factor for truncation
@@ -433,11 +433,11 @@ class Polyhedron(Assembly):
 
             # find the angles required to rotate the central pdb file, to align
             # it with the box (previously was also returning vtbox)
-            if 'ndarray' not in str(type(phone)):
-                vtdata = self._cuboid_adjust(np.array(vcuby), self.unit[i].get_xyz(), phone, fag, pen, (i, 0))
+            if 'ndarray' not in str(type(alpha)):
+                vtdata = self._cuboid_adjust(np.array(vcuby), self.unit[i].get_xyz(), alpha, beta, gamma, (i, 0))
             else:
                 conntype = self.conn_type[i]
-                vtdata = self._cuboid_adjust(np.array(vcuby), self.unit[i].get_xyz(), phone[conntype], fag[conntype], pen[conntype], (i, 0))
+                vtdata = self._cuboid_adjust(np.array(vcuby), self.unit[i].get_xyz(), alpha[conntype], beta[conntype], gamma[conntype], (i, 0))
 
             # append vertex array with pdb file
             v_cubody_data.append(vtdata)
@@ -496,7 +496,7 @@ class Polyhedron(Assembly):
 
         return vrecty
 
-    def _cuboid_adjust(self, vcuby, v_data, phone, fag, pen, ii):
+    def _cuboid_adjust(self, vcuby, v_data, alpha, beta, gamma, ii):
         '''
         take a cuboid and a source cuboid and data file, and output vertex array with data and box transposed into target position
         ii parameter: if second element not 0, indicates the number of elements per ring (second half rotated by 180 degrees)
@@ -509,14 +509,14 @@ class Polyhedron(Assembly):
         vt = vcuby - com_cuby
 
         if ii[1] != 0:
-            # for the double rings, work out what the fag=0 position is based
+            # for the double rings, work out what the beta=0 position is based
             # on the centre of face vector
             e = np.mean(vt[[2, 3, 6, 7]], axis=0)
 
             # work out what centre of face vector makes with Z axis
-            fagZero = np.arccos(np.dot(e, np.array([0.0, 0.0, 1.0])) / np.linalg.norm(e))
-            # correct to make sure fag is offset by this much
-            fag = (np.pi / 2.0 - fagZero) + fag
+            betaZero = np.arccos(np.dot(e, np.array([0.0, 0.0, 1.0])) / np.linalg.norm(e))
+            # correct to make sure beta is offset by this much
+            beta = (np.pi / 2.0 - betaZero) + beta
 
         tusk = 5.0  # These random rotations make sure that we don't get stuck in an initially bad position
         # perform a random rotation 1
@@ -561,7 +561,7 @@ class Polyhedron(Assembly):
         else:
             theta2 = 0.0
 
-        # perform the 'phone' lateral rotation
+        # perform the 'alpha' lateral rotation
         vt2 = self._poly_rotate(vt2, 0.0, theta2, 0.0)
 
         # find angle of (y, z) compoent of vector from origin to centre of face
@@ -586,14 +586,14 @@ class Polyhedron(Assembly):
         vrd = v_data
         if ii[0] >= ii[1] and ii[1] != 0:  # DO THIS FOR DOUBLE RINGS
             vrd = self._poly_rotate(vrd, 0.0, np.pi, 0.0)  # 180 about y
-            fag = fag * -1.0
+            beta = beta * -1.0
 
-        # perform the 'fag' edge rotation
-        vrd = self._poly_rotate(vrd, fag, 0.0, 0.0)
-        # perform the 'phone' lateral rotation
-        vrd = self._poly_rotate(vrd, 0.0, 0.0, phone)
-        # perform the 'pen' lateral rotation
-        vrd = self._poly_rotate(vrd, 0.0, pen, 0.0)
+        # perform the 'beta' edge rotation
+        vrd = self._poly_rotate(vrd, beta, 0.0, 0.0)
+        # perform the 'alpha' lateral rotation
+        vrd = self._poly_rotate(vrd, 0.0, 0.0, alpha)
+        # perform the 'gamma' lateral rotation
+        vrd = self._poly_rotate(vrd, 0.0, gamma, 0.0)
         vrd = self._poly_rotate(vrd, -theta3, 0.0, 0.0)  # x rotation by theta3
         vrd = self._poly_rotate(vrd, 0.0, -theta2, 0.0)  # y rotation by theta2
         vrd = self._poly_rotate(vrd, 0.0, 0.0, -theta1)  # z rotation by theta1
