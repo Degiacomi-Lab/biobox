@@ -1,20 +1,8 @@
-# Copyright (c) 2014-2021 Matteo Degiacomi
-#
-# EMnIM is free software ;
-# you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
-# either version 2 of the License, or (at your option) any later version.
-# EMnIM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;
-# without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details.
-# You should have received a copy of the GNU General Public License along with SBT ;
-# if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
-#
-# Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com
-
-# from CHIMERA files chimera/share/VolumeData/mrc, plus readarray.py and griddata.py
-
 # Read 'mrc' or 'ccp4' or 'imod' map file format electron microscope data.
 # Byte swapping will be done if needed.
+#
+# NOTE: the code below is a Python 3 translation of CHIMERA files
+# chimera/share/VolumeData/mrc, readarray.py and griddata.py (2014 version, in Python 2)
 
 import numpy as np
 import os.path
@@ -38,6 +26,7 @@ class Data_Cache:
         self.data = {}
         self.groups = {}
 
+        
     # ---------------------------------------------------------------------------
     #
     def cache_data(self, key, value, size, description, groups = []):
