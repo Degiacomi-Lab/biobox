@@ -1664,6 +1664,43 @@ class Molecule(Structure):
 
         return np.array(secstruct) #(secstruct[0:210])
 
+    def renumber_resid_keep_chains(self, atom_thresh=30, start_from=1):
+        '''
+        Renumber resnumbers (starting from start_from variable), but base chain renumber resetting on pre-defined chain letters 
+        (i.e. not the structure.) Useful for insertion/grafting of motifs of arbitrary length, which disrupt the renumbering, or 
+        when the structure is broken and you want two or more discontinuous segements to have a single chain letter, and continuous resnums.
+        
+        :param atom_thresh: Threshold number of atoms that we count within a single residue, before we consider other residues with similar properties (chain, resnum) as seperate. Warning - if you have a very small protein or segements this might cause an issue. (default 30 from typ with H)
+        :param start_from: Start counting resnums from this value (default 1)
+        '''
+
+        CA_idx = np.asarray(self.atomselect("*", "*", "CA", get_index=True)[1])
+        resnum = np.asarray(self.data['resid'][CA_idx])
+        # chain for each resid
+        chains = np.asarray(self.data['chain'][CA_idx])
+
+        # start residue numbering from 1. Change when chain break occurs (in file, not in structure)
+        res_count = 1
+        for cnt, val in enumerate(CA_idx):
+            # maximum AA length is 27 (tryp with hydrogens), set greater than 30 as threashold
+            # full residue index set
+            full_res = self.atomselect(chains[cnt], [resnum[cnt]], "*", get_index=True)[1]
+        
+            # now remove residues that have similar properties, but are not the same
+            full_res = np.asarray([x for x in full_res - val if np.abs(x) <= 30]) + val
+        
+            # now renumber
+            self.data["resid"][full_res] = res_count
+        
+            try:
+                # reset numbering if chain letter changes
+                if chains[cnt] == chains[cnt+1]:
+                    res_count += 1
+                else:
+                    res_count = 1
+            except IndexError:
+                continue
+
 
     def get_couples(self, idx, cutoff):
         '''
