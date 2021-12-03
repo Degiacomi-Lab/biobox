@@ -24,7 +24,7 @@ Biobox requires Python3.x and the following packages:
 * scikit-learn
 * cython
 
-install with: `python setup.py install` and make sure the folder where Biobox is located is in your PYTHONPATH.
+Biobox can be installed with: `pip install biobox`. Biobox can otherwise be installed manually typing the followin command in the Biobox folder: `python setup.py install`. Please make sure the folder where Biobox is located is in your PYTHONPATH.
 
 Optional external software:
 * CCS calculation relies on a call to [IMPACT](
@@ -43,4 +43,4 @@ https://github.com/degiacom/biobox_notebook
 
 ## CITATION
 
-A publication is currently in preparation. If you use Biobox in your work, please cite this repository.
+When using Biobox in your work, please cite: [L. S. P. Rudden, S. C. Musson, J. L. P. Benesch, M. T. Degiacomi (2021). Biobox: a toolbox for biomolecular modelling, Bioinformatics](https://academic.oup.com/bioinformatics/advance-article/doi/10.1093/bioinformatics/btab785/6428530?login=true)
