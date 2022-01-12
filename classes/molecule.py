@@ -1305,7 +1305,7 @@ class Molecule(Structure):
 
         return d
 
-    def write_pdb(self, outname, conformations=[], index=[], split_struc=True):
+    def write_pdb(self, outname, conformations=[], index=[], split_struc=True, dssp=False):
         '''
         overload superclass method for writing (multi)pdb.
 
@@ -1313,6 +1313,7 @@ class Molecule(Structure):
         :param index: indices of atoms to write to file. If empty, all atoms are returned. Index values obtaineable with a call like: index=molecule.atomselect("A", [1, 2, 3], "CA", True)[1]
         :param conformations: list of conformation indices to write to file. By default, a multipdb with all conformations will be produced.
         :param split_struc: Guess chain split on structure being written. Default: True. Set to False if protein is broken, but should retain chain lettering and doesn't have chain breaks.
+        :param dssp: If using DSSP secondary structure check, requires that CRYST be the first line by default (hence write that line)
         '''
 
         # store current frame, so it will be reestablished after file output is
@@ -1330,6 +1331,8 @@ class Molecule(Structure):
                 raise Exception("ERROR: requested coordinate index %s, but only %s are available" %(np.max(conformations), len(self.coordinates)))
 
         f_out = open(outname, "w")
+        if dssp:
+            f_out.write("CRYST1    1.000    1.000    1.000  90.00  90.00  90.00 P 1           1") # only if doing secondary structure check
 
         for cnt, f in enumerate(frames):
             # get all informations from PDB (for current conformation) in a list
@@ -1625,13 +1628,13 @@ class Molecule(Structure):
                 raise Exception("DSSPPATH environment variable undefined")
 
         # generate temporary PDB and calculate secondary structure using DSSP
-        self.write_pdb("tmp.pdb", conformations=[self.current])
+        self.write_pdb("tmp.pdb", conformations=[self.current], split_struc=False, dssp=True)
 
         #TMP: assign all atoms to structure
         #subprocess.check_call('~/bin/amber16_tmp/bin/tleap -f build > /dev/null', shell=True)
         try:
             import subprocess
-            subprocess.check_call("%s -i tmp.pdb -o result.dssp"%dssp_path, shell=True)
+            subprocess.check_call("%s tmp.pdb -o result.dssp"%dssp_path, shell=True)
             fin=open("result.dssp","r")
         except Exception as e:
             raise Exception("Could not calculate secondary structure! %s"%e)
