@@ -82,7 +82,12 @@ class Molecule(Structure):
                                       "OC1": "O", "OC2": "O", "OW": "O", "HW1": "H", "HW2": "H", "CH3" : "C", "HH31" : "H", "HH32" : "H", "HH33" : "H",
                                       "C00" : "C", "C01" : "C", "C02" : "C", "C04" : "C", "C06" : "C", "C08" : "C", "H03" : "H", "H05" : "H", "H07" : "H",
                                       "H09" : "H", "H0A" : "H", "H0B" : "H", "N01" : "N", "C03": "C", "C05": "C", "O06": "O", "H08": "H", "H0C": "H", "H0D": "H", 
-                                      "H0E": "H", "H0F": "H", "O03": "O", "H04": "H", "H06": "H", "OD": "O", "O02" : "O", "HO" : "H", "OT" : "O", "O1" : "O", "O2" : "O"}
+                                      "H0E": "H", "H0F": "H", "O03": "O", "H04": "H", "H06": "H", "OD": "O", "O02" : "O", "HO" : "H", "OT" : "O", "O1" : "O", "O2" : "O",
+                                      "1H":"H", "2H":"H", "3H":"H", "1HG1":"H", "2HG1":"H", "3HG1":"H", "1HG2":"H", "2HG2":"H", "3HG2":"H", "1HB":"H", "2HB":"H", "1HG":"H", "2HG":"H",
+                                      "1HE2":"H", "2HE2":"H", "1HD":"H", "2HD":"H", "1HH1":"H", "2HH1":"H", "1HH2":"H", "2HH2":"H", "1HD1":"H", "1HD2":"H",
+                                      "2HD1":"H", "2HD2":"H", "3HD1":"H", "3HD2":"H", "1HZ":"H", "2HZ":"H", "3HZ":"H", "1HE":"H", "2HE":"H", "3HB":"H", "1HA":"H", "2HA":"H",
+                                      "3HE":"H"}
+                                       
 
 
         # if a filename is provided, attempt loading the file according to its file extension
@@ -1677,6 +1682,9 @@ class Molecule(Structure):
         :param start_from: Start counting resnums from this value (default 1)
         '''
 
+        self.data.reset_index(drop=True, inplace=True)
+        self.data["index"] = np.arange(len(self.data))
+
         CA_idx = np.asarray(self.atomselect("*", "*", "CA", get_index=True)[1])
         resnum = np.asarray(self.data['resid'][CA_idx])
         # chain for each resid
@@ -1693,7 +1701,7 @@ class Molecule(Structure):
             full_res = np.asarray([x for x in full_res - val if np.abs(x) <= 30]) + val
         
             # now renumber
-            self.data["resid"][full_res] = res_count
+            self.data.loc[full_res, "resid"] = res_count
         
             try:
                 # reset numbering if chain letter changes
@@ -1704,6 +1712,57 @@ class Molecule(Structure):
             except IndexError:
                 continue
 
+    def reorder_resid(self, idx, chain="A", renumber=True):
+        """
+        Reorder the internal resid of a PDB structure (retaining the topology) based on the idx list of resid.
+        Number of elements in idx list must == number of resid in the chain.
+        :params idx: List of indices to reorder the internal ordering of a chain based on resid. Doesn't have to be same values as native resid, but must be in desired ascending order. There can be no numeric breaks (i.e., [1, 2, 3, 6, 7, 8, 4, 5] acceptable, [1, 2, 3, 8, 4, 5] is not
+        :params chain: Chain to apply reordering to
+        :params renumber: After restructuring metadata, reorder the resid values
+        """
+
+        native_idx = self.atomselect(chain, "*", "CA", get_index=True)[1]
+        native_resid = self.get_subset(native_idx).data["resid"]
+
+        # shift idx values so they match the values of the native idx
+        if np.min(native_resid) == np.min(idx):
+            pass
+        elif np.min(native_resid) < np.min(idx):
+            idx -= np.min(native_resid)
+        else:
+            idx += np.min(native_resid)
+
+        native_resid = set(native_resid)
+        # next, create two seperate molecules, one with chain being changed, one without
+        M_sub = self.get_subset(self.atomselect(chain, "*", "*", get_index=True)[1])
+        Rest_idx = self.atomignore(chain, "*", "*", get_index=True)[1]
+        if len(Rest_idx) != 0: # if False, no second chain
+            Rest = self.get_subset(Rest_idx)
+
+        M_sub.data["neworder"] = "" # empty column placeholder
+        for i, n in enumerate(idx): # create column with desired sort order
+            M_sub.data.loc[M_sub.data["resid"] == n, "neworder"] = i
+
+        M_sub_reorder = M_sub.data.sort_values(by = ['neworder', 'index'])
+        index_reorder = np.asarray(M_sub_reorder["index"])
+        M_sub_cwd = M_sub.coordinates[:, index_reorder]
+
+        # replace metadata and coordaintes
+        # if separete chains, add back in
+        M_sub.data = M_sub_reorder; M_sub.coordinates = M_sub_cwd
+        if len(Rest_idx) != 0:
+            N = Rest + M_sub
+            self.data = N.data
+            self.coordinates = N.coordinates
+        else:
+            self.data = M_sub_reorder
+            self.coordinates = M_sub_cwd
+
+        # delete temporary neworder column
+        self.data.drop("neworder", axis=1, inplace=True)
+
+        if renumber:
+            self.renumber_resid_keep_chains()
 
     def get_couples(self, idx, cutoff):
         '''
