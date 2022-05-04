@@ -1716,6 +1716,7 @@ class Molecule(Structure):
         """
         Reorder the internal resid of a PDB structure (retaining the topology) based on the idx list of resid.
         Number of elements in idx list must == number of resid in the chain.
+        Note there can be no breaks in the resid ordering of the chain, otherwise this fails (will return the input topology)
         :params idx: List of indices to reorder the internal ordering of a chain based on resid. Doesn't have to be same values as native resid, but must be in desired ascending order. There can be no numeric breaks (i.e., [1, 2, 3, 6, 7, 8, 4, 5] acceptable, [1, 2, 3, 8, 4, 5] is not
         :params chain: Chain to apply reordering to
         :params renumber: After restructuring metadata, reorder the resid values
