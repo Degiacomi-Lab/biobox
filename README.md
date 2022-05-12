@@ -34,11 +34,11 @@ https://process.innovation.ox.ac.uk/software/) (requires definition of IMPACTPAT
 ## USAGE
 
 Documentation:
-* Biobox's API is available at https://degiacom.github.io/biobox/
+* Biobox's API is available at https://Degiacomi-Lab.github.io/biobox/
 
 Tutorial:
 * A Jupyter notebook presenting Biobox's main functionalities is available at
-https://github.com/degiacom/biobox_notebook
+https://github.com/Degiacomi-Lab/biobox_notebook
 * The notebook can be run directly in a browser via Binder: https://mybinder.org/v2/gh/degiacom/biobox_notebook/HEAD
 
 ## CITATION
