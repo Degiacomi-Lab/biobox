@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2017 Matteo Degiacomi
+# Copyright (c) 2014-2022 Matteo Degiacomi
 #
 # BiobOx is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
@@ -9,10 +9,10 @@
 # You should have received a copy of the GNU General Public License along with BiobOx ;
 # if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #
-# Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com
+# Author : Matteo Degiacomi, matteo.degiacomi@gmail.com
 
 '''
-Functions to measure characteristics of any BiobOx object
+Functions to measure characteristics of any Biobox object
 '''
 
 import subprocess
@@ -204,7 +204,7 @@ def saxs(M, crysol_path='', crysol_options="-lm 20 -ns 500", pdbname=""):
         os.remove("%s00.int" % outfile)
         os.remove("%s00.log" % outfile)
         os.remove("%s.pdb" % outfile)
-    except Exception as ex:
+    except Exception:
         pass
 
     return data[:, 0:2]

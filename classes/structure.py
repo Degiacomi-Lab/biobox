@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2017 Matteo Degiacomi
+# Copyright (c) 2014-2022 Matteo Degiacomi
 #
 # BiobOx is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
@@ -9,7 +9,7 @@
 # You should have received a copy of the GNU General Public License along with BiobOx ;
 # if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #
-# Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com
+# Author : Matteo Degiacomi, matteo.degiacomi@gmail.com
 
 from copy import deepcopy
 import numpy as np
@@ -41,7 +41,8 @@ class Structure(object):
         self.current = 0
         '''index of currently selected conformation'''
 
-        self.points = self.coordinates[self.current]
+        #self.points = self.coordinates[self.current]
+        self.points = self.coordinates.view()[self.current]
         '''pointer to currently selected conformation'''
 
         self.properties = {}
@@ -73,7 +74,8 @@ class Structure(object):
         '''
         if pos < self.coordinates.shape[0]:
             self.current = pos
-            self.points = self.coordinates[self.current]
+            #self.points = self.coordinates[self.current]
+            self.points = self.coordinates.view()[self.current]
             self.properties['center'] = self.get_center()
         else:
             raise Exception("ERROR: position %s requested, but only %s conformations available" %(pos, self.coordinates.shape[0]))
@@ -97,7 +99,8 @@ class Structure(object):
         :param coords: array of 3D points
         '''
         self.coordinates[self.current] = deepcopy(coords)
-        self.points = self.coordinates[self.current]
+        #self.points = self.coordinates[self.current]
+        self.points = self.coordinates.view()[self.current]
 
     def add_xyz(self, coords):
         '''
@@ -129,6 +132,7 @@ class Structure(object):
         else:
             raise Exception("ERROR: expected numpy array with 2 or three dimensions, but %s dimensions were found" %np.ndim)
 
+
     def delete_xyz(self, index):
         '''
         remove one conformation from the conformations database.
@@ -148,7 +152,8 @@ class Structure(object):
         remove all the coordinates and empty metadata
         '''
         self.coordinates = np.array([[[], []], [[], []]])
-        self.points = self.coordinates[0]
+        #self.points = self.coordinates[0]
+        self.points = self.coordinates.view()[0]
         self.data = pd.DataFrame(index=[], columns=[])
 
     def translate(self, x, y, z):
@@ -212,7 +217,8 @@ class Structure(object):
         '''
         self.coordinates[self.current, :, :] = np.dot(self.points, M)
         # new memory allocated? Pointer needs to be moved
-        self.points = self.coordinates[self.current]
+        #self.points = self.coordinates[self.current]
+        self.points = self.coordinates.view()[self.current]
 
     def get_center(self):
         '''

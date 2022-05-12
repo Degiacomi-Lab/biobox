@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2017 Matteo Degiacomi
+# Copyright (c) 2014-2022 Matteo Degiacomi
 #
 # BiobOx is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
@@ -9,7 +9,7 @@
 # You should have received a copy of the GNU General Public License along with BiobOx ;
 # if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #
-# Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com
+# Author : Matteo Degiacomi, matteo.degiacomi@gmail.com
 
 import numpy as np
 import pandas as pd
@@ -100,10 +100,12 @@ class Multimer(Polyhedron):
         else:
             return pts
 
-    def make_molecule(self):
+    def make_molecule(self, rename_chains=False):
         '''
         Return a :func:`Molecule <molecule.Molecule>` object containing all the points of the assembly. Chain will indicate different units, original chain value is pushed in segment entry.
 
+        :param rename_chains: if True, chains of the newly produced molecule will be named from scratch.
+       
         :returns: :func:`Molecule <molecule.Molecule>` object
         '''
 
@@ -119,7 +121,9 @@ class Multimer(Polyhedron):
                 "atom", "index", "name", "resname", "chain",
                 "resid", "beta", "occupancy", "atomtype"]].values
 
-            #data_tmp[:, 4] = self.chain_names[i] # avoid renaming the chains
+            if rename_chains:
+                data_tmp[:, 4] = self.chain_names[i] # avoid renaming the chains
+
             data = np.concatenate((data, data_tmp))
 
             # merge knowledge about CCS acquired by different molecules
@@ -194,27 +198,30 @@ class Multimer(Polyhedron):
 
         return self.data.loc[indices, columns].values
 
-    def write_pdb(self, outname):
+    def write_pdb(self, outname, rename_chains=False):
         '''
         Write a pdb of the multimeric assembly.
 
         :param outname: name of PDB file to generate
         '''
 
+        #M = self.make_molecule(rename_chains)
+        #M.write_pdb(outname)
+        
         f_out = open(outname, "w")
-
+        
         for f in range(len(self.unit[0].coordinates)):
-
+        
             cnt = 1
             # set current state to new frame
             for j in range(0, len(self.unit), 1):
                 self.unit[j].set_current(f)
-
+        
         for j in range(0, len(self.unit), 1):
             # get data about points and their properties from the desired
             # protein structure
             d = self.unit[j].get_pdb_data()
-
+        
             for i in range(0, len(self.unit[j].points), 1):
                 # create and write PDB lin
                 if d[i][2][0].isdigit():
@@ -224,8 +231,8 @@ class Multimer(Polyhedron):
                 #L='%-6s%5i  %-4s%-4s%1s%4i    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n'%(d[i][0], cnt, d[i][2], d[i][3], self.chain_names[j], d[i][5], d[i][6], d[i][7], d[i][8], d[i][9], d[i][10], d[i][11])
                 f_out.write(L)
                 cnt += 1
-
+        
             f_out.write("TER\n")
-
+        
         f_out.write("END\n")
         f_out.close()

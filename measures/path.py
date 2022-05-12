@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2017 Matteo Degiacomi
+# Copyright (c) 2014-2022 Matteo Degiacomi
 #
 # BiobOx is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
@@ -9,7 +9,7 @@
 # You should have received a copy of the GNU General Public License along with BiobOx ;
 # if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #
-# Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com
+# Author : Matteo Degiacomi, matteo.degiacomi@gmail.com
 
 import heapq
 import scipy.spatial.distance as SD
@@ -219,7 +219,7 @@ class Path(object):
             try:
                 pred = came_from[pts_idx[-1]]
 
-            except Exception as ex:
+            except Exception:
                 return -1, np.array([])
 
             if pred == idx_start:
@@ -727,7 +727,7 @@ class Xlink(Path):
         for i in indices:
             try:
                 pts.append(self.molecule.points[i])
-            except Exception as ex:
+            except Exception:
                 raise Exception("could not find index %s in molecule!" % i)
 
         # allocate distance matrix
@@ -852,8 +852,9 @@ class Xlink(Path):
                     print("> %s%s_%s vs %s%s_%s: %5.2fA" % (l1[0], l1[2], l1[1], l2[0], l2[2], l2[1], dist))
 
                 if get_path:
-                    path_data = [[i, j]]
-                    path_data.extend(pts_crd)
+                    #path_data = [[i, j]]
+                    #path_data.extend(pts_crd)
+                    path_data = [[i, j], np.array(pts_crd)]
                     paths.append(path_data)
 
         if get_path:

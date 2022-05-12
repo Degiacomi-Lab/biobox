@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2021 Matteo Degiacomi
+# Copyright (c) 2014-2022 Matteo Degiacomi
 #
 # BiobOx is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
@@ -436,7 +436,7 @@ class Density(Structure):
         return self.properties['scan'][
             np.argmin(np.abs(self.properties['scan'][:, 2] - ccs))]
 
-    def threshold_vol_ccs(self, low="", high="", sampling_points=1000, append=False, noise_filter=0.01):
+    def threshold_vol_ccs(self, low="", high="", sampling_points=1000, append=False, noise_filter=0.01, verbose=False):
         '''
         return the volume to threshold to CCS relationship
 
@@ -461,7 +461,9 @@ class Density(Structure):
                 vol = 0
                 ccs = 0
 
-            print("thresh: %s, vol=%s, ccs=%s (%s points)" % (thresh, vol, ccs, len(self.points)))
+            if verbose:
+                print("thresh: %s, vol=%s, ccs=%s (%s points)" % (thresh, vol, ccs, len(self.points)))
+            
             result.append([thresh, vol, ccs])
 
         r = np.array(result)
@@ -723,7 +725,6 @@ class Density(Structure):
 
 if __name__ == "__main__":
 
-    import os
     import biobox as bb
 
     print("loading density...")
