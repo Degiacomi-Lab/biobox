@@ -1379,7 +1379,7 @@ class Molecule(Structure):
                         L = '%-6s%5s %-4s %-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
                     else:
                         L = '%-6s%5s  %-3s %-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
-                
+
                     f_out.write(L)
 
                     # Terminate chain if applicable
@@ -1675,10 +1675,10 @@ class Molecule(Structure):
 
     def renumber_resid_keep_chains(self, atom_thresh=30, start_from=1):
         '''
-        Renumber resnumbers (starting from start_from variable), but base chain renumber resetting on pre-defined chain letters 
-        (i.e. not the structure.) Useful for insertion/grafting of motifs of arbitrary length, which disrupt the renumbering, or 
+        Renumber resnumbers (starting from start_from variable), but base chain renumber resetting on pre-defined chain letters
+        (i.e. not the structure.) Useful for insertion/grafting of motifs of arbitrary length, which disrupt the renumbering, or
         when the structure is broken and you want two or more discontinuous segements to have a single chain letter, and continuous resnums.
-        
+
         :param atom_thresh: Threshold number of atoms that we count within a single residue, before we consider other residues with similar properties (chain, resnum) as seperate. Warning - if you have a very small protein or segements this might cause an issue. (default 30 from typ with H)
         :param start_from: Start counting resnums from this value (default 1)
         '''
@@ -1697,13 +1697,13 @@ class Molecule(Structure):
             # maximum AA length is 27 (tryp with hydrogens), set greater than 30 as threashold
             # full residue index set
             full_res = self.atomselect(chains[cnt], [resnum[cnt]], "*", get_index=True)[1]
-        
+
             # now remove residues that have similar properties, but are not the same
             full_res = np.asarray([x for x in full_res - val if np.abs(x) <= 30]) + val
-        
+
             # now renumber
             self.data.loc[full_res, "resid"] = res_count
-        
+
             try:
                 # reset numbering if chain letter changes
                 if chains[cnt] == chains[cnt+1]:
@@ -1791,7 +1791,7 @@ class Molecule(Structure):
 
         return np.array(res)
 
-    
+
     def match_residue(self, M2, sec = 3):
         '''
         Compares two bb.Molecule() peptide strands and returns the resids within both peptides when the two are homogenous
@@ -1912,28 +1912,28 @@ class Molecule(Structure):
         :param ff: name of forcefield text file input that needs to be read to read charges / vdw radii.
         :param amber_convert: If True, will assume forcefield is amber and convert resnames as necessary
         '''
-        
+
         intervals = self.guess_chain_split()[1]
 
         if amber_convert:
             # patch naming of C-termini
             for i in intervals[1:]:
-                idxs = self.same_residue(i-1, get_index=True)[1]   
+                idxs = self.same_residue(i-1, get_index=True)[1]
                 names = self.data.loc[idxs, ["name"]].values
                 if np.any(names == "OC1") or np.any(names == "OXT"):
                     resname = self.data.loc[idxs[0], ["resname"]].values[0]
                     newresnames = np.array(["C"+resname]*len(idxs))
                     self.data.loc[idxs, ["resname"]] = newresnames
-    
+
             # patch naming of N-termini
             for i in intervals[0:-1]:
-                idxs = self.same_residue(i, get_index=True)[1]   
+                idxs = self.same_residue(i, get_index=True)[1]
                 names = self.data.loc[idxs, ["name"]].values
                 if np.any(names == "H1") and np.any(names == "H2"):
                     resname = self.data.loc[idxs[0], ["resname"]].values[0]
                     newresnames = np.array(["N"+resname]*len(idxs))
                     self.data.loc[idxs, ["resname"]] = newresnames
-    
+
             HIP = np.array(["HIP"] * 18)    # create numpy array structures to possibly reassign later
             HIE = np.array(["HIE"] * 17)    # create numpy array structures to possibly reassign later
             HID = np.array(["HID"] * 17)    # create numpy array structures to possibly reassign later
@@ -1946,9 +1946,9 @@ class Molecule(Structure):
 
             start_chain = self.data["resid"].iloc[0]   # This is in case we get 1 or 2 as the first chain ID start
             end_chain = self.data["resid"].iloc[-1]    #  We don't know the end chain number so we find it here
-            start_res = self.data["resname"].iloc[0] 
-            end_res = self.data["resname"].iloc[-1] 
-            
+            start_res = self.data["resname"].iloc[0]
+            end_res = self.data["resname"].iloc[-1]
+
             # Need to check if first residue is actually an N-termini residue, and if so, reassign resnames if necessary
             if (self.data["name"].iloc[0:27] == 'H1').any() and (self.data["name"].iloc[0:27] == 'H2').any() and (self.data["name"].iloc[0:27] == 'H3').any() and self.data["resname"][0][0] != 'N':
                 print('Found N-Termini, reassigning first resname to match the forcefield')
@@ -1961,47 +1961,47 @@ class Molecule(Structure):
             nhis_check = self.data["resname"] == 'NHIS' # Check for N termini HIS
             chis_check = self.data["resname"] == 'CHIS'
             if np.sum(his_check) != 0 or np.sum(nhis_check) != 0 or np.sum(chis_check) != 0:
-                print("WARNING: found residue with name HIS, checking to see what protonation state it is in and reassigning to HIP, HIE or HID.\nYou should check HIS in your pdb file is right to be sure!")     
+                print("WARNING: found residue with name HIS, checking to see what protonation state it is in and reassigning to HIP, HIE or HID.\nYou should check HIS in your pdb file is right to be sure!")
                 for ix in range(len(self.data["resname"])):
                     H_length = 17 # Set this as it is more common, and also covers the basis to capture HD1 or HE2 later if necessary (as C and O tend to be last a
-                    # N is always the first atom (use that as basis)                                                                                                                             
-                    
-                    if self.data["name"][ix] == 'N' and self.data["resname"][ix] == 'HIS':  
-                                                                                           
+                    # N is always the first atom (use that as basis)
+
+                    if self.data["name"][ix] == 'N' and self.data["resname"][ix] == 'HIS':
+
                         if (self.data["name"][ix:(ix+H_length)] == 'HE2').any() and (self.data["name"][ix:(ix+H_length)] == 'HD1').any(): # If the residue contains HE2 and HD1, it is a HIP residue
                             H_length = 18     #   number of atoms in histdine (HIP)
                             self.data.loc[ix:(ix+H_length-1), "resname"] = HIP
-    
+
                         elif (self.data["name"][ix:(ix+H_length)] == 'HE2').any():
                             self.data.loc[ix:(ix+H_length-1), "resname"] = HIE
-    
+
                         elif (self.data["name"][ix:(ix+H_length)] == 'HD1').any():
                             self.data.loc[ix:(ix+H_length-1), "resname"] = HID
-    
+
                     elif self.data["name"][ix] == 'N' and self.data["resname"][ix] == 'NHIS':
                         H_length = 19
-    
+
                         if (self.data["name"][ix:(ix+H_length)] == 'HE2').any() and (self.data["name"][ix:(ix+H_length)] == 'HD1').any(): # If the residue contains HE2 and HD1, it is a HIP residue
                             H_length = 20     #   number of atoms in histdine (HIP)
                             self.data.loc[ix:(ix+H_length-1), "resname"] = NHIP
-    
+
                         elif (self.data["name"][ix:(ix+H_length)] == 'HE2').any():
                             self.data.loc[ix:(ix+H_length-1), "resname"] = NHIE
-    
+
                         elif (self.data["name"][ix:(ix+H_length)] == 'HD1').any():
                             self.data.loc[ix:(ix+H_length-1), "resname"] = NHID
-    
+
                     elif self.data["name"][ix] == 'N' and self.data["resname"][ix] == 'CHIS':
                         H_length = 19
-    
+
                         if (self.data["name"][ix:(ix+H_length)] == 'HE2').any() and (self.data["name"][ix:(ix+H_length)] == 'HD1').any(): # If the residue contains HE2 and HD1, it is a HIP residue
                             H_length = 20     #   number of atoms in histdine (HIP)
                             self.data.loc[ix:(ix+H_length-1), "resname"] = CHIP
-    
+
                         elif (self.data["name"][ix:(ix+H_length)] == 'HE2').any():
                             H_length = 18
                             self.data.loc[ix:(ix+H_length-1), "resname"] = CHIE
-    
+
                         elif (self.data["name"][ix:(ix+H_length)] == 'HD1').any():
                             self.data.loc[ix:(ix+H_length-1), "resname"] = CHID
 
@@ -2106,12 +2106,12 @@ class Molecule(Structure):
         self.set_current(currentbkp)
 
         return
-    
+
     def clean(self, path='~/biobox/classes/remove_alt_conf.sh', remove_non_amino=True):
         '''
         clean up a PDB files from alt conformations and ligands. Requires subprocess to be installed.
         (For now) requires input to be a protein, so will remove all ligands etc.
-        This removes residues with the least certainty (based on beta factor). 
+        This removes residues with the least certainty (based on beta factor).
         If no beta factor is present, it removes all residue conformations after the first
 
         :param path: Path to the removing alt conf. bash script (in current folder by default)
@@ -2121,12 +2121,12 @@ class Molecule(Structure):
         import subprocess
 
         # all amino acids (in case we want to remove non-standard residues). Also includes N and C prefixs
-        amino = ['ILE','GLN', 'GLY', 'MSE', 'GLU', 'CYS', 'ASP', 'SER', 'HSD', 'HSE', 'PRO', 'CYX', 'HSP', 'HID', 'HIE', 'ASN', 
+        amino = ['ILE','GLN', 'GLY', 'MSE', 'GLU', 'CYS', 'ASP', 'SER', 'HSD', 'HSE', 'PRO', 'CYX', 'HSP', 'HID', 'HIE', 'ASN',
                 'HIP', 'VAL', 'THR', 'HIS', 'TRP', 'LYS', 'PHE', 'ALA', 'MET', 'LEU', 'ARG', 'TYR', 'NILE', 'NGLN', 'NGLY',
-                'NMSE', 'NGLU', 'NCYS', 'NASP', 'NSER', 'NHSD', 'NHSE', 'NPRO', 'NCYX', 'NHSP', 'NHID', 'NHIE', 'NASN', 'NHIP', 
-                'NVAL', 'NTHR',  'NHIS','NTRP', 'NLYS', 'NPHE', 'NALA', 'NMET', 'NLEU', 'NARG', 'NTYR', 'CILE', 'CGLN', 'CGLY', 
-                'CMSE', 'CGLU', 'CCYS', 'CASP', 'CSER', 'CHSD', 'CHSE', 'CPRO', 'CCYX', 'CHSP', 'CHID', 'CHIE', 'CASN', 'CHIP', 
-                'CVAL', 'CTHR', 'CHIS', 'CTRP', 'CLYS', 'CPHE', 'CALA', 'CMET', 'CLEU', 'CARG', 'CTYR'] 
+                'NMSE', 'NGLU', 'NCYS', 'NASP', 'NSER', 'NHSD', 'NHSE', 'NPRO', 'NCYX', 'NHSP', 'NHID', 'NHIE', 'NASN', 'NHIP',
+                'NVAL', 'NTHR',  'NHIS','NTRP', 'NLYS', 'NPHE', 'NALA', 'NMET', 'NLEU', 'NARG', 'NTYR', 'CILE', 'CGLN', 'CGLY',
+                'CMSE', 'CGLU', 'CCYS', 'CASP', 'CSER', 'CHSD', 'CHSE', 'CPRO', 'CCYX', 'CHSP', 'CHID', 'CHIE', 'CASN', 'CHIP',
+                'CVAL', 'CTHR', 'CHIS', 'CTRP', 'CLYS', 'CPHE', 'CALA', 'CMET', 'CLEU', 'CARG', 'CTYR']
 
         self.write_pdb("tmp2.pdb")
         subprocess.call(path + " tmp2.pdb", shell=True)
@@ -2139,7 +2139,7 @@ class Molecule(Structure):
         else:
             A = Molecule()
             A.import_pdb("clean_tmp2.pdb")
-        
+
         # Get residues with strings in
         # Find our what first numbers are (i.e. remove strings) so we have all conformations and the non string version
         # Then check what avg beta factor is, if it's zero, chop off all string conformations
@@ -2153,7 +2153,7 @@ class Molecule(Structure):
                 repeat.append(i)
             else:
                 continue
-        
+
         #get relevent chains
         chains = np.unique(A.data["chain"][A_idxs[repeat]])
         # keep a record of indices to keep and all of the ones we explore
@@ -2180,7 +2180,7 @@ class Molecule(Structure):
                         # Always an N preceding a CA
                         if i < len(A_CAs) -1:
                             beta.append(np.mean(A_subset.data['beta'][A_CAs[i] - 1 : A_CAs[i+1] - 1]))
-                        else: 
+                        else:
                             beta.append(np.mean(A_subset.data['beta'][A_CAs[i] - 1 : 1 + np.asarray(A_subset.data['index'])[-1]]))
 
                     # only select residue with lowest beta

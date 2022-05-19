@@ -49,13 +49,13 @@ class Structure(object):
         '''collection of properties. By default, 'center' (geometric center of the Structure) is defined'''
 
         self.properties['center'] = self.get_center()
-   
-        idx = np.arange(len(self.points))     
+
+        idx = np.arange(len(self.points))
         if isinstance(r, list) or type(r).__module__ == 'numpy':
             if len(r) > 0:
                 self.data = pd.DataFrame(r, index=idx, columns=["radius"])
         else:
-                rad = r*np.ones(len(self.points))           
+                rad = r*np.ones(len(self.points))
                 self.data = pd.DataFrame(rad, index=idx, columns=["radius"])
                 ''' metadata about each atom (pandas Dataframe)'''
 
@@ -379,7 +379,7 @@ class Structure(object):
         fout = open(filename, "w")
 
         for f in frames:
-            
+
             # Build our hexidecimal array if num. of atoms > 99999
             idx_val = np.arange(1, self.coordinates.shape[1] + 1, 1)
 
@@ -393,7 +393,7 @@ class Structure(object):
                 #    nb = hex(i).split('x')[1]
                 #else:
                 #    nb = str(i)
-                
+
                 l = (idx_val[i], "SPH", "SPH", "A", np.mod(i, 9999),
                      self.coordinates[f, i, 0],
                      self.coordinates[f, i, 1],
@@ -524,7 +524,7 @@ class Structure(object):
         :returns: numpy array of projection of each conformation into the n-dimensional eigenspace
         :returns: sklearn PCA object
         '''
-     
+
         from sklearn.decomposition import PCA
 
         # define conformational space (flatten coordinates of desired atoms
@@ -680,7 +680,7 @@ class Structure(object):
         if full:
             return np.sqrt(abs(rmsdval / L)), np.matmul(V, Wt)
         else:
-            return np.sqrt(abs(rmsdval / L))           
+            return np.sqrt(abs(rmsdval / L))
 
     def rmsd_distance_matrix(self, points_index=[], flat=False):
         '''

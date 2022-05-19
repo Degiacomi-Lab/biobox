@@ -105,7 +105,7 @@ class Multimer(Polyhedron):
         Return a :func:`Molecule <molecule.Molecule>` object containing all the points of the assembly. Chain will indicate different units, original chain value is pushed in segment entry.
 
         :param rename_chains: if True, chains of the newly produced molecule will be named from scratch.
-       
+
         :returns: :func:`Molecule <molecule.Molecule>` object
         '''
 
@@ -207,21 +207,21 @@ class Multimer(Polyhedron):
 
         #M = self.make_molecule(rename_chains)
         #M.write_pdb(outname)
-        
+
         f_out = open(outname, "w")
-        
+
         for f in range(len(self.unit[0].coordinates)):
-        
+
             cnt = 1
             # set current state to new frame
             for j in range(0, len(self.unit), 1):
                 self.unit[j].set_current(f)
-        
+
         for j in range(0, len(self.unit), 1):
             # get data about points and their properties from the desired
             # protein structure
             d = self.unit[j].get_pdb_data()
-        
+
             for i in range(0, len(self.unit[j].points), 1):
                 # create and write PDB lin
                 if d[i][2][0].isdigit():
@@ -231,8 +231,8 @@ class Multimer(Polyhedron):
                 #L='%-6s%5i  %-4s%-4s%1s%4i    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n'%(d[i][0], cnt, d[i][2], d[i][3], self.chain_names[j], d[i][5], d[i][6], d[i][7], d[i][8], d[i][9], d[i][10], d[i][11])
                 f_out.write(L)
                 cnt += 1
-        
+
             f_out.write("TER\n")
-        
+
         f_out.write("END\n")
         f_out.close()

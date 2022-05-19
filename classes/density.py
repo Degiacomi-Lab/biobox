@@ -28,7 +28,7 @@ class Density(Structure):
     def __init__(self):
         '''
         A density map is fully described by the following attributes, stored in the self.properties dictionary:
-        
+
         :param density: density map
         :param delta:   scaling factor for voxels (default is [1, 1, 1] Angstrom)
         :param size:    dimensions in voxels
@@ -131,10 +131,10 @@ class Density(Structure):
         :param origin: coordinates of bottom left corner of the map
         :param delta: voxels' shape (default is a cubic voxel of 1 Angstrom-long sides).
         '''
-                
+
         if len(data.shape) != 3:
             raise Exception("ERROR: a 3D numpy array is expected")
-        
+
         self.properties['density'] = data
         self.properties['origin'] = np.array(origin)
         self.properties['size'] = np.array(data.shape)
@@ -279,7 +279,7 @@ class Density(Structure):
 
         '''
         given target mass and map resolution, predict CCS. Mass threshold is rescaled using the fitting function c / (1 + exp(-k*(resolution-x0))) + y0.
-        
+
         :param resolution: map resolution in 1/Angstrom
         :param mass: protein mass in kDa
         :param density: protein density in Da/A3
@@ -288,11 +288,11 @@ class Density(Structure):
         :param c: sigmoid parameter
         :param k: sigmoid parameter
         :returns CCS estimated from mass and density map resolution
-        '''        
+        '''
 
         if 'scan' not in list(self.properties):
             raise IOError("no threshold to volume to CCS relationship loaded yet. Please execute thresh_vol_ccs method.")
-        
+
         data=self.properties['scan'].copy()
         data[:,1]*=density
         data[:,1]/=1000.0
@@ -300,21 +300,21 @@ class Density(Structure):
         #get mass threshold
         dtest1=np.argmin(np.abs(data[:,1]-mass))
         thresh=data[dtest1,0]
-        
+
         #rescale mass threshold
         scaling= c / (1 + np.exp(-k*(resolution-x0))) + y0
         calibrated_thresh=thresh/scaling
-        
+
         #get associated CCS
         dtest1=np.argmin(np.abs(data[:,0]-calibrated_thresh))
         return data[dtest1,2], data[dtest1,0]
-        
-        
+
+
 
     def predict_mass_from_ccs(self, resolution, ccs, density=0.84, x0=2.51911893, y0=-1.06481492, c=2.7018764, k=0.44084821):
         '''
         given target mass and map resolution, predict CCS. Mass threshold is rescaled using the fitting function c / (1 + exp(-k*(resolution-x0))) + y0.
-    
+
         :param resolution: map resolution in 1/Angstrom
         :param mass: protein mass in kDa
         :param density: protein density in Da/A3
@@ -324,10 +324,10 @@ class Density(Structure):
         :param k: sigmoid parameter
         :returns CCS estimated from mass and density map resolution
         '''
-        
+
         if 'scan' not in list(self.properties):
             raise IOError("no threshold to volume to CCS relationship loaded yet. Please execute thresh_vol_ccs method.")
-        
+
         data=self.properties['scan'].copy()
         data[:,1]*=density
         data[:,1]/=1000.0
@@ -335,11 +335,11 @@ class Density(Structure):
         #get mass threshold
         dtest1=np.argmin(np.abs(data[:,2]-ccs))
         thresh=data[dtest1,0]
-        
+
         #rescale mass threshold
         scaling= c / (1 + np.exp(-k*(resolution-x0))) + y0
         calibrated_thresh=thresh*scaling
-        
+
         #get associated CCS
         dtest1=np.argmin(np.abs(data[:,0]-calibrated_thresh))
         return data[dtest1,1], data[dtest1,0]
@@ -443,7 +443,7 @@ class Density(Structure):
         :param sampling_points: number of measures to perform between min and max intensity in density map
         :returns: array reporting tested values and error on mass ([threshold, model_mass-target_mass])
         '''
-        
+
         import biobox as bb
 
         if low == "":
@@ -463,7 +463,7 @@ class Density(Structure):
 
             if verbose:
                 print("thresh: %s, vol=%s, ccs=%s (%s points)" % (thresh, vol, ccs, len(self.points)))
-            
+
             result.append([thresh, vol, ccs])
 
         r = np.array(result)
@@ -737,7 +737,7 @@ if __name__ == "__main__":
 
     # test points placement
     D.place_points(4)
-    
+
     # test CCS calculation and prediction
     D.threshold_vol_ccs(sampling_points=50, append=False)#, noise_filter=1)
     ccs = D.predict_ccs_from_mass(11.5, 801)

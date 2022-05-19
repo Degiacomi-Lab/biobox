@@ -18,7 +18,7 @@ def cmp(a, b):
 # -----------------------------------------------------------------------------
 #
 class Data_Cache:
-        
+
     def __init__(self, size):
         self.size = size
         self.used = 0
@@ -26,7 +26,7 @@ class Data_Cache:
         self.data = {}
         self.groups = {}
 
-        
+
     # ---------------------------------------------------------------------------
     #
     def cache_data(self, key, value, size, description, groups = []):
@@ -78,14 +78,14 @@ class Data_Cache:
 
         kd = map(lambda d: (d.key, d.value), groups[group])
         return kd
-    
+
     # ---------------------------------------------------------------------------
     #
     def resize(self, size):
 
         self.size = size
         self.reduce_use()
-    
+
     # ---------------------------------------------------------------------------
     #
     def reduce_use(self):
@@ -150,10 +150,10 @@ class MRC_Grid:
         # Path, file_type used for reloading data sets.
         self.path = path
         self.file_type = file_type    # 'mrc', 'ccp4', ....
-        
+
         name = self.name_from_path(path)
         self.name = name
-        
+
         self.size = tuple(d.data_size)
 
         if not isinstance(d.element_type, np.dtype):
@@ -225,7 +225,7 @@ class MRC_Grid:
     def ijk_to_xyz(self, ijk):
 
         return map_point(ijk, self.ijk_to_xyz_transform)
-        
+
     # ---------------------------------------------------------------------------
     #
     def matrix(self, ijk_origin = (0,0,0), ijk_size = None,
@@ -240,7 +240,7 @@ class MRC_Grid:
             self.cache_data(m, ijk_origin, ijk_size, ijk_step)
 
         return m
-        
+
     # ---------------------------------------------------------------------------
     # NumPy matrix.    The returned matrix has size ijk_size and
     # element ijk is accessed as m[k,j,i].    It is an error if the requested
@@ -252,7 +252,7 @@ class MRC_Grid:
     def read_matrix(self, ijk_origin, ijk_size, ijk_step, progress):
 
         return self.mrc_data.read_matrix(ijk_origin, ijk_size, ijk_step, progress)
-    
+
 
     def cached_data(self, origin, size, step):
 
@@ -337,7 +337,7 @@ class MRC_Grid:
 
         for k,d in dcache.group_keys_and_data(self):
             dcache.remove_key(k)
-    
+
     # ---------------------------------------------------------------------------
     #
     def add_change_callback(self, cb):
@@ -356,7 +356,7 @@ class MRC_Grid:
     def values_changed(self):
 
         self.call_callbacks('values changed')
-    
+
     # ---------------------------------------------------------------------------
     # Mapping of array indices to xyz coordinates has changed.
     #
@@ -367,7 +367,7 @@ class MRC_Grid:
     # ---------------------------------------------------------------------------
     #
     def call_callbacks(self, reason):
-        
+
         for cb in self.change_callbacks:
             cb(reason)
 
@@ -382,7 +382,7 @@ class MRC_Data:
         self.name = os.path.basename(path)
 
         file1 = open(path, 'rb')
- 
+
         file1.seek(0,2)                                                            # go to end of file
         file_size = file1.tell()
         file1.seek(0,0)                                                          # go to beginning of file
@@ -404,7 +404,7 @@ class MRC_Data:
 
         self.check_header_values(v, file_size, file1)
         self.header = v                         # For dumpmrc.py standalone program.
-        
+
         self.data_offset = file1.tell()
         file1.close()
 
@@ -468,13 +468,13 @@ class MRC_Data:
         for lbl in v['labels']:
             if lbl.startswith(b'Chimera rotation: '):
                 ax,ay,az,angle = map(float, lbl.rstrip('\0').split()[2:])
-                
+
                 #S = Structure()
                 r = self.rotation_matrix([ax, ay, az], angle)
                 #r = Matrix.rotation_from_axis_angle((ax,ay,az), angle)
-                
+
         self.rotation = r
-        
+
         self.min_intensity = v['amin']
         self.max_intensity = v['amax']
 
@@ -517,7 +517,7 @@ class MRC_Data:
 
         i32 = np.int32
         f32 = np.float32
-        
+
         v = {}
         v['nc'], v['nr'], v['ns'] = self.read_values(file1, i32, 3)
         v['mode'] = self.read_values(file1, i32, 1)
@@ -576,7 +576,7 @@ class MRC_Data:
         MODE_char     = 0
         MODE_short    = 1
         MODE_float    = 2
-        
+
         if mode == MODE_char:
             if unsigned_8_bit:
                 t = np.dtype(np.uint8)
@@ -629,7 +629,7 @@ class MRC_Data:
 
     #
     def read_values_from_string(self, string, etype, count):
-    
+
         values = np.frombuffer(string, etype)
         if self.swap_bytes:
             values = values.byteswap()
@@ -653,12 +653,12 @@ class MRC_Data:
                                                 progress)
         if not matrix is None:
             matrix = self.permute_matrix_to_xyz_axis_order(matrix)
-        
+
         return matrix
 
     #
     def permute_matrix_to_xyz_axis_order(self, matrix):
-        
+
         if self.ijk_to_crs == (0,1,2):
             return matrix
 
@@ -672,7 +672,7 @@ class MRC_Data:
 def valid_cell_angles(alpha, beta, gamma, path):
 
     err = None
-    
+
     for a in (alpha, beta, gamma):
         if a <= 0 or a >= 180:
             err = 'must be between 0 and 180'
@@ -696,7 +696,7 @@ def valid_cell_angles(alpha, beta, gamma, path):
 # is translation.
 #
 def transformation_and_inverse(origin, step, axes):
-    
+
     ox, oy, oz = origin
     d0, d1, d2 = step
     ax, ay, az = axes
@@ -707,11 +707,11 @@ def transformation_and_inverse(origin, step, axes):
 
     #from Matrix import invert_matrix
     #tf_inv = invert_matrix(tf)
-    tf_inv=tf 
- 
+    tf_inv=tf
+
     # Replace array by tuples
     tf_inv = tuple(map(tuple, tf_inv))
-    
+
     return tf, tf_inv
 
 # -----------------------------------------------------------------------------
@@ -739,7 +739,7 @@ def scale_and_skew(ijk, step, cell_angles):
 # -----------------------------------------------------------------------------
 #
 def apply_rotation(r, v):
-    
+
     rv = [r[a][0]*v[0] + r[a][1]*v[1] + r[a][2]*v[2] for a in (0,1,2)]
     return tuple(rv)
 
@@ -772,7 +772,7 @@ def read_array(path, byte_offset, ijk_origin, ijk_size, ijk_step,
 
         if progress:
                 progress.close_on_cancel(file1)
-                
+
         # Seek in file to read needed 1d slices.
         io, jo, ko = ijk_origin
         isize, jsize, ksize = ijk_size
@@ -808,7 +808,7 @@ def read_full_array(path, byte_offset, size, type1, byte_swap,
                                         progress = None, block_size = 2**20):
 
         a = allocate_array(size, type1)
-        
+
         file1 = open(path, 'rb')
         file1.seek(byte_offset)
 
@@ -824,7 +824,7 @@ def read_full_array(path, byte_offset, size, type1, byte_swap,
                 progress.done()
         else:
                 file1.readinto(a)
-                
+
         file1.close()
 
         if byte_swap:
@@ -865,7 +865,7 @@ def read_text_floats(path, byte_offset, size, array = None,
 
         if transpose:
                 array = array.transpose()
-        
+
         if progress:
                 progress.done()
 
@@ -903,7 +903,7 @@ def read_float_lines(f, array, line_format, progress = None):
                         c += 1
                 if progress:
                         progress.fraction(float(c)/(count-1))
-    
+
 # -----------------------------------------------------------------------------
 #
 def split_fields(line, field_size, max_fields):
@@ -923,7 +923,7 @@ def allocate_array(size, value_type = np.float32, step = None, progress = None,
                                      reverse_indices = True, zero_fill = False):
 
 
-        
+
 
         if step is None:
                 msize = size
@@ -980,7 +980,7 @@ def read_density(filename,extension):
         matrix = grid_data.matrix((0,0,k), (isz,jsz,1))
         if type1 != mtype:
             matrix = matrix.astype(type1)
-    
+
         m.append(matrix)
 
     data=np.squeeze(np.array(m).astype(float))
@@ -995,12 +995,12 @@ if __name__=="__main__":
 
     import os
     filename = "..%stest%sEMD-1080.mrc"%(os.sep, os.sep)
-    
+
     #try:
     [density,data] = read_density(filename, 'mrc')
     print("origin: %s"%np.array(data.origin))
     print("shape: %s"%np.array(density.shape))
     print("delta: %s"%(np.identity(3)*np.array(data.mrc_data.data_step)))
-        
+
     #except Exception as e:
     #    print("%s"%e)

@@ -274,7 +274,7 @@ class Sphere(Structure):
         :param radius: size of the individual points composing it
         :param n_sphere_point: This parameter defines the amount of points in the sphere
         '''
- 
+
         pts = []
         inc = np.pi * (3 - np.sqrt(5))
         offset = 2 / float(n_sphere_point)
@@ -298,7 +298,7 @@ class Sphere(Structure):
 
         self.properties['pt_radius'] = radius  # squeezing coeff on x axis
 
-       
+
     def _old_get_surface(self):
         '''
         compute sphere surface.

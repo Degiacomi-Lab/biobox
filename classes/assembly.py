@@ -68,7 +68,7 @@ class Assembly(object):
             e = deepcopy(struct)
             self.unit.append(e)
             self.unit_labels[str(i)] = i
-            
+
             e.points = e.coordinates.view()[0]
 
             #add labeling to structures tables, prior concatenation
@@ -79,7 +79,7 @@ class Assembly(object):
         #create dataframe collecting information from all structures
         self.data = pd.concat(dfs)
         self.data.index = np.arange(len(self.data))
-        
+
         self.current = 0
 
     def merge(self, assembly, n=1):
@@ -428,7 +428,7 @@ class Assembly(object):
     def get_uxyz(self):
         '''
         extract all structures coordinates in a a list, where every element contains an array of coordinates of a unit.
-        
+
         :returns: list of units coordinates.
         '''
         pts = []
@@ -465,7 +465,7 @@ class Assembly(object):
         '''
 
         from biobox.measures.calculators import sasa
-        
+
         # sum asa of individual components
         asa = 0
         for i in range(0, len(self.unit), 1):
@@ -513,7 +513,7 @@ class Assembly(object):
         elif fibertype == 'pmg':
 
             return
-        
+
         # TODO
         elif fibertype == 'pgg':
 
@@ -543,7 +543,7 @@ class Assembly(object):
         elif fibertype == 'p6m':
 
             return
-        
+
         else:
             return [fibertype]
 
@@ -613,9 +613,9 @@ class Assembly(object):
             z = - (Lp2pi + x0) * np.sin(phi) + z0 * np.cos(phi)
             x = x2 + Lp2pi
             y = L * np.sin(theta - thetap) + y0
-            
+
             return x, y, z
-            
+
 
         transformations = self._components(fibertype)
 
@@ -656,7 +656,7 @@ class Assembly(object):
 
         if 'p1oblique' in transformations:
             vy = vy * np.sin(gamma)
-        
+
         if 'p2' in transformations:
             psi = np.arcsin(float(vy) / np.sqrt(vx ** 2 + vy ** 2))
 
@@ -670,7 +670,7 @@ class Assembly(object):
         def basic_transform(u, Lx, Ly, fibertype, vx, vy, gamma, v, psi):
             if fibertype == 'p1hexagonal' and Ly % 2 == 1:
                 Lx += .5
-            
+
             elif fibertype == 'p1oblique' and Ly % 2 == 1:
                 Lx += vy * np.cos(gamma)
 
@@ -713,7 +713,7 @@ class Assembly(object):
                         u.rotate(180, 0, 0)
                         Lx += v * np.cos(np.pi / 4) / vx
                         Lx -= 1
-                                       
+
                 else:
                     if Ly % 2 == 1:
                         u.rotate(90, 0, 0)
@@ -721,8 +721,8 @@ class Assembly(object):
                         Lx += 1
                     else:
                         Lx -= v * np.cos(np.pi / 4) / vx
-                    Ly -= v * np.sin(np.pi / 4) / vy 
-            
+                    Ly -= v * np.sin(np.pi / 4) / vy
+
             elif fibertype == 'p6':
                 odd = (Ly % 2 == 1)
                 if Lx % 6 == 1:
@@ -813,4 +813,4 @@ class Assembly(object):
 
 
 
-        
+

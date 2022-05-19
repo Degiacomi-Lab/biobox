@@ -141,7 +141,7 @@ def sasa(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
 def rgyr(M):
     '''
     compute radius of gyration.
-    
+
     :param M: any biobox object
     :returns: radius of gyration
     '''
@@ -153,7 +153,7 @@ def rgyr(M):
 
     elif this_inst in ["Assembly", "Polyhedra"]:
         M = M.make_structure()
-    
+
     d_square = np.sum((M.points - M.get_center())**2, axis=1)
     return np.sqrt(np.sum(d_square) / d_square.shape[0])
 
@@ -216,7 +216,7 @@ def ccs(M, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMod
 
     :param M: any biobox object
     :param use_lib: if true, impact library will be used, if false a system call to impact executable will be performed instead
-    :param impact_path: by default, the environment variable IMPACTPATH is sought. This allows redirecting to a specific impact root folder. 
+    :param impact_path: by default, the environment variable IMPACTPATH is sought. This allows redirecting to a specific impact root folder.
     :param impact_options: flags to be passes to impact executable
     :param pdbname: if a file has been already written, impact can be asked to analyze it
     :param tjm_scale: if True, CCS value calculated with PA method is scaled to better match trajectory method.

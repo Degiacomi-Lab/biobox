@@ -744,7 +744,7 @@ class Xlink(Path):
                     continue
 
                 # extract atom's residue information, in case
-                # verbosity is requested             
+                # verbosity is requested
                 if verbose:
                     l1 = self.molecule.data.loc[indices[i], ["resname", "chain", "resid"]].values
                     l2 = self.molecule.data.loc[indices[j], ["resname", "chain", "resid"]].values
@@ -779,7 +779,7 @@ class Xlink(Path):
                             if dist_sph[idxs[k, 0], idxs[k, 1]] > self.maxdist:
                                 pts_crd = []
                                 break
- 
+
                             # stop if euclidean distance is greater than best
                             # curved path found up to now
                             if dist_sph[idxs[k, 0], idxs[k, 1]] > bestdist:
@@ -984,12 +984,12 @@ class Xlink(Path):
         #select only points reachable from the actual available coordinate
         rds = np.sort(np.array(radii)) #sorted radii list
         dists = np.array([rds[i+1]-rds[i] for i in range(len(rds)-1)]) #distances between adjacent spherical shells
-      
+
         step = np.max([pts_dist, np.max(dists), 3.0])
         db = DBSCAN(eps=step, min_samples=2).fit(res3)
         if db.labels_[0] != -1:
             R = res3[db.labels_ == db.labels_[0]]
         else:
             R = np.array([res3[0]])
-        
+
         return R
