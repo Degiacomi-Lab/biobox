@@ -1,5 +1,6 @@
 import unittest
-
+import sys
+sys.path.append('/home/wppj21/Workshop/biobox')
 import biobox as bb
 
 
@@ -12,28 +13,28 @@ class test_density(unittest.TestCase):
     def test_density_points(self):
 
         print("\n> density: placing points")
- 
-        try:       
-            self.D.place_points(5)            
+
+        try:
+            self.D.place_points(5)
         except Exception:
             assert False
 
     def test_density_CCS(self):
 
         print("\n> density: CCS calculation")
- 
-        try:          
+
+        try:
             self.D.threshold_vol_ccs(sampling_points=1, append=False, noise_filter=0)
         except Exception:
             assert False
 
 
 class test_structures(unittest.TestCase):
-    
+
     def setUp(self):
         self.M = bb.Molecule()
         self.M.import_pdb("HSP.pdb")
-    
+
     def test_len(self):
         print("\n> testing magic method:")
         print(">> atom count of monomer: %s"%len(self.M))
@@ -43,25 +44,25 @@ class test_structures(unittest.TestCase):
         #print M2[:, 20:22]
 
     def test_xlink(self):
-    
+
         print("\n> testing shortest path")
-    
+
         try:
             #extract indices of atoms to connect
             idx = self.M.atomselect("*", "LYS", "NZ", use_resname=True, get_index=True)[1]
-    
+
             #prepare xlink measurer
             XL = bb.Xlink(self.M)
             XL.set_clashing_atoms(atoms=["CA", "C", "N", "O", "CB"], densify=True, atoms_vdw=False)
-        
-            XL.setup_global_search(maxdist=14, use_hull=False)  
+
+            XL.setup_global_search(maxdist=14, use_hull=False)
             #XL.setup_local_search(maxdist=24)
-    
+
             distance2, paths = XL.distance_matrix(idx, method="theta", get_path=True, smooth=True, verbose=False, flexible_sidechain=True, test_los=True)
 
         except Exception:
             assert False
-             
+
 
     def test_SASA(self):
 
@@ -75,7 +76,7 @@ class test_structures(unittest.TestCase):
     def test_monomer_CCS(self):
 
         print("\n> testing CCS")
-        
+
         try:
             ccs1 = bb.ccs(self.M)
         except Exception:
@@ -104,7 +105,7 @@ class test_structures(unittest.TestCase):
     def test_multimer_selections(self):
 
         print("\n> testing multimer atomselect and query")
-        try:        
+        try:
             A = bb.Multimer()
             A.load_list([self.M, self.M], ["1", "2"])
         except Exception:
@@ -128,7 +129,7 @@ class test_structures(unittest.TestCase):
 
 
     def test_multimer_rototranslations(self):
-        
+
         print("\n> testing multimer rototranslations")
         try:
             P = bb.Multimer()
@@ -148,7 +149,7 @@ class test_structures(unittest.TestCase):
             self.M.align_axes()
             self.M.rotate(10, 10, 10)
             self.M.translate(20, 20, 20)
-                    
+
         except Exception:
             assert False
 
@@ -157,11 +158,11 @@ class test_structures(unittest.TestCase):
     def test_polyRMSD(self):
 
         print("\n> assemblying Polyhedra")
-        try:    
+        try:
             #setup desired polyhedron
             P = bb.Multimer()
             P.setup_polyhedron("Octahedron", self.M)
-        
+
             #try creation and and deletion of some polyhedra
             P.generate_polyhedron(40, 180, 0, 0)
             P.generate_polyhedron(42, 180, 5, 0, add_conformation=True)
@@ -169,16 +170,16 @@ class test_structures(unittest.TestCase):
             P.generate_polyhedron(40, 180, 10, 10, add_conformation=True)
             P.generate_polyhedron(40, 180, 5, 5, add_conformation=True)
             P.delete_xyz(2)
-            
+
             #test atomselects on alternate conformations
             P.set_current(0)
             a1 = P.atomselect(["1", "2"], "*", 90, "CA")
             P.set_current(1)
             a2 = P.atomselect(["1", "2"], "*", 90, "CA")
-            
+
             #different conformations must be selected
             self.assertNotAlmostEqual(a1[0, 0], a2[0, 0])
-            
+
         except Exception:
             assert False
 
@@ -191,23 +192,23 @@ class test_structures(unittest.TestCase):
             C1 = bb.Prism(10, 20, 5)
             C1.get_surface()
             C1.get_volume()
-            
+
             C2 = bb.Cylinder(10, 50)
             C2.get_surface()
             C2.get_volume()
-    
+
             C3 = bb.Cone(10, 30)
             C3.get_surface()
             C3.get_volume()
-    
+
             C4 = bb.Ellipsoid(10, 20, 30)
             C4.get_surface()
             C4.get_volume()
-    
+
             C5 = bb.Sphere(10)
             C5.get_surface()
             C5.get_volume()
-        
+
         except Exception:
             assert False
 

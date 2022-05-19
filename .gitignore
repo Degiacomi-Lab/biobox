@@ -50,7 +50,7 @@ Temporary Items
 *.py[cod]
 
 # compiled libraries
-lib/*so
+src/biobox/lib/*so
 
 # Sphinx documentation
 doc/_build/
@@ -66,7 +66,7 @@ doc/_templates/
 *.log
 
 # files generated during testing
-test/params
+biobox/test/params
 
 # cython-generated files
 lib/*.c

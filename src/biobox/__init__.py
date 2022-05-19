@@ -17,4 +17,6 @@ __date__ = '$Date: 2016-08-05 $'
 
 name = 'biobox'
 
-from src/biobox import *
+from biobox.measures import *
+from biobox.classes import *
+from biobox.lib import *
