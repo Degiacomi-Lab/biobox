@@ -13,8 +13,8 @@
 import os
 import shutil
 import numpy as np
-from distutils.core import setup
-from distutils.command.build_ext import build_ext
+from setuptools import setup
+from setuptools.command.build_ext import build_ext
 from Cython.Build import cythonize
 
 
@@ -31,7 +31,7 @@ class InstallCommand(build_ext):
                     if extension in ["pyd", "so"]:
                         os.rename(os.path.join(root, filename), filename)
 
-        except Exception as ex:
+        except Exception:
             print("files already exist, skipping...")
 
         shutil.rmtree("build")
@@ -40,8 +40,8 @@ os.chdir("lib")
 
 # small hack to get around a problem in older cython versions, i.e.
 # an infinite dependencies loop when __init__.py file is in the same folder as pyx
-if os.path.exists("__init__.py"):
-    os.rename("__init__.py", "tmp")
+#if os.path.exists("__init__.py"):
+#    os.rename("__init__.py", "tmp")
 
 
 setup(
@@ -54,4 +54,4 @@ setup(
 )
 
 # continuation of the small hack
-os.rename("tmp", "__init__.py")
+#os.rename("tmp", "__init__.py")

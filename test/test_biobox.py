@@ -15,7 +15,7 @@ class test_density(unittest.TestCase):
  
         try:       
             self.D.place_points(5)            
-        except Exception as ex:
+        except Exception:
             assert False
 
     def test_density_CCS(self):
@@ -24,7 +24,7 @@ class test_density(unittest.TestCase):
  
         try:          
             self.D.threshold_vol_ccs(sampling_points=1, append=False, noise_filter=0)
-        except Exception as ex:
+        except Exception:
             assert False
 
 
@@ -35,13 +35,12 @@ class test_structures(unittest.TestCase):
         self.M.import_pdb("HSP.pdb")
     
     def test_len(self):
-        print("\n> testing magic methods")
-        print(">> atom count: %s"%len(self.M))
-        print(">> frames count: %s"%len(self.M, "frames"))
+        print("\n> testing magic method:")
+        print(">> atom count of monomer: %s"%len(self.M))
 
         M2 = self.M + self.M
-        print(">> atom count of extension: %s"%len(M2))
-        print M2[:, 20:22]
+        print(">> atom count of dimer: %s"%len(M2))
+        #print M2[:, 20:22]
 
     def test_xlink(self):
     
@@ -60,7 +59,7 @@ class test_structures(unittest.TestCase):
     
             distance2, paths = XL.distance_matrix(idx, method="theta", get_path=True, smooth=True, verbose=False, flexible_sidechain=True, test_los=True)
 
-        except Exception as ex:
+        except Exception:
             assert False
              
 
@@ -69,7 +68,7 @@ class test_structures(unittest.TestCase):
         print("\n> testing molecule's SASA")
         try:
             [sasa, mesh, surf_idx] = bb.sasa(self.M, n_sphere_point=400)
-        except Exception as ex:
+        except Exception:
             assert False
 
 
@@ -79,8 +78,12 @@ class test_structures(unittest.TestCase):
         
         try:
             ccs1 = bb.ccs(self.M)
+        except Exception:
+            assert False
+
+        try:
             ccs2 = bb.ccs(self.M, use_lib=False)
-        except Exception as ex:
+        except Exception:
             assert False
 
         self.assertAlmostEqual(ccs1, ccs2, delta=ccs2/10.0) #max 10% difference
@@ -95,7 +98,7 @@ class test_structures(unittest.TestCase):
             A.load(self.M, 3)
             A.make_circular_symmetry(30)
             bb.ccs(A)
-        except Exception as ex:
+        except Exception:
             assert False
 
     def test_multimer_selections(self):
@@ -104,21 +107,21 @@ class test_structures(unittest.TestCase):
         try:        
             A = bb.Multimer()
             A.load_list([self.M, self.M], ["1", "2"])
-        except Exception as ex:
+        except Exception:
             assert False
 
         pts_test = self.M.atomselect("*", "LYS", "CA", use_resname = True)
 
         try:
             pts = A.query('unit == "1" and resname == "LYS" and name == "CA"')
-        except Exception as ex:
+        except Exception:
             assert False
 
         self.assertEqual(len(pts), len(pts_test))
 
         try:
             pts = A.atomselect("1", "*", "LYS", "CA", use_resname = True)
-        except Exception as ex:
+        except Exception:
             assert False
 
         self.assertEqual(len(pts), len(pts_test))
@@ -133,7 +136,7 @@ class test_structures(unittest.TestCase):
             P.rotate(0, 0, 90)
             P.make_prism(25, 15, 180, 45, 90)
             P.rotate(10, 10, 10, [1, 2])
-        except Exception as ex:
+        except Exception:
             assert False
 
 
@@ -146,7 +149,7 @@ class test_structures(unittest.TestCase):
             self.M.rotate(10, 10, 10)
             self.M.translate(20, 20, 20)
                     
-        except Exception as ex:
+        except Exception:
             assert False
 
 
@@ -173,7 +176,10 @@ class test_structures(unittest.TestCase):
             P.set_current(1)
             a2 = P.atomselect(["1", "2"], "*", 90, "CA")
             
-        except Exception as ex:
+            #different conformations must be selected
+            self.assertNotAlmostEqual(a1[0, 0], a2[0, 0])
+            
+        except Exception:
             assert False
 
 
@@ -187,12 +193,12 @@ class test_structures(unittest.TestCase):
             C1.get_volume()
             
             C2 = bb.Cylinder(10, 50)
-            C1.get_surface()
-            C1.get_volume()
+            C2.get_surface()
+            C2.get_volume()
     
             C3 = bb.Cone(10, 30)
-            C1.get_surface()
-            C1.get_volume()
+            C3.get_surface()
+            C3.get_volume()
     
             C4 = bb.Ellipsoid(10, 20, 30)
             C4.get_surface()
@@ -202,7 +208,7 @@ class test_structures(unittest.TestCase):
             C5.get_surface()
             C5.get_volume()
         
-        except Exception as ex:
+        except Exception:
             assert False
 
 
