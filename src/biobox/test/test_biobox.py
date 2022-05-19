@@ -1,9 +1,9 @@
 import unittest
-import sys
-sys.path.append('/home/wppj21/Workshop/biobox')
+import sys, os
+
+sys.path.append(os.sep.join(os.getcwd().split(os.sep)[:-2]))
 import biobox as bb
-
-
+     
 class test_density(unittest.TestCase):
 
     def setUp(self):
