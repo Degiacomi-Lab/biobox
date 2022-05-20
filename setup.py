@@ -18,46 +18,23 @@ from setuptools.command.build_ext import build_ext
 from Cython.Build import cythonize
 
 
-class InstallCommand(build_ext):
-
-    def run(self):
-
-        build_ext.run(self)
-
-        try:
-            for root, dirnames, filenames in os.walk("build"):
-                for filename in filenames:
-                    extension = filename.split(".")[-1]
-                    if extension in ["pyd", "so"]:
-                        os.rename(os.path.join(root, filename), filename)
-
-        except Exception:
-            print("files already exist, skipping...")
-
-        shutil.rmtree("build")
-
-os.chdir(f"src{os.sep}biobox{os.sep}lib")
-
-# small hack to get around a problem in older cython versions, i.e.
-# an infinite dependencies loop when __init__.py file is in the same folder as pyx
-#if os.path.exists("__init__.py"):
-#    os.rename("__init__.py", "tmp")
-
-
+packages=find_packages(where='src')
+print('packages being: ', packages)
+pyx_files = []
+for package in packages:
+    package_path = f'src{os.sep}{os.sep.join(package.split("."))}'
+    for file in os.listdir(package_path):
+        if file.split('.')[-1]=='pyx':
+            pyx_files.append(f'{package_path}{os.sep}{file}')
 setup(
     name = 'biobox',
-    version='1.0.0',
-    #authors='Many Handsome People',
-    #license = '',
+    version='1.1.0',
     include_dirs=[np.get_include()],
     ext_modules=cythonize(
-        "*.pyx",
+        pyx_files,#"*.pyx",
         include_path=[np.get_include()],
-            compiler_directives={'boundscheck': False, 'wraparound': False}),
-    cmdclass={'install': InstallCommand},
-    #packages=['biobox'],
-    packages=find_packages(where='src'),
+        compiler_directives={'boundscheck': False, 'wraparound': False}),
+    package_data={"":["*.dat"]},
+    packages=packages,
+    package_dir={"":"src"},
 )
-
-# continuation of the small hack
-#os.rename("tmp", "__init__.py")

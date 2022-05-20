@@ -24,7 +24,7 @@ Biobox requires Python3.x and the following packages:
 * scikit-learn
 * cython
 
-Biobox can be installed with: `pip install biobox`. Biobox can otherwise be installed manually typing the followin command in the Biobox folder: `python setup.py install`. Please make sure the folder where Biobox is located is in your PYTHONPATH.
+Biobox can be installed with: `pip install biobox`. Biobox can otherwise be installed manually typing the followin command in the Biobox folder: `python setup.py build_ext --inplace` followed by `python setup.py install`. Please make sure the folder where Biobox is located is in your PYTHONPATH.
 
 Optional external software:
 * CCS calculation relies on a call to [IMPACT](

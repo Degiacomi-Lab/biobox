@@ -1,9 +1,11 @@
 import unittest
 import sys, os
-
-sys.path.append(os.sep.join(os.getcwd().split(os.sep)[:-2]))
+if 'CONDA_BUILD_STATE' in os.environ and os.environ['CONDA_BUILD_STATE']=='TEST':
+    pass
+else:
+    sys.path.append(os.sep.join(os.getcwd().split(os.sep)[:-1])+os.sep+'src')
 import biobox as bb
-     
+
 class test_density(unittest.TestCase):
 
     def setUp(self):
@@ -74,8 +76,11 @@ class test_structures(unittest.TestCase):
 
 
     def test_monomer_CCS(self):
-
-        print("\n> testing CCS")
+        if 'IMPACTPATH' in os.environ:
+            print("\n> testing CCS")
+        else:
+            print("\n\n> IMPACTPATH not set therefore can't test CCS. \n WARNING: If you want CCS calculations you need to set IMPACTPATH")
+            return
 
         try:
             ccs1 = bb.ccs(self.M)
@@ -91,8 +96,12 @@ class test_structures(unittest.TestCase):
 
 
     def test_multimer_CCS(self):
+        if 'IMPACTPATH' in os.environ:
+            print("\n> testing multimer CCS")
+        else:
+            print("\n\n> IMPACTPATH not set therefore can't test CCS. \n WARNING: If you want CCS calculations you need to set IMPACTPATH")
+            return
 
-        print("\n> testing multimer CCS")
 
         try:
             A = bb.Multimer()
