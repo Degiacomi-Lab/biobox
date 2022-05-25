@@ -17,14 +17,20 @@ Allowed operations on structures incude:
 
 ## INSTALLATION AND REQUIREMENTS
 
+The best way to install Biobox is via Anaconda
+`conda install biobox -c conda-forge`
+
+Biobox can be also installed via pip
+`pip install biobox`
+
+Biobox can otherwise be installed manually typing the followin command in the Biobox folder: `python setup.py build_ext --inplace` followed by `python setup.py install`. Please make sure the folder where Biobox is located is in your PYTHONPATH.
+
 Biobox requires Python3.x and the following packages:
 * numpy
 * scipy
 * pandas
 * scikit-learn
 * cython
-
-Biobox can be installed with: `pip install biobox`. Biobox can otherwise be installed manually typing the followin command in the Biobox folder: `python setup.py build_ext --inplace` followed by `python setup.py install`. Please make sure the folder where Biobox is located is in your PYTHONPATH.
 
 Optional external software:
 * CCS calculation relies on a call to [IMPACT](
