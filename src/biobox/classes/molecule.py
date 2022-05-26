@@ -23,7 +23,7 @@ kB = 1.3806 * 10**(-23) # m**2 kg s**-2 K-1, Lattice Boltzmann constant
 e = 1.602 * 10**(-19) # A s, electronic charge
 m = 1 * 10**(-9) # number of nm in 1 m
 c = 3.336 * 10**(-30) # conversion from debye to e m
-Na = 6.022 * 10**(23) # Avagadros Number
+Na = 6.022 * 10**(23) # Avogadro's Number
 
 from biobox.classes.structure import Structure
 from biobox.lib import e_density
@@ -145,7 +145,7 @@ class Molecule(Structure):
 
         try:
             f_in = open(pdb, "r")
-        except Exception as ex:
+        except Exception:
             raise Exception('ERROR: file %s not found!' % pdb)
 
         # store filename
@@ -165,14 +165,14 @@ class Molecule(Structure):
             if "REMARK 350   BIOMT" in line:
                 try:
                     biomt.append(line.split()[4:8])
-                except Exception as ex:
+                except Exception:
                     raise Exception("ERROR: biomatrix format seems corrupted")
 
             # load symmetry matrix, if any is present
             if "REMARK 290   SMTRY" in line:
                 try:
                     symm.append(line.split()[4:8])
-                except Exception as ex:
+                except Exception:
                     raise Exception("ERROR: symmetry matrix format seems corrupted")
 
             # if a complete model was parsed store all the saved data into
@@ -193,13 +193,13 @@ class Molecule(Structure):
                         # Set the index numbers to the idx values to avoid hexadecimal counts
                         self.data["index"] = idx
 
-                    except Exception as ex:
+                    except Exception:
                         raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' %pdb)
 
                     # saving vdw radii
                     try:
                         self.data['radius'] = np.array(r)
-                    except Exception as ex:
+                    except Exception:
                         raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' %pdb)
 
                     # save default charge state
@@ -210,7 +210,7 @@ class Molecule(Structure):
                     if len(p) > 0:
                         alternative.append(np.array(p))
                     p = []
-                except Exception as ex:
+                except Exception:
                     raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' % pdb)
 
             if record == 'ATOM' or (include_hetatm and record == 'HETATM'):
@@ -227,32 +227,41 @@ class Molecule(Structure):
                     w.append(line[6:12].strip())  # extract atom index
                     w.append(line[12:17].strip())  # extract atomname
                     w.append(line[17:21].strip())  # extract resname
-                    w.append(line[21].strip())  # extract chain name
-                    w.append(line[22:26].strip())  # extract residue id
+                    
+                    # extract chain name and residue ID
+                    
+                    # for 1-character-long chain name (works only for proteins with less than 1000 resids)
+                    if line[22] == " " or line[22].isdigit():
+                        w.append(line[21].strip())  
+                        w.append(line[22:26].strip())
+
+                    else: # for 1-character-long chain name (usual case)
+                        w.append(line[21:23].strip())  
+                        w.append(line[23:26].strip())
 
                     # extract occupancy
                     try:
                         w.append(float(line[54:60]))
-                    except Exception as ex:
+                    except Exception:
                         w.append(1.0)
 
                     # extract beta factor
                     try:
                         # w.append("{0.2f}".format(float(line[60:66])))
                         w.append(float(line[60:66]))
-                    except Exception as ex:
+                    except Exception:
                         w.append(0.0)
 
                     # extract atomtype
                     try:
                         w.append(line[76:78].strip())
-                    except Exception as ex:
+                    except Exception:
                         w.append("")
 
                     # use atomtype to extract vdw radius
                     try:
                         r.append(self.know('atom_vdw')[line[76:78].strip()])
-                    except Exception as ex:
+                    except Exception:
                         r.append(self.know('atom_vdw')['.'])
 
                     # assign default charge state of 0
@@ -282,12 +291,12 @@ class Molecule(Structure):
                     # Set the index numbers to the idx values to avoid hexadecimal counts
                     self.data["index"] = idx
 
-                except Exception as ex:
+                except Exception:
                     raise Exception('ERROR: something went wrong when saving data in %s!\nERROR: are all the columns separated?' %pdb)
 
                 try:
                     self.data['radius'] = np.array(r)
-                except Exception as ex:
+                except Exception:
                     raise Exception('ERROR: something went wrong when saving van der Waals radii in %s!\nERROR: are all the columns separated?' % pdb)
 
                 # save default charge state
@@ -298,7 +307,7 @@ class Molecule(Structure):
                 if len(p) > 0:
                     alternative.append(np.array(p))
                 p = []
-            except Exception as ex:
+            except Exception:
                 raise Exception('ERROR: something went wrong when saving coordinates in %s!\nERROR: are all the columns separated?' %pdb)
 
         # transform the alternative temporary list into a nice multiple
@@ -306,7 +315,7 @@ class Molecule(Structure):
         if len(alternative) > 0:
             try:
                 alternative_xyz = np.array(alternative).astype(float)
-            except Exception as e:
+            except Exception:
                 alternative_xyz = np.array([alternative[0]]).astype(float)
                 print('WARNING: found %s models, but their atom count differs' % len(alternative))
                 print('WARNING: treating only the first model in file %s' % pdb)
@@ -382,12 +391,10 @@ class Molecule(Structure):
 
         p = []  # collects coordinates for every model
         coords = []
-        counter = 1
         with open(fname) as f_in:
             for line in itertools.islice(f_in, header, header+no_atoms):
                 p.append([float(line[21:45]), float(line[48:72]), float(line[75:99])])
             coords.append(p)
-            p_record = p[-1]
             for line in itertools.islice(f_in, 0, 2*no_atoms+energy_skip):
                 pass
             while len(p) != 0:
@@ -416,7 +423,7 @@ class Molecule(Structure):
 
         try:
             f_in = open(pqr, "r")
-        except Exception as ex:
+        except Exception:
             raise Exception('ERROR: file %s not found!' % pqr)
 
         # store filename
@@ -444,19 +451,19 @@ class Molecule(Structure):
                         self.data = pd.DataFrame(data, index=idx, columns=cols)
                         self.data["index"] = idx # convert to internal numbering system
 
-                    except Exception as ex:
+                    except Exception:
                         raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' %pqr)
 
                     # saving vdw radii
                     try:
                         self.data['radius'] = np.array(r)
-                    except Exception as ex:
+                    except Exception:
                         raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' %pqr)
 
                     # saving electrostatics
                     try:
                         self.data['charge'] = np.array(e)
-                    except Exception as ex:
+                    except Exception:
                         raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' % pqr)
 
                 # save 3D coordinates of every atom and restart the accumulator
@@ -464,7 +471,7 @@ class Molecule(Structure):
                     if len(p) > 0:
                         alternative.append(np.array(p))
                     p = []
-                except Exception as ex:
+                except Exception:
                     raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' %pqr)
 
             if record == 'ATOM' or (include_hetatm and record == 'HETATM'):
@@ -480,13 +487,13 @@ class Molecule(Structure):
                     try:
                         # 54 is separator, 55 is plus/minus
                         e.append(float(line[54:62]))
-                    except Exception as ex:
+                    except Exception:
                         e.append(0.0)
 
                     # extract vdW radius
                     try:
                         r.append(float(line[62:69]))
-                    except Exception as ex:
+                    except Exception:
                         r.append(self.know('atom_vdw')['.'])
 
                     # initialize list
@@ -497,8 +504,17 @@ class Molecule(Structure):
                     w.append(line[6:11].strip())  # extract atom index
                     w.append(line[12:17].strip())  # extract atomname
                     w.append(line[17:20].strip())  # extract resname
-                    w.append(line[21].strip())  # extract chain name
-                    w.append(line[22:26].strip())  # extract residue id
+
+                    # extract chain name and residue ID
+                    
+                    # for 1-character-long chain name (works only for proteins with less than 1000 resids)
+                    if line[22] == " " or line[22].isdigit():
+                        w.append(line[21].strip())  
+                        w.append(line[22:26].strip())
+
+                    else: # for 1-character-long chain name (usual case)
+                        w.append(line[21:23].strip())  
+                        w.append(line[23:26].strip())
 
                     # extract occupancy
                     w.append('1')
@@ -534,12 +550,12 @@ class Molecule(Structure):
                     self.data = pd.DataFrame(data, index=idx, columns=cols)
                     self.data["index"] = idx # convert to internal numbering system
 
-                except Exception as ex:
+                except Exception:
                     raise Exception('ERROR: something went wrong when saving data in %s!\nERROR: are all the columns separated?' % pqr)
 
                 try:
                     self.data['radius'] = np.array(r)
-                except Exception as ex:
+                except Exception:
                     raise Exception('ERROR: something went wrong when saving van der Waals radii in %s!\nERROR: are all the columns separated?' %pqr)
 
             # save 3D coordinates of every atom and restart the accumulator
@@ -547,7 +563,7 @@ class Molecule(Structure):
                 if len(p) > 0:
                     alternative.append(np.array(p))
                 p = []
-            except Exception as ex:
+            except Exception:
                 raise Exception('ERROR: something went wrong when saving coordinates in %s!\nERROR: are all the columns separated?' %pqr)
 
         # transform the alternative temporary list into a nice multiple
@@ -555,7 +571,7 @@ class Molecule(Structure):
         if len(alternative) > 0:
             try:
                 alternative_xyz = np.array(alternative).astype(float)
-            except Exception as ex:
+            except Exception:
                 alternative_xyz = np.array([alternative[0]]).astype(float)
                 print('WARNING: found %s models, but their atom count differs' % len(alternative))
                 print('WARNING: treating only the first model in file %s' % pqr)
@@ -639,7 +655,7 @@ class Molecule(Structure):
             atom = self.data["name"].values[i]
             try:
                 a_type.append(self.knowledge["atomtype"][atom])
-            except Exception as ex:
+            except Exception:
                 a_type.append("")
 
         self.data["atomtype"] = a_type
@@ -723,7 +739,7 @@ class Molecule(Structure):
         try:
             # numpy array of charges [c1, c2, c3, ...]
             charges = self.data['charge'].values[idx]
-        except Exception as e:
+        except Exception:
             raise Exception('ERROR: No charges associated with %s' % self)
 
         charges = np.reshape(charges, (len(charges), 1))
@@ -1132,7 +1148,7 @@ class Molecule(Structure):
         try:
             test = len(index)  # this should fail if index is a number
             idlist = index
-        except Exception as e:
+        except Exception:
             idlist = [index]
 
         D = self.data.values
@@ -1324,6 +1340,7 @@ class Molecule(Structure):
 
         # store current frame, so it will be reestablished after file output is
         # complete
+
         currentbkp = self.current
 
         # if a subset of all available frames is requested to be written,
@@ -1360,32 +1377,24 @@ class Molecule(Structure):
             else:
                 no = 1
 
-            if no == 1:
-                for i in range(0, len(d), 1):
-                    # create and write PDB line
-                    if d[i][2][0].isdigit():
-                        L = '%-6s%5s  %-4s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
-                    elif len(d[i][2]) == 4:
-                        L = '%-6s%5s %-4s %-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
-                    else:
-                        L = '%-6s%5s  %-3s %-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
-                    f_out.write(L)
-            else:
-                for i in range(0, len(d), 1):
-                    # create and write PDB line
-                    if d[i][2][0].isdigit():
-                        L = '%-6s%5s  %-4s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
-                    elif len(d[i][2]) == 4:
-                        L = '%-6s%5s %-4s %-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
-                    else:
-                        L = '%-6s%5s  %-3s %-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
+            for i in range(0, len(d), 1):
+                
+                # create and write PDB line
+                if len(d[i][4]) == 2:
+                    fmt = '%-6s%5s  %-4s%-4s%2s%3s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n'    
+                elif d[i][2][0].isdigit():
+                    fmt = '%-6s%5s  %-4s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n'
+                elif len(d[i][2]) == 4:
+                    fmt = '%-6s%5s %-4s %-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n'
+                else:
+                    fmt = '%-6s%5s  %-3s %-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n'
 
-                    f_out.write(L)
+                f_out.write(fmt%(d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11]))
 
-                    # Terminate chain if applicable
-                    if np.any(i == split):
-                        L = 'TER   %5s      %-4s%1s%4s\n' % (idx_val[i], d[i][3], d[i][4], d[i][5])
-                        f_out.write(L)
+                # Terminate chain if applicable
+                if no != 1 and np.any(i == split):
+                    L = 'TER   %5s      %-4s%1s%4s\n' % (idx_val[i], d[i][3], d[i][4], d[i][5])
+                    f_out.write(L)
 
             f_out.write("ENDMDL\n")
 
@@ -1394,6 +1403,7 @@ class Molecule(Structure):
         self.set_current(currentbkp)
 
         return
+    
 
     def write_gro(self, outname, conformations=[], index=""):
         '''
@@ -1462,7 +1472,7 @@ class Molecule(Structure):
         try:
             rmsf = self.rmsf(indices, step)
             return 8.0 * (np.pi**2) * (rmsf**2) / 3.0
-        except Exception as ex:
+        except Exception:
             raise Exception('ERROR: could not calculate RMSF!')
 
     def rmsf_from_beta_factor(self, indices=[]):
@@ -1480,7 +1490,7 @@ class Molecule(Structure):
 
             return np.sqrt(b * 3 / (8 * np.pi * np.pi))
 
-        except Exception as ex:
+        except Exception:
             raise Exception('ERROR: beta factors missing?')
 
     def get_mass_by_residue(self, skip_resname=[]):
@@ -1512,7 +1522,7 @@ class Molecule(Structure):
                     try:
                         # add mass of residue to total mass
                         mass += self.know('residue_mass')[resname]
-                    except Exception as ex:
+                    except Exception:
                         #@todo: if residue is not known, why not summing constituent atoms masses, warning the user that it's an estimation?
                         raise Exception("ERROR: mass for resname %s is unknown!\nInsert a key in protein\'s masses dictionary knowledge['residue_mass'] and retry!\nex.: protein.knowledge['residue_mass'][\"TST\"]=142.42" %resname)
 
@@ -1537,7 +1547,7 @@ class Molecule(Structure):
             if resname not in skip_resname:
                 try:
                     mass += self.know('atom_mass')[atomtype]
-                except Exception as e:
+                except Exception:
                     if atomtype == "":
                         print(self.data.values[i:i+40])
                         raise Exception("ERROR: no atomtype found!")
@@ -1945,9 +1955,9 @@ class Molecule(Structure):
             CHID = np.array(["CHID"] * 19)
 
             start_chain = self.data["resid"].iloc[0]   # This is in case we get 1 or 2 as the first chain ID start
-            end_chain = self.data["resid"].iloc[-1]    #  We don't know the end chain number so we find it here
+            #end_chain = self.data["resid"].iloc[-1]    #  We don't know the end chain number so we find it here
             start_res = self.data["resname"].iloc[0]
-            end_res = self.data["resname"].iloc[-1]
+            #end_res = self.data["resname"].iloc[-1]
 
             # Need to check if first residue is actually an N-termini residue, and if so, reassign resnames if necessary
             if (self.data["name"].iloc[0:27] == 'H1').any() and (self.data["name"].iloc[0:27] == 'H2').any() and (self.data["name"].iloc[0:27] == 'H3').any() and self.data["resname"][0][0] != 'N':
@@ -2007,7 +2017,10 @@ class Molecule(Structure):
 
         if len(ff) == 0:
             folder = os.path.dirname(os.path.realpath(__file__))
-            ff = "%s%s..%samber14sb.dat" %(folder, os.sep, os.sep)
+            
+            folder = os.path.dirname(os.path.realpath(__file__))
+            folder = os.sep.join(folder.split(os.sep)[:-1])
+            ff = "%s%sdata%amber14sb.dat" %(folder, os.sep, os.sep)
 
         if os.path.isfile(ff) != 1:
             raise Exception("ERROR: %s not found!" % ff)

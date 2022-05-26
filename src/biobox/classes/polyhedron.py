@@ -47,7 +47,8 @@ class Polyhedron(Assembly):
 
         if len(dbfilename) == 0:
             folder = os.path.dirname(os.path.realpath(__file__))
-            dbfilename = "%s%s..%spolyhedron_database.dat" %(folder, os.sep, os.sep)
+            folder = os.sep.join(folder.split(os.sep)[:-1])
+            dbfilename = "%s%sdata%spolyhedron_database.dat" %(folder, os.sep, os.sep)
 
         if os.path.isfile(dbfilename) != 1:
             raise Exception("ERROR: %s not found!" % dbfilename)
