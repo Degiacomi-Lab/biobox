@@ -2006,9 +2006,8 @@ class Molecule(Structure):
                             self.data.loc[ix:(ix+H_length-1), "resname"] = CHID
 
         if len(ff) == 0:
-            #"amber14sb.dat"
             folder = os.path.dirname(os.path.realpath(__file__))
-            ff = "%s/amber14sb.dat" % folder
+            ff = "%s%s..%samber14sb.dat" %(folder, os.sep, os.sep)
 
         if os.path.isfile(ff) != 1:
             raise Exception("ERROR: %s not found!" % ff)
@@ -2245,3 +2244,4 @@ class Molecule(Structure):
         '''
 
         dummy = e_density.c_get_dipole_density(dipole_map = dipole_map, orig = orig, min_val = min_val, V = V, outname = outname, vox_in_window = vox_in_window, eqn = eqn, T = T, P = P, epsilonE = epsilonE, resolution = resolution)
+        return dummy
