@@ -1327,14 +1327,14 @@ class Molecule(Structure):
 
         return d
 
-    def write_pdb(self, outname, conformations=[], index=[], split_struc=True, dssp=False):
+    def write_pdb(self, outname, conformations=[], index=[], split_struc=False dssp=False):
         '''
         overload superclass method for writing (multi)pdb.
 
         :param outname: name of pdb file to be generated.
         :param index: indices of atoms to write to file. If empty, all atoms are returned. Index values obtaineable with a call like: index=molecule.atomselect("A", [1, 2, 3], "CA", True)[1]
         :param conformations: list of conformation indices to write to file. By default, a multipdb with all conformations will be produced.
-        :param split_struc: Guess chain split on structure being written. Default: True. Set to False if protein is broken, but should retain chain lettering and doesn't have chain breaks.
+        :param split_struc: Guess chain split on structure being written. Default: False. Set to False if protein is broken, but should retain chain lettering and doesn't have chain breaks.
         :param dssp: If using DSSP secondary structure check, requires that CRYST be the first line by default (hence write that line)
         '''
 
