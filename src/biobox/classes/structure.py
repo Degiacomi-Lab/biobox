@@ -601,9 +601,10 @@ class Structure(object):
                 # apply rotation matrix
                 if align:
                     self.set_current(i)
-                    self.coordinates[i] += (COM1 - COM2) # should center on reference frame
+                    self.coordinates[i] -= COM2 # should center on origin
                     rotation = np.dot(V, Wt)
                     self.apply_transformation(rotation)
+                    self.coordinates[i] += COM1 # now should center on reference frame
 
                 reflect = float(
                     str(float(np.linalg.det(V) * np.linalg.det(Wt))))

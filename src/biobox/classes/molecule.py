@@ -1327,7 +1327,7 @@ class Molecule(Structure):
 
         return d
 
-    def write_pdb(self, outname, conformations=[], index=[], split_struc=False dssp=False):
+    def write_pdb(self, outname, conformations=[], index=[], split_struc=False, dssp=False):
         '''
         overload superclass method for writing (multi)pdb.
 
