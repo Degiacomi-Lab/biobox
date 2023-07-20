@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2022 Matteo Degiacomi
+# Copyright (c) 2014-2023 Matteo Degiacomi
 #
 # Bionox is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
@@ -12,8 +12,8 @@
 # Author : Matteo Degiacomi, matteo.degiacomi@gmail.com
 
 __author__ = "Matteo T. Degiacomi ($Author: matteo.degiacomi $)"
-__version__ = '1.0'
-__date__ = '$Date: 2016-08-05 $'
+__version__ = '1.1.2'
+__date__ = '$Date: 2023-06-20 $'
 
 name = 'biobox'
 
