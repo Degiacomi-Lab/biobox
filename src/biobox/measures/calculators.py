@@ -119,6 +119,9 @@ def sasa(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
 
         # compute distance matrix between mesh points and neighboring atoms
         test = np.where(contact_map[i, :] < radii.max() + probe * 2)[0]
+        
+        # don't consider atom mesh points surround as neighbour
+        test = np.delete(test, np.where(test == i))
         neigh = M.points[test]
         dist = I.distance_matrix(neigh, mesh) - radii[test][:, np.newaxis]
 
