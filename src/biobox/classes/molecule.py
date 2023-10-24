@@ -117,6 +117,45 @@ class Molecule(Structure):
         M2 = M.make_molecule()
         return M2
 
+    def addall(self, other, conformations=[]):
+        '''
+        Like __add__, but instead of adding Molecules self and other at their current frame, include all frames in the addition
+        i.e. __add__ changes coordinates from (f, n+m, 3) -> (1, n+m, 3) at the current frame. Here we preserve f.
+        Ensure the different subunits have the same number of alternate conformations.
+        Use as: N = self.addall(other)
+
+        :param other: Other molecule object to add with self
+        :param conformations: List of specific conformations you with to add together (default == all)
+        :returns: New molecule object (as __add__) 
+        '''
+        current_self = self.current; current_other = other.current
+
+        f = self.coordinates.shape[0]
+        if f != other.coordinates.shape[0]:
+            raise Exception("Number of frames need to be identical between two Molecule objects!")
+
+        if conformations == []:
+            start = 0
+        else:
+            start = conformations[0]
+
+        self.set_current(start); other.set_current(start)
+        N = self.__add__(other)
+
+        if conformations == []:
+            for i in range(1, f):
+                self.set_current(i); other.set_current(i)
+                N2 = self.__add__(other)
+                N.add_xyz(N2.points)
+        else:
+            for c in conformations[1:]:
+                self.set_current(c); other.set_current(c)
+                N2 = self.__add__(other)
+                N.add_xyz(N2.points)
+
+        self.set_current(current_self) # reset to input
+        other.set_current(current_other)
+        return N
 
     def know(self, prop):
         '''
@@ -129,7 +168,6 @@ class Molecule(Structure):
             return self.knowledge[str(prop)]
         else:
             raise Exception("entry %s not found in knowledge base!" % prop)
-
 
     def import_pdb(self, pdb, include_hetatm=False):
         '''

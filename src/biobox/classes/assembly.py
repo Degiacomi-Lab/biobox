@@ -183,7 +183,7 @@ class Assembly(object):
             e.data["unit_index"] = e.data.index
             dfs.append(e.data)
 
-            e.points = e.coordinates.view()[0]
+            e.points = e.coordinates.view()[struct_list[i].current]
 
 
         #create dataframe collecting information from all structures
