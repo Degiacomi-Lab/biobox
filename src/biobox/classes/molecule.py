@@ -1721,7 +1721,7 @@ class Molecule(Structure):
 
         return np.array(secstruct) #(secstruct[0:210])
 
-    def renumber_resid_keep_chains(self, atom_thresh=30, start_from=1):
+    def renumber_resid_keep_chains(self, atom_thresh=30, start_from=1, reset_resid_with_chain=True):
         '''
         Renumber resnumbers (starting from start_from variable), but base chain renumber resetting on pre-defined chain letters
         (i.e. not the structure.) Useful for insertion/grafting of motifs of arbitrary length, which disrupt the renumbering, or
@@ -1729,6 +1729,7 @@ class Molecule(Structure):
 
         :param atom_thresh: Threshold number of atoms that we count within a single residue, before we consider other residues with similar properties (chain, resnum) as seperate. Warning - if you have a very small protein or segements this might cause an issue. (default 30 from typ with H)
         :param start_from: Start counting resnums from this value (default 1)
+        :param reset_resid_with_chain: At a chain break, reset the residue numbering at 1 (default True), otherwise continue with arbitrary numbering
         '''
 
         self.data.reset_index(drop=True, inplace=True)
@@ -1756,7 +1757,7 @@ class Molecule(Structure):
                 # reset numbering if chain letter changes
                 if chains[cnt] == chains[cnt+1]:
                     res_count += 1
-                else:
+                elif reset_resid_with_chain:
                     res_count = 1
             except IndexError:
                 continue
