@@ -1811,6 +1811,7 @@ class Molecule(Structure):
 
         # delete temporary neworder column
         self.data.drop("neworder", axis=1, inplace=True)
+        self.points = self.coordinates.view()[self.current]
 
         if renumber:
             self.renumber_resid_keep_chains()
