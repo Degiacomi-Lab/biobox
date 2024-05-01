@@ -609,7 +609,7 @@ class Structure(object):
                 reflect = float(
                     str(float(np.linalg.det(V) * np.linalg.det(Wt))))
 
-                if reflect == -1.0:
+                if reflect < 0.0:
                     S[-1] = -S[-1]
                     V[:, -1] = -V[:, -1]
 
@@ -674,7 +674,7 @@ class Structure(object):
 
         reflect = float(str(float(np.linalg.det(V) * np.linalg.det(Wt))))
 
-        if reflect == -1.0:
+        if reflect < 0.0:
             S[-1] = -S[-1]
             V[:, -1] = -V[:, -1]
 
