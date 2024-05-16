@@ -1443,13 +1443,14 @@ class Molecule(Structure):
         return
     
 
-    def write_gro(self, outname, conformations=[], index=""):
+    def write_gro(self, outname, conformations=[], index="", gmx_correction=False):
         '''
         write structure(s) in .gro format.
 
         :param outname: name of .gro file to be generated.
         :param index: indices of atoms to write to file. If empty, all atoms are returned. Index values obtaineable with a call like: index=molecule.atomselect("A", [1, 2, 3], "CA", True)[1]
         :param conformations: list of conformation indices to write to file. By default, all conformations will be returned.
+        :param gmx_correction: GROMACS fails when index number is >99999, VMD also returns weird visualisation errors. Set to True to reset numbering (native GROMACS behaviour) when number is greater than 99999.
         '''
 
         # store current frame, so it will be reestablished after file output is
@@ -1479,6 +1480,9 @@ class Molecule(Structure):
             f_out.write("%s\n" % len(d))
             for i in range(0, len(d), 1):
                 # create and write .gro line
+                if int(d[i][1]) > 99999 and gmx_correction:
+                    for x in range(len(d[i:])): # need this because of list comprehension
+                        d[i+x][1] = d[i+x][1] - 99999 # ensures resetting at multiples of 99999
                 L = '%5d%-5s%5s%5d%8.3f%8.3f%8.3f\n' % (int(d[i][5]), d[i][3], d[i][2], int(d[i][1]), float(d[i][6]) / 10.0, float(d[i][7]) / 10.0, float(d[i][8]) / 10.0)
                 f_out.write(L)
 
