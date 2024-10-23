@@ -86,7 +86,7 @@ class Molecule(Structure):
                                       "1H":"H", "2H":"H", "3H":"H", "1HG1":"H", "2HG1":"H", "3HG1":"H", "1HG2":"H", "2HG2":"H", "3HG2":"H", "1HB":"H", "2HB":"H", "1HG":"H", "2HG":"H",
                                       "1HE2":"H", "2HE2":"H", "1HD":"H", "2HD":"H", "1HH1":"H", "2HH1":"H", "1HH2":"H", "2HH2":"H", "1HD1":"H", "1HD2":"H",
                                       "2HD1":"H", "2HD2":"H", "3HD1":"H", "3HD2":"H", "1HZ":"H", "2HZ":"H", "3HZ":"H", "1HE":"H", "2HE":"H", "3HB":"H", "1HA":"H", "2HA":"H",
-                                      "3HE":"H"}
+                                      "3HE":"H", "HN":"H"}
 
 
 
@@ -1758,11 +1758,10 @@ class Molecule(Structure):
             self.data.loc[full_res, "resid"] = res_count
 
             try:
-                # reset numbering if chain letter changes
-                if chains[cnt] == chains[cnt+1]:
-                    res_count += 1
-                elif reset_resid_with_chain:
+                if reset_resid_with_chain and chains[cnt] != chains[cnt+1]:
                     res_count = 1
+                else:
+                    res_count += 1 
             except IndexError:
                 continue
 
