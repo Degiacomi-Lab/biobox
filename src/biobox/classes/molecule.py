@@ -87,8 +87,8 @@ class Molecule(Structure):
                                       "1HE2":"H", "2HE2":"H", "1HD":"H", "2HD":"H", "1HH1":"H", "2HH1":"H", "1HH2":"H", "2HH2":"H", "1HD1":"H", "1HD2":"H",
                                       "2HD1":"H", "2HD2":"H", "3HD1":"H", "3HD2":"H", "1HZ":"H", "2HZ":"H", "3HZ":"H", "1HE":"H", "2HE":"H", "3HB":"H", "1HA":"H", "2HA":"H",
                                       "3HE":"H", "HN":"H"}
-
-
+        self.knowledge['AA_mapping'] = {"GLY": "G", "ALA": "A", "LEU": "L", "MET": "M", "PHE": "F", "TRP": "W", "LYS": "K", "GLN": "Q", "GLU": "E", "SER": "S",
+                                        "PRO": "P", "VAL": "V", "ILE": "I", "CYS": "C", "TYR": "Y", "HIS": "H", "ARG": "R", "ASN": "N", "ASP": "D", "THR": "T", "NAN" : "Z"}
 
         # if a filename is provided, attempt loading the file according to its file extension
         if fname != "":
@@ -2301,3 +2301,37 @@ class Molecule(Structure):
 
         dummy = e_density.c_get_dipole_density(dipole_map = dipole_map, orig = orig, min_val = min_val, V = V, outname = outname, vox_in_window = vox_in_window, eqn = eqn, T = T, P = P, epsilonE = epsilonE, resolution = resolution)
         return dummy
+
+    def get_fasta(self, chains=True, chain_split=False):
+        '''
+        Generate the sequence associated with a moleule in a fasta approved format.
+        The only thing that will need appending to text is the >SEQ information that you may want to edit (e.g. to include uniprot ID, strain if appropiate, etc.).
+        If chains is True, then each new chain will append a / to designate the breaks.
+        If chain_split is set to True, biobox will automatically split your protein according to where it sees gaps in the structure, and place / where these new chains begin.
+        If you have gaps in your structure (e.g. from disordered regions), this can result in incorrect assignment of novel chains.
+
+        :param chains: Assign / between chains. Default: True
+        :param chain_split: Let biobox decide where the chain splits are (based on structure). Default: False
+        '''
+
+        seq = ""
+        if chain_split:
+            self.guess_chain_split()
+        if chains:
+            for c in np.unique(self.data["chain"]):
+                M = self.get_subset(self.atomselect(c, "*", "CA", get_index=True)[1])
+                text = "".join([self.knowledge["AA_mapping"][S] for S in M.data["resname"]])
+                if len(seq) == 0:
+                    seq = text
+                else:
+                    seq += "/"
+                    seq += text
+        else:
+            M = self.get_subset(self.atomselect("*", "*", "CA", get_index=True)[1])
+            text = "".join([self.knowledge["AA_mapping"][S] for S in M.data["resname"]])
+            if len(seq) == 0:
+                seq = text
+            else:
+                seq += "/"
+                seq += text
+        return seq
