@@ -164,6 +164,20 @@ class test_structures(unittest.TestCase):
         direct = np.sqrt(np.mean(np.sum((P.coordinates[1]-P.coordinates[0])**2, axis=1)))
         self.assertAlmostEqual(rmsd[1], direct, places=4)
 
+    def test_principal_axes(self):
+
+        print("\n> testing principal axes and alignment on them")
+        # the axes must be real (NumPy 2.5 made linalg.eig always return complex arrays) and
+        # orthonormal, and after align_axes they must lie on x, y and z, signs included
+        from copy import deepcopy
+        P = deepcopy(self.M)
+        axes = P.get_principal_axes()
+        self.assertFalse(np.iscomplexobj(axes))
+        np.testing.assert_allclose(np.dot(axes, axes.T), np.eye(3), atol=1e-10)
+
+        P.align_axes()
+        np.testing.assert_allclose(P.get_principal_axes(), np.eye(3), atol=1e-6)
+
     def test_SASA_c(self):
 
         print("\n> testing that sasa_c agrees with sasa")

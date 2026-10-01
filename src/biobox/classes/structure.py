@@ -298,12 +298,19 @@ class Structure(object):
         I0[2, 1] = I0[1, 2]
 
         # Calculate and return the principal moments of inertia and corresponding
-        # principal axes for the current geometry.
-        e_values, e_vectors = np.linalg.eig(I0)
+        # principal axes for the current geometry. The inertia tensor is symmetric, so eigh
+        # applies, and its results are real (from NumPy 2.5, eig always returns complex arrays)
+        e_values, e_vectors = np.linalg.eigh(I0)
 
         indices = np.argsort(e_values)
         e_values = e_values[indices]
         e_vectors = e_vectors.T[indices]
+
+        # the sign of an eigenvector is arbitrary and depends on the linear algebra library.
+        # Fix it (largest component positive), so that align_axes is reproducible across
+        # platforms
+        largest = e_vectors[np.arange(3), np.argmax(np.abs(e_vectors), axis=1)]
+        e_vectors = e_vectors * np.sign(largest)[:, np.newaxis]
 
         return e_vectors
 

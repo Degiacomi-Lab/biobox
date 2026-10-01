@@ -28,7 +28,7 @@ for package in packages:
             pyx_files.append(f'{package_path}{os.sep}{file}')
 setup(
     name = 'biobox',
-    version='1.1.4',
+    version='1.1.5',
     include_dirs=[np.get_include()],
     ext_modules=cythonize(
         pyx_files,#"*.pyx",
