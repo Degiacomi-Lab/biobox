@@ -182,8 +182,11 @@ cpdef cython_get_surface(np.ndarray points, np.ndarray radii, float probe, int n
             #place mesh points around atom of choice
             mesh=sphere_points*(radii[i]+probe)+points[i]
 
-            #compute distance matrix between mesh points and neighboring atoms
-            test=np.where(contact_map[i,:]<radii.max()+probe*2)[0]
+            #compute distance matrix between mesh points and neighboring atoms. Atom j can cover
+            #a mesh point of atom i only within radii[i]+radii[j]+2*probe, and atom i itself is
+            #excluded, since rounding would otherwise bury about half of its own mesh
+            test=np.where(contact_map[i,:]<radii[i]+radii+probe*2)[0]
+            test=test[test!=i]
             neigh=points[test]
             dist=S.cdist(neigh,mesh)-radii[test][:,np.newaxis]
 

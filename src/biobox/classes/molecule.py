@@ -1359,8 +1359,8 @@ class Molecule(Structure):
                       self.points[i, 0],
                       self.points[i, 1],
                       self.points[i, 2],
-                      self.data["beta"].values[i],
                       self.data["occupancy"].values[i],
+                      self.data["beta"].values[i],
                       self.data["atomtype"].values[i]])
 
         return d

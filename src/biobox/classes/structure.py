@@ -558,7 +558,7 @@ class Structure(object):
         bkpcurrent = self.current
 
         if ref_index >= len(self.coordinates):
-            raise Exception("ERROR: index %s requested, but only %s exist in database" %(len(self.coordinates)))
+            raise Exception("ERROR: index %s requested, but only %s exist in database" %(ref_index, len(self.coordinates)))
 
         # define reference frame, and center it
         if len(points_index) == 0:
@@ -597,6 +597,13 @@ class Structure(object):
                 # great!
                 V, S, Wt = np.linalg.svd(np.dot(np.transpose(m2), m1))
 
+                # if V*Wt is improper (determinant -1) it is a rotation combined with a
+                # reflection, and would turn the structure into its mirror image. This must be
+                # corrected before the alignment uses it, not only for the RMSD value
+                if np.linalg.det(V) * np.linalg.det(Wt) < 0.0:
+                    S[-1] = -S[-1]
+                    V[:, -1] = -V[:, -1]
+
                 # if alignement is required, move pointer to current frame, and
                 # apply rotation matrix
                 if align:
@@ -605,13 +612,6 @@ class Structure(object):
                     rotation = np.dot(V, Wt)
                     self.apply_transformation(rotation)
                     self.coordinates[i] += COM1 # now should center on reference frame
-
-                reflect = float(
-                    str(float(np.linalg.det(V) * np.linalg.det(Wt))))
-
-                if reflect < 0.0:
-                    S[-1] = -S[-1]
-                    V[:, -1] = -V[:, -1]
 
                 rmsdval = E0 - (2.0 * sum(S))
                 rmsdval = np.sqrt(abs(rmsdval / L))

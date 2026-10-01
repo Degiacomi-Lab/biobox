@@ -71,3 +71,6 @@ biobox/test/params
 # cython-generated files
 lib/*.c
 *.c
+
+# setuptools build folder (python setup.py build_ext)
+/build/

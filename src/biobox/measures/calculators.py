@@ -29,7 +29,11 @@ import biobox.lib.fastmath as FM  # cython routines
 
 def sasa_c(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
     '''
-    compute the accessible surface area using the Shrake-Rupley algorithm ("rolling ball method")
+    compute the accessible surface area using the Shrake-Rupley algorithm ("rolling ball method").
+
+    Kept for backwards compatibility: this is now an alias of :func:`sasa`, whose vectorised
+    implementation is faster than the former compiled one, and which also fixes two errors
+    it carried (an atom occluding its own mesh, and neighbours being missed).
 
     :param M: any biobox object
     :param targets: indices to be used for surface estimation. By default, all indices are kept into account.
@@ -40,29 +44,34 @@ def sasa_c(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
     :returns: mesh numpy array containing the found points forming the accessible surface mesh
     :returns: IDs of surface points
     '''
+    return sasa(M, targets=targets, probe=probe, n_sphere_point=n_sphere_point, threshold=threshold)
 
-    #make sure that everything is collected as a Structure object, and radii are available
-    this_inst = type(M).__name__
-    if this_inst == "Multimer":
-        M = M.make_molecule()
 
-    elif this_inst in ["Assembly", "Polyhedra"]:
-        M = M.make_structure()
+def _golden_spiral(n_sphere_point):
+    '''
+    points evenly distributed on a unit sphere, placed along a golden spiral.
 
-    # getting radii associated to every atom
-    radii = M.data['radius'].values
+    :param n_sphere_point: number of points
+    :returns: n_sphere_point x 3 numpy array
+    '''
+    k = np.arange(int(n_sphere_point))
+    inc = np.pi * (3 - np.sqrt(5))
+    offset = 2 / float(n_sphere_point)
+    y = k * offset - 1 + (offset / 2)
+    r = np.sqrt(1 - y * y)
+    phi = k * inc
+    return np.column_stack((np.cos(phi) * r, y, np.sin(phi) * r))
 
-    if threshold < 0.0 or threshold > 1.0:
-        raise Exception("ERROR: threshold should be a floating point between 0 and 1!")
-
-    if len(targets) == 0:
-        return FM.c_get_surface(M.points, radii, probe, n_sphere_point, threshold)
-    else:
-        return FM.c_get_surface(M.points[targets], radii, probe, n_sphere_point, threshold)
 
 def sasa(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
     '''
-    compute the accessible surface area using the Shrake-Rupley algorithm ("rolling ball method")
+    compute the accessible surface area using the Shrake-Rupley algorithm ("rolling ball method").
+
+    every target atom is surrounded by a mesh of points at distance radius+probe from its centre,
+    i.e. the positions the centre of a probe touching the atom can take. A mesh point is exposed
+    when it lies farther than radius+probe from every other atom, and the area of the atom is the
+    exposed fraction of its sphere. All atoms of M act as occluders, whether or not they are
+    targets.
 
     :param M: any biobox object
     :param targets: indices to be used for surface estimation. By default, all indices are kept into account.
@@ -74,6 +83,7 @@ def sasa(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
     :returns: IDs of surface points
     '''
 
+    from scipy.spatial import cKDTree
     import biobox.measures.interaction as I
 
     #make sure that everything is collected as a Structure object, and radii are available
@@ -88,25 +98,19 @@ def sasa(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
         targets = range(0, len(M.points), 1)
 
     # getting radii associated to every atom
-    radii = M.data['radius'].values
+    points = np.asarray(M.points, dtype=float)
+    radii = np.asarray(M.data['radius'].values, dtype=float)
 
     if threshold < 0.0 or threshold > 1.0:
         raise Exception("ERROR: threshold should be a floating point between 0 and 1!")
 
-    # create unit sphere points cloud (using golden spiral)
-    pts = []
-    inc = np.pi * (3 - np.sqrt(5))
-    offset = 2 / float(n_sphere_point)
-    for k in range(int(n_sphere_point)):
-        y = k * offset - 1 + (offset / 2)
-        r = np.sqrt(1 - y * y)
-        phi = k * inc
-        pts.append([np.cos(phi) * r, y, np.sin(phi) * r])
-
-    sphere_points = np.array(pts)
+    sphere_points = _golden_spiral(n_sphere_point)
     const = 4.0 * np.pi / len(sphere_points)
 
-    contact_map = I.distance_matrix(M.points, M.points)
+    # a KD-tree rather than a full contact map, so that memory grows with the number of atoms
+    # rather than with its square
+    tree = cKDTree(points)
+    max_radius = radii.max()
 
     asa = 0.0
     surface_atoms = []
@@ -115,26 +119,28 @@ def sasa(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
     for i in targets:
 
         # place mesh points around atom of choice
-        mesh = sphere_points * (radii[i] + probe) + M.points[i]
+        mesh = sphere_points * (radii[i] + probe) + points[i]
 
-        # compute distance matrix between mesh points and neighboring atoms
-        test = np.where(contact_map[i, :] < radii.max() + probe * 2)[0]
-        
-        # don't consider atom mesh points surround as neighbour
-        test = np.delete(test, np.where(test == i))
-        neigh = M.points[test]
-        dist = I.distance_matrix(neigh, mesh) - radii[test][:, np.newaxis]
+        # atom j can cover a mesh point of atom i only if their centres are closer than
+        # radii[i] + radii[j] + 2*probe. The atom itself is excluded: its mesh lies at exactly
+        # radii[i] + probe from its centre, and rounding would otherwise flag about half of the
+        # points as buried by the atom they belong to
+        candidates = np.asarray(tree.query_ball_point(points[i], radii[i] + max_radius + probe * 2), dtype=int)
+        d_ij = np.linalg.norm(points[candidates] - points[i], axis=1)
+        test = candidates[(d_ij < radii[i] + radii[candidates] + probe * 2) & (candidates != i)]
 
-        # lines=atoms, columns=mesh points. Count columns containing values greater than probe*2
-        # i.e. allowing sufficient space for a probe to fit completely
-        cnt = 0
-        for m in range(dist.shape[1]):
-            if not np.any(dist[:, m] < probe):
-                cnt += 1
-                mesh_pts.append(mesh[m])
+        # lines=neighbours, columns=mesh points. A mesh point is exposed when no neighbour
+        # surface is closer to it than the probe radius, i.e. a probe centred there fits
+        if len(test) == 0:
+            exposed = np.ones(len(mesh), dtype=bool)
+        else:
+            dist = I.distance_matrix(points[test], mesh) - radii[test][:, np.newaxis]
+            exposed = ~np.any(dist < probe, axis=0)
 
-        # calculate asa for current atom, if a sufficient amount of mesh
-        # points is exposed (NOTE: to verify)
+        cnt = int(np.count_nonzero(exposed))
+        mesh_pts.extend(mesh[exposed])
+
+        # calculate asa for current atom, if a sufficient amount of mesh points is exposed
         if cnt > n_sphere_point * threshold:
             surface_atoms.append(i)
             asa += const * cnt * (radii[i] + probe)**2
