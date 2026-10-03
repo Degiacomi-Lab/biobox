@@ -807,55 +807,52 @@ class Molecule(Structure):
         :param kernel_half_width: Kernel half width of the gaussian kernel, will be scaled by atom specific sigma
         :returns: :func:`Density <density.Density>` object, containing a density map
         '''
-        atomdata = [["C", 1.7, 1.455, 0.51], ["H", 1.2, 0.72, 0.25],
-                    ["O", 1.52, 1.15, 0.42], ["S", 1.8, 1.62, 0.54],
-                    ["N", 1.55, 1.2, 0.44]]
-
-        # attempt assigning atomtypes, if any is unknown, and test if successful
-        if np.any(self.data["atomtype"].values == ''):
-            self.assign_atomtype()
-
-        if np.any(self.data["atomtype"].values == ''):
-            idxs = np.where(self.data["atomtype"].values == '')[0]
-            raise Exception("Unknown atomtype for:\n%s"%self.data.iloc[idxs])
-
-        dens = []
-        for d in atomdata:
-            # select atomtype and point only to those coordinates
-            pts = self.points[self.data["atomtype"].values == d[0]]
-
-            # if there are atoms from a certain type
-            if len(pts) > 0:
-                # use the standard density calculation with a atom-type
-                # specific sigma value
-                D = self.get_density(buff=buff, step=step, kernel_half_width=kernel_half_width, sigma=d[2])
-                # export the np-array density map for summing
-                d_tmp = D.properties["density"]
-
-            # print 'atom %s has a maximum density of %s, occurs %s times in the protein and the density map has a shape of %s'%(d[0], np.max(d_tmp), len(pts), d_tmp.shape)
-            # print 'one entry in d_tmp: \n%s'%d_tmp[35][27][20]
-            # print np.unravel_index(d_tmp.argmax(), d_tmp.shape)
-            # initialize the dens-list if it's empty
-            if len(dens) == 0:
-                dens = deepcopy(d_tmp)
-            # sum up the densities from all atom types
-            else:
-                dens += d_tmp  # dens is a 3d numpy array with point intensities
-
-        # print 'one entry in dens is: \n%s'%dens[35][27][20]
+        axes = self._grid_axes(self.points, step, buff)
+        dens = self._vdw_density_on_grid(np.arange(len(self.points)), axes, step, kernel_half_width)
 
         from biobox.classes.density import Density
         D = Density()
         D.properties['density'] = dens
         D.properties['size'] = np.array(dens.shape)
-        # still appears to be some small error (but is dependent on molecule), perhaps discretisation of space?
-        D.properties['origin'] = np.min(self.points, axis=0) - (kernel_half_width) / 2. + step #np.mean(pts, axis=0) - step * np.array(dens.shape) / 2.0
+        D.properties['origin'] = np.array([ax[0] for ax in axes])
         D.properties['delta'] = np.identity(3) * step
         D.properties['format'] = 'dx'
         D.properties['filename'] = ''
         D.properties["sigma"] = np.std(dens)
 
         return D
+
+    def _vdw_density_on_grid(self, idx, axes, step, kernel_half_width):
+        '''
+        sum of the density maps of each atom type, each built from the atoms of that type on a common grid.
+
+        :param idx: indices of atoms to include
+        :param axes: grid axes, as returned by _grid_axes
+        :param step: size of cubic voxels, in Angstrom
+        :param kernel_half_width: Kernel half width of the gaussian kernel, will be scaled by atom specific sigma
+        :returns: 3D numpy array
+        '''
+        atomdata = [["C", 1.7, 1.455, 0.51], ["H", 1.2, 0.72, 0.25],
+                    ["O", 1.52, 1.15, 0.42], ["S", 1.8, 1.62, 0.54],
+                    ["N", 1.55, 1.2, 0.44]]
+
+        # attempt assigning atomtypes, if any is unknown, and test if successful
+        if np.any(self.data["atomtype"].values[idx] == ''):
+            self.assign_atomtype()
+
+        atomtypes = self.data["atomtype"].values[idx]
+        if np.any(atomtypes == ''):
+            raise Exception("Unknown atomtype for:\n%s"%self.data.iloc[idx[atomtypes == '']])
+
+        pts = self.points[idx]
+        dens = np.zeros([len(ax) for ax in axes])
+        for d in atomdata:
+            # use the standard density calculation with an atom-type specific sigma value
+            sel = atomtypes == d[0]
+            if np.any(sel):
+                dens += self._density_on_grid(pts[sel], axes, step, d[2], kernel_half_width)
+
+        return dens
 
     def get_electrostatics(self, step=1.0, buff=3, threshold=0.01, vdw_kernel_half_width=5, elect_kernel_half_width=12, chain='*', clear_mass=True):
         '''
@@ -865,8 +862,9 @@ class Molecule(Structure):
         :param buff: padding to add at points cloud boundaries
         :param threshold: Threshold used for removing mass occupied space from the electron density map
         :param vdw_kernel_half_width: kernel half width, in voxels
-        :param elect_kernel_half_width: kernel half width, in voxels
+        :param elect_kernel_half_width: kernel half width, in Angstrom
         :param chain: select chain to use, default all chains
+        :param clear_mass: if True, set the potential to zero where the mass density exceeds threshold
         :returns: positive :func:`Density <density.Density>` object
         :returns: negative :func:`Density <density.Density>` object
         :returns: mass density object
@@ -876,87 +874,49 @@ class Molecule(Structure):
 
         try:
             # numpy array of charges [c1, c2, c3, ...]
-            charges = self.data['charge'].values[idx]
+            charges = self.data['charge'].values[idx].astype(float)
         except Exception:
             raise Exception('ERROR: No charges associated with %s' % self)
 
-        charges = np.reshape(charges, (len(charges), 1))
-
-        # numpy 2d-array of shape (:, 4): [[x, y, z, charge], [x, y, z,
-        # charge], ...]
-        c_atoms = np.hstack((pts, charges))
-
         k = 8.9875517873681764  # Coulomb's constant in nN
 
-        # rectangular box boundaries
-        bnds = np.array([[np.min(pts[:, 0]) - buff, np.max(pts[:, 0]) + buff],
-                         [np.min(pts[:, 1]) - buff, np.max(pts[:, 1]) + buff],
-                         [np.min(pts[:, 2]) - buff, np.max(pts[:, 2]) + buff]])
+        # rectangular box enclosing the selected atoms, shared by all maps
+        axes = self._grid_axes(pts, step, buff)
+        origin = np.array([ax[0] for ax in axes])
 
-        xax = np.arange(bnds[0, 0], bnds[0, 1] + step, step)
-        yax = np.arange(bnds[1, 0], bnds[1, 1] + step, step)
-        zax = np.arange(bnds[2, 0], bnds[2, 1] + step, step)
+        # place Kronecker deltas in mesh grid, summing the charges falling in the same voxel
+        d = np.zeros([len(ax) for ax in axes])
+        np.add.at(d, self._grid_indices(pts, axes, step), charges)
 
-        # create empty box
-        d = np.zeros((len(xax), len(yax), len(zax)))
-
-        # place Kronecker deltas in mesh grid -> discretes point coordinates
-        # into mesh grid with an intensity of charge
-        for atom in c_atoms:
-            xpos = np.argmin(np.abs(xax - atom[0]))
-            ypos = np.argmin(np.abs(yax - atom[1]))
-            zpos = np.argmin(np.abs(zax - atom[2]))
-            d[xpos, ypos, zpos] = atom[3]
-
-        # initialize 3d kernel_box
-        # how many steps are needed to reach kernel half width in angstroms
-        l_kernel = int(2 * elect_kernel_half_width / step)
-        # the kernel is an empty box...
-        kernel = np.zeros((l_kernel, l_kernel, l_kernel))
-        it = np.nditer(kernel, flags=['multi_index'])
-        while not it.finished:
-            x_index = it.multi_index[0]  # indices
-            y_index = it.multi_index[1]
-            z_index = it.multi_index[2]
-            x_coord = x_index * step - (l_kernel / 2)  # real space coordinates
-            y_coord = y_index * step - (l_kernel / 2)
-            z_coord = z_index * step - (l_kernel / 2)
-            distance = np.sqrt(x_coord *x_coord + y_coord *y_coord + z_coord *z_coord)
-            if distance > 0.9:  # ... where a hyperbola will be created only outside of H-vdW and inside of relevant kernel-half-width distance
-                kernel[x_index, y_index, z_index] = k / distance
-
-            it.iternext()
+        # 3d kernel centred on its middle voxel, reaching elect_kernel_half_width Angstrom
+        half = int(round(elect_kernel_half_width / step))
+        r = np.arange(-half, half + 1) * step
+        x, y, z = np.meshgrid(r, r, r, indexing='ij')
+        distance = np.sqrt(x * x + y * y + z * z)
+        kernel = np.zeros(distance.shape)
+        # a hyperbola is created only outside of H-vdW and inside of relevant kernel-half-width distance
+        outside = distance > 0.9
+        kernel[outside] = k / distance[outside]
 
         # convolve point mesh with 3d coulomb hyperbola
         e = scipy.signal.fftconvolve(d, kernel, mode='same')
 
-        # define mass-occupied space
-        # mass_density is Density-object, buff=buff makes shure that the
-        # density maps have the same dimensions
-        mass_density = self.get_vdw_density(
-            buff=buff, step=step, kernel_half_width=vdw_kernel_half_width)
+        # define mass-occupied space of the selected atoms, on the same grid
+        from biobox.classes.density import Density
+        dens = self._vdw_density_on_grid(idx, axes, step, vdw_kernel_half_width)
+        mass_density = Density()
+        mass_density.properties['density'] = dens
+        mass_density.properties['size'] = np.array(dens.shape)
+        mass_density.properties['origin'] = origin
+        mass_density.properties['delta'] = np.identity(3) * step
+        mass_density.properties['format'] = 'dx'
+        mass_density.properties['filename'] = ''
+        mass_density.properties["sigma"] = np.std(dens)
 
         if clear_mass:
-            d_map = mass_density.return_density_map()
-
-        # initialize counter to count the amount of removed points
-        i = 0
-        # initialize the iterator for said function
-        it = np.nditer(e, flags=['multi_index'])
-        while not it.finished:
-            x_index = it.multi_index[0]  # indices
-            y_index = it.multi_index[1]
-            z_index = it.multi_index[2]
-            x_coord = xax[x_index]  # real space coordinates
-            y_coord = yax[y_index]
-            z_coord = zax[z_index]
-            if d_map[x_index, y_index, z_index] > threshold:
-                i += 1
-                e[x_index, y_index, z_index] = 0
-
-            it.iternext()
-
-        print('removed %s points due to van der Waals clashing' % i)
+            occupied = dens > threshold
+            e[occupied] = 0
+            print('removed %s points due to van der Waals clashing' % np.count_nonzero(occupied))
 
         # split the density into two maps
         e_pos = deepcopy(e)
@@ -968,13 +928,13 @@ class Molecule(Structure):
 
         # prepare density data structure for both positive and negative maps at
         # once
-        from biobox.classes.density import Density
         D_pos = Density()
         D_neg = Density()
         D_pos.properties['density'] = e_pos
         D_neg.properties['density'] = e_neg
         D_pos.properties['size'] = D_neg.properties['size'] = np.array(e.shape)
-        D_pos.properties['origin'] = D_neg.properties['origin'] = np.mean(self.points, axis=0) - step * np.array(e.shape) / 2.0
+        D_pos.properties['origin'] = origin
+        D_neg.properties['origin'] = origin.copy()
         D_pos.properties['delta'] = D_neg.properties['delta'] = np.identity(3) * step
         D_pos.properties['format'] = D_neg.properties['format'] = 'dx'
         D_pos.properties['filename'] = D_neg.properties['filename'] = ''

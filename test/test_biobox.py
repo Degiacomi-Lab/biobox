@@ -275,6 +275,90 @@ class test_structures(unittest.TestCase):
         S = M.apply_symmetry()
         np.testing.assert_allclose(S.points, [[0, 0, 0], [10, 0, 0]])
 
+    def _molecule_from_atoms(self, atoms):
+        # build a molecule from a list of (name, element, chain, resid, xyz)
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            fname = os.path.join(tmp, "atoms.pdb")
+            with open(fname, "w") as f:
+                for i, (name, element, chain, resid, xyz) in enumerate(atoms):
+                    f.write("ATOM  %5d  %-3s ALA %1s%4d    %8.3f%8.3f%8.3f  1.00  0.00          %2s\n" % (i+1, name, chain, resid, xyz[0], xyz[1], xyz[2], element))
+                f.write("END\n")
+            M = bb.Molecule()
+            M.import_pdb(fname)
+        return M
+
+    def _voxel_xyz(self, D, idx):
+        return D.properties["origin"] + np.array(idx) * np.diag(D.properties["delta"])
+
+    def test_density_origin(self):
+
+        print("\n> testing that density maps place atoms at their coordinates")
+        M = self._molecule_from_atoms([("CA", "C", "A", 1, [1.0, 2.0, 3.0]), ("CB", "C", "A", 1, [5.0, 2.0, 3.0])])
+        for D in [M.get_density(step=1.0), M.get_vdw_density(step=0.5)]:
+            dens = D.properties["density"]
+            first = np.unravel_index(np.argmax(dens[:dens.shape[0]//2]), dens.shape)
+            np.testing.assert_allclose(self._voxel_xyz(D, first), [1.0, 2.0, 3.0], atol=1e-9)
+            np.testing.assert_allclose(D.properties["origin"], [1.0 - 3, 2.0 - 3, 3.0 - 3])
+
+    def test_vdw_density_per_type(self):
+
+        print("\n> testing that each atom type contributes only its own atoms")
+        C = self._molecule_from_atoms([("CA", "C", "A", 1, [0, 0, 0]), ("CB", "C", "A", 1, [3, 0, 0])])
+        D = C.get_vdw_density(step=0.5)
+        axes = C._grid_axes(C.points, 0.5, 3)
+        np.testing.assert_allclose(D.properties["density"], C._density_on_grid(C.points, axes, 0.5, 1.455, 10))
+
+        # without carbons, the hydrogen map alone is returned
+        H = self._molecule_from_atoms([("H", "H", "A", 1, [0, 0, 0])])
+        D = H.get_vdw_density(step=0.5)
+        axes = H._grid_axes(H.points, 0.5, 3)
+        np.testing.assert_allclose(D.properties["density"], H._density_on_grid(H.points, axes, 0.5, 0.72, 10))
+
+        # in a mixed molecule, the map is the sum of the carbon and the hydrogen maps
+        CH = self._molecule_from_atoms([("CA", "C", "A", 1, [0, 0, 0]), ("H", "H", "A", 1, [3, 0, 0])])
+        D = CH.get_vdw_density(step=0.5)
+        axes = CH._grid_axes(CH.points, 0.5, 3)
+        expected = CH._density_on_grid(CH.points[:1], axes, 0.5, 1.455, 10) + CH._density_on_grid(CH.points[1:], axes, 0.5, 0.72, 10)
+        np.testing.assert_allclose(D.properties["density"], expected)
+
+    def test_electrostatics(self):
+
+        print("\n> testing electrostatic maps")
+        atoms = [("CA", "C", "A", 1, [0, 0, 0]), ("CB", "C", "A", 1, [0.2, 0, 0]),
+                 ("CA", "C", "B", 1, [17, 0, 0])]
+
+        # charges falling in the same voxel add up
+        M = self._molecule_from_atoms(atoms[:2])
+        M.data["charge"] = [1.0, 1.0]
+        P1 = M.get_electrostatics(clear_mass=False)[0].properties["density"]
+        M.data["charge"] = [2.0, 0.0]
+        P2 = M.get_electrostatics(clear_mass=False)[0].properties["density"]
+        M.data["charge"] = [0.0, 2.0]
+        P3 = M.get_electrostatics(clear_mass=False)[0].properties["density"]
+        np.testing.assert_allclose(P1, P2)
+        np.testing.assert_allclose(P2, P3)
+        self.assertGreater(P1.sum(), 0)
+
+        # the potential of a single charge is centred on it, whatever the voxel size
+        M = self._molecule_from_atoms(atoms[:1])
+        M.data["charge"] = [1.0]
+        for step in [1.0, 0.5]:
+            D = M.get_electrostatics(step=step, clear_mass=False)[0]
+            dens = D.properties["density"]
+            grid = np.indices(dens.shape).reshape(3, -1).T
+            centroid = self._voxel_xyz(D, (grid * dens.reshape(-1, 1)).sum(axis=0) / dens.sum())
+            np.testing.assert_allclose(centroid, [0, 0, 0], atol=1e-6)
+
+        # a chain gives the same maps whether selected or alone
+        M = self._molecule_from_atoms(atoms)
+        M.data["charge"] = [1.0, 0.0, -1.0]
+        B = M.get_subset(M.atomselect("B", "*", "*", get_index=True)[1])
+        for selected, alone in zip(M.get_electrostatics(chain="B"), B.get_electrostatics()):
+            np.testing.assert_allclose(selected.properties["density"], alone.properties["density"])
+            np.testing.assert_allclose(selected.properties["origin"], alone.properties["origin"])
+        np.testing.assert_allclose(M.get_electrostatics(chain="B")[1].properties["origin"], [17 - 3, -3, -3])
+
     def test_element_from_atom_name(self):
 
         print("\n> testing element assignment when the element column is blank")
