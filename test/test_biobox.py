@@ -443,6 +443,82 @@ class test_structures(unittest.TestCase):
         np.testing.assert_allclose(M2.data["charge"].values, charges[1:])
         np.testing.assert_allclose(M2.data["radius"].values, radii[1:])
 
+    def test_pdb_altloc_icode(self):
+
+        print("\n> testing alternate locations, insertion codes and residue numbers in pdb files")
+        import tempfile
+        lines = ["ATOM      1  N   ALA A  10       0.000   0.000   0.000  1.00 10.00           N\n",
+                 "ATOM      2  CA AALA A  10       1.000   0.000   0.000  0.60 10.00           C\n",
+                 "ATOM      3  CA BALA A  10       1.100   0.000   0.000  0.40 10.00           C\n",
+                 "ATOM      4  CA  GLY A  52       3.000   0.000   0.000  1.00 10.00           C\n",
+                 "ATOM      5  CA  SER A  52A      4.000   0.000   0.000  1.00 10.00           C\n",
+                 "ATOM      6  CA  THR A-100       5.000   0.000   0.000  1.00 10.00           C\n",
+                 "ATOM      7  CA  VAL BA000       6.000   0.000   0.000  1.00 10.00           C\n",
+                 "END\n"]
+        with tempfile.TemporaryDirectory() as tmp:
+            fname = os.path.join(tmp, "std.pdb")
+            with open(fname, "w") as f:
+                f.writelines(lines)
+            M = bb.Molecule()
+            M.import_pdb(fname)
+
+            self.assertEqual(list(M.data["name"]), ["N", "CA", "CA", "CA", "CA", "CA", "CA"])
+            self.assertEqual(list(M.data["altloc"]), ["", "A", "B", "", "", "", ""])
+            self.assertEqual(list(M.data["icode"]), ["", "", "", "", "A", "", ""])
+            self.assertEqual(list(M.data["chain"]), ["A"] * 6 + ["B"])
+            self.assertEqual(list(M.data["resid"]), [10, 10, 10, 52, 52, -100, 10000])
+
+            # both alternate locations are kept, and a residue number selects all its insertion codes
+            self.assertEqual(len(M.atomselect("A", 10, "CA")), 2)
+            np.testing.assert_array_equal(M.atomselect("A", 52, "*", get_index=True)[1], [3, 4])
+            np.testing.assert_array_equal(M.atomselect("A", "52A", "*", get_index=True)[1], [4])
+            np.testing.assert_array_equal(M.same_residue(4, get_index=True)[1], [4])
+            np.testing.assert_array_equal(M.same_residue_unique(3, get_index=True)[1], [3])
+            self.assertEqual(M.get_fasta(), "AGST/V")
+
+            # writing restores every column, and reading it back gives the same data
+            out = os.path.join(tmp, "out.pdb")
+            M.write_pdb(out)
+            written = [l for l in open(out) if l.startswith("ATOM")]
+            self.assertEqual([l[12:27] for l in written[1:3]], [" CA AALA A  10 ", " CA BALA A  10 "])
+            self.assertEqual(written[4][12:27], " CA  SER A  52A")
+            M2 = bb.Molecule()
+            M2.import_pdb(out)
+            for col in ["name", "altloc", "icode", "chain", "occupancy"]:
+                self.assertEqual(list(M2.data[col]), list(M.data[col]), col)
+            # residue 10000 does not fit 4 columns and keeps its last 4 digits
+            self.assertEqual(list(M2.data["resid"]), [10, 10, 10, 52, 52, -100, 0])
+
+        # columns survive merging molecules
+        both = M + M
+        self.assertEqual(list(both.data["altloc"]), list(M.data["altloc"]) * 2)
+        self.assertEqual(list(both.data["icode"]), list(M.data["icode"]) * 2)
+
+    def test_write_pdb_limits(self):
+
+        print("\n> testing values the pdb format cannot hold")
+        import tempfile
+        M = self._molecule_from_atoms([("CA", "C", "A", 1, [0, 0, 0])])
+        with tempfile.TemporaryDirectory() as tmp:
+            out = os.path.join(tmp, "out.pdb")
+            for xyz in [[-1000.0, 0, 0], [0, 0, 10000.0]]:
+                M.coordinates[0, 0] = xyz
+                with self.assertRaises(Exception):
+                    M.write_pdb(out)
+                self.assertFalse(os.path.exists(out))
+
+            M.coordinates[0, 0] = [0, 0, 0]
+            M.data["chain"] = "AB"
+            with self.assertRaises(Exception):
+                M.write_pdb(out)
+
+            # residue numbers that do not fit keep their last 4 digits
+            M.data["chain"] = "A"
+            M.data["resid"] = 12345
+            M.write_pdb(out)
+            line = [l for l in open(out) if l.startswith("ATOM")][0]
+            self.assertEqual(line[22:26], "2345")
+
     def test_element_from_atom_name(self):
 
         print("\n> testing element assignment when the element column is blank")
