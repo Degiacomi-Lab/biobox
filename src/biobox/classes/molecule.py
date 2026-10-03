@@ -62,7 +62,7 @@ class Molecule(Structure):
                                           "HIS": 137.1411, "HSE": 137.1411, "HSD": 137.1411, "HSP": 137.1411, "HIE": 137.1411, "HID": 137.1411, "HIP": 137.1411, "ILE": 113.1594, "LEU": 113.1594,
                                           "LYS": 128.1741, "MET": 131.1926, "MSE": 131.1926, "PHE": 147.1766, "PRO": 97.1167, "SER": 87.0782, "THR": 101.1051, "TRP": 186.2132, "TYR": 163.1760, "VAL": 99.1326}
         self.knowledge['atom_vdw'] = {'H': 1.20, 'N': 1.55, 'NA': 2.27, 'CU': 1.40, 'CL': 1.75, 'C': 1.70, 'O': 1.52, 'I': 1.98, 'P': 1.80, 'B': 1.85, 'BR': 1.85, 'S': 1.80, 'SE': 1.90,
-                                      'F': 1.47, 'FE': 1.80, 'K': 2.75, 'MN': 1.73, 'MG': 1.73, 'ZN': 1.39, 'HG': 1.8, 'XE': 1.8, 'AU': 1.8, 'LI': 1.8, '.': 1.8}
+                                      'F': 1.47, 'FE': 1.80, 'K': 2.75, 'CA': 2.31, 'MN': 1.73, 'MG': 1.73, 'ZN': 1.39, 'HG': 1.8, 'XE': 1.8, 'AU': 1.8, 'LI': 1.8, '.': 1.8}
         self.knowledge['atom_ccs'] = {'H': 1.2, 'C': 1.91, 'N': 1.91, 'O': 1.91, 'P': 1.91, 'S': 1.91, '.': 1.91}
         self.knowledge['atom_mass'] = {"H": 1.00794, "D": 2.01410178, "HE": 4.00, "LI": 6.941, "BE": 9.01, "B": 10.811, "C": 12.0107, "N": 14.0067, "O": 15.9994, "F": 18.998403, "NE": 20.18, "NA": 22.989769,
                                        "MG": 24.305, "AL": 26.98, "SI": 28.09, "P": 30.973762, "S": 32.065, "CL": 35.453, "AR": 39.95, "K": 39.0983, "CA": 40.078, "SC": 44.96, "TI": 47.87, "V": 50.94,
@@ -168,6 +168,36 @@ class Molecule(Structure):
             return self.knowledge[str(prop)]
         else:
             raise Exception("entry %s not found in knowledge base!" % prop)
+
+    def _guess_element(self, name):
+        '''
+        guess the chemical element of an atom from its PDB atom name field (columns 13-16).
+
+        One-letter elements are right-justified, so " CA " is a carbon, while two-letter elements start in column 13, so "CA  " is a calcium.
+        A name starting in column 13 and ending in digits (e.g. "HE21") is a hydrogen, and a name starting with a digit (e.g. "1HD1") takes the element of its second character.
+
+        :param name: atom name field, columns 13-16 of an ATOM or HETATM line
+        :returns: element symbol in upper case, or "" if no known element matches
+        '''
+        name = name.upper().ljust(4)
+        elements = self.know('atom_mass')
+
+        stripped = name.strip()
+        if stripped == "":
+            return ""
+
+        if name[0].isalpha() and not name[2:].strip().isdigit() and stripped in elements:
+            return stripped
+
+        if stripped[0].isdigit() and len(stripped) > 1:
+            candidate = stripped[1]
+        else:
+            candidate = stripped[0]
+
+        if candidate in elements:
+            return candidate
+
+        return ""
 
     def import_pdb(self, pdb, include_hetatm=False):
         '''
@@ -290,15 +320,15 @@ class Molecule(Structure):
                     except Exception:
                         w.append(0.0)
 
-                    # extract atomtype
-                    try:
-                        w.append(line[76:78].strip())
-                    except Exception:
-                        w.append("")
+                    # extract atomtype, guessing it from the atom name if the element column is blank
+                    element = line[76:78].strip()
+                    if element == "":
+                        element = self._guess_element(line[12:16])
+                    w.append(element)
 
                     # use atomtype to extract vdw radius
                     try:
-                        r.append(self.know('atom_vdw')[line[76:78].strip()])
+                        r.append(self.know('atom_vdw')[element])
                     except Exception:
                         r.append(self.know('atom_vdw')['.'])
 
@@ -338,7 +368,7 @@ class Molecule(Structure):
                     raise Exception('ERROR: something went wrong when saving van der Waals radii in %s!\nERROR: are all the columns separated?' % pdb)
 
                 # save default charge state
-                self.properties['charge'] = np.array(e)
+                self.data['charge'] = np.array(e)
 
             # save 3D coordinates of every atom and restart the accumulator
             try:
@@ -595,6 +625,11 @@ class Molecule(Structure):
                     self.data['radius'] = np.array(r)
                 except Exception:
                     raise Exception('ERROR: something went wrong when saving van der Waals radii in %s!\nERROR: are all the columns separated?' %pqr)
+
+                try:
+                    self.data['charge'] = np.array(e)
+                except Exception:
+                    raise Exception('ERROR: something went wrong when saving charges in %s!\nERROR: are all the columns separated?' %pqr)
 
             # save 3D coordinates of every atom and restart the accumulator
             try:

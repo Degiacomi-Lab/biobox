@@ -75,6 +75,62 @@ class test_structures(unittest.TestCase):
             np.testing.assert_allclose(M2.data["occupancy"].astype(float), occupancy)
             np.testing.assert_allclose(M2.data["beta"].astype(float), beta)
 
+    def test_import_without_end(self):
+
+        print("\n> testing that charges are loaded from files without an END statement")
+        import tempfile
+        pdb = ["ATOM      1  N   ALA A   1       0.000   0.000   0.000  1.00 10.00           N\n",
+               "ATOM      2  CA  ALA A   1       1.458   0.000   0.000  1.00 10.00           C\n"]
+        pqr = ["ATOM      1  N   ALA A   1       0.000   0.000   0.000  0.1414 1.8240\n",
+               "ATOM      2  CA  ALA A   1       1.458   0.000   0.000 -0.0597 1.9080\n"]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            for end in ["", "END\n"]:
+                fname = os.path.join(tmp, "test.pdb")
+                with open(fname, "w") as f:
+                    f.writelines(pdb + [end])
+                M = bb.Molecule()
+                M.import_pdb(fname)
+                np.testing.assert_allclose(M.data["charge"].values, [0.0, 0.0])
+
+                fname = os.path.join(tmp, "test.pqr")
+                with open(fname, "w") as f:
+                    f.writelines(pqr + [end])
+                M = bb.Molecule()
+                M.import_pqr(fname)
+                np.testing.assert_allclose(M.data["charge"].values, [0.1414, -0.0597])
+                np.testing.assert_allclose(M.data["radius"].values, [1.8240, 1.9080])
+
+    def test_element_from_atom_name(self):
+
+        print("\n> testing element assignment when the element column is blank")
+        # HSP.pdb has no element column, so elements and radii come from the atom names
+        CA = self.M.atomselect("*", "*", "CA", get_index=True)[1]
+        N = self.M.atomselect("*", "*", "N", get_index=True)[1]
+        self.assertTrue(np.all(self.M.data["atomtype"].values[CA] == "C"))
+        np.testing.assert_allclose(self.M.data["radius"].values[CA], 1.70)
+        np.testing.assert_allclose(self.M.data["radius"].values[N], 1.55)
+
+        # a right-justified one-letter element differs from a two-letter element in column 13
+        names = {" CA ": "C", "CA  ": "CA", "FE  ": "FE", " OXT": "O", "OXT ": "O",
+                 "HE21": "H", "1HD1": "H", "HB2 ": "H", "ZN  ": "ZN", " QQ ": ""}
+        for name, element in names.items():
+            self.assertEqual(self.M._guess_element(name), element, name)
+
+        # an element column, when present, takes precedence over the atom name
+        import tempfile
+        lines = ["HETATM    1 CA    CA A   1       0.000   0.000   0.000  1.00 10.00          CA\n",
+                 "HETATM    2 CA    CA A   2       5.000   0.000   0.000  1.00 10.00            \n",
+                 "ATOM      3  CA  ALA A   3      10.000   0.000   0.000  1.00 10.00           C\n", "END\n"]
+        with tempfile.TemporaryDirectory() as tmp:
+            fname = os.path.join(tmp, "calcium.pdb")
+            with open(fname, "w") as f:
+                f.writelines(lines)
+            M = bb.Molecule()
+            M.import_pdb(fname, include_hetatm=True)
+        self.assertEqual(list(M.data["atomtype"]), ["CA", "CA", "C"])
+        np.testing.assert_allclose(M.data["radius"].values, [2.31, 2.31, 1.70])
+
     def test_xlink(self):
 
         print("\n> testing shortest path")
