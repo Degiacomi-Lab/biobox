@@ -1138,34 +1138,23 @@ class Molecule(Structure):
         else:
             raise Exception("ERROR: wrong type for chain selection. Should be str, list, or numpy")
 
-        if isinstance(res, str):
-            if res == '*':
-                res_query = np.array([True] * len(self.points))
-            elif use_resname:
-                res_query = self.data["resname"].values == res
-            else:
-                res_query = self.data["resid"].values == res
+        # residue boolean selector
+        if isinstance(res, np.generic):
+            res = res.item()
 
-        elif isinstance(res, int):
-            if use_resname:
-                res_query = self.data["resname"].values == str(res)
-            else:
-                res_query = self.data["resid"].values == res
-
-        elif isinstance(res, list) or type(res).__module__ == 'numpy':
-            if use_resname:
-                res_query = self.data["resname"].values == str(res[0])
-            else:
-                res_query = self.data["resid"].values == res[0]
-
-            for r in range(1, len(res), 1):
-                if use_resname:
-                    res_query = np.logical_or(res_query, self.data["resname"].values == str(res[r]))
-                else:
-                    res_query = np.logical_or(res_query, self.data["resid"].values == res[r])
+        if isinstance(res, str) and res == '*':
+            res_query = np.array([True] * len(self.points))
 
         else:
-            raise Exception("ERROR: wrong type for resid selection. Should be int, list, or numpy")
+            if isinstance(res, (str, int)):
+                res = [res]
+            elif not isinstance(res, (list, tuple, range, np.ndarray)):
+                raise Exception("ERROR: wrong type for resid selection. Should be int, list, or numpy")
+
+            if use_resname:
+                res_query = np.isin(self.data["resname"].values, [str(r) for r in res])
+            else:
+                res_query = np.isin(self.data["resid"].values, [self._as_resid(r) for r in res])
 
         # atom name boolean selector
         if isinstance(atom, str):
@@ -1188,6 +1177,24 @@ class Molecule(Structure):
             return [self.points[query], np.where(query == True)[0]]
         else:
             return self.points[query]
+
+    def _as_resid(self, res):
+        '''
+        convert a residue ID given as a numpy scalar or a numeric string into an int.
+
+        :param res: residue ID
+        :returns: residue ID as int
+        '''
+        if isinstance(res, np.generic):
+            res = res.item()
+
+        if isinstance(res, str):
+            try:
+                return int(res)
+            except ValueError:
+                raise Exception("ERROR: resid %s is not an integer. To select by residue name, set use_resname=True" % res)
+
+        return res
 
     def atomignore(self, chain, res, atom, get_index=False, use_resname=False):
         '''
@@ -1225,13 +1232,13 @@ class Molecule(Structure):
         :returns: coordinates of the selected points and, if get_index is set to true, their indices in self.points array.
         '''
 
-        D = self.data.values
-        l = D[index]
+        chain = self.data["chain"].values
+        resid = self.data["resid"].values
+        index = np.atleast_1d(index)
 
-        if len(l.shape) == 1:
-            l = l.reshape(1, len(l))
-
-        test = np.logical_and(D[:, 4] == l[:, 4], D[:, 5] == l[:, 5])
+        test = np.zeros(len(self.data), dtype=bool)
+        for c, r in set(zip(chain[index], resid[index])):
+            test = np.logical_or(test, np.logical_and(chain == c, resid == r))
 
         idxs = np.where(test)[0]
         if len(idxs) > 0:
@@ -1319,6 +1326,12 @@ class Molecule(Structure):
         :param flip: If true, extract atoms that DON'T match idxs (default is False)
         :returns: :func:`Molecule <molecule.Molecule>` object
         '''
+
+        idxs = np.asarray(idxs)
+        if idxs.dtype == bool:
+            idxs = np.where(idxs)[0]
+        elif len(idxs) == 0:
+            idxs = idxs.astype(int)
 
         if flip:
             self_index = set(self.data["index"])

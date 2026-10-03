@@ -144,6 +144,46 @@ class test_structures(unittest.TestCase):
         self.assertEqual(list(M.data["atomtype"]), ["C", "CA", "NA", "NA", "O", "H", "C", "H", ""])
         np.testing.assert_allclose(M.data["radius"].values, [1.70, 2.31, 2.27, 2.27, 1.52, 1.20, 1.70, 1.20, 1.80])
 
+    def test_atomselect_resid_types(self):
+
+        print("\n> testing atomselect with numpy and string residue IDs")
+        expected = self.M.atomselect("*", 33, "CA", get_index=True)[1]
+        self.assertEqual(len(expected), 2)
+        r = np.unique(self.M.data["resid"])[0]
+        self.assertIsInstance(r, np.integer)
+        for res in [r, "33", [r], np.array([33]), ["33"]]:
+            np.testing.assert_array_equal(self.M.atomselect("*", res, "CA", get_index=True)[1], expected)
+
+        both = self.M.atomselect("*", [33, 34], "CA", get_index=True)[1]
+        self.assertEqual(len(both), 4)
+
+        lys = self.M.atomselect("*", np.str_("LYS"), "NZ", use_resname=True, get_index=True)[1]
+        self.assertEqual(len(lys), len(self.M.atomselect("*", "LYS", "NZ", use_resname=True, get_index=True)[1]))
+        self.assertGreater(len(lys), 0)
+
+        with self.assertRaises(Exception):
+            self.M.atomselect("*", "LYS", "NZ")
+
+    def test_same_residue_list(self):
+
+        print("\n> testing same_residue with a list of atoms")
+        first = self.M.same_residue(0, get_index=True)[1]
+        second = self.M.same_residue(20, get_index=True)[1]
+        both = self.M.same_residue([0, 20], get_index=True)[1]
+        np.testing.assert_array_equal(both, np.union1d(first, second))
+        np.testing.assert_array_equal(self.M.same_residue([0, 1], get_index=True)[1], first)
+
+    def test_get_subset_mask(self):
+
+        print("\n> testing get_subset with a boolean mask")
+        mask = self.M.data["name"].values == "CA"
+        idx = np.where(mask)[0]
+        S = self.M.get_subset(mask)
+        self.assertEqual(len(S), len(idx))
+        np.testing.assert_allclose(S.points, self.M.points[idx])
+        self.assertEqual(len(self.M.get_subset(mask, flip=True)), len(self.M) - len(idx))
+        self.assertEqual(len(self.M.get_subset([])), 0)
+
     def test_element_from_atom_name(self):
 
         print("\n> testing element assignment when the element column is blank")
