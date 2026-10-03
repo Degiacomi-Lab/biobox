@@ -1455,6 +1455,56 @@ class Molecule(Structure):
 
         return d
 
+    @staticmethod
+    def _hybrid36(value, width=5):
+        '''
+        encode a positive integer in hybrid-36, the PDB convention for numbers too large for their field.
+
+        Numbers that fit the field are written in decimal, larger ones in base 36 starting with a letter (e.g. 100000 is A0000 for width 5).
+
+        :param value: integer to encode
+        :param width: width of the field
+        :returns: string of at most width characters
+        '''
+        if value < 10**width:
+            return str(value)
+
+        block = 26 * 36**(width - 1)
+        value -= 10**width
+        for digits in ["0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", "0123456789abcdefghijklmnopqrstuvwxyz"]:
+            if value < block:
+                value += 10 * 36**(width - 1)
+                code = ""
+                while value > 0:
+                    value, r = divmod(value, 36)
+                    code = digits[r] + code
+                return code
+            value -= block
+
+        raise Exception("ERROR: %s is too large for a hybrid-36 field of width %s" % (value, width))
+
+    @staticmethod
+    def _pdb_atom_prefix(record, serial, name, resname, chain, resid):
+        '''
+        first 30 columns of an ATOM or HETATM line, up to the x coordinate.
+
+        Atom names of 4 characters, or starting with a digit, begin in column 13, shorter ones in column 14.
+        A 2-character chain name takes columns 22-23, and the residue ID columns 24-26.
+
+        :returns: string of 30 characters
+        '''
+        if len(name) >= 4 or name[:1].isdigit():
+            name = "%-4s" % name
+        else:
+            name = " %-3s" % name
+
+        if len(chain) == 2:
+            chain_resid = "%2s%3s" % (chain, resid)
+        else:
+            chain_resid = "%1s%4s" % (chain, resid)
+
+        return "%-6s%5s %4s %-4s%s    " % (record, serial, name, resname, chain_resid)
+
     def write_pdb(self, outname, conformations=[], index=[], split_struc=False, dssp=False):
         '''
         overload superclass method for writing (multi)pdb.
@@ -1462,7 +1512,7 @@ class Molecule(Structure):
         :param outname: name of pdb file to be generated.
         :param index: indices of atoms to write to file. If empty, all atoms are returned. Index values obtaineable with a call like: index=molecule.atomselect("A", [1, 2, 3], "CA", True)[1]
         :param conformations: list of conformation indices to write to file. By default, a multipdb with all conformations will be produced.
-        :param split_struc: Guess chain split on structure being written. Default: False. Set to False if protein is broken, but should retain chain lettering and doesn't have chain breaks.
+        :param split_struc: Guess chain split on the atoms being written, rename their chains accordingly and close each chain with TER. The molecule itself is not changed. Default: False. Set to False if protein is broken, but should retain chain lettering and doesn't have chain breaks.
         :param dssp: If using DSSP secondary structure check, requires that CRYST be the first line by default (hence write that line)
         '''
 
@@ -1481,9 +1531,24 @@ class Molecule(Structure):
             else:
                 raise Exception("ERROR: requested coordinate index %s, but only %s are available" %(np.max(conformations), len(self.coordinates)))
 
+        if len(index) == 0:
+            index = np.arange(len(self.points))
+
+        # guess chains once, on a copy of the atoms being written, so that all models share them
+        ter = []
+        if split_struc:
+            S = self.get_subset(index, conformations=[frames[0]])
+            no, split, _ = S.guess_chain_split()
+            chains = S.data["chain"].values
+            if no != 1:
+                # last atom of every chain
+                ter = set(np.asarray(split[1:]) - 1)
+
+        serials = [self._hybrid36(i + 1) for i in range(len(index))]
+
         f_out = open(outname, "w")
         if dssp:
-            f_out.write("CRYST1    1.000    1.000    1.000  90.00  90.00  90.00 P 1           1") # only if doing secondary structure check
+            f_out.write("CRYST1    1.000    1.000    1.000  90.00  90.00  90.00 P 1           1\n") # only if doing secondary structure check
 
         for cnt, f in enumerate(frames):
             # get all informations from PDB (for current conformation) in a list
@@ -1491,37 +1556,17 @@ class Molecule(Structure):
             self.set_current(f)
             d = self.get_pdb_data(index)
 
-            # Build our hexidecimal array if num. of atoms > 99999
-            idx_val = np.arange(1, len(d) + 1, 1)
-            if len(idx_val) > 99999:
-                vhex = np.vectorize(hex)
-                idx_val = vhex(idx_val)   # convert index values to hexidecimal
-                idx_val = [num[2:] for num in idx_val]  # remove 0x at start of hexidecimal number
-
-            # prep for termination lines - turn off split? (just skip below steps)
-            if split_struc:
-                no, split, _ = self.guess_chain_split()
-                split = np.asarray(split[1:]) -1 # don't need starting atom, and we want to shift down to end of last residue
-            else:
-                no = 1
-
             for i in range(0, len(d), 1):
-                
-                # create and write PDB line
-                if len(d[i][4]) == 2:
-                    fmt = '%-6s%5s  %-4s%-4s%2s%3s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n'    
-                elif d[i][2][0].isdigit():
-                    fmt = '%-6s%5s  %-4s%-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n'
-                elif len(d[i][2]) == 4:
-                    fmt = '%-6s%5s %-4s %-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n'
-                else:
-                    fmt = '%-6s%5s  %-3s %-4s%1s%4s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n'
+                chain = chains[i] if split_struc else d[i][4]
 
-                f_out.write(fmt%(d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11]))
+                # create and write PDB line
+                L = self._pdb_atom_prefix(d[i][0], serials[i], d[i][2], d[i][3], chain, d[i][5])
+                L += '%8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
+                f_out.write(L)
 
                 # Terminate chain if applicable
-                if no != 1 and np.any(i == split):
-                    L = 'TER   %5s      %-4s%1s%4s\n' % (idx_val[i], d[i][3], d[i][4], d[i][5])
+                if i in ter:
+                    L = 'TER   %5s      %-4s%1s%4s\n' % (serials[i], d[i][3], chain, d[i][5])
                     f_out.write(L)
 
             f_out.write("ENDMDL\n")
@@ -1540,7 +1585,7 @@ class Molecule(Structure):
         :param outname: name of .gro file to be generated.
         :param index: indices of atoms to write to file. If empty, all atoms are returned. Index values obtaineable with a call like: index=molecule.atomselect("A", [1, 2, 3], "CA", True)[1]
         :param conformations: list of conformation indices to write to file. By default, all conformations will be returned.
-        :param gmx_correction: GROMACS fails when index number is >99999, VMD also returns weird visualisation errors. Set to True to reset numbering (native GROMACS behaviour) when number is greater than 99999.
+        :param gmx_correction: kept for compatibility. Atom numbers always run from 1 and restart after 99999, as in GROMACS, and residue IDs above 99999 restart likewise.
         '''
 
         # store current frame, so it will be reestablished after file output is
@@ -1570,17 +1615,18 @@ class Molecule(Structure):
             f_out.write("%s\n" % len(d))
             for i in range(0, len(d), 1):
                 # create and write .gro line
-                if int(d[i][1]) > 99999 and gmx_correction:
-                    for x in range(len(d[i:])): # need this because of list comprehension
-                        d[i+x][1] = d[i+x][1] - 99999 # ensures resetting at multiples of 99999
-                L = '%5d%-5s%5s%5d%8.3f%8.3f%8.3f\n' % (int(d[i][5]), d[i][3], d[i][2], int(d[i][1]), float(d[i][6]) / 10.0, float(d[i][7]) / 10.0, float(d[i][8]) / 10.0)
+                resid = int(d[i][5])
+                if resid > 99999:
+                    resid = resid % 100000
+                L = '%5d%-5s%5s%5d%8.3f%8.3f%8.3f\n' % (resid, d[i][3], d[i][2], (i + 1) % 100000, float(d[i][6]) / 10.0, float(d[i][7]) / 10.0, float(d[i][8]) / 10.0)
                 f_out.write(L)
 
             if "box" in self.properties:
                 b = self.properties["box"][f] / 10.0
             else:
-                minpos = np.min(self.points, axis=0) / 10.0
-                b = np.max(self.points, axis=0) - minpos / 10.0
+                # box enclosing the written atoms, in nm
+                xyz = np.array([row[6:9] for row in d]).astype(float)
+                b = (np.max(xyz, axis=0) - np.min(xyz, axis=0)) / 10.0
 
             formatting = ""
             for item in b:
@@ -2219,6 +2265,10 @@ class Molecule(Structure):
         # Get our PQR database style
         pqr = self.pdb2pqr()
 
+        # rows of the atoms being written, in the molecule and in pqr
+        rows = np.arange(len(self.points)) if len(index) == 0 else np.asarray(index)
+        serials = [self._hybrid36(i + 1) for i in range(len(rows))]
+
         f_out = open(outname, "w")
 
         for f in frames:
@@ -2226,22 +2276,12 @@ class Molecule(Structure):
             self.set_current(f)
             d = self.get_pdb_data(index)
 
-            # Get our
-
-
-            # Build our hexidecimal array if num. of atoms > 99999
-            idx_val = np.arange(1, len(d) + 1, 1)
-            if len(idx_val) > 99999:
-                vhex = np.vectorize(hex)
-                idx_val = vhex(idx_val)   # convert index values to hexidecimal
-                idx_val = [num[2:] for num in idx_val]  # remove 0x at start of hexidecimal number
-
             for i in range(0, len(d), 1):
-                # create and write PDB line
-                if d[i][2][0].isdigit():
-                    L = '%-6s%5s %-5s%-4s%1s%4s    %8.3f%8.3f%8.3f%7.4f%7.4f        %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(pqr.iloc[i]["charge"]), float(pqr.iloc[i]["radius"]), d[i][11])
-                else:
-                    L = '%-6s%5s  %-4s%-4s%1s%4s    %8.3f%8.3f%8.3f%7.4f%7.4f        %2s\n' % (d[i][0], idx_val[i], d[i][2], d[i][3], d[i][4], d[i][5], float(d[i][6]), float(d[i][7]), float(d[i][8]), float(pqr.iloc[i]["charge"]), float(pqr.iloc[i]["radius"]), d[i][11])
+                # create and write PQR line, with charge and radius in columns 55-62 and 63-69 so
+                # that they stay separated by whitespace
+                q = pqr.iloc[rows[i]]
+                L = self._pdb_atom_prefix(d[i][0], serials[i], d[i][2], d[i][3], d[i][4], d[i][5])
+                L += '%8.3f%8.3f%8.3f%8.4f%7.4f       %2s\n' % (float(d[i][6]), float(d[i][7]), float(d[i][8]), float(q["charge"]), float(q["radius"]), d[i][11])
                 f_out.write(L)
 
             f_out.write("END\n")

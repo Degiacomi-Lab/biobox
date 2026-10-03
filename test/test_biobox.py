@@ -359,6 +359,90 @@ class test_structures(unittest.TestCase):
             np.testing.assert_allclose(selected.properties["origin"], alone.properties["origin"])
         np.testing.assert_allclose(M.get_electrostatics(chain="B")[1].properties["origin"], [17 - 3, -3, -3])
 
+    def test_write_pdb_columns(self):
+
+        print("\n> testing atom name columns and serial numbers in written pdb files")
+        import tempfile
+        M = self._molecule_from_atoms([("CA", "C", "A", 1, [0, 0, 0]), ("CB", "C", "A", 1, [1, 0, 0]), ("CG", "C", "A", 1, [2, 0, 0])])
+        M.data["name"] = ["CA", "HD11", "1HD1"]
+        with tempfile.TemporaryDirectory() as tmp:
+            fname = os.path.join(tmp, "names.pdb")
+            M.write_pdb(fname)
+            lines = [l for l in open(fname) if l.startswith("ATOM")]
+        # columns 13-16 hold the name, column 17 the (empty) altloc
+        self.assertEqual([l[12:17] for l in lines], [" CA  ", "HD11 ", "1HD1 "])
+        self.assertEqual([l[6:11] for l in lines], ["    1", "    2", "    3"])
+
+        h36 = bb.Molecule._hybrid36
+        self.assertEqual([h36(v) for v in [1, 99999, 100000, 100001, 100000 + 26*36**4]], ["1", "99999", "A0000", "A0001", "a0000"])
+
+    def test_write_pdb_split(self):
+
+        print("\n> testing TER records of a written subset")
+        import tempfile
+        from copy import deepcopy
+        M = deepcopy(self.M)
+        M.add_xyz(M.coordinates[0] + 1.0)
+        chains = M.data["chain"].values.copy()
+        index = np.arange(1000, len(M))
+        with tempfile.TemporaryDirectory() as tmp:
+            fname = os.path.join(tmp, "split.pdb")
+            M.write_pdb(fname, index=index, split_struc=True)
+            models = open(fname).read().split("ENDMDL")[:-1]
+
+        np.testing.assert_array_equal(M.data["chain"].values, chains)
+        self.assertEqual(len(models), 2)
+        for model in models:
+            lines = model.splitlines()
+            ter = [i for i, l in enumerate(lines) if l.startswith("TER")]
+            atoms_before = [len([l for l in lines[:i] if l.startswith("ATOM")]) for i in ter]
+            self.assertEqual(atoms_before, [618, 642, 666])
+        self.assertEqual(models[0].count("TER"), models[1].count("TER"))
+        chains_1 = [l[21] for l in models[0].splitlines() if l.startswith("ATOM")]
+        chains_2 = [l[21] for l in models[1].splitlines() if l.startswith("ATOM")]
+        self.assertEqual(chains_1, chains_2)
+
+    def test_write_gro(self):
+
+        print("\n> testing atom numbers and box of written gro files")
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            fname = os.path.join(tmp, "out.gro")
+            self.M.write_gro(fname)
+            lines = open(fname).readlines()
+            self.M.write_gro(fname, index=[5, 9])
+            sub = open(fname).readlines()
+
+        self.assertEqual([int(l[15:20]) for l in lines[2:5]], [1, 2, 3])
+        span = (self.M.points.max(axis=0) - self.M.points.min(axis=0)) / 10.0
+        np.testing.assert_allclose([float(x) for x in lines[-1].split()], span, atol=1e-5)
+        self.assertEqual([int(l[15:20]) for l in sub[2:4]], [1, 2])
+        span = (self.M.points[[5, 9]].max(axis=0) - self.M.points[[5, 9]].min(axis=0)) / 10.0
+        np.testing.assert_allclose([float(x) for x in sub[-1].split()], span, atol=1e-5)
+
+    def test_write_pqr(self):
+
+        print("\n> testing charge and radius columns of written pqr files")
+        import tempfile
+        import pandas as pd
+        M = self._molecule_from_atoms([("N", "N", "A", 1, [0, 0, 0]), ("CA", "C", "A", 1, [1, 0, 0]), ("C", "C", "A", 1, [2, 0, 0])])
+        charges = [0.1414, -0.0597, -0.3821]
+        radii = [1.824, 1.908, 1.9]
+        M.pdb2pqr = lambda: pd.DataFrame({"charge": charges, "radius": radii})
+        with tempfile.TemporaryDirectory() as tmp:
+            fname = os.path.join(tmp, "out.pqr")
+            M.write_pqr(fname, index=[1, 2])
+            lines = [l for l in open(fname) if l.startswith("ATOM")]
+            M2 = bb.Molecule()
+            M2.import_pqr(fname)
+
+        # whitespace-separated fields, as read by APBS and PDB2PQR
+        self.assertEqual([len(l.split()) for l in lines], [12, 12])
+        self.assertEqual([float(l.split()[9]) for l in lines], charges[1:])
+        self.assertEqual([float(l.split()[10]) for l in lines], radii[1:])
+        np.testing.assert_allclose(M2.data["charge"].values, charges[1:])
+        np.testing.assert_allclose(M2.data["radius"].values, radii[1:])
+
     def test_element_from_atom_name(self):
 
         print("\n> testing element assignment when the element column is blank")
