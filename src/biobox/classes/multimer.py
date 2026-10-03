@@ -109,58 +109,33 @@ class Multimer(Polyhedron):
         :returns: :func:`Molecule <molecule.Molecule>` object
         '''
 
-        # create new data entry (renumber indices, reassign chain name)
-        data = np.empty([0, 9])
-
+        # create new data entry (renumber indices, reassign chain name), keeping every column of the units
+        frames = []
         atom_ccs = {}
-        r = []
-        c = []
-        skipcharge = False
         for i in range(0, len(self.unit), 1):
-            data_tmp = self.unit[i].data[[
-                "atom", "index", "name", "resname", "chain",
-                "resid", "beta", "occupancy", "atomtype"]].values
-
+            d = self.unit[i].data.copy()
             if rename_chains:
-                data_tmp[:, 4] = self.chain_names[i] # avoid renaming the chains
-
-            data = np.concatenate((data, data_tmp))
+                d["chain"] = self.chain_names[i]
+            frames.append(d)
 
             # merge knowledge about CCS acquired by different molecules
             atom_ccs = {}
             for k in self.unit[i].knowledge['atom_ccs'].keys():
                 atom_ccs[k] = self.unit[i].knowledge['atom_ccs'][k]
 
-            if len(r) == 0:
-                r = self.unit[i].data['radius']
-            else:
-                r = np.concatenate((r, self.unit[i].data['radius']))
+        data = pd.concat(frames, ignore_index=True)
+        data["index"] = np.arange(len(data))
 
-            try:
-                if len(c) == 0:
-                    c = self.unit[i].data['charge']
-                else:
-                    c = np.concatenate((c, self.unit[i].data['charge']))
-            except Exception as ex:
-                skipcharge = True
-                continue
-
-        data[:, 1] = np.linspace(1, len(data), len(data)).astype(int)
-        cols = ["atom", "index", "name", "resname", "chain", "resid", "beta", "occupancy", "atomtype"]
-        idx = np.arange(len(data))
+        # charges are kept only if every unit has them
+        if not all("charge" in d.columns for d in frames):
+            data = data.drop(columns="charge", errors="ignore")
 
         # create molecule, and push created data information
         M = Molecule()
         M.add_xyz(self.get_all_xyz())
-        M.data = pd.DataFrame(data, index=idx, columns=cols)
+        M.data = data
         M.properties['center'] = M.get_center()
         M.knowledge['atom_ccs'] = atom_ccs
-        M.data['radius'] = r
-
-        if not skipcharge:
-            M.data['charge'] = c
-
-
 
         return M
 

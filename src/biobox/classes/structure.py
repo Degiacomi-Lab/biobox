@@ -440,26 +440,61 @@ class Structure(object):
         :param buff: padding to add at points cloud boundaries
         :returns: :func:`Density <density.Density>` object, containing a simulated density map
         '''
-        pts = self.points
+        axes = self._grid_axes(self.points, step, buff)
+        b = self._density_on_grid(self.points, axes, step, sigma, kernel_half_width)
 
-        # rectangular box boundaries
-        bnds = np.array([[np.min(pts[:, 0]) - buff, np.max(pts[:, 0]) + buff],
-                         [np.min(pts[:, 1]) - buff, np.max(pts[:, 1]) + buff],
-                         [np.min(pts[:, 2]) - buff, np.max(pts[:, 2]) + buff]])
+        # prepare density data structure
+        from biobox.classes.density import Density
+        D = Density()
+        D.properties['density'] = b
+        D.properties['size'] = np.array(b.shape)
+        D.properties['origin'] = np.array([ax[0] for ax in axes])
+        D.properties['delta'] = np.identity(3) * step
+        D.properties['format'] = 'dx'
+        D.properties['filename'] = ''
+        D.properties["sigma"] = np.std(b)
 
-        xax = np.arange(bnds[0, 0], bnds[0, 1] + step, step)
-        yax = np.arange(bnds[1, 0], bnds[1, 1] + step, step)
-        zax = np.arange(bnds[2, 0], bnds[2, 1] + step, step)
+        return D
 
-        # create empty box
-        d = np.zeros((len(xax), len(yax), len(zax)))
+    @staticmethod
+    def _grid_axes(pts, step, buff):
+        '''
+        coordinates of the grid points of a regular grid enclosing a points cloud.
 
-        # place Kronecker deltas in mesh grid
-        for p in pts:
-            xpos = np.argmin(np.abs(xax - p[0]))
-            ypos = np.argmin(np.abs(yax - p[1]))
-            zpos = np.argmin(np.abs(zax - p[2]))
-            d[xpos, ypos, zpos] = 1
+        :param pts: points the grid encloses
+        :param step: size of cubic voxels, in Angstrom
+        :param buff: padding to add at points cloud boundaries
+        :returns: list of three arrays, the coordinates of grid points along x, y and z
+        '''
+        return [np.arange(np.min(pts[:, i]) - buff, np.max(pts[:, i]) + buff + step, step) for i in range(3)]
+
+    @staticmethod
+    def _grid_indices(pts, axes, step):
+        '''
+        indices of the grid points closest to each point.
+
+        :param pts: points to place on the grid
+        :param axes: grid axes, as returned by _grid_axes
+        :param step: size of cubic voxels, in Angstrom
+        :returns: tuple of three arrays of indices, along x, y and z
+        '''
+        return tuple(np.clip(np.rint((pts[:, i] - axes[i][0]) / step).astype(int), 0, len(axes[i]) - 1) for i in range(3))
+
+    @staticmethod
+    def _density_on_grid(pts, axes, step, sigma, kernel_half_width):
+        '''
+        density map of points on a grid, convolved with a gaussian kernel and scaled to a maximum of 1.
+
+        :param pts: points to place on the grid
+        :param axes: grid axes, as returned by _grid_axes
+        :param step: size of cubic voxels, in Angstrom
+        :param sigma: gaussian kernel sigma, in voxels
+        :param kernel_half_width: kernel half width, in voxels
+        :returns: 3D numpy array
+        '''
+        # count points in their closest grid point
+        d = np.zeros([len(ax) for ax in axes])
+        np.add.at(d, Structure._grid_indices(pts, axes, step), 1)
 
         # create 3d gaussian kernel
         window = kernel_half_width * 2 + 1
@@ -482,18 +517,7 @@ class Structure(object):
         b = scipy.signal.fftconvolve(d, h, mode='same')
         b /= np.max(b)
 
-        # prepare density data structure
-        from biobox.classes.density import Density
-        D = Density()
-        D.properties['density'] = b
-        D.properties['size'] = np.array(b.shape)
-        D.properties['origin'] = np.min(self.points, axis=0) - kernel_half_width / 2.0 + step #np.mean(self.points, axis=0) - step * np.array(b.shape) / 2.0
-        D.properties['delta'] = np.identity(3) * step
-        D.properties['format'] = 'dx'
-        D.properties['filename'] = ''
-        D.properties["sigma"] = np.std(b)
-
-        return D
+        return b
 
     def rmsf(self, indices=-1, step=1):
         '''
