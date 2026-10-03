@@ -1,3 +1,5 @@
+[![tests](https://github.com/Degiacomi-Lab/biobox/actions/workflows/tests.yml/badge.svg)](https://github.com/Degiacomi-Lab/biobox/actions/workflows/tests.yml)
+
 Biobox provides a collection of data structures and methods for loading, manipulating and analyzing atomistic and pseudoatomistic structures.
 
 Biobox main features:

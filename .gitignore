@@ -74,3 +74,6 @@ lib/*.c
 
 # setuptools build folder (python setup.py build_ext)
 /build/
+
+# code review notes (local only)
+code_review/
