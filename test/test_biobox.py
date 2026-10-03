@@ -101,6 +101,49 @@ class test_structures(unittest.TestCase):
                 np.testing.assert_allclose(M.data["charge"].values, [0.1414, -0.0597])
                 np.testing.assert_allclose(M.data["radius"].values, [1.8240, 1.9080])
 
+    def test_import_gro(self):
+
+        print("\n> testing selections on a molecule loaded from a gro file")
+        import tempfile
+        gro = ["two residues\n", "    3\n",
+               "    1ALA      N    1   0.000   0.000   0.000\n",
+               "    1ALA     CA    2   0.100   0.000   0.000\n",
+               "    2ALA      N    3   0.200   0.000   0.000\n",
+               "   1.00000   1.00000   1.00000\n"]
+        with tempfile.TemporaryDirectory() as tmp:
+            fname = os.path.join(tmp, "test.gro")
+            with open(fname, "w") as f:
+                f.writelines(gro)
+            M = bb.Molecule()
+            M.import_gro(fname)
+
+        self.assertEqual(list(M.data["index"]), [0, 1, 2])
+        self.assertEqual(len(M.atomselect("A", 1, "CA")), 1)
+        self.assertEqual(len(M.atomselect("A", [1, 2], "*")), 3)
+        self.assertEqual(len(M.query("resid == 1")), 2)
+        self.assertEqual(len(M.get_subset([0], flip=True)), 2)
+        np.testing.assert_allclose(M.points[:, 0], [0.0, 1.0, 2.0])
+        np.testing.assert_allclose(M.data["occupancy"].values, [1.0, 1.0, 1.0])
+
+        print("\n> testing elements and radii guessed from gro atom names")
+        # an ion is named as its residue, protein and water names come from the atomtype
+        # table, other names from their first letter, and unknown names get the default radius
+        atoms = [("ALA", "CA"), ("CA", "CA"), ("NA", "NA"), ("SOD", "SOD"), ("SOL", "OW"),
+                 ("SOL", "HW1"), ("LIG", "C12"), ("LIG", "1HD1"), ("LIG", "XX1")]
+        lines = ["guesses\n", "%5d\n" % len(atoms)]
+        for i, (resname, name) in enumerate(atoms):
+            lines.append("%5d%-5s%5s%5d%8.3f%8.3f%8.3f\n" % (i+1, resname, name, i+1, 0.3*i, 0, 0))
+        lines.append("   5.00000   5.00000   5.00000\n")
+        with tempfile.TemporaryDirectory() as tmp:
+            fname = os.path.join(tmp, "guess.gro")
+            with open(fname, "w") as f:
+                f.writelines(lines)
+            M = bb.Molecule()
+            M.import_gro(fname)
+
+        self.assertEqual(list(M.data["atomtype"]), ["C", "CA", "NA", "NA", "O", "H", "C", "H", ""])
+        np.testing.assert_allclose(M.data["radius"].values, [1.70, 2.31, 2.27, 2.27, 1.52, 1.20, 1.70, 1.20, 1.80])
+
     def test_element_from_atom_name(self):
 
         print("\n> testing element assignment when the element column is blank")

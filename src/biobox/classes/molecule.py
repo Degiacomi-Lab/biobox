@@ -86,7 +86,8 @@ class Molecule(Structure):
                                       "1H":"H", "2H":"H", "3H":"H", "1HG1":"H", "2HG1":"H", "3HG1":"H", "1HG2":"H", "2HG2":"H", "3HG2":"H", "1HB":"H", "2HB":"H", "1HG":"H", "2HG":"H",
                                       "1HE2":"H", "2HE2":"H", "1HD":"H", "2HD":"H", "1HH1":"H", "2HH1":"H", "1HH2":"H", "2HH2":"H", "1HD1":"H", "1HD2":"H",
                                       "2HD1":"H", "2HD2":"H", "3HD1":"H", "3HD2":"H", "1HZ":"H", "2HZ":"H", "3HZ":"H", "1HE":"H", "2HE":"H", "3HB":"H", "1HA":"H", "2HA":"H",
-                                      "3HE":"H", "HN":"H"}
+                                      "3HE":"H", "HN":"H",
+                                      "SOD":"NA", "POT":"K", "CLA":"CL", "CAL":"CA", "CES":"CS"}
         self.knowledge['AA_mapping'] = {"GLY": "G", "ALA": "A", "LEU": "L", "MET": "M", "PHE": "F", "TRP": "W", "LYS": "K", "GLN": "Q", "GLU": "E", "SER": "S",
                                         "PRO": "P", "VAL": "V", "ILE": "I", "CYS": "C", "TYR": "Y", "HIS": "H", "ARG": "R", "ASN": "N", "ASP": "D", "THR": "T", "NAN" : "Z"}
 
@@ -196,6 +197,33 @@ class Molecule(Structure):
 
         if candidate in elements:
             return candidate
+
+        return ""
+
+    def _guess_gro_element(self, name, resname):
+        '''
+        guess the chemical element of an atom from its gro atom and residue names.
+
+        An atom named as its own residue (e.g. NA in residue NA) is a monatomic ion, and names listed in knowledge['atomtype'] take the element given there.
+        Any other name takes the element of its first letter after leading digits (e.g. C12 is a carbon, 1HD1 a hydrogen).
+
+        :param name: atom name
+        :param resname: residue name
+        :returns: element symbol in upper case, or "" if no known element matches
+        '''
+        name = name.strip().upper()
+        resname = resname.strip().upper()
+        elements = self.know('atom_mass')
+
+        if name == resname and name in elements:
+            return name
+
+        if name in self.know('atomtype'):
+            return self.know('atomtype')[name]
+
+        stripped = name.lstrip("0123456789")
+        if stripped != "" and stripped[0] in elements:
+            return stripped[0]
 
         return ""
 
@@ -691,7 +719,7 @@ class Molecule(Structure):
                 resname = w[1]; resnumber=w[0]
 
                 # read data useful for indexing (guess what is missing)
-                d_data.append(["ATOM", w[3], w[2], resname, "A", resnumber, "0.0", "0.0", ""])
+                d_data.append(["ATOM", w[3], w[2], resname, "A", resnumber, "1.0", "0.0", self._guess_gro_element(w[2], resname)])
                 d.append([w[4], w[5], w[6]])
                 cnt += 1
 
@@ -711,10 +739,17 @@ class Molecule(Structure):
         cols = ["atom", "index", "name", "resname", "chain", "resid", "occupancy", "beta", "atomtype"]
         idx = np.arange(len(data))
         self.data = pd.DataFrame(data, index=idx, columns=cols)
+        self.data["index"] = idx # convert to internal numbering system
 
         #add additional information about van der waals radius and atoms charge
-        self.data['radius'] = np.ones(len(d_data)) * self.know('atom_vdw')['.']
+        vdw = self.know('atom_vdw')
+        self.data['radius'] = [vdw.get(a, vdw['.']) for a in self.data['atomtype']]
         self.data['charge'] = np.zeros(len(d_data))
+
+        #correctly set types of columns requiring other than string
+        self.data["resid"] = self.data["resid"].astype(int)
+        self.data["occupancy"] = self.data["occupancy"].astype(float)
+        self.data["beta"] = self.data["beta"].astype(float)
 
         fin.close()
 
