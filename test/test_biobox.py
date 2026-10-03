@@ -184,6 +184,97 @@ class test_structures(unittest.TestCase):
         self.assertEqual(len(self.M.get_subset(mask, flip=True)), len(self.M) - len(idx))
         self.assertEqual(len(self.M.get_subset([])), 0)
 
+    def _write_biomt_pdb(self, fname, remarks, models):
+        # write a pdb with the given REMARK lines and one MODEL per list of (chain, resid, xyz, occupancy, beta)
+        with open(fname, "w") as f:
+            f.writelines(remarks)
+            for i, atoms in enumerate(models):
+                f.write("MODEL     %4d\n" % (i+1))
+                for j, (chain, resid, xyz, occ, beta) in enumerate(atoms):
+                    f.write("ATOM  %5d  CA  ALA %1s%4d    %8.3f%8.3f%8.3f%6.2f%6.2f           C\n" % (j+1, chain, resid, xyz[0], xyz[1], xyz[2], occ, beta))
+                f.write("ENDMDL\n")
+            f.write("END\n")
+
+    def _biomt_lines(self, mats, record="REMARK 350   BIOMT"):
+        lines = []
+        for n, m in enumerate(mats):
+            for row in range(3):
+                lines.append("%s%d %3d%10.6f%10.6f%10.6f%15.5f\n" % (record, row+1, n+1, m[row, 0], m[row, 1], m[row, 2], m[row, 3]))
+        return lines
+
+    def test_apply_biomatrix(self):
+
+        print("\n> testing biological assembly construction from BIOMT")
+        import tempfile
+        R = np.array([[0., -1., 0.], [1., 0., 0.], [0., 0., 1.]])
+        identity = np.hstack([np.eye(3), np.zeros((3, 1))])
+        rototranslation = np.hstack([R, [[10.], [0.], [0.]]])
+        shift = np.hstack([np.eye(3), [[0.], [0.], [5.]]])
+
+        # biomolecule 1: both operators on chains A and B (the chain list continues on an AND line)
+        # biomolecule 2: chain A unchanged, chain B shifted. Chain C is not part of any assembly
+        remarks = ["REMARK 350 BIOMOLECULE: 1\n",
+                   "REMARK 350 APPLY THE FOLLOWING TO CHAINS: A,\n",
+                   "REMARK 350                    AND CHAINS: B\n"] + self._biomt_lines([identity, rototranslation]) + \
+                  ["REMARK 350 BIOMOLECULE: 2\n",
+                   "REMARK 350 APPLY THE FOLLOWING TO CHAINS: A\n"] + self._biomt_lines([identity]) + \
+                  ["REMARK 350 APPLY THE FOLLOWING TO CHAINS: B\n"] + self._biomt_lines([shift])
+        frame1 = [("A", 1, [1, 0, 0], 0.25, 77.0), ("A", 2, [2, 1, 0], 0.5, 11.0),
+                  ("B", 1, [0, 3, 1], 0.75, 22.0), ("C", 1, [9, 9, 9], 1.0, 33.0)]
+        frame2 = [(c, r, np.array(x) + 1, o, b) for c, r, x, o, b in frame1]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            fname = os.path.join(tmp, "biomt.pdb")
+            self._write_biomt_pdb(fname, remarks, [frame1, frame2])
+            M = bb.Molecule()
+            M.import_pdb(fname)
+
+        self.assertEqual(sorted(M.properties["biomatrix"]), [1, 2])
+        self.assertEqual(M.properties["biomatrix"][1][0][0], ["A", "B"])
+
+        B = M.apply_biomatrix()
+        xyz = M.coordinates[:, :3]
+        expected = np.concatenate([xyz, np.dot(xyz, R.T) + [10, 0, 0]], axis=1)
+        np.testing.assert_allclose(B.coordinates, expected, atol=1e-6)
+        np.testing.assert_allclose(B.points, B.coordinates[0])
+        self.assertEqual(list(B.data["chain"]), ["A", "A", "B", "D", "D", "E"])
+        np.testing.assert_allclose(B.data["occupancy"].values, [0.25, 0.5, 0.75] * 2)
+        np.testing.assert_allclose(B.data["beta"].values, [77.0, 11.0, 22.0] * 2)
+        self.assertEqual(list(B.data["index"]), list(range(6)))
+        self.assertEqual(list(B.data.index), list(range(6)))
+        self.assertIn("radius", B.data.columns)
+        self.assertEqual(len(B.query("chain == 'D'")), 2)
+        self.assertEqual(len(B.get_subset([0, 3])), 2)
+
+        B2 = M.apply_biomatrix(2)
+        self.assertEqual(list(B2.data["chain"]), ["A", "A", "B"])
+        np.testing.assert_allclose(B2.points, xyz[0] + [[0, 0, 0], [0, 0, 0], [0, 0, 5]])
+
+        with self.assertRaises(Exception):
+            M.apply_biomatrix(3)
+
+    def test_apply_matrices_chain_names(self):
+
+        print("\n> testing chain names of many copies, and SMTRY operators")
+        import tempfile
+        mats = [np.hstack([np.eye(3), [[10.*i], [0.], [0.]]]) for i in range(70)]
+        remarks = self._biomt_lines(mats[:2], record="REMARK 290   SMTRY") + self._biomt_lines(mats)
+        with tempfile.TemporaryDirectory() as tmp:
+            fname = os.path.join(tmp, "copies.pdb")
+            self._write_biomt_pdb(fname, remarks, [[("A", 1, [0, 0, 0], 1.0, 0.0)]])
+            M = bb.Molecule()
+            M.import_pdb(fname)
+
+        # matrices without a chain list apply to all chains, and names run on to two characters
+        B = M.apply_biomatrix()
+        self.assertEqual(len(set(B.data["chain"])), 70)
+        self.assertEqual(B.data["chain"].values[0], "A")
+        self.assertTrue(any(len(c) == 2 for c in B.data["chain"]))
+        np.testing.assert_allclose(B.points[:, 0], 10.*np.arange(70))
+
+        S = M.apply_symmetry()
+        np.testing.assert_allclose(S.points, [[0, 0, 0], [10, 0, 0]])
+
     def test_element_from_atom_name(self):
 
         print("\n> testing element assignment when the element column is blank")

@@ -252,17 +252,43 @@ class Molecule(Structure):
         r = []
         e = []
         alternative = []
-        biomt = []
+        biomt = {}  # biomolecule id: list of [chains, BIOMT rows]
+        biomolecule = None
         symm = []
         for line in f_in:
             record = line[0:6].strip()
 
-            # load biomatrix, if any is present
-            if "REMARK 350   BIOMT" in line:
-                try:
-                    biomt.append(line.split()[4:8])
-                except Exception:
-                    raise Exception("ERROR: biomatrix format seems corrupted")
+            # load biomatrix, if any is present, together with the chains it applies to
+            if line.startswith("REMARK 350"):
+                text = line[10:].strip()
+                if text.startswith("BIOMOLECULE:"):
+                    biomolecule = int(text.split(":")[1])
+                    biomt[biomolecule] = []
+
+                elif text.startswith("APPLY THE FOLLOWING TO CHAINS:") or text.startswith("AND CHAINS:"):
+                    chains = [c.strip() for c in text.split(":")[1].split(",") if c.strip() != ""]
+                    if biomolecule is None:
+                        biomolecule = 1
+                        biomt[biomolecule] = []
+                    groups = biomt[biomolecule]
+                    # continuation lines extend the chain list of the current group
+                    if text.startswith("AND CHAINS:") and len(groups) > 0 and len(groups[-1][1]) == 0:
+                        groups[-1][0].extend(chains)
+                    else:
+                        groups.append([chains, []])
+
+                elif text.startswith("BIOMT"):
+                    if biomolecule is None:
+                        biomolecule = 1
+                        biomt[biomolecule] = []
+                    groups = biomt[biomolecule]
+                    # matrices given before any chain list apply to all chains
+                    if len(groups) == 0:
+                        groups.append([None, []])
+                    try:
+                        groups[-1][1].append(line.split()[4:8])
+                    except Exception:
+                        raise Exception("ERROR: biomatrix format seems corrupted")
 
             # load symmetry matrix, if any is present
             if "REMARK 290   SMTRY" in line:
@@ -421,15 +447,19 @@ class Molecule(Structure):
         else:
             raise Exception('ERROR: something went wrong when saving alternative coordinates in %s!\nERROR: no model was loaded... are ENDMDL statements there?' % pdb)
 
-        # if biomatrix information is provided, creat
+        # if biomatrix information is provided, store it as {biomolecule id: [(chains, matrices), ...]}
         if len(biomt) > 0:
+            b = {}
+            for bm, groups in biomt.items():
+                b[bm] = []
+                for chains, rows in groups:
+                    # test whether there are enough lines to create biomatrix statements
+                    if len(rows) == 0 or np.mod(len(rows), 3):
+                        raise Exception('ERROR: found %s BIOMT entries in biomolecule %s. A multiple of 3 is expected'%(len(rows), bm))
 
-            # test whether there are enough lines to create biomatrix
-            # statements
-            if np.mod(len(biomt), 3):
-                raise Exception('ERROR: found %s BIOMT entries. A multiple of 3 is expected'%len(biomt))
+                    mats = np.array(rows).astype(float).reshape((int(len(rows) / 3), 3, 4))
+                    b[bm].append((chains, mats))
 
-            b = np.array(biomt).astype(float).reshape((int(len(biomt) / 3), 3, 4))
             self.properties["biomatrix"] = b
 
         # if symmetry information is provided, create entry in properties
@@ -953,84 +983,101 @@ class Molecule(Structure):
 
         return D_pos, D_neg, mass_density
 
-    def _apply_matrices(self, mats):
+    def _apply_matrices(self, groups):
         '''
-        replicate molecule according to list of transformation matrices
+        build a molecule made of copies of chains of this molecule, each transformed as x' = Rx + t.
+
+        The first copy of a chain keeps its name, and later copies take chain names not used in this molecule, with one character first and two characters once those run out.
+        All conformations are transformed.
+
+        :param groups: list of (chains, matrices) pairs, where chains is a list of chain names (None for all chains) and matrices is an array of 3x4 [R|t] matrices
+        :returns: new Molecule
         '''
 
-        xyzall = []
-        #data = []
-        # create new data entry (renumber indices, reassign chain name)
-        data = np.empty([0, 9])
+        # chain names available for copies, in order, single characters first
+        used = set(self.data["chain"].values)
+        single = list(dict.fromkeys(self.chain_names))
+        double = [a + b for a in single for b in single]
+        available = [c for c in single + double if c not in used]
 
-        # replicate original coordinates applying transformations
-        cnt = 0
-        for m in mats:
-            xyz2 = self.points.copy() + m[:, 3]  # translate
-            xyz2 = np.dot(xyz2, m[:, 0:3])  # rotate
-            xyzall.extend(xyz2)  # merge
+        copies = []
+        for chains, mats in groups:
+            present = used if chains is None else used.intersection(chains)
+            copies.extend(list(present) * len(mats))
+        needed = len(copies) - len(set(copies))
+        if needed > len(available):
+            raise Exception("ERROR: the transformed molecule needs %s new chain names, but only %s are available" % (needed, len(available)))
 
-            #assign a specific name to the new chain
-            #newdata = deepcopy(self.data)
-            #newdata["chain"] = self.chain_names[cnt]
+        named = set()
+        data = []
+        xyz = []
+        for chains, mats in groups:
+            if chains is None:
+                idx = np.arange(len(self.data))
+            else:
+                idx = np.where(np.isin(self.data["chain"].values, chains))[0]
 
-            #if cnt == 0:
-            #    data = [newdata]
-            #else:
-            #    data.append(newdata)
+            if len(idx) == 0:
+                continue
 
-            data_tmp = self.data[[
-                "atom", "index", "name", "resname", "chain",
-                "resid", "beta", "occupancy", "atomtype"]].values
+            for m in mats:
+                xyz.append(np.dot(self.coordinates[:, idx], m[:, 0:3].T) + m[:, 3])
 
-            data_tmp[:, 4] = self.chain_names[cnt]
-            data = np.concatenate((data, data_tmp))
+                d = self.data.iloc[idx].copy()
+                names = {}
+                for c in pd.unique(d["chain"].values):
+                    if c not in named:
+                        names[c] = c
+                        named.add(c)
+                    else:
+                        names[c] = available.pop(0)
 
-            cnt += 1
+                d["chain"] = d["chain"].map(names)
+                data.append(d)
 
-        # temporary vectorized hexadecimal maker, in case there are more than
-        # 9999 atoms
-        def dohex(number):
-            return hex(number).split('x')[1]
+        if len(data) == 0:
+            raise Exception("ERROR: none of the chains the matrices apply to is in the molecule")
 
-        vhex = np.vectorize(dohex)
+        M = Molecule()
+        M.knowledge = deepcopy(self.knowledge)
+        M.data = pd.concat(data, ignore_index=True)
+        M.data["index"] = np.arange(len(M.data))
+        M.add_xyz(np.concatenate(xyz, axis=1))
+        M.set_current(self.current)
 
-        indices = np.linspace(1, len(data), len(data)).astype(int)
-        idx = vhex(indices)
-        cols = ["atom", "index", "name", "resname", "chain", "resid", "occupancy", "beta", "atomtype"]
+        return M
 
-        M2 = Molecule()
-        M2.coordinates = np.array([xyzall])
-        M2.data = pd.DataFrame(data, index=idx, columns=cols)
-        M2.properties['center'] = M2.get_center()
-
-        return M2
-
-    def apply_biomatrix(self):
+    def apply_biomatrix(self, biomolecule=1):
         '''
-        if biomatrix information is provided, generate a new molecule with all symmetry operators applied.
+        if biomatrix information is provided, generate a new molecule with the biological assembly described by REMARK 350.
 
-        :returns: new Molecule containing several copies of the current Molecule, arranged according to BIOMT statements contained in pdb, or -1 if no transformation matrix is provided
+        Each BIOMT operator is applied only to the chains listed for it, and chains not listed are left out, as in the assembly files of the PDB.
+
+        :param biomolecule: id of the BIOMOLECULE to build
+        :returns: new Molecule containing the transformed copies of the chains, arranged according to the BIOMT statements of the requested biomolecule
         '''
 
         # if no biomatrix statement is found, return with error
         if "biomatrix" not in self.properties:
             raise Exception("ERROR: no biomatrix found in pdb %s" %self.properties["filename"])
 
-        return self._apply_matrices(self.properties["biomatrix"])
+        if biomolecule not in self.properties["biomatrix"]:
+            raise Exception("ERROR: biomolecule %s not found, available: %s" %(biomolecule, sorted(self.properties["biomatrix"])))
+
+        return self._apply_matrices(self.properties["biomatrix"][biomolecule])
 
     def apply_symmetry(self):
         '''
-        if symmetry information is provided, generate a new molecule with all symmetry operators applied.
+        if symmetry information is provided, generate a new molecule with all symmetry operators applied to all chains.
 
-        :returns: new Molecule containing several copies of the current Molecule, arranged according to SMTRY statements contained in pdb, or -1 if no transformation matrix is provided
+        :returns: new Molecule containing several copies of the current Molecule, arranged according to SMTRY statements contained in pdb
         '''
 
         # if no symmetry statement is found, return with error
         if "symmetry" not in self.properties:
             raise Exception("ERROR: no symmetry matrix found in pdb %s" %self.properties["filename"])
 
-        return self._apply_matrices(self.properties["symmetry"])
+        return self._apply_matrices([(None, self.properties["symmetry"])])
 
     def get_atoms_ccs(self):
         '''
