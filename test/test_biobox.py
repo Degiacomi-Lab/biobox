@@ -73,14 +73,15 @@ class test_density(unittest.TestCase):
             D.import_map(fname, "mrc")
             self.assertEqual(D.properties["density"].shape, (7, 5, 3))
             np.testing.assert_array_equal(np.argwhere(D.properties["density"] == 100), [[4, 1, 2]])
-            np.testing.assert_allclose(np.diag(D.properties["delta"]), [2, 3, 4])
-            np.testing.assert_allclose(D.properties["origin"], [10, -20, 30])
+            # values derived from float32 header fields, compared to well below a picometre
+            np.testing.assert_allclose(np.diag(D.properties["delta"]), [2, 3, 4], atol=1e-5)
+            np.testing.assert_allclose(D.properties["origin"], [10, -20, 30], atol=1e-5)
             self.assertEqual(D.properties["format"], "mrc")
 
             # nstart, when the ORIGIN field is empty
             self._write_mrc(fname, data, voxel=(2, 3, 4), nstart=(1, 2, 3))
             D.import_map(fname, "mrc")
-            np.testing.assert_allclose(D.properties["origin"], [2, 6, 12])
+            np.testing.assert_allclose(D.properties["origin"], [2, 6, 12], atol=1e-5)
 
             # mode 0 is signed, mode 6 unsigned 16-bit, single sections are kept
             signed = np.full((3, 3, 3), -5)
@@ -103,8 +104,8 @@ class test_density(unittest.TestCase):
             import biobox.classes.density_MRC as MRC
             self._write_mrc(fname, data, voxel=(2, 3, 4), nstart=(1, 2, 3))
             G = MRC.MRC_Grid(fname, "mrc")
-            np.testing.assert_allclose(G.ijk_to_xyz((4, 1, 2)), (10, 9, 20))
-            np.testing.assert_allclose(G.xyz_to_ijk((10, 9, 20)), (4, 1, 2))
+            np.testing.assert_allclose(G.ijk_to_xyz((4, 1, 2)), (10, 9, 20), atol=1e-5)
+            np.testing.assert_allclose(G.xyz_to_ijk((10, 9, 20)), (4, 1, 2), atol=1e-5)
 
             # load failures are reported
             with open(fname, "wb") as f:
