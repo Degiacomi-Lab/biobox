@@ -15,6 +15,7 @@
 import numpy as np
 cimport numpy as np
 from cpython cimport bool
+from libc.math cimport sqrt
 import scipy.spatial.distance as S
 import scipy.signal
 from scipy.spatial import Delaunay
@@ -82,7 +83,7 @@ cdef class Graph(object):
                 self.yax=np.arange(-s[1],s[1]+step,step)
                 self.zax=np.arange(-s[2],s[2]+step,step)
                 #grid=np.array(np.meshgrid(s1,s2,s3))
-                self.center=np.mean(self.prot_points, axis=0)
+                self.center=(np.max(self.prot_points, axis=0)+np.min(self.prot_points, axis=0))/2.0
          
                  
         #@param step grid step size
@@ -114,7 +115,11 @@ cdef class Graph(object):
                 b=scipy.signal.fftconvolve(grid, self.g, mode='same')
     
                 #accept points where density is under threshold (i.e., region is accessible)
-                self.access_grid=b<np.max(b)-np.std(b)*3
+                #without obstacles in the grid, every point is accessible
+                if np.max(b)>0:
+                    self.access_grid=b<np.max(b)-np.std(b)*3
+                else:
+                    self.access_grid=np.ones(b.shape, dtype=bool)
 
             else:
                 b=[]
@@ -214,7 +219,11 @@ cdef class Graph(object):
                     b=scipy.signal.fftconvolve(grid, self.g, mode='same')
     
                     #accept points where density is under threshold (i.e., region is accessible)
-                    self.access_grid=b<np.max(b)-np.std(b)*stds
+                    #without obstacles in the grid, every point is accessible
+                    if np.max(b)>0:
+                        self.access_grid=b<np.max(b)-np.std(b)*stds
+                    else:
+                        self.access_grid=np.ones(b.shape, dtype=bool)
                     
                 else:
                     b=[]
@@ -262,15 +271,35 @@ cdef class Graph(object):
         # @param flat_index if true, the index will be first converted into 3D
         cpdef np.ndarray get_points_from_idx_flat(self, int idx2):
                 cdef np.ndarray idx=np.array(self.get_3d_index(idx2))
-                return idx*self.step+self.center-self.step*np.array(self.access_grid_shape)/2.0
+                return idx*self.step+self.get_origin()
 
 
         ## convert accessibility map coordinates into a position
         # @param accessibility grid index, can be either flat or 3D
         # @param flat_index if true, the index will be first converted into 3D
         cpdef np.ndarray get_points_from_idx(self, np.ndarray idx):
-                #idx=np.array(idx2)
-                return idx*self.step+self.center-self.step*np.array(self.access_grid_shape)/2.0
+                return idx*self.step+self.get_origin()
+
+
+        ## coordinates of the grid point with index [0, 0, 0]
+        cpdef np.ndarray get_origin(self):
+                return self.center+np.array([self.xax[0], self.yax[0], self.zax[0]])
+
+
+        ## indices of the grid points closest to a list of positions
+        #@param pts positions, as an (n, 3) array
+        cpdef np.ndarray get_idx_from_points(self, np.ndarray pts):
+                return np.rint((pts-self.get_origin())/self.step).astype(int)
+
+
+        ## test whether the grid points closest to a list of positions are accessible (positions outside the grid are not)
+        #@param pts positions, as an (n, 3) array
+        cpdef np.ndarray is_accessible(self, np.ndarray pts):
+                cdef np.ndarray idx=self.get_idx_from_points(pts)
+                cdef np.ndarray inside=np.all((idx>=0) & (idx<self.access_grid_shape), axis=1)
+                cdef np.ndarray result=np.zeros(len(pts), dtype=bool)
+                result[inside]=self.access_grid[tuple(idx[inside].T)]
+                return result
 
 
         ##given a target point, give the closest node in accessibility graph.
@@ -387,29 +416,26 @@ cdef class Graph(object):
             #return list(np.unravel_index(idx, tuple(self.access_grid_shape)))
 
         
-        cpdef heuristic(self, a, b):
+        ##euclidean distance between two points in the graph, in grid steps (admissible heuristic for A*)
+        cpdef double heuristic(self, a, b):
             cdef list aa=self.get_3d_index(a.T)
             cdef list bb=self.get_3d_index(b.T)
-            cdef list v=[bb[0]-aa[0],bb[1]-aa[1],bb[2]-aa[2]]
-            return v[0]*v[0]+v[1]*v[1]+v[2]*v[2]
+            cdef int dx=bb[0]-aa[0]
+            cdef int dy=bb[1]-aa[1]
+            cdef int dz=bb[2]-aa[2]
+            return sqrt(dx*dx+dy*dy+dz*dz)
 
 
-        ##cost from moving between two points in the graph.
-        #@todo must complete only returns 1 at the moment
+        ##cost from moving between two points in the graph: their euclidean distance, in grid steps.
         #@param a point (in flat coordiantes)
         #@param b point (in flat coordiantes)
-        cpdef int cost(self, int a, int b):
+        cpdef double cost(self, int a, int b):
                 cdef list aa=self.get_3d_index(a)
                 cdef list bb=self.get_3d_index(b)
-                cdef list v=[bb[0]-aa[0],bb[1]-aa[1],bb[2]-aa[2]]
-                #cdef v=np.array(self.get_3d_index(a))-np.array(self.get_3d_index(b))                
-                return v[0]*v[0]+v[1]*v[1]+v[2]*v[2]
-
-                ##other alternative metrics/implementations                
-                #return np.dot(aa-bb,aa-bb)
-                #return np.sqrt(np.dot(aa-bb,aa-bb)) #euclidean!
-                #return self.weights.get(b, 1)
-                #return 1
+                cdef int dx=bb[0]-aa[0]
+                cdef int dy=bb[1]-aa[1]
+                cdef int dz=bb[2]-aa[2]
+                return sqrt(dx*dx+dy*dy+dz*dz)
 
 
         ##generate 3D gaussian, used for density map generation
