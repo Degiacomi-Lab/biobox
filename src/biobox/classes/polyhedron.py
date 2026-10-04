@@ -215,23 +215,23 @@ class Polyhedron(Assembly):
 
         # this method exploits the RMSD method implemented in Structure class.
         S = Structure()
-
+        current = self.current
 
         # all alternative coordinates are accumulated in a Structure instance
-        for i in range(0, self.unit[0].coordinates.shape[0], 1):
-            self.set_current(i)
+        for f in range(0, self.unit[0].coordinates.shape[0], 1):
+            self.set_current(f)
 
             # if specific coordinates are requested, load only those
             if len(points_indices) > 0:
-                pts = self.unit[0].get_xyz()
-                for i in range(1, len(self.unit), 1):
-                    pts = np.concatenate((pts, self.unit[i].get_xyz()[points_indices[i], :]))
+                pts = np.concatenate([self.unit[u].get_xyz()[points_indices[u], :] for u in range(len(self.unit))])
 
             # otherwise, load everything
             else:
                 pts = self.get_all_xyz()
 
             S.add_xyz(pts)
+
+        self.set_current(current)
 
         return S.rmsd_distance_matrix()
 
@@ -282,7 +282,7 @@ class Polyhedron(Assembly):
             i = pos[self.conn[k][0]]
             j = pos[self.conn[k][1]]
 
-            clr = colors[self.conn_type[k % len(colors)]]
+            clr = colors[int(self.conn_type[k]) % len(colors)]
             fout.write("draw color %s\n" % clr)
             fout.write("draw cylinder {%s %s %s} {%s %s %s} radius 0.5\n" %(i[0], i[1], i[2], j[0], j[1], j[2]))
 
@@ -314,7 +314,7 @@ class Polyhedron(Assembly):
             else:
                 neigh_dict[i] = np.array(neighs)
 
-            return neigh_dict
+        return neigh_dict
 
     def _search_database(self, polyname, dbfilename="polyhedron_database_complete.dat"):
         '''
