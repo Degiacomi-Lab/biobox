@@ -31,7 +31,7 @@ from biobox.lib import e_density
 
 class Molecule(Structure):
     '''
-    Subclass of :func:`Structure <structure.Structure>`, allows reading, manipulating and analyzing molecular structures.
+    Subclass of :func:`Structure <biobox.classes.structure.Structure>`, allows reading, manipulating and analyzing molecular structures.
     '''
 
     chain_names = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
@@ -803,7 +803,7 @@ class Molecule(Structure):
         :param buff: Buffer used to create the boundaries of the density map
         :param step: Stepsize for creating the density object
         :param kernel_half_width: Kernel half width of the gaussian kernel, will be scaled by atom specific sigma
-        :returns: :func:`Density <density.Density>` object, containing a density map
+        :returns: :func:`Density <biobox.classes.density.Density>` object, containing a density map
         '''
         axes = self._grid_axes(self.points, step, buff)
         dens = self._vdw_density_on_grid(np.arange(len(self.points)), axes, step, kernel_half_width)
@@ -861,10 +861,10 @@ class Molecule(Structure):
         :param threshold: Threshold used for removing mass occupied space from the electron density map
         :param vdw_kernel_half_width: kernel half width, in voxels
         :param elect_kernel_half_width: kernel half width, in Angstrom
-        :param chain: chain whose charges generate the potential, default all chains. The grid encloses this chain.
-        :param clear_mass: if True, set the potential to zero where the mass density of all atoms (not only the selected chain) exceeds threshold
-        :returns: positive :func:`Density <density.Density>` object
-        :returns: negative :func:`Density <density.Density>` object
+        :param chain: select chain to use, default all chains
+        :param clear_mass: if True, set the potential to zero where the mass density exceeds threshold
+        :returns: positive :func:`Density <biobox.classes.density.Density>` object
+        :returns: negative :func:`Density <biobox.classes.density.Density>` object
         :returns: mass density object
         '''
 
@@ -1295,7 +1295,7 @@ class Molecule(Structure):
         '''
         Select atoms having the same residue and chain as a given atom (or list of atoms)
 
-        :param index indices: of atoms of choice (integer of list of integers)
+        :param index: indices of atoms of choice (integer or list of integers)
         :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)
         :returns: coordinates of the selected points and, if get_index is set to true, their indices in self.points array.
         '''
@@ -1389,12 +1389,12 @@ class Molecule(Structure):
 
     def get_subset(self, idxs, conformations=[], flip = False):
         '''
-        Return a :func:`Molecule <molecule.Molecule>` object containing only the selected atoms and frames
+        Return a :func:`Molecule <biobox.classes.molecule.Molecule>` object containing only the selected atoms and frames
 
         :param ixds: atoms to extract
         :param conformations: frames to extract (by default, all)
         :param flip: If true, extract atoms that DON'T match idxs (default is False)
-        :returns: :func:`Molecule <molecule.Molecule>` object
+        :returns: :func:`Molecule <biobox.classes.molecule.Molecule>` object
         '''
 
         idxs = np.asarray(idxs)

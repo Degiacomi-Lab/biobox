@@ -1,0 +1,11 @@
+# Packages needed to build the documentation (installed by Read the Docs, see
+# .readthedocs.yaml). These are the packages that biobox's modules import when autodoc
+# loads them. The package itself is not installed or compiled: docs/source/conf.py puts
+# "src" on sys.path and mocks the compiled Cython extensions (autodoc_mock_imports).
+
+sphinx>=7,<9
+
+numpy
+pandas
+scipy
+scikit-learn

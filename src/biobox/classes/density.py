@@ -22,7 +22,7 @@ from biobox.classes.structure import Structure
 
 class Density(Structure):
     '''
-    Subclass of :func:`Structure <structure.Structure>`, allows importing density map, and transform them in a PDB file containing a collection of spheres placed on the map's high density regions.
+    Subclass of :func:`Structure <biobox.classes.structure.Structure>`, allows importing density map, and transform them in a PDB file containing a collection of spheres placed on the map's high density regions.
     '''
 
     def __init__(self):
@@ -284,7 +284,7 @@ class Density(Structure):
         :param y0: sigmoid parameter
         :param c: sigmoid parameter
         :param k: sigmoid parameter
-        :returns CCS estimated from mass and density map resolution
+        :returns: CCS estimated from mass and density map resolution (in A^2), and the threshold it corresponds to (in sigma units)
         '''
 
         if 'scan' not in list(self.properties):
@@ -310,16 +310,16 @@ class Density(Structure):
 
     def predict_mass_from_ccs(self, resolution, ccs, density=0.84, x0=2.51911893, y0=-1.06481492, c=2.7018764, k=0.44084821):
         '''
-        given target mass and map resolution, predict CCS. Mass threshold is rescaled using the fitting function c / (1 + exp(-k*(resolution-x0))) + y0.
+        given target CCS and map resolution, predict mass. The CCS threshold is rescaled using the fitting function c / (1 + exp(-k*(resolution-x0))) + y0.
 
         :param resolution: map resolution in 1/Angstrom
-        :param mass: protein mass in kDa
+        :param ccs: target CCS in A^2
         :param density: protein density in Da/A3
         :param x0: sigmoid parameter
         :param y0: sigmoid parameter
         :param c: sigmoid parameter
         :param k: sigmoid parameter
-        :returns CCS estimated from mass and density map resolution
+        :returns: mass estimated from CCS and density map resolution (in kDa), and the threshold it corresponds to (in sigma units)
         '''
 
         if 'scan' not in list(self.properties):
@@ -388,7 +388,7 @@ class Density(Structure):
         A threshold leaving no points gives volume and CCS 0. A CCS that cannot be computed (e.g. IMPACT unavailable) is NaN, and the volume is kept.
 
         :param sigma: density threshold, in multiples of the map standard deviation
-        :param noise_filter: see :func:`place_points <density.Density.place_points>`
+        :param noise_filter: see :func:`place_points <biobox.classes.density.Density.place_points>`
         :returns: volume, CCS
         '''
         import biobox as bb
@@ -733,7 +733,7 @@ class Density(Structure):
         '''
         compute density map volume. This is done by counting the points, and multiplying that by voxels' volume.
 
-        .. warning:: can be called only after :func:`place_points <density.Density.place_points>` has been called.
+        .. warning:: can be called only after :func:`place_points <biobox.classes.density.Density.place_points>` has been called.
 
         .. warning:: supposes unskewed voxels.
         '''

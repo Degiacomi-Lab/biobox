@@ -53,9 +53,7 @@ Temporary Items
 src/biobox/lib/*so
 
 # Sphinx documentation
-doc/_build/
-doc/_static/
-doc/_templates/
+docs/build/
 
 # Eclipse files
 .project

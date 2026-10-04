@@ -20,15 +20,15 @@ from biobox.classes.assembly import Assembly
 
 class Polyhedron(Assembly):
     '''
-    Subclass of :func:`Assembly <assembly.Assembly>`, allowing the assembly of polyhedral symmetries.
-    After instantiation, the first method to be called is :func:`setup_polyhedron <polyhedron.Polyhedron.setup_polyhedron>`
+    Subclass of :func:`Assembly <biobox.classes.assembly.Assembly>`, allowing the assembly of polyhedral symmetries.
+    After instantiation, the first method to be called is :func:`setup_polyhedron <biobox.classes.polyhedron.Polyhedron.setup_polyhedron>`
     '''
 
     def setup_polyhedron(self, polyname, M, dbfilename=""):
         '''
         load information for the generation of a polyhedral assembly.
 
-        It loads the desired :func:`Structure <structure.Structure>` to be used as building block (it automatically centers and alignes it).
+        It loads the desired :func:`Structure <biobox.classes.structure.Structure>` to be used as building block (it automatically centers and alignes it).
         it also loads and geometric information about the desired polyhedron from database.
         database contains this information: [polymer_name number_of_vertices numbe_of_edges vertices_coordinates vertices_connectivity connectivity_type]
 

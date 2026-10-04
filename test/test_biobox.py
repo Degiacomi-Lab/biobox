@@ -1029,30 +1029,49 @@ class test_structures(unittest.TestCase):
         np.testing.assert_allclose(S.get_center(), [6, 0, 0])
         np.testing.assert_allclose(S.properties["center"], [6, 0, 0])
 
-    def test_transformations_all_frames(self):
+    def test_transformations_current_frame(self):
 
-        print("\n> testing that rotations and alignment move every frame")
+        print("\n> testing that transformations move only the current conformation")
         from copy import deepcopy
         rng = np.random.default_rng(1)
         frame = rng.normal(size=(30, 3)) * [5, 3, 1] + [10, -4, 2]
         S = bb.Structure(p=frame)
         S.add_xyz(frame + [1.0, 2.0, 3.0])
-        S.set_current(0)
+        S.add_xyz(frame - [4.0, 0.0, 1.0])
+        S.set_current(1)
+        untouched = [0, 2]
+
+        transformations = {
+            "rotate": lambda T: T.rotate(90, 0, 0),
+            "translate": lambda T: T.translate(5, -2, 1),
+            "apply_transformation": lambda T: T.apply_transformation(np.array([[0., 1, 0], [-1, 0, 0], [0, 0, 1]])),
+            "center_to_origin": lambda T: T.center_to_origin(),
+            "align_axes": lambda T: T.align_axes(),
+        }
+        for name, transform in transformations.items():
+            T = deepcopy(S)
+            transform(T)
+            np.testing.assert_allclose(T.coordinates[untouched], S.coordinates[untouched], err_msg=name)
+            self.assertFalse(np.allclose(T.coordinates[1], S.coordinates[1]), name)
+            np.testing.assert_allclose(T.points, T.coordinates[1], err_msg=name)
+            np.testing.assert_allclose(T.properties["center"], T.coordinates[1].mean(axis=0), atol=1e-10, err_msg=name)
 
         R = deepcopy(S)
         R.rotate(90, 0, 0)
-        for f in range(2):
-            np.testing.assert_allclose(R.coordinates[f][:, 0], S.coordinates[f][:, 0])
-            np.testing.assert_allclose(R.coordinates[f][:, 1], -S.coordinates[f][:, 2], atol=1e-10)
-        np.testing.assert_allclose(R.points, R.coordinates[0])
+        np.testing.assert_allclose(R.coordinates[1][:, 0], S.coordinates[1][:, 0])
+        np.testing.assert_allclose(R.coordinates[1][:, 1], -S.coordinates[1][:, 2], atol=1e-10)
 
-        # one rigid motion for the whole structure: the frames keep their relative placement
         A = deepcopy(S)
         A.align_axes()
         np.testing.assert_allclose(A.get_principal_axes(), np.eye(3), atol=1e-6)
-        shift = A.coordinates[1] - A.coordinates[0]
-        np.testing.assert_allclose(shift, np.tile(shift[0], (len(shift), 1)), atol=1e-10)
-        np.testing.assert_allclose(np.linalg.norm(shift[0]), np.linalg.norm([1.0, 2.0, 3.0]))
+
+        # assemblies move the current conformation of their units
+        P = bb.Assembly()
+        P.load(S, 2)
+        P.translate(1, 0, 0)
+        for u in P.unit:
+            np.testing.assert_allclose(u.coordinates[0], S.coordinates[0] + [1, 0, 0])
+            np.testing.assert_allclose(u.coordinates[1:], S.coordinates[1:])
 
     def test_structure_construction(self):
 
