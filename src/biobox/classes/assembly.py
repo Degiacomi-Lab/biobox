@@ -69,8 +69,9 @@ class Assembly(object):
             self.unit.append(e)
             self.unit_labels[str(i)] = i
 
-            # the assembly starts at the first frame of every unit
-            e.set_current(0)
+            # every unit keeps the current frame of the structure it was copied from
+            # (deepcopy breaks the view of points on coordinates)
+            e.set_current(struct.current)
 
             #add labeling to structures tables, prior concatenation
             e.data["unit"] = str(i)

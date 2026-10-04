@@ -115,23 +115,29 @@ class test_density(unittest.TestCase):
 
     def test_density_points_placement(self):
 
-        print("\n> density: points sit on their voxels")
+        print("\n> density: points arrangement shrunk by the sphere radius")
+        origin = np.array([1.0, 2.0, 3.0])
         for delta, corner in [(1.0, 20), (2.0, 20), (2.0, 40)]:
             data = np.zeros((60, 60, 60))
             data[corner:corner + 4, corner:corner + 4, corner:corner + 4] = 1.0
             D = bb.Density()
-            D.import_numpy(data, origin=[1.0, 2.0, 3.0], delta=np.identity(3) * delta)
+            D.import_numpy(data, origin=origin, delta=np.identity(3) * delta)
             D.place_points(sigma=0.5, noise_filter=0)
-            np.testing.assert_allclose(D.points.min(axis=0), np.array([1.0, 2.0, 3.0]) + corner * delta)
-            np.testing.assert_allclose(D.points.max(axis=0), np.array([1.0, 2.0, 3.0]) + (corner + 3) * delta)
+            r = D.properties["radius"]
+            if delta == 1:
+                scale = 1.0
+            else:
+                scale = (delta - 1) / (3 * delta - 3) * (3 * delta - r)
+            np.testing.assert_allclose(D.points.min(axis=0), origin + corner * scale + r)
+            np.testing.assert_allclose(D.points.max(axis=0), origin + (corner + 3) * scale + r)
 
-        # a single voxel
+        # a single voxel has no extent to shrink, and sits at its voxel shifted by the radius
         data = np.zeros((10, 10, 10))
         data[5, 5, 5] = 1.0
         D = bb.Density()
         D.import_numpy(data, delta=np.identity(3) * 2)
         D.place_points(sigma=0.5, noise_filter=0)
-        np.testing.assert_allclose(D.points, [[10, 10, 10]])
+        np.testing.assert_allclose(D.points, [np.ones(3) * (10 + D.properties["radius"])])
 
         # a blob holding 3% of the points survives a noise filter of 1% but not one of 5%
         data = np.zeros((40, 40, 40))
@@ -392,11 +398,13 @@ class test_structures(unittest.TestCase):
         self.assertEqual(sorted(M.properties["biomatrix"]), [1, 2])
         self.assertEqual(M.properties["biomatrix"][1][0][0], ["A", "B"])
 
+        # only the current conformation is copied
+        M.set_current(1)
         B = M.apply_biomatrix()
-        xyz = M.coordinates[:, :3]
-        expected = np.concatenate([xyz, np.dot(xyz, R.T) + [10, 0, 0]], axis=1)
-        np.testing.assert_allclose(B.coordinates, expected, atol=1e-6)
-        np.testing.assert_allclose(B.points, B.coordinates[0])
+        xyz = M.coordinates[1, :3]
+        expected = np.concatenate([xyz, np.dot(xyz, R.T) + [10, 0, 0]])
+        self.assertEqual(B.coordinates.shape, (1, 6, 3))
+        np.testing.assert_allclose(B.points, expected, atol=1e-6)
         self.assertEqual(list(B.data["chain"]), ["A", "A", "B", "D", "D", "E"])
         np.testing.assert_allclose(B.data["occupancy"].values, [0.25, 0.5, 0.75] * 2)
         np.testing.assert_allclose(B.data["beta"].values, [77.0, 11.0, 22.0] * 2)
@@ -408,7 +416,7 @@ class test_structures(unittest.TestCase):
 
         B2 = M.apply_biomatrix(2)
         self.assertEqual(list(B2.data["chain"]), ["A", "A", "B"])
-        np.testing.assert_allclose(B2.points, xyz[0] + [[0, 0, 0], [0, 0, 0], [0, 0, 5]])
+        np.testing.assert_allclose(B2.points, xyz + [[0, 0, 0], [0, 0, 0], [0, 0, 5]])
 
         with self.assertRaises(Exception):
             M.apply_biomatrix(3)
@@ -510,14 +518,23 @@ class test_structures(unittest.TestCase):
             centroid = self._voxel_xyz(D, (grid * dens.reshape(-1, 1)).sum(axis=0) / dens.sum())
             np.testing.assert_allclose(centroid, [0, 0, 0], atol=1e-6)
 
-        # a chain gives the same maps whether selected or alone
+        # a selected chain gives the same potential as the chain alone, on the same grid
         M = self._molecule_from_atoms(atoms)
         M.data["charge"] = [1.0, 0.0, -1.0]
         B = M.get_subset(M.atomselect("B", "*", "*", get_index=True)[1])
-        for selected, alone in zip(M.get_electrostatics(chain="B"), B.get_electrostatics()):
+        for selected, alone in zip(M.get_electrostatics(chain="B", clear_mass=False), B.get_electrostatics(clear_mass=False)):
             np.testing.assert_allclose(selected.properties["density"], alone.properties["density"])
             np.testing.assert_allclose(selected.properties["origin"], alone.properties["origin"])
         np.testing.assert_allclose(M.get_electrostatics(chain="B")[1].properties["origin"], [17 - 3, -3, -3])
+
+        # the mass mask also holds atoms of other chains, including those just outside the grid
+        for xa in [15.0, 13.0]:
+            near = self._molecule_from_atoms([("CA", "C", "A", 1, [xa, 0, 0]), ("CA", "C", "B", 1, [17, 0, 0])])
+            far = self._molecule_from_atoms([("CA", "C", "A", 1, [50, 0, 0]), ("CA", "C", "B", 1, [17, 0, 0])])
+            mass_near = near.get_electrostatics(chain="B")[2]
+            mass_far = far.get_electrostatics(chain="B")[2]
+            np.testing.assert_allclose(mass_near.properties["origin"], mass_far.properties["origin"])
+            self.assertGreater(mass_near.properties["density"].sum(), mass_far.properties["density"].sum())
 
     def test_write_pdb_columns(self):
 
@@ -535,6 +552,38 @@ class test_structures(unittest.TestCase):
 
         h36 = bb.Molecule._hybrid36
         self.assertEqual([h36(v) for v in [1, 99999, 100000, 100001, 100000 + 26*36**4]], ["1", "99999", "A0000", "A0001", "a0000"])
+
+    def test_pdb_two_character_chains(self):
+
+        print("\n> testing two-character chain names in pdb files")
+        import tempfile
+        M = self._molecule_from_atoms([("CA", "C", "A", 1, [0, 0, 0]), ("CA", "C", "B", 2, [1, 0, 0]), ("CA", "C", "C", 1000, [2, 0, 0])])
+        M.data["chain"] = ["A", "AB", "AC"]
+        with tempfile.TemporaryDirectory() as tmp:
+            fname = os.path.join(tmp, "chains.pdb")
+            M.write_pdb(fname)
+            lines = [l for l in open(fname) if l.startswith("ATOM")]
+            # column 22 holds the first character, columns 73-76 the full name, and the residue number keeps columns 23-26
+            self.assertEqual([l[21] for l in lines], ["A", "A", "A"])
+            self.assertEqual([l[72:76] for l in lines], ["    ", "AB  ", "AC  "])
+            self.assertEqual([l[22:26] for l in lines], ["   1", "   2", "1000"])
+            R = bb.Molecule()
+            R.import_pdb(fname)
+            self.assertEqual(list(R.data["chain"]), ["A", "AB", "AC"])
+            self.assertEqual(list(R.data["resid"]), [1, 2, 1000])
+
+            # segment identifiers that do not extend the chain are not chain names
+            fname = os.path.join(tmp, "segid.pdb")
+            with open(fname, "w") as f:
+                for j, (chain, segid) in enumerate([("A", "PROA"), ("A", "B1"), ("B", "B")]):
+                    f.write("ATOM  %5d  CA  ALA %1s%4d    %8.3f%8.3f%8.3f%6.2f%6.2f      %-4s   C\n" % (j+1, chain, 1, j, 0, 0, 1, 0, segid))
+            R = bb.Molecule()
+            R.import_pdb(fname)
+            self.assertEqual(list(R.data["chain"]), ["A", "A", "B"])
+
+            M.data["chain"] = ["A", "ABC", "AC"]
+            with self.assertRaises(Exception):
+                M.write_pdb(os.path.join(tmp, "long.pdb"))
 
     def test_write_pdb_split(self):
 
@@ -668,7 +717,7 @@ class test_structures(unittest.TestCase):
                 self.assertFalse(os.path.exists(out))
 
             M.coordinates[0, 0] = [0, 0, 0]
-            M.data["chain"] = "AB"
+            M.data["chain"] = "ABC"
             with self.assertRaises(Exception):
                 M.write_pdb(out)
 
@@ -1221,7 +1270,7 @@ class test_structures(unittest.TestCase):
         A.translate(10, 0, 0, unit="B")
         np.testing.assert_allclose([u.points[0, 0] for u in A.unit], [0, 11, 2])
 
-        # lists are loaded after existing units, and loaded units start at frame 0
+        # lists are loaded after existing units, and loaded units keep the current frame of their structure
         A.load_list([S[0], S[1]], ["C", "D"])
         self.assertEqual(A.unit_labels["C"], 3)
         self.assertEqual(A.unit_labels["D"], 4)
@@ -1229,10 +1278,10 @@ class test_structures(unittest.TestCase):
         two.set_current(1)
         L = bb.Assembly()
         L.load(two, 1)
-        self.assertEqual(L.unit[0].current, 0)
-        np.testing.assert_allclose(L.unit[0].points, [[0.0, 0, 0]])
+        self.assertEqual(L.unit[0].current, 1)
+        np.testing.assert_allclose(L.unit[0].points, [[5.0, 0, 0]])
         L.translate(1, 0, 0)
-        np.testing.assert_allclose(L.unit[0].points, L.unit[0].coordinates[0])
+        np.testing.assert_allclose(L.unit[0].points, L.unit[0].coordinates[1])
 
         # coordinates of units of different size
         H = bb.Assembly()
