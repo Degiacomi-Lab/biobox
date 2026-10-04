@@ -1518,34 +1518,6 @@ class Molecule(Structure):
         return d
 
     @staticmethod
-    def _hybrid36(value, width=5):
-        '''
-        encode a positive integer in hybrid-36, the PDB convention for numbers too large for their field.
-
-        Numbers that fit the field are written in decimal, larger ones in base 36 starting with a letter (e.g. 100000 is A0000 for width 5).
-
-        :param value: integer to encode
-        :param width: width of the field
-        :returns: string of at most width characters
-        '''
-        if value < 10**width:
-            return str(value)
-
-        block = 26 * 36**(width - 1)
-        value -= 10**width
-        for digits in ["0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", "0123456789abcdefghijklmnopqrstuvwxyz"]:
-            if value < block:
-                value += 10 * 36**(width - 1)
-                code = ""
-                while value > 0:
-                    value, r = divmod(value, 36)
-                    code = digits[r] + code
-                return code
-            value -= block
-
-        raise Exception("ERROR: %s is too large for a hybrid-36 field of width %s" % (value, width))
-
-    @staticmethod
     def _pdb_resid(resid):
         '''
         residue number as written in the 4 columns of a PDB line, keeping its last 4 digits if it does not fit.
@@ -1729,19 +1701,14 @@ class Molecule(Structure):
         self.set_current(currentbkp)
         return
 
-    def beta_factor_from_rmsf(self, indices=-1, step=1):
+    def beta_factor_from_rmsf(self, indices=-1):
         '''
-        estimate atoms beta factor on the base of their RMSF.
+        estimate atoms beta factor on the base of their RMSF (B = 8 pi^2 RMSF^2 / 3).
 
         :param indices: indices of atoms of interest. If not set all atoms will be considered.
-        :param step: timestep between two conformations (useful when using conformations extracted from molecular dynamics)
         '''
-
-        try:
-            rmsf = self.rmsf(indices, step)
-            return 8.0 * (np.pi**2) * (rmsf**2) / 3.0
-        except Exception:
-            raise Exception('ERROR: could not calculate RMSF!')
+        rmsf = self.rmsf(indices)
+        return 8.0 * (np.pi**2) * (rmsf**2) / 3.0
 
     def rmsf_from_beta_factor(self, indices=[]):
         '''

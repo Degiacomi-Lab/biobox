@@ -652,6 +652,141 @@ class test_structures(unittest.TestCase):
         P.align_axes()
         np.testing.assert_allclose(P.get_principal_axes(), np.eye(3), atol=1e-6)
 
+    def test_principal_axes_frame(self):
+
+        print("\n> testing that principal axes are taken about the center and form a rotation")
+        rng = np.random.default_rng(0)
+        for k in range(50):
+            pts = rng.normal(size=(40, 3)) * [5, 3, 1]
+            S = bb.Structure(p=pts)
+            axes = S.get_principal_axes()
+            self.assertAlmostEqual(np.linalg.det(axes), 1.0, places=10)
+
+            # the axes do not depend on where the structure sits
+            S.translate(30, 40, -20)
+            np.testing.assert_allclose(S.get_principal_axes(), axes, atol=1e-8)
+
+            # and they are the eigenvectors of the covariance, from largest to smallest variance
+            w, v = np.linalg.eigh(np.cov(pts.T))
+            np.testing.assert_allclose(np.abs(np.sum(axes * v.T[::-1], axis=1)), np.ones(3), atol=1e-8)
+
+    def test_center_copy(self):
+
+        print("\n> testing that a returned center does not change afterwards")
+        S = bb.Structure(p=np.array([[0., 0, 0], [2, 0, 0]]))
+        c = S.get_center()
+        S.translate(5, 0, 0)
+        np.testing.assert_allclose(c, [1, 0, 0])
+        np.testing.assert_allclose(S.get_center(), [6, 0, 0])
+        np.testing.assert_allclose(S.properties["center"], [6, 0, 0])
+
+    def test_transformations_all_frames(self):
+
+        print("\n> testing that rotations and alignment move every frame")
+        from copy import deepcopy
+        rng = np.random.default_rng(1)
+        frame = rng.normal(size=(30, 3)) * [5, 3, 1] + [10, -4, 2]
+        S = bb.Structure(p=frame)
+        S.add_xyz(frame + [1.0, 2.0, 3.0])
+        S.set_current(0)
+
+        R = deepcopy(S)
+        R.rotate(90, 0, 0)
+        for f in range(2):
+            np.testing.assert_allclose(R.coordinates[f][:, 0], S.coordinates[f][:, 0])
+            np.testing.assert_allclose(R.coordinates[f][:, 1], -S.coordinates[f][:, 2], atol=1e-10)
+        np.testing.assert_allclose(R.points, R.coordinates[0])
+
+        # one rigid motion for the whole structure: the frames keep their relative placement
+        A = deepcopy(S)
+        A.align_axes()
+        np.testing.assert_allclose(A.get_principal_axes(), np.eye(3), atol=1e-6)
+        shift = A.coordinates[1] - A.coordinates[0]
+        np.testing.assert_allclose(shift, np.tile(shift[0], (len(shift), 1)), atol=1e-10)
+        np.testing.assert_allclose(np.linalg.norm(shift[0]), np.linalg.norm([1.0, 2.0, 3.0]))
+
+    def test_structure_construction(self):
+
+        print("\n> testing empty structures, radii and added frames")
+        # an empty structure has no frames and no points, before and after clear
+        for S in [bb.Structure(), bb.Molecule()]:
+            self.assertEqual(len(S), 0)
+            self.assertEqual(len(S.coordinates), 0)
+        S = bb.Structure(p=np.zeros((3, 3)))
+        S.clear()
+        self.assertEqual(len(S), 0)
+        S.add_xyz(np.ones((2, 3)))
+        self.assertEqual(S.coordinates.shape, (1, 2, 3))
+
+        # a radius can be any scalar, or one value per point
+        pts = np.arange(9.0).reshape(3, 3)
+        np.testing.assert_allclose(bb.Structure(pts, r=np.float64(1.5)).data["radius"], [1.5] * 3)
+        np.testing.assert_allclose(bb.Structure(pts, r=[1, 2, 3]).data["radius"], [1, 2, 3])
+        with self.assertRaises(Exception):
+            bb.Structure(pts, r=[1, 2])
+
+        # the first added frame becomes current, wherever the pointer was
+        S = bb.Structure(pts)
+        S.add_xyz(pts + 1)
+        S.add_xyz(pts + 2)
+        S.set_current(0)
+        S.add_xyz(pts + 3)
+        self.assertEqual(S.current, 3)
+        np.testing.assert_allclose(S.points, pts + 3)
+        S.set_current(0)
+        S.add_xyz(np.array([pts + 4, pts + 5]))
+        self.assertEqual(S.current, 4)
+
+    def test_structure_index_arrays(self):
+
+        print("\n> testing selections given as numpy arrays")
+        rng = np.random.default_rng(2)
+        S = bb.Structure(rng.normal(size=(4, 10, 3)))
+        idx = np.array([1, 3, 5])
+        np.testing.assert_allclose(S.get_xyz(idx), S.points[idx])
+        np.testing.assert_allclose(S.get_xyz([1, 3, 5]), S.points[idx])
+        np.testing.assert_allclose(S.get_xyz(), S.points)
+        np.testing.assert_allclose(S.rmsf(idx), S.rmsf()[idx])
+        proj, pca = S.pca(2, idx)
+        self.assertEqual(proj.shape, (4, 2))
+
+    def test_rmsf(self):
+
+        print("\n> testing RMSF against its definition")
+        # the square root of the mean squared displacement from the mean position, over frames
+        rng = np.random.default_rng(4)
+        X = rng.normal(size=(7, 5, 3)) * 2
+        expected = np.sqrt(np.mean(np.sum((X - X.mean(axis=0))**2, axis=2), axis=0))
+        S = bb.Structure(X)
+        np.testing.assert_allclose(S.rmsf(), expected)
+        np.testing.assert_allclose(S.rmsf(np.array([0, 3])), expected[[0, 3]])
+
+        from copy import deepcopy
+        M = deepcopy(self.M)
+        M.add_xyz(M.coordinates[0] + rng.normal(size=M.coordinates[0].shape))
+        idx = np.array([0, 10, 20])
+        np.testing.assert_allclose(M.beta_factor_from_rmsf(idx), 8 * np.pi**2 * M.rmsf(idx)**2 / 3)
+
+    def test_structure_hull_and_pdb(self):
+
+        print("\n> testing convex hull and pdb output of a structure")
+        import tempfile
+        from scipy.spatial import ConvexHull
+        rng = np.random.default_rng(3)
+        pts = rng.normal(size=(50, 3))
+        H = bb.Structure(pts).convex_hull()
+        self.assertEqual(len(H), len(ConvexHull(pts).vertices))
+        self.assertTrue(all(any(np.allclose(p, q) for q in pts) for p in H.points))
+
+        S = bb.Structure(pts[:3], r=[1.5, 2.0, 2.5])
+        with tempfile.TemporaryDirectory() as tmp:
+            fname = os.path.join(tmp, "spheres.pdb")
+            S.write_pdb(fname)
+            lines = [l for l in open(fname) if l.startswith("ATOM")]
+        # radius in the beta factor column, occupancy 1
+        np.testing.assert_allclose([float(l[60:66]) for l in lines], [1.5, 2.0, 2.5])
+        np.testing.assert_allclose([float(l[54:60]) for l in lines], [1.0, 1.0, 1.0])
+
     def test_SASA_c(self):
 
         print("\n> testing that sasa_c agrees with sasa")
