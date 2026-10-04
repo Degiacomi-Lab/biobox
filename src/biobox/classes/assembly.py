@@ -69,7 +69,8 @@ class Assembly(object):
             self.unit.append(e)
             self.unit_labels[str(i)] = i
 
-            e.points = e.coordinates.view()[0]
+            # the assembly starts at the first frame of every unit
+            e.set_current(0)
 
             #add labeling to structures tables, prior concatenation
             e.data["unit"] = str(i)
@@ -103,15 +104,15 @@ class Assembly(object):
         :returns: label assigned to the new Structure in the assembly
         '''
 
+        index = len(self.unit)
         if label == "":
-            self.unit_labels[str(len(self.unit) - 1)] = len(self.unit) - 1
-            self.unit.append(structure)
-        if label != "":
-            if label not in self.unit_labels.keys():
-                self.unit_labels[str(label)] = len(self.unit) - 1
-                self.unit.append(structure)
-            else:
-                raise Exception("ERROR: label %s already existing in multimer!" %label)
+            label = str(index)
+
+        if str(label) in self.unit_labels:
+            raise Exception("ERROR: label %s already existing in multimer!" %label)
+
+        self.unit_labels[str(label)] = index
+        self.unit.append(structure)
 
 
         #append structure to dataframe
@@ -166,13 +167,14 @@ class Assembly(object):
 
         # append new structures to old ones
         dfs = [self.data]
-        for i in range(len(self.unit), len(self.unit) + len(struct_list), 1):
-            # create dictionary with neighbors
-            e = deepcopy(struct_list[i])
+        first = len(self.unit)
+        for k, struct in enumerate(struct_list):
+            i = first + k
+            e = deepcopy(struct)
             self.unit.append(e)
 
             if len(labels) != 0:
-                lbl = labels[i]
+                lbl = str(labels[k])
             else:
                 lbl = str(i)
 
@@ -183,7 +185,8 @@ class Assembly(object):
             e.data["unit_index"] = e.data.index
             dfs.append(e.data)
 
-            e.points = e.coordinates.view()[struct_list[i].current]
+            # deepcopy breaks the view of points on coordinates
+            e.set_current(struct.current)
 
 
         #create dataframe collecting information from all structures
@@ -199,7 +202,7 @@ class Assembly(object):
         '''
         return Structure(p=self.get_all_xyz())
 
-    def make_curved_chain(self, angle, dist, groups=[]):
+    def make_curved_chain(self, angle, dist, groups=None):
         '''
         move loaded units so that they arrange in a bent chain.
 
@@ -210,9 +213,8 @@ class Assembly(object):
         '''
 
         # if no group has been selected, every subunit forms a group by itself
-        if len(groups) == 0:
-            for i in range(0, len(self.unit), 1):
-                groups.append([i])
+        if groups is None or len(groups) == 0:
+            groups = [[i] for i in range(len(self.unit))]
 
         # keep track of the position of previous member of chain
         last_center = np.array([0.0, 0.0, 0.0])
@@ -260,7 +262,7 @@ class Assembly(object):
             # corresponding to the requested radius
             xyzMaxIndex = np.argmax(self.unit[i].points, axis=0)
             maxAtom = self.unit[i].points[xyzMaxIndex[0]]
-            self.translate(-maxAtom[0] - radius, -maxAtom[1] + displacement, 0.0, i)
+            self.unit[i].translate(-maxAtom[0] - radius, -maxAtom[1] + displacement, 0.0)
 
             # number of degrees to rotate
             angle = np.radians(i * (360.0 / float(len(self.unit))))
@@ -297,7 +299,6 @@ class Assembly(object):
                            [0, 0, 1]])
             self.unit[i].apply_transformation(Rz)
             self.unit[i + int(len(self.unit) / 2.0)].apply_transformation(Rz)
-            self.translate(0, 0, z, i + int(len(self.unit) / 2.0))
 
     def make_prism(self, radius, z, a, b, c, t=0):
         '''
@@ -334,7 +335,6 @@ class Assembly(object):
                            [0, 0, 1]])
             self.unit[i].apply_transformation(Rz)
             self.unit[i + int(len(self.unit) / 2.0)].apply_transformation(Rz)
-            self.translate(0, 0, z, i + int(len(self.unit) / 2.0))
 
     def rotate(self, x, y, z, unit=[]):
         '''
@@ -431,11 +431,7 @@ class Assembly(object):
 
         :returns: list of units coordinates.
         '''
-        pts = []
-        for i in range(0, len(self.unit), 1):
-            pts.append(self.unit[i].get_xyz())
-
-        return np.array(pts)
+        return [self.unit[i].get_xyz() for i in range(len(self.unit))]
 
     def get_size(self):
         '''

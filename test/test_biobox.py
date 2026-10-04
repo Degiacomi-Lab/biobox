@@ -734,6 +734,106 @@ class test_structures(unittest.TestCase):
             assert False
 
 
+    def test_multimer_write_pdb(self):
+
+        print("\n> testing that a multimer is written frame by frame")
+        import tempfile
+        from copy import deepcopy
+        M = deepcopy(self.M)
+        M.add_xyz(M.coordinates[0] + 1.0)
+        P = bb.Multimer()
+        P.load(M, 2)
+        for u in P.unit:
+            u.set_current(1)
+        with tempfile.TemporaryDirectory() as tmp:
+            fname = os.path.join(tmp, "multimer.pdb")
+            P.write_pdb(fname)
+            text = open(fname).read()
+        models = text.split("ENDMDL")[:-1]
+        self.assertEqual(len(models), 2)
+        for f, model in enumerate(models):
+            atoms = [l for l in model.splitlines() if l.startswith("ATOM")]
+            self.assertEqual(len(atoms), 2 * len(M))
+            self.assertAlmostEqual(float(atoms[0][30:38]), M.coordinates[f, 0, 0], places=3)
+            self.assertEqual({l[21] for l in atoms}, {"A", "B"})
+        self.assertEqual([u.current for u in P.unit], [1, 1])
+
+    def test_multimer_make_molecule(self):
+
+        print("\n> testing that merging units keeps the knowledge of all of them")
+        from copy import deepcopy
+        A = deepcopy(self.M)
+        B = deepcopy(self.M)
+        A.knowledge["atom_ccs"]["FE"] = 2.5
+        B.knowledge["atom_ccs"]["ZN"] = 1.5
+        P = bb.Multimer()
+        P.load_list([A, B], ["A", "B"])
+        merged = P.make_molecule()
+        self.assertEqual(merged.knowledge["atom_ccs"]["FE"], 2.5)
+        self.assertEqual(merged.knowledge["atom_ccs"]["ZN"], 1.5)
+
+    def test_assembly_units(self):
+
+        print("\n> testing assembly labels, loading and frames")
+        S = [bb.Structure(np.array([[float(i), 0, 0]])) for i in range(3)]
+
+        # labels refer to the unit they were given to
+        A = bb.Assembly()
+        self.assertEqual(A.append(S[0]), "0")
+        self.assertEqual(A.append(S[1], "B"), "B")
+        self.assertEqual(A.append(S[2]), "2")
+        self.assertEqual(A.unit_labels, {"0": 0, "B": 1, "2": 2})
+        A.translate(10, 0, 0, unit="B")
+        np.testing.assert_allclose([u.points[0, 0] for u in A.unit], [0, 11, 2])
+
+        # lists are loaded after existing units, and loaded units start at frame 0
+        A.load_list([S[0], S[1]], ["C", "D"])
+        self.assertEqual(A.unit_labels["C"], 3)
+        self.assertEqual(A.unit_labels["D"], 4)
+        two = bb.Structure(np.array([[[0.0, 0, 0]], [[5.0, 0, 0]]]))
+        two.set_current(1)
+        L = bb.Assembly()
+        L.load(two, 1)
+        self.assertEqual(L.unit[0].current, 0)
+        np.testing.assert_allclose(L.unit[0].points, [[0.0, 0, 0]])
+        L.translate(1, 0, 0)
+        np.testing.assert_allclose(L.unit[0].points, L.unit[0].coordinates[0])
+
+        # coordinates of units of different size
+        H = bb.Assembly()
+        H.load_list([bb.Structure(np.zeros((2, 3))), bb.Structure(np.zeros((3, 3)))], ["x", "y"])
+        self.assertEqual([len(p) for p in H.get_uxyz()], [2, 3])
+
+    def test_assembly_builders(self):
+
+        print("\n> testing assembly builders")
+        point = bb.Structure(np.array([[0.0, 0, 0]]))
+        for build in ["make_stacked_rings", "make_prism"]:
+            A = bb.Assembly()
+            A.load(point, 4)
+            if build == "make_stacked_rings":
+                A.make_stacked_rings(10, 5)
+            else:
+                A.make_prism(10, 5, 0, 0, 0)
+            np.testing.assert_allclose(sorted(u.points[0, 2] for u in A.unit), [0, 0, 5, 5], atol=1e-10)
+
+        # the default grouping does not leak from one call to the next
+        A = bb.Assembly()
+        A.load(point, 2)
+        A.make_curved_chain(10, 5)
+        B = bb.Assembly()
+        B.load(point, 4)
+        B.make_curved_chain(10, 5)
+        self.assertEqual(len({tuple(np.round(u.points[0], 6)) for u in B.unit}), 4)
+
+        # circular symmetry with custom labels
+        C = bb.Assembly()
+        for name in ["a", "b", "c"]:
+            C.append(bb.Structure(np.array([[0.0, 0, 0], [1.0, 0, 0]])), name)
+        C.make_circular_symmetry(5)
+        radii = [np.linalg.norm(u.points[0, :2]) for u in C.unit]
+        np.testing.assert_allclose(radii, radii[0])
+
     #test rototranslations on double disks (prism method)
     def test_monomers_rototranslations(self):
 

@@ -119,7 +119,6 @@ class Multimer(Polyhedron):
             frames.append(d)
 
             # merge knowledge about CCS acquired by different molecules
-            atom_ccs = {}
             for k in self.unit[i].knowledge['atom_ccs'].keys():
                 atom_ccs[k] = self.unit[i].knowledge['atom_ccs'][k]
 
@@ -175,39 +174,38 @@ class Multimer(Polyhedron):
 
     def write_pdb(self, outname, rename_chains=False):
         '''
-        Write a pdb of the multimeric assembly.
+        Write a pdb of the multimeric assembly, one MODEL per frame. Every unit is written as a chain of its own.
 
         :param outname: name of PDB file to generate
+        :param rename_chains: kept for compatibility, every unit is always given its own chain name
         '''
+        nframes = len(self.unit[0].coordinates)
+        if any(len(u.coordinates) != nframes for u in self.unit):
+            raise Exception("ERROR: all units must have the same number of frames")
 
-        #M = self.make_molecule(rename_chains)
-        #M.write_pdb(outname)
+        names = list(dict.fromkeys(self.chain_names))
+        if len(self.unit) > len(names):
+            raise Exception("ERROR: %s units, but only %s single-character chain names" % (len(self.unit), len(names)))
 
+        currents = [u.current for u in self.unit]
         f_out = open(outname, "w")
-
-        for f in range(len(self.unit[0].coordinates)):
-
-            cnt = 1
-            # set current state to new frame
-            for j in range(0, len(self.unit), 1):
-                self.unit[j].set_current(f)
-
-        for j in range(0, len(self.unit), 1):
-            # get data about points and their properties from the desired
-            # protein structure
-            d = self.unit[j].get_pdb_data()
-
-            for i in range(0, len(self.unit[j].points), 1):
-                # create and write PDB lin
-                if d[i][2][0].isdigit():
-                    L = '%-6s%5i %-5s%-4s%1s%4i    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], cnt, d[i][2], d[i][3], self.chain_names[j], int(d[i][5]), float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
-                else:
-                    L = '%-6s%5i  %-4s%-4s%1s%4i    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (d[i][0], cnt, d[i][2], d[i][3], self.chain_names[j], int(d[i][5]), float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
-                #L='%-6s%5i  %-4s%-4s%1s%4i    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n'%(d[i][0], cnt, d[i][2], d[i][3], self.chain_names[j], d[i][5], d[i][6], d[i][7], d[i][8], d[i][9], d[i][10], d[i][11])
-                f_out.write(L)
-                cnt += 1
-
-            f_out.write("TER\n")
-
-        f_out.write("END\n")
-        f_out.close()
+        try:
+            for f in range(nframes):
+                f_out.write("MODEL        %i\n" % (f + 1))
+                cnt = 1
+                for j, u in enumerate(self.unit):
+                    u.set_current(f)
+                    # get data about points and their properties from the desired protein structure
+                    d = u.get_pdb_data()
+                    for i in range(0, len(d), 1):
+                        L = Molecule._pdb_atom_prefix(d[i][0], Molecule._hybrid36(cnt), d[i][2], d[i][3], names[j], d[i][5], d[i][12], d[i][13])
+                        L += '%8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
+                        f_out.write(L)
+                        cnt += 1
+                    f_out.write("TER\n")
+                f_out.write("ENDMDL\n")
+            f_out.write("END\n")
+        finally:
+            f_out.close()
+            for u, c in zip(self.unit, currents):
+                u.set_current(c)
