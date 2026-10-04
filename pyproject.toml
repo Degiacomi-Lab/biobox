@@ -1,0 +1,55 @@
+[build-system]
+# numpy and Cython are needed to compile the extensions in src/biobox/lib. Building against
+# numpy 2 produces extensions that also run with numpy 1.x.
+requires = ["setuptools>=77", "Cython>=3.0", "numpy>=2.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "biobox"
+dynamic = ["version"]
+description = "Data structures and methods for loading, manipulating and analyzing atomistic and pseudoatomistic structures"
+readme = "README.md"
+license = "GPL-2.0-or-later"
+license-files = ["LICENSE"]
+authors = [{ name = "Matteo T. Degiacomi", email = "matteo.degiacomi@gmail.com" }]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26",
+    "scipy",
+    "pandas",
+    "scikit-learn",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Cython",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+docs = ["sphinx>=7,<9"]
+
+[project.urls]
+Homepage = "https://github.com/Degiacomi-Lab/biobox"
+Documentation = "https://biobox.readthedocs.io"
+Issues = "https://github.com/Degiacomi-Lab/biobox/issues"
+
+[tool.setuptools]
+# install only the modules, compiled extensions and the files listed in package-data
+include-package-data = false
+
+[tool.setuptools.dynamic]
+version = { attr = "biobox.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+biobox = ["data/*.dat"]
