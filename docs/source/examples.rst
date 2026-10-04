@@ -12,23 +12,23 @@ Let's load a molecule, and identify only the backbone atoms of chain A.
 
 :func:`atomselect <biobox.classes.molecule.Molecule.atomselect>` accepts as parameters single strings, lists or "*" as wildcard.
 After this call, pos contains the coordinates of all selected atoms, and idx their indices.
-Another way to select atoms, is to use the :func:`atomselect <biobox.classes.molecule.Molecule.query>` method. The following call will yield the same result as the atomselect above.
+Another way to select atoms is to use the :func:`query <biobox.classes.molecule.Molecule.query>` method. The following call will yield the same result as the atomselect above.
 
 >>> pos, idx = M.query('chain == "A" and name == ["CA","C","N","O"]', get_index=True)
 
-The query methods follows the pandas query syntax, and allows to be more expressive. Any column stored in M.data (call M.data.columns) can be addressed.
+The query method follows the pandas query syntax, and allows to be more expressive. Any column stored in M.data (call M.data.columns) can be addressed.
 Now that we have identified indices of interest, we can save a subset of the initial pdb in a new one, or to create a new :func:`Molecule <biobox.classes.molecule.Molecule>` object containing only them.
 
 >>> M.write_pdb("chainA.pdb", index=idx)
 >>> M2 = M.get_subset(idx)
 
 **multiple conformations** may be available in the PDB. By default, the first one is set as current.
-Is is possible to set as current another one as follows: 
+It is possible to set as current another one as follows:
 
 >>> M.set_current(2)
 >>> pos2, idx2 = M.atomselect("A", "*", ["CA","C","N","O"], get_index=True)
 
-After this new :func:`atomselect <biobox.classes.molecule.Molecule.atomselect>` call, idx2 will be equal to idx1 (atom selected are still the same), but pos2 will be different from pos (atoms positions differ between different conformations).
+After this new :func:`atomselect <biobox.classes.molecule.Molecule.atomselect>` call, idx2 will be equal to idx (atoms selected are still the same), but pos2 will be different from pos (atoms positions differ between different conformations).
 Unless otherwise specified, :func:`get_subset <biobox.classes.molecule.Molecule.get_subset>` selects all the alternative conformations from the atoms of interest.
 :func:`get_subset <biobox.classes.molecule.Molecule.get_subset>` can however also be instructed to select a subset of conformations, for instance: 
 
@@ -47,15 +47,14 @@ We can for example add the coordinates of all pdb files to the same :func:`Molec
 >>> files = glob.glob("*pdb")
 >>> M = biobox.Molecule()
 >>> M.import_pdb(files[0])
->>> for f in xrange(1, len(files)):
->>>     M2 = Molecule()
->>>     M2.import_pdb(f)
->>>     M2_xyz = M2.get_xyz()
->>>     M.add_xyz(M2_xyz)
+>>> for f in files[1:]:
+...     M2 = biobox.Molecule()
+...     M2.import_pdb(f)
+...     M.add_xyz(M2.get_xyz())
 
 In order to generate a hierarchical clustering of these conformations, we need a flattened RMSD distance matrix.
 This can then be fed to scipy's Nearest Point Algorithm for clustering.
-In this example, we will aggregate all structures having and RMSD smaller than 2 Angstrom.
+In this example, we will aggregate all structures having an RMSD smaller than 2 Angstrom (structures are aligned before measuring RMSD).
 
 >>> import scipy.cluster.hierarchy as SCH
 >>> dist = M.rmsd_distance_matrix(flat=True)
@@ -73,18 +72,18 @@ First, let's load our protein building block:
 >>> M.import_pdb("protein.pdb")
 
 Now, let's create a :func:`Multimer <biobox.classes.multimer.Multimer>` arranged according to a tetrahedral symmetry.
-To do so, we have to load information about the tetrahedral scaffold BiobOx will exploit to align six monomers.
-By default this information is stored in the file classes/polyhedron_database.dat, though the user can import his own database.
+To do so, we have to load information about the tetrahedral scaffold biobox will exploit to align six monomers.
+By default this information is stored in the file data/polyhedron_database.dat, though the user can import their own database.
 
 >>> P = biobox.Multimer()
 >>> P.setup_polyhedron('Tetrahedron', M)
 >>> P.generate_polyhedron(10,180,20,10)
 
-Now, P contains six proteins arranged as a tetrahedron having a radius of 10 Angstrom.
+Now, P contains six proteins arranged as a tetrahedron of size 10 (the scaffold vertices are scaled by this factor, see :func:`generate_polyhedron <biobox.classes.polyhedron.Polyhedron.generate_polyhedron>`).
 Every subunit is rotated with respect of its specific position on the scaffold.
 Rotation angles are defined with respect of the molecule's principal axes.
 Here, we rotate by 180 degrees around the first principal axis, 20 around the second, and 10 around the third.
-Let's now build two new polyhedra with different radii and rotation angles:
+Let's now build two new polyhedra with different sizes and rotation angles:
 
 >>> P.generate_polyhedron(10,180,50,65, add_conformation=True)
 >>> P.generate_polyhedron(12,185,40,60, add_conformation=True)
@@ -92,23 +91,23 @@ Let's now build two new polyhedra with different radii and rotation angles:
 Since we set add_conformation=True, the atoms arrangement of the new multimers will be appended as new conformations.
 With add_conformation=False (default) the previous subunits arrangements gets overwritten.
 
-.. note:: assemblies' multiple conformations are treated by appending on each subunit its different conformation. BiobOx then sets on all subunits the same current position.
+.. note:: assemblies' multiple conformations are treated by appending on each subunit its different conformation. biobox then sets on all subunits the same current position.
 
 Now, we want to calculate the RMSD between the created multimers' alpha carbons. With these lines, dist_mat will contain the RMSD distance matrix between the multimers:
 
 >>> idxs = P.atomselect("*", "*" ,"*", "CA", get_index=True)[1]
 >>> dist_mat = P.rmsd_distance_matrix(points_indices=idxs)
 
-Note that, as for the case of :func:`atomselect <biobox.classes.molecule.Molecule>` objects, a :func:`query <biobox.classes.multimer.Multimer.query>` method is also available. The same selection as the command above can be obtained with:
+Note that, as for the case of :class:`Molecule <biobox.classes.molecule.Molecule>` objects, a :func:`query <biobox.classes.multimer.Multimer.query>` method is also available. The same selection as the command above can be obtained with:
 
->>> idx = M.query('name == "CA"', get_index=True)[1]
+>>> idx = P.query('name == "CA"', get_index=True)[1]
 
-To select atoms from some specific units, the following command can be issued:
+To select atoms from some specific units (units are labelled "0", "1", ... unless otherwise specified), the following command can be issued:
 
->>> idx = M.query('unit == ["0", "3", "5"] and name == "CA"', get_index=True)[1]
+>>> idx = P.query('unit == ["0", "3", "5"] and name == "CA"', get_index=True)[1]
 
 Subunits can also be grouped, and different groups can be rotated differently.
-In the following example, the tetrahedron's chains A, B, C and D, E, F form different groups that are rotated independently.
+In the following example, the tetrahedron's units 0, 1, 2 and 3, 4, 5 form different groups that are rotated independently.
 
 >>> import numpy as np
 >>> P.conn_type = np.array([0, 0, 0, 1, 1, 1])
@@ -118,7 +117,7 @@ Note that when more than one edge type is provided, rotation angles should be in
 
 Polyhedral scaffolds are constituted of vertices connected by edges.
 By altering the position of the vertices, the scaffolds can be deformed (e.g. useful to model near-symmetries).
-In BiobOx, deformations are treated in terms of deformation vectors, i.e. unit-vectors indicating in which direction a vertex can move.
+In biobox, deformations are treated in terms of deformation vectors, i.e. unit-vectors indicating in which direction a vertex can move.
 Here, we will allow the first vertex to move radially. We will then build a tetrahedron, where this vertex is displaced from its initial position by its deformation vector, scaled by a constant (here, 5).
 
 >>> P.add_deformation(0)
@@ -130,9 +129,9 @@ To see how your scaffold looks like, a pdb file containing the vertices and an a
 >>> P.write_poly_architecture("architecture", scale=10, deformation=[5])
 
 This will generate two files architecture.pdb and architecture.tcl.
-The initial unit-sized scaffold will scaled by 10, and the first vertex moved away radially.
+The initial unit-sized scaffold will be scaled by 10, and the first vertex moved away radially.
 
-.. seealso:: this method was used to build polyhedral assemblies consistent with experimental data in `I. Santhanagopalan I. et al., It takes a dimer to tango: Oligomeric small heat shock proteins dissociate to capture substrate, Journal of Biological Chemisty, 2018 <https://www.jbc.org/content/293/51/19511.long>`_
+.. seealso:: this method was used to build polyhedral assemblies consistent with experimental data in `I. Santhanagopalan I. et al., It takes a dimer to tango: Oligomeric small heat shock proteins dissociate to capture substrate, Journal of Biological Chemistry, 2018 <https://www.jbc.org/content/293/51/19511.long>`_
 
 
 
@@ -141,16 +140,16 @@ super coarse-grain modelling
 
 In this example, we will arrange a group of cylinders in a ring.
 To do so, we have first to create a single collection of points arranged like a :func:`Cylinder <biobox.classes.convex.Cylinder>`.
-Unless otherwise specified (using the optional keyword radius), every point composing the cylinder (and any other convex point cloud) will have a radius of 1.4 Angstrom.
+Unless otherwise specified (using the optional keyword radius), every point composing the cylinder will have a radius of 1.1 Angstrom (1.1 Angstrom also for prisms and cones, 1.9 Angstrom for spheres and ellipsoids).
 To simulate a smooth surface, one can either increase the points radius, or their density.
-Here, we will use default values, and the resulting cylinder will then be rotated by 45 degrees along the x axis.
+Here, we will use default values, and the resulting cylinder will then be rotated by 45 degrees around the x axis.
 
 >>> cylinder_length = 20
 >>> cylinder_radius = 10
->>> C = biobox.Cylinder(cylinder_length, cylinder_radius)
+>>> C = biobox.Cylinder(cylinder_radius, cylinder_length)
 >>> C.rotate(45, 0, 0)
 
-We will now create an assembly loading ten copies of our template cylinder, arrange them in a 30 Angstrom-wide circle, and save the resulting structure into a PDB file.
+We will now create an assembly loading ten copies of our template cylinder, arrange them in a ring around the z axis at a radial displacement of 30 Angstrom, and save the resulting structure into a PDB file.
 
 >>> A = biobox.Assembly()
 >>> A.load(C, 10)
@@ -160,15 +159,16 @@ We will now create an assembly loading ten copies of our template cylinder, arra
 We can now assess some of the assembly's characteristics, for instance its height and width.
 This can be done by extracting all the assembly's points coordinates in a unique numpy array.
 
+>>> import numpy as np
 >>> xyz = A.get_all_xyz()
 >>> width = np.max(xyz[:, 0]) - np.min(xyz[:, 0])
 >>> height = np.max(xyz[:, 2]) - np.min(xyz[:, 2])
 
-An alternative way to measure assembly dimensions, it to profit of methods in :func:`Structure <biobox.classes.structure.Structure>` class.
+An alternative way to measure assembly dimensions is to use methods of the :func:`Structure <biobox.classes.structure.Structure>` class.
 Here we collapse the Assembly's units coordinates in a single :func:`Structure <biobox.classes.structure.Structure>` instance.
 
 >>> S = A.make_structure()
->>> print S.get_size()
+>>> print(S.get_size())
 
 In case not all the subunits of the assembly are the same, a list of subunits can be loaded.
 In this case, we will load a :func:`Sphere <biobox.classes.convex.Sphere>` (and call it "S") as well as two identical cylinders (called "C1" and "C2").
@@ -197,7 +197,7 @@ density map cutoff via Collision Cross Section
 ----------------------------------------------
 
 Ion Mobility (IM) experiments report on a molecule's collision cross section (CCS).
-Here we show how to relate IM data with a electron density 3D reconstruction obtained by Electron Microscopy (EM).
+Here we show how to relate IM data with an electron density 3D reconstruction obtained by Electron Microscopy (EM).
 
 We first import a GroEL density map EMD-1457.mrc.
 
@@ -207,12 +207,13 @@ We first import a GroEL density map EMD-1457.mrc.
 Depending on which threshold value one selects, the resulting isosurface will have a certain volume and CCS.
 We now compute the map's relationship between threshold, volume and CCS with 100 equally spaced threshold values.
 This might take several minutes, depending on map size (by default, a scan between minimal and maximal map intensity is performed).
-Obtained values will be returned in a numpy array containining as columns [threshold, volume, CCS].
+Obtained values will be returned in a numpy array containing as columns [threshold, volume, CCS], with the threshold in multiples of the map standard deviation, the volume in A^3 and the CCS in A^2.
+CCS values are computed with IMPACT, which must be installed separately and located via the IMPACTPATH environment variable (see the README). A CCS that cannot be computed is NaN.
 This will also be stored in self.properties['scan'], for future usage.
 
 >>> tvc = D.threshold_vol_ccs(low=0, sampling_points=100)
 
-Let's predict the density CCS using a fitted mass-based threshold, and compare it the known CCS of 24500 A^2.
+Let's predict the density CCS using a fitted mass-based threshold, and compare it to the known CCS of 24500 A^2.
 This requires providing the map's resolution (here, 5.4 Angstrom) and the mass of GroEL (801 kDa).
 The procedure interrogates the data previously stored in D.properties['scan'].
 
@@ -285,7 +286,8 @@ We will use a lazy Theta* method, with flexible side chains, and path smoothing 
 >>> distance_mat = XL.distance_matrix(idx, method="theta", smooth=True, flexible_sidechain=True)
 
 distance_mat is the distance matrix between all lysines, sorted according to idx.
-It will contain -1 for lysine's linking atoms too far to be encompassed by the moving grid, and -2 for failed path detection (e.g. because a linking atom is buried).
+It will contain -1 for pairs of linking atoms too far apart to be encompassed by the moving grid, or that no path can connect.
+Without flexible side chains (flexible_sidechain=False), -2 marks pairs where a linking atom is buried.
 
 .. seealso:: this method is presented and benchmarked in `M. T. Degiacomi et al., Accommodating protein dynamics in the analysis of chemical cross-links, Structure, 2017 <https://www.sciencedirect.com/science/article/pii/S0969212617302915?via%3Dihub>`_
 

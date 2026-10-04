@@ -1,4 +1,4 @@
-[![tests](https://github.com/Degiacomi-Lab/biobox/actions/workflows/tests.yml/badge.svg)](https://github.com/Degiacomi-Lab/biobox/actions/workflows/tests.yml)
+[![tests](https://github.com/Degiacomi-Lab/biobox/actions/workflows/tests.yml/badge.svg)](https://github.com/Degiacomi-Lab/biobox/actions/workflows/tests.yml) [![Documentation Status](https://readthedocs.org/projects/biobox/badge/?version=latest)](https://biobox.readthedocs.io/en/latest/)
 
 Biobox provides a collection of data structures and methods for loading, manipulating and analyzing atomistic and pseudoatomistic structures.
 
@@ -42,7 +42,7 @@ https://process.innovation.ox.ac.uk/software/) (requires definition of IMPACTPAT
 ## USAGE
 
 Documentation:
-* Biobox's API is available at https://Degiacomi-Lab.github.io/biobox/
+* Biobox's documentation, including its API, is available at https://biobox.readthedocs.io
 
 Tutorial:
 * A Jupyter notebook presenting Biobox's main functionalities is available at

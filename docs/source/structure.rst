@@ -1,7 +1,7 @@
 Single Structures
 =================
 
-The main data structure in BiobOx is the :func:`Structure <biobox.classes.structure.Structure>` class, which handles collections of 3D points.
+The main data structure in biobox is the :func:`Structure <biobox.classes.structure.Structure>` class, which handles collections of 3D points.
 Points are stored in a MxNx3 **coordinates array**, where M is the number of alternative points arrangements, and N is the amount of points.
 
 At any moment, one of the loaded points conformations is considered to be the active one (a.k.a. **current**).

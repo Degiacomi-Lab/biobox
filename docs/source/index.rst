@@ -4,12 +4,12 @@
    contain the root `toctree` directive.
 
 
-BiobOx's documentation
+biobox's documentation
 ======================
 
-BiobOx provides a collection of data structures and methods for loading, manipulating and analyzing atomistic and pseudo-atomistic structures.
+biobox provides a collection of data structures and methods for loading, manipulating and analyzing atomistic and pseudo-atomistic structures.
 
-BiobOx main features:
+biobox main features:
 
 * importing of PDB, PQR and GRO files, possibly containing multiple conformations (e.g. multi PDB, gro trajectory)
 * generation of coarse grain shapes composed of specific arrangements of pseudoatoms
