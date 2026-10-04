@@ -1077,6 +1077,43 @@ class test_structures(unittest.TestCase):
             assert False
 
 
+    def test_polyhedron_methods(self):
+
+        print("\n> testing polyhedron neighbors, RMSD selection and colors")
+        import tempfile
+        rng = np.random.default_rng(5)
+        block = bb.Structure(rng.normal(size=(6, 3)))
+
+        # every edge of a dodecahedron touches four others
+        D = bb.Polyhedron()
+        D.setup_polyhedron("Dodecahedron", block)
+        neigh = D.get_neighbors()
+        self.assertEqual(len(neigh), len(D.conn))
+        self.assertTrue(all(len(v) == 4 for v in neigh.values()))
+
+        # the RMSD uses the selected points of every unit
+        P = bb.Polyhedron()
+        P.setup_polyhedron("Octahedron", block)
+        P.generate_polyhedron(40, 180, 0, 0)
+        P.generate_polyhedron(42, 180, 5, 0, add_conformation=True)
+        P.set_current(1)
+        sel = [[0, 2]] * len(P.unit)
+        frames = []
+        for f in range(2):
+            frames.append(np.concatenate([u.coordinates[f][[0, 2]] for u in P.unit]))
+        expected = bb.Structure(np.array(frames)).rmsd(0, 1)
+        dist = P.rmsd_distance_matrix(sel)
+        self.assertAlmostEqual(np.max(dist), expected, places=6)
+        self.assertEqual(P.unit[0].current, 1)
+
+        # colors follow the connection type, also beyond the 25 default colors
+        P.conn_type = np.arange(len(P.conn)) * 3
+        with tempfile.TemporaryDirectory() as tmp:
+            P.write_poly_architecture(output=os.path.join(tmp, "arch"))
+            lines = [l.split()[2] for l in open(os.path.join(tmp, "arch.tcl")) if l.startswith("draw color")]
+        colors = ['blue', 'red', 'gray', 'orange', 'yellow', 'tan', 'silver', 'green', 'white', 'pink', 'cyan', 'purple', 'lime',
+                  'mauve', 'ochre', 'iceblue', 'black', 'yellow2', 'green2', 'cyan2', 'blue2', 'violet', 'magenta', 'red2', 'orange2']
+        self.assertEqual(lines, [colors[(3 * k) % 25] for k in range(len(P.conn))])
     def test_convex_formulas(self):
 
         print("\n> testing convex shape volumes, surfaces and CCS")
