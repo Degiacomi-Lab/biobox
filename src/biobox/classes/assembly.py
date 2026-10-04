@@ -19,7 +19,7 @@ import pandas as pd
 
 class Assembly(object):
     '''
-    Construct and manipulate assemblies of multiple :func:`Structure <structure.Structure>` instances.
+    Construct and manipulate assemblies of multiple :func:`Structure <biobox.classes.structure.Structure>` instances.
     '''
 
     # labels for chain names (will be assigned to individual members of the
@@ -97,9 +97,9 @@ class Assembly(object):
 
     def append(self, structure, label=""):
         '''
-        append a new :func:`Structure <structure.Structure>` instance into an existing assembly
+        append a new :func:`Structure <biobox.classes.structure.Structure>` instance into an existing assembly
 
-        :param structure: :func:`Structure <structure.Structure>` object to be appended to assembly
+        :param structure: :func:`Structure <biobox.classes.structure.Structure>` object to be appended to assembly
         :param label: name to give to the assembly. If not provided a default value equal to the rank of the new Structure in the assembly will be assigned.
         :returns: label assigned to the new Structure in the assembly
         '''
@@ -125,9 +125,9 @@ class Assembly(object):
 
     def add_conformation(self, new_assembly):
         '''
-        append a new :func:`Assembly <assembly.Assembly>` instance into an existing assembly, as alternate conformation
+        append a new :func:`Assembly <biobox.classes.assembly.Assembly>` instance into an existing assembly, as alternate conformation
 
-        :param new_assembly: :func:`Assembly <assembly.Assembly>` object to be appended as alternative conformation
+        :param new_assembly: :func:`Assembly <biobox.classes.assembly.Assembly>` object to be appended as alternative conformation
         '''
         if len(self.unit) != len(new_assembly.unit):
             raise Exception("ERROR: expecting %s subunits, found %s!" %(len(self.unit), len(new_assembly.unit)))
@@ -143,9 +143,9 @@ class Assembly(object):
 
     def load_list(self, struct_list, labels=[]):
         '''
-        load a list of :func:`Structure <structure.Structure>` objects with their associated labels list (typically for hetero assemblies).
+        load a list of :func:`Structure <biobox.classes.structure.Structure>` objects with their associated labels list (typically for hetero assemblies).
 
-        :param struct_list: :func:`Structure <structure.Structure>` objects (or subclasses of it)
+        :param struct_list: :func:`Structure <biobox.classes.structure.Structure>` objects (or subclasses of it)
         :param labels: user-friendly names used to identify every structure. If empty, simple incremental integers are used.
         '''
 
@@ -196,9 +196,9 @@ class Assembly(object):
 
     def make_structure(self):
         '''
-        returns a :func:`Structure <structure.Structure>` object containing all the points of the assembly.
+        returns a :func:`Structure <biobox.classes.structure.Structure>` object containing all the points of the assembly.
 
-        :returns: :func:`Structure <structure.Structure>` object
+        :returns: :func:`Structure <biobox.classes.structure.Structure>` object
         '''
         return Structure(p=self.get_all_xyz())
 

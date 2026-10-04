@@ -8,7 +8,7 @@
 # gcc -shared -pthread -fPIC -fwrapv -O3 -Wall -fno-strict-aliasing -I/usr/include/python2.6 -o fastmath.so fastmath.c
 #
 # to build documentation:
-# sphinx-build -b html doc doc/html
+# sphinx-build -b html docs/source docs/build
 
 import os
 import shutil

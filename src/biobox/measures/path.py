@@ -55,7 +55,7 @@ class PriorityQueue(object):
 
 class Path(object):
     '''
-    Methods for finding shortest paths between points in a point cloud (typically a :func:`Structure <structure.Structure>` object).
+    Methods for finding shortest paths between points in a point cloud (typically a :func:`Structure <biobox.classes.structure.Structure>` object).
 
     Two algorithms are implemented: A* and Theta*.
     In order to deal with lists of links within the same dataset, two methodologies are offered, global or local.
@@ -71,7 +71,7 @@ class Path(object):
         '''
         An accessibility graph must be initially created around the provided points cloud.
         This is a mesh where none of its nodes clashes with any of the provided point in the cloud.
-        After instantiation, :func:`setup_local_search <path.Path.setup_local_search>` or :func:`setup_global_search <path.Path.setup_global_search>` must first be called (depending on whether one wants to generate a single grid encompassing all the protein, or a smaller, moving grid).
+        After instantiation, :func:`setup_local_search <biobox.measures.path.Path.setup_local_search>` or :func:`setup_global_search <biobox.measures.path.Path.setup_global_search>` must first be called (depending on whether one wants to generate a single grid encompassing all the protein, or a smaller, moving grid).
 
         :param points: points for representing obstacles.
         '''
@@ -81,7 +81,7 @@ class Path(object):
     def setup_local_search(self, step=1.0, maxdist=28, params=np.array([])):
         '''
         setup Path to perform path search using the local grid method.
-        This method (or :func:`setup_global_search <path.Path.setup_global_search>`) must be called before and path detection can be launched with :func:`search_path <path.Path.search_path>`.
+        This method (or :func:`setup_global_search <biobox.measures.path.Path.setup_global_search>`) must be called before and path detection can be launched with :func:`search_path <biobox.measures.path.Path.search_path>`.
 
         :param step: grid step size
         :param maxdist: clash detection threshold
@@ -93,7 +93,7 @@ class Path(object):
     def setup_global_search(self, step=1.0, maxdist=34, use_hull=True, boundaries=[], cloud=np.array([]), params=np.array([])):
         '''
         setup Path to perform path search using the a global grid wrapping all the obtacles region.
-        This method (or :func:`setup_local_search <path.Path.setup_local_search>`) must be called before and path detection can be lauched with :func:`search_path <path.Path.search_path>`.
+        This method (or :func:`setup_local_search <biobox.measures.path.Path.setup_local_search>`) must be called before and path detection can be lauched with :func:`search_path <biobox.measures.path.Path.search_path>`.
 
         :param step: grid step size.
         :param maxdist: clash detection threshold
@@ -620,18 +620,18 @@ class Path(object):
 
 class Xlink(Path):
     '''
-    subclass of :func:`Path <path.Path>`, measure cross-linking distance between atom pairs in a molecule.
+    subclass of :func:`Path <biobox.measures.path.Path>`, measure cross-linking distance between atom pairs in a molecule.
 
-    * after instantiation, call first :func:`set_clashing_atoms <path.Xlink.set_clashing_atoms>` to define molecule's atoms of interest for clash detection.
-    * Subsequently, call either :func:`setup_local_search <path.Xlink.setup_local_search>` or :func:`setup_local_search <path.Xlink.setup_global_search>` to prepare the points grid used for path detection.
-    * Physical distances between a list of atom indices can be finally computed with :func:`distance_matrix <path.Xlink.distance_matrix>` or, between two atoms only, with :func:`search_path <path.Path.search_path>`.
+    * after instantiation, call first :func:`set_clashing_atoms <biobox.measures.path.Xlink.set_clashing_atoms>` to define molecule's atoms of interest for clash detection.
+    * Subsequently, call either :func:`setup_local_search <biobox.measures.path.Xlink.setup_local_search>` or :func:`setup_local_search <biobox.measures.path.Xlink.setup_global_search>` to prepare the points grid used for path detection.
+    * Physical distances between a list of atom indices can be finally computed with :func:`distance_matrix <biobox.measures.path.Xlink.distance_matrix>` or, between two atoms only, with :func:`search_path <biobox.measures.path.Path.search_path>`.
 
     If molecule contains multiple conformations, conformation i can be chosen by calling Xlink.molecule.set_current(i) before performing the procedure described in superclass.
     '''
 
     def __init__(self, molecule):
         '''
-        :param molecule: :func:`Molecule <molecule.Molecule>` instance
+        :param molecule: :func:`Molecule <biobox.classes.molecule.Molecule>` instance
         '''
         self.molecule = molecule
 
@@ -715,7 +715,7 @@ class Xlink(Path):
         '''
         setup Path to perform path search using the local grid method.
 
-        This method (or :func:`setup_global_search <path.Path.setup_global_search>`) must be called before and path detection can be launched with :func:`search_path <path.Path.search_path>`.
+        This method (or :func:`setup_global_search <biobox.measures.path.Path.setup_global_search>`) must be called before and path detection can be launched with :func:`search_path <biobox.measures.path.Path.search_path>`.
 
         :param step: grid step size
         :param maxdist: clash detection threshold
@@ -726,7 +726,7 @@ class Xlink(Path):
     def setup_global_search(self, step=1.0, maxdist=28, use_hull=False, boundaries=[], cloud=np.array([])):
         '''
         setup Path to perform path search using the a global grid wrapping all the obtacles region.
-        This method (or :func:`setup_local_search <path.Path.setup_local_search>`) must be called before and path detection can be lauched with :func:`search_path <path.Path.search_path>`.
+        This method (or :func:`setup_local_search <biobox.measures.path.Path.setup_local_search>`) must be called before and path detection can be lauched with :func:`search_path <biobox.measures.path.Path.search_path>`.
 
         :param step: grid step size.
         :param maxdist: clash detection threshold

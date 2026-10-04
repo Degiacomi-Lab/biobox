@@ -435,7 +435,7 @@ class Structure(object):
         '''
         compute the convex hull of the current frame using the QuickHull algorithm.
 
-        :returns: :func:`Structure <structure.Structure>` object, containing the coordinates of vertices composing the convex hull
+        :returns: :func:`Structure <biobox.classes.structure.Structure>` object, containing the coordinates of vertices composing the convex hull
         '''
         from scipy.spatial import ConvexHull
         hull = ConvexHull(self.points)
@@ -449,7 +449,7 @@ class Structure(object):
         :param sigma: gaussian kernel sigma
         :param kernel_half_width: kernel half width, in voxels
         :param buff: padding to add at points cloud boundaries
-        :returns: :func:`Density <density.Density>` object, containing a simulated density map
+        :returns: :func:`Density <biobox.classes.density.Density>` object, containing a simulated density map
         '''
         axes = self._grid_axes(self.points, step, buff)
         b = self._density_on_grid(self.points, axes, step, sigma, kernel_half_width)
@@ -534,7 +534,7 @@ class Structure(object):
         '''
         compute Root Mean Square Fluctuation (RMSF) of selected atoms over all conformations: the square root of the mean squared displacement of each point from its mean position.
 
-        No superposition is performed, so conformations should be aligned beforehand (e.g. with :func:`rmsd_one_vs_all <structure.Structure.rmsd_one_vs_all>` and align=True).
+        No superposition is performed, so conformations should be aligned beforehand (e.g. with :func:`rmsd_one_vs_all <biobox.classes.structure.Structure.rmsd_one_vs_all>` and align=True).
 
         :param indices: indices of points for which RMSF will be calculated. If no indices list is provided, RMSF of all points will be calculated.
         :returns: numpy aray with RMSF of all provided indices, in the same order
