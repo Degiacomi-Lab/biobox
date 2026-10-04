@@ -1584,6 +1584,31 @@ class test_structures(unittest.TestCase):
         except Exception:
             assert False
 
+    def test_half_sphere(self):
+
+        print("\n> testing the side chain half sphere")
+        from biobox.measures.path import Xlink
+        X = Xlink(self.M)
+        i = self.M.atomselect("*", "*", "NZ", get_index=True)[1][0]
+
+        # the atom's position comes first, and every other point keeps thresh from all atoms
+        for kwargs in [{}, {"thresh": 3.0}, {"radii": []}, {"radii": [6.0]}]:
+            s = X.get_half_sphere(i, **kwargs)
+            np.testing.assert_array_equal(s[0], self.M.points[i])
+            d = np.linalg.norm(s[1:, None] - self.M.points[None], axis=2)
+            self.assertTrue(np.all(d >= kwargs.get("thresh", 2.0)))
+
+        # distance_matrix passes every option on
+        from unittest import mock
+        seen = []
+        def capture(idx, **kwargs):
+            seen.append(kwargs)
+            raise RuntimeError("stop")
+        with mock.patch.object(X, "get_half_sphere", side_effect=capture):
+            with self.assertRaises(Exception):
+                X.distance_matrix([i], flexible_sidechain=True, sphere_pts_surf=3.0, sphere_thresh=2.5, sphere_radii=[6.0, 5.0])
+        self.assertEqual(seen[0], {"pts_surf": 3.0, "thresh": 2.5, "radii": [6.0, 5.0]})
+
 
 if __name__ == '__main__':
     unittest.main()
