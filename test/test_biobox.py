@@ -570,6 +570,146 @@ class test_structures(unittest.TestCase):
             assert False
 
 
+    def _wall_path(self, step=1.0):
+        # a 13 x 13 sheet of points at x = 0, in a global grid spanning -14 to 14 A
+        from biobox.measures.path import Path
+        ys = np.arange(-6, 6.01, 1.0)
+        wall = np.array([[0, y, z] for y in ys for z in ys], float)
+        P = Path(wall)
+        P.setup_global_search(step=step, maxdist=60, use_hull=False, boundaries=[[-14, 14]] * 3)
+        return P
+
+    def _path_clear(self, P, wp):
+        # every segment of a path stays in accessible space, except next to its two ends
+        exempt = P._target_exemptions(wp[0], wp[-1])
+        return all(P._segment_clear(a, b, exempt) for a, b in zip(wp[:-1], wp[1:]))
+
+    def test_line_of_sight(self):
+
+        print("\n> testing line of sight along every dominant axis")
+        import biobox.lib.fastmath as FM
+        for axis in range(3):
+            grid = np.ones((20, 20, 20), dtype=bool)
+            a = np.array([5, 5, 5])
+            b = a.copy()
+            b[axis] += 10
+            b[(axis + 1) % 3] += 1
+            on = a.copy()
+            on[axis] += 2
+            off = on.copy()
+            off[(axis + 1) % 3] += 1
+            grid[tuple(on)] = False
+            self.assertFalse(FM.c_line_of_sight(grid, a, b))
+            grid[tuple(on)] = True
+            grid[tuple(off)] = False
+            self.assertTrue(FM.c_line_of_sight(grid, a, b))
+            np.testing.assert_array_equal(a, [5, 5, 5])
+
+    def test_path_grid(self):
+
+        print("\n> testing path grid coordinates, costs and extent")
+        from biobox.lib.graph import Graph
+        P = self._wall_path()
+        g = P.graph
+        np.testing.assert_allclose(g.get_points_from_idx(np.array([0., 0., 0.])), [-14, -14, -14])
+        np.testing.assert_allclose(g.get_points_from_idx(np.array([14., 14., 14.])), [0, 0, 0])
+        self.assertFalse(g.is_accessible(np.array([[0., 0., 0.]]))[0])
+        self.assertTrue(g.is_accessible(np.array([[-8., 0., 0.]]))[0])
+
+        # euclidean step costs and heuristic, in grid steps
+        flat = lambda i: int(g.get_flat_index(np.array(i)))
+        self.assertAlmostEqual(g.cost(flat([1, 1, 1]), flat([2, 2, 2])), np.sqrt(3))
+        self.assertAlmostEqual(g.heuristic(np.array(flat([1, 1, 1])), np.array(flat([4, 5, 1]))), 5.0)
+
+        # the default grid encloses a lopsided cloud
+        rng = np.random.default_rng(0)
+        cloud = np.vstack([rng.normal(0, 2, (200, 3)), [[20, 0, 0]] * 4])
+        G = Graph(cloud)
+        G.make_grid(step=1.0)
+        lo = G.get_points_from_idx(np.array([0., 0., 0.]))
+        hi = G.get_points_from_idx(np.array(G.access_grid_shape - 1, dtype=float)) if G.access_grid_shape is not None else None
+        G.make_global_grid(step=1.0)
+        hi = G.get_points_from_idx(np.array(G.access_grid_shape - 1, dtype=float))
+        self.assertTrue(np.all(cloud.min(axis=0) >= lo) and np.all(cloud.max(axis=0) <= hi))
+
+    def test_astar_optimal(self):
+
+        print("\n> testing that A* returns the shortest path on the grid")
+        from scipy.sparse import coo_matrix
+        from scipy.sparse.csgraph import dijkstra
+        P = self._wall_path()
+        g = P.graph
+        acc = g.access_grid
+        shape = acc.shape
+        rows, cols, w = [], [], []
+        idx = np.array(np.where(acc)).T
+        for d in [np.array(v) for v in np.ndindex(3, 3, 3)]:
+            d = d - 1
+            if not np.any(d):
+                continue
+            nb = idx + d
+            ok = np.all((nb >= 0) & (nb < shape), axis=1)
+            ok[ok] = acc[tuple(nb[ok].T)]
+            rows.extend(np.ravel_multi_index(tuple(idx[ok].T), shape))
+            cols.extend(np.ravel_multi_index(tuple(nb[ok].T), shape))
+            w.extend([np.linalg.norm(d)] * int(ok.sum()))
+        n = int(np.prod(shape))
+        A = coo_matrix((w, (rows, cols)), shape=(n, n)).tocsr()
+
+        for s, e in [([-5, 0, 0], [5, 0, 0]), ([-6, 2, 3], [7, -1, -2])]:
+            s = np.array(s, float)
+            e = np.array(e, float)
+            si = int(np.ravel_multi_index(tuple(g.get_idx_from_points(np.array([s]))[0]), shape))
+            ei = int(np.ravel_multi_index(tuple(g.get_idx_from_points(np.array([e]))[0]), shape))
+            d, wp = P.search_path(s, e, method="astar", get_path=False, test_los=False)
+            nodes = wp[1:-1]
+            chain = np.sum(np.linalg.norm(np.diff(nodes, axis=0), axis=1))
+            self.assertAlmostEqual(chain, dijkstra(A, indices=si)[ei], places=6)
+
+    def test_path_search(self):
+
+        print("\n> testing shortest paths around and through obstacles")
+        P = self._wall_path()
+
+        # paths around the wall stay in accessible space, before and after smoothing, and are
+        # never shorter than the shortest way around its edge
+        bound = 2 * np.sqrt(5**2 + 6**2)
+        for method in ["theta", "astar", "old_theta"]:
+            for los in [False, True]:
+                d, wp = P.search_path(np.array([-5., 0, 0]), np.array([5., 0, 0]), method=method, get_path=False, test_los=los)
+                self.assertTrue(self._path_clear(P, wp), (method, los))
+                self.assertGreaterEqual(d, bound)
+                ds, chain = P.smooth(P._get_trails(wp))
+                self.assertTrue(self._path_clear(P, chain), (method, los))
+                self.assertGreaterEqual(ds, bound)
+
+        # points seeing each other are joined by a straight line
+        rng = np.random.default_rng(0)
+        for k in range(20):
+            s = np.array([-8., 0, 0]) + rng.uniform(-3, 3, 3)
+            e = np.array([-8., 0, 0]) + rng.uniform(-3, 3, 3)
+            d, wp = P.search_path(s, e, get_path=False)
+            self.assertAlmostEqual(d, np.linalg.norm(s - e))
+
+        # a point inside a sealed shell cannot be reached
+        from biobox.measures.path import Path
+        n = int(4 * np.pi * 49 / 0.25)
+        k = np.arange(n)
+        y = k * 2.0 / n - 1 + 1.0 / n
+        r = np.sqrt(1 - y * y)
+        shell = 7 * np.column_stack((np.cos(k * np.pi * (3 - np.sqrt(5))) * r, y, np.sin(k * np.pi * (3 - np.sqrt(5))) * r))
+        Q = Path(shell)
+        Q.setup_global_search(step=1.0, maxdist=60, use_hull=False, boundaries=[[-14, 14]] * 3)
+        for method in ["theta", "astar"]:
+            d, wp = Q.search_path(np.array([11., 0, 0]), np.array([0.3, 0.2, 0.1]), method=method, get_path=False)
+            self.assertEqual(d, -1)
+            self.assertEqual(len(wp), 0)
+
+        # a local grid without obstacles is fully accessible
+        Q = Path(np.array([[100., 100, 100], [101, 100, 100]]))
+        Q.setup_local_search(step=1.0, maxdist=28)
+        self.assertAlmostEqual(Q.search_path(np.array([0., 0, 0]), np.array([5., 0, 0]))[0], 5.0)
+
     def test_SASA(self):
 
         print("\n> testing molecule's SASA")

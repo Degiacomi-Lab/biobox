@@ -154,20 +154,24 @@ class Path(object):
         # get indices of closest graph neighbors in graph, corresponding to points to connect
         # in this case start and end will be picked within the same ensemble of coordinates
         # first, check if atoms are accessible, exit if likely to be buried
-        dists, idx_3d_start = self.graph.get_closest_nodes(np.array([start]))
-        if dists[0] > connect_thresh:
+        dists_start, idx_3d_start = self.graph.get_closest_nodes(np.array([start]))
+        if dists_start[0] > connect_thresh:
             return -2, np.array([])
 
-        dists, idx_3d_end = self.graph.get_closest_nodes(np.array([end]))
-        if dists[0] > connect_thresh:
+        dists_end, idx_3d_end = self.graph.get_closest_nodes(np.array([end]))
+        if dists_end[0] > connect_thresh:
             return -2, np.array([])
 
         idx_start = self.graph.get_flat_index(np.array(idx_3d_start.T))[0]
         idx_end = self.graph.get_flat_index(np.array(idx_3d_end.T))[0]
 
-        # if start and end see each other, do not run shortest path algorithms
+        # if start and end see each other, do not run shortest path algorithms. The straight
+        # line between them is used if it is clear, otherwise the path goes through their graph nodes
         if self._line_of_sight(idx_3d_start[0], idx_3d_end[0]):
-            waypoints = np.array([start, self.graph.get_points_from_idx_flat(idx_start), self.graph.get_points_from_idx_flat(idx_end), end])
+            if self._segment_clear(start, end, self._target_exemptions(start, end)):
+                waypoints = np.array([start, end])
+            else:
+                waypoints = np.array([start, self.graph.get_points_from_idx_flat(idx_start), self.graph.get_points_from_idx_flat(idx_end), end])
 
         else:
             ###COMPUTE CURVED DISTANCE###
@@ -220,7 +224,8 @@ class Path(object):
                 pred = came_from[pts_idx[-1]]
 
             except Exception:
-                return -1, np.array([])
+                # the goal was never reached: start and end are disconnected
+                return np.array([])
 
             if pred == idx_start:
                 break
@@ -247,35 +252,75 @@ class Path(object):
         if not clean_lineofsight:
             return np.array(pts_crd)
 
-        # clear waypoints located between two points "seeing eachother"
-        test = np.ones(len(pts_crd)).astype(bool)
+        # clear graph nodes located between two nodes "seeing eachother": from the last kept
+        # node, skip nodes as long as the following one is visible, so that every segment between
+        # kept nodes is tested
+        nodes = np.array([self.graph.get_3d_index(p) for p in pts_idx])
+        keep = [0]
+        for k in range(1, len(nodes) - 1):
+            if not self._line_of_sight(nodes[keep[-1]].copy(), nodes[k + 1].copy()):
+                keep.append(k)
+        keep.append(len(nodes) - 1)
 
-        w = []
-        for p in pts_idx:
-            p3d = self.graph.get_3d_index(p)
-            w.append(p3d)
+        # pts_crd holds the endpoint, then one coordinate per node, then the start point
+        return np.array([pts_crd[0]] + [pts_crd[k + 1] for k in keep] + [pts_crd[-1]])
 
-        waypoints = np.array(w)
+    # test whether the segment between two positions crosses only accessible grid points, with
+    # the line of sight test used by the path search. Grid points closer to a center c than a
+    # radius r, for every (c, r) in exempt, count as accessible
+    def _segment_clear(self, p, q, exempt=()):
 
-        # forward
-        i = 1
-        while i < len(waypoints):
+        g = self.graph
+        shape = np.array(g.access_grid_shape)
+        ends = g.get_idx_from_points(np.array([p, q], dtype=float))
+        if np.any(ends < 0) or np.any(ends >= shape):
+            return False
 
-            if test[i] == 1:  # if point is visible
+        changed = self._open_exemptions(exempt)
+        try:
+            clear = bool(g.access_grid[tuple(ends[0])]) and bool(self._line_of_sight(ends[0].copy(), ends[1].copy()))
+        finally:
+            self._close_exemptions(changed)
 
-                for j in range(i+1, len(waypoints)):
-                    #for j in range(len(waypoints)-1, i + 1, -1):
-                    # test from end to second neighbor
-                    if test[j] == 1:
-                        v = waypoints[i].copy()
-                        w = waypoints[j].copy()
-                        if self._line_of_sight(v, w):
-                            #print(i, j)
-                            test[i + 1:j+1] = False
-                            #break
-            i += 1
+        return clear
 
-        return np.array(pts_crd)[test]
+    # temporarily mark as accessible the grid points closer to a center c than a radius r, for
+    # every (c, r) in exempt. Returns what _close_exemptions needs to restore them
+    def _open_exemptions(self, exempt):
+
+        g = self.graph
+        shape = np.array(g.access_grid_shape)
+        changed = []
+        for c, r in exempt:
+            c = np.asarray(c, dtype=float)
+            lo = np.clip(g.get_idx_from_points(np.array([c - r]))[0], 0, shape - 1)
+            hi = np.clip(g.get_idx_from_points(np.array([c + r]))[0], 0, shape - 1)
+            box = np.indices(hi - lo + 1).reshape(3, -1).T + lo
+            near = box[np.linalg.norm(g.get_points_from_idx(box.astype(float)) - c, axis=1) <= r]
+            own = g.get_idx_from_points(np.array([c]))
+            own = own[np.all((own >= 0) & (own < shape), axis=1)]
+            near = np.vstack([near, own])
+            changed.append((near, g.access_grid[tuple(near.T)].copy()))
+            g.access_grid[tuple(near.T)] = True
+        return changed
+
+    def _close_exemptions(self, changed):
+
+        for near, values in reversed(changed):
+            self.graph.access_grid[tuple(near.T)] = values
+
+    # regions around the targets of a path not tested by _segment_clear. Targets lie in
+    # inaccessible space, so the region extends from each target to its closest accessible grid point
+    def _target_exemptions(self, *targets):
+
+        exempt = []
+        for t in targets:
+            dist, idx = self.graph.get_closest_nodes(np.array([t], dtype=float))
+            if len(idx[0]) == 0:
+                exempt.append((np.asarray(t, dtype=float), 0.0))
+            else:
+                exempt.append((np.asarray(t, dtype=float), np.sqrt(dist[0]) + 1e-9))
+        return exempt
 
     # fill intermediate regions between waypoints with points
     # points are separated with steps of 1A (or less)
@@ -475,6 +520,7 @@ class Path(object):
     def smooth(self, chain, move_angle_thresh=0.0):
         '''
         Utility method aimed at smoothing a chain produced by A* or Theta*, to make it less angular.
+        A point is moved only if the path stays in accessible space, except next to the chain ends (the targets, which lie in inaccessible space).
 
         :param chain: numpy array containing the list of points composing the path
         :param move_angle_thresh: if angle between three consecutive points is greater than this threshold, smoothing is performed
@@ -487,6 +533,7 @@ class Path(object):
         elif len(chain) == 2:
             return np.sqrt(np.dot(chain[1] - chain[0], chain[1] - chain[0])), chain
 
+        chain = np.array(chain, dtype=float)
         angles_test = np.zeros(len(chain) - 2)
 
         # first test: scan all angles, and pinpoint the ones to check
@@ -513,7 +560,24 @@ class Path(object):
             if np.degrees(np.arccos(dd)) > move_angle_thresh:
                 angles_test[i - 1] = 1
 
-        # for every flagged angle, try to straighten
+        # for every flagged angle, try to straighten. Grid points next to the chain ends (the
+        # targets) count as accessible while testing moves
+        changed = self._open_exemptions(self._target_exemptions(chain[0], chain[-1]))
+        try:
+            self._straighten(chain, angles_test)
+        finally:
+            self._close_exemptions(changed)
+
+        dist = 0
+        for i in range(0, len(chain) - 1, 1):
+            dist += np.sqrt(np.dot(chain[i] - chain[i + 1], chain[i] - chain[i + 1]))
+
+        return dist, chain
+
+    # move the middle point of every flagged angle of a chain halfway between its neighbours,
+    # if the path stays clear
+    def _straighten(self, chain, angles_test):
+
         while np.any(angles_test == 1):
 
             for i in range(0, len(angles_test), 1):
@@ -523,21 +587,20 @@ class Path(object):
                     # angle i involves atoms i, i+1 (center to be displaced)
                     # and i+2
                     point = (chain[i + 2] + chain[i]) / 2.0
-                    chain[i + 1] = point[:]
-
                     angles_test[i] = -1
+
+                    # move the point only if the path stays clear
+                    if not self._segment_clear(chain[i], point) or not self._segment_clear(point, chain[i + 2]):
+                        continue
+
+                    chain[i + 1] = point
+
                     # if angle has been moved, tag for angle check its
                     # neighbors
                     if i >= 1 and angles_test[i - 1] != -1:
                         angles_test[i - 1] = 1
                     if i < len(angles_test) - 1 and angles_test[i + 1] != -1:
                         angles_test[i + 1] = 1
-
-        dist = 0
-        for i in range(0, len(chain) - 1, 1):
-            dist += np.sqrt(np.dot(chain[i] - chain[i + 1], chain[i] - chain[i + 1]))
-
-        return dist, chain
 
 
     def write_grid(self, filename="grid.pdb"):
