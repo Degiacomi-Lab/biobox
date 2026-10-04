@@ -25,14 +25,15 @@ The best way to install Biobox is via Anaconda
 Biobox can be also installed via pip
 `pip install biobox`
 
-Biobox can otherwise be installed manually typing the followin command in the Biobox folder: `python setup.py build_ext --inplace` followed by `python setup.py install`. Please make sure the folder where Biobox is located is in your PYTHONPATH.
+Biobox can otherwise be installed from source, typing the following command in the Biobox folder: `pip install .`
+This compiles Biobox's Cython extensions, so a C compiler is needed. Cython and numpy are fetched automatically for the build.
+For development, the extensions can instead be compiled next to the sources with `python setup.py build_ext --inplace` (with numpy, Cython and setuptools 77 or later installed), adding the `src` folder to your PYTHONPATH.
 
-Biobox requires Python3.x and the following packages:
-* numpy
+Biobox requires Python 3.10 or later (tested up to 3.14) and the following packages, installed automatically by pip:
+* numpy (1.26 or later)
 * scipy
 * pandas
 * scikit-learn
-* cython
 
 Optional external software:
 * CCS calculation relies on a call to [IMPACT](

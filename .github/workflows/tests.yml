@@ -40,7 +40,7 @@ jobs:
         shell: bash
         run: |
           python -m pip install --upgrade pip
-          python -m pip install "numpy${{ matrix.numpy && format('=={0}', matrix.numpy) || '' }}" scipy pandas scikit-learn cython setuptools pytest
+          python -m pip install "numpy${{ matrix.numpy && format('=={0}', matrix.numpy) || '' }}" scipy pandas scikit-learn cython "setuptools>=77" pytest
 
       - name: Build Cython extensions
         run: python setup.py build_ext --inplace
@@ -48,3 +48,37 @@ jobs:
       - name: Run tests
         working-directory: test
         run: python -m pytest -v test_biobox.py
+
+  package:
+    # build the sdist and a wheel from it as pip does, then run the tests against the installed wheel
+    name: package / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Build sdist and wheel
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build
+
+      - name: Install wheel
+        shell: bash
+        run: python -m pip install dist/*.whl pytest
+
+      - name: Run tests against the installed package
+        shell: bash
+        # a copy of the tests outside the repository, so that src/ is not on the path
+        run: |
+          cp -r test "$RUNNER_TEMP/test"
+          cd "$RUNNER_TEMP/test"
+          python -m pytest -v test_biobox.py

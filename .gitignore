@@ -75,3 +75,5 @@ lib/*.c
 
 # code review notes (local only)
 code_review/
+*.egg-info/
+/dist/

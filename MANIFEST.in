@@ -1,0 +1,3 @@
+# Cython sources, needed to build from the sdist. The generated C files are left out.
+include src/biobox/lib/*.pyx
+exclude src/biobox/lib/*.c
