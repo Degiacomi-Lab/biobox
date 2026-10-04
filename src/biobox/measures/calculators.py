@@ -17,6 +17,7 @@ Functions to measure characteristics of any Biobox object
 
 import subprocess
 import os
+import shlex
 import sys
 import random
 import string
@@ -39,10 +40,10 @@ def sasa_c(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
     :param targets: indices to be used for surface estimation. By default, all indices are kept into account.
     :param probe: radius of the "rolling ball"
     :param n_sphere_point: number of mesh points per atom
-    :param threshold: fraction of points in sphere, above which structure points are considered as exposed
-    :returns: accessible surface area in A^2
+    :param threshold: fraction of mesh points that must be exposed for an atom to be listed among the surface atoms. It does not affect the area or the mesh.
+    :returns: accessible surface area in A^2, summed over all target atoms
     :returns: mesh numpy array containing the found points forming the accessible surface mesh
-    :returns: IDs of surface points
+    :returns: IDs of surface atoms, i.e. target atoms whose exposed fraction exceeds threshold
     '''
     return sasa(M, targets=targets, probe=probe, n_sphere_point=n_sphere_point, threshold=threshold)
 
@@ -77,10 +78,10 @@ def sasa(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
     :param targets: indices to be used for surface estimation. By default, all indices are kept into account.
     :param probe: radius of the "rolling ball"
     :param n_sphere_point: number of mesh points per atom
-    :param threshold: fraction of points in sphere, above which structure points are considered as exposed
-    :returns: accessible surface area in A^2
+    :param threshold: fraction of mesh points that must be exposed for an atom to be listed among the surface atoms. It does not affect the area or the mesh.
+    :returns: accessible surface area in A^2, summed over all target atoms
     :returns: mesh numpy array containing the found points forming the accessible surface mesh
-    :returns: IDs of surface points
+    :returns: IDs of surface atoms, i.e. target atoms whose exposed fraction exceeds threshold
     '''
 
     from scipy.spatial import cKDTree
@@ -103,6 +104,13 @@ def sasa(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
 
     if threshold < 0.0 or threshold > 1.0:
         raise Exception("ERROR: threshold should be a floating point between 0 and 1!")
+
+    if len(points) == 0:
+        return 0.0, np.empty((0, 3)), np.array([], dtype=int)
+
+    n_missing = int(np.count_nonzero(~np.isfinite(radii)))
+    if n_missing > 0:
+        raise ValueError("%s atoms have no finite radius" % n_missing)
 
     sphere_points = _golden_spiral(n_sphere_point)
     const = 4.0 * np.pi / len(sphere_points)
@@ -139,13 +147,13 @@ def sasa(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
 
         cnt = int(np.count_nonzero(exposed))
         mesh_pts.extend(mesh[exposed])
+        asa += const * cnt * (radii[i] + probe)**2
 
-        # calculate asa for current atom, if a sufficient amount of mesh points is exposed
+        # an atom counts as a surface atom if a sufficient amount of its mesh points is exposed
         if cnt > n_sphere_point * threshold:
             surface_atoms.append(i)
-            asa += const * cnt * (radii[i] + probe)**2
 
-    return asa, np.array(mesh_pts), np.array(surface_atoms)
+    return asa, np.array(mesh_pts).reshape(-1, 3), np.array(surface_atoms, dtype=int)
 
 def rgyr(M):
     '''
@@ -184,7 +192,8 @@ def saxs(M, crysol_path='', crysol_options="-lm 20 -ns 500", pdbname=""):
         except KeyError:
             raise Exception("ATSASPATH environment variable undefined")
 
-    if pdbname == "":
+    temporary_pdb = pdbname == ""
+    if temporary_pdb:
         # write temporary pdb file of current structure on which to launch
         # SAXS calculation
         pdbname = "%s.pdb" % random_string(32)
@@ -198,23 +207,19 @@ def saxs(M, crysol_path='', crysol_options="-lm 20 -ns 500", pdbname=""):
         if os.path.isfile(pdbname) != 1:
             raise Exception("ERROR: %s not found!" % pdbname)
 
-    # get basename for output
-    outfile = os.path.basename(pdbname).split('.')[0]
+    # crysol names its output after the input file, in the working directory
+    outfile = os.path.splitext(os.path.basename(pdbname))[0]
 
-    call_line = os.path.join(crysol_path, "crysol")
-    #try:
-    subprocess.check_call('%s %s %s > /dev/null' %(call_line, crysol_options, pdbname), shell=True)
-    #except Exception as e:
-    #    raise Exception("ERROR: crysol calculation failed!")
-
-    data = np.loadtxt("%s00.int" % outfile, skiprows=1)
+    call_line = [os.path.join(crysol_path, "crysol")] + shlex.split(crysol_options) + [pdbname]
     try:
-        os.remove("%s00.alm" % outfile)
-        os.remove("%s00.int" % outfile)
-        os.remove("%s00.log" % outfile)
-        os.remove("%s.pdb" % outfile)
-    except Exception:
-        pass
+        subprocess.check_call(call_line, stdout=subprocess.DEVNULL)
+        data = np.loadtxt("%s00.int" % outfile, skiprows=1)
+    finally:
+        for ext in ["00.alm", "00.int", "00.log"]:
+            if os.path.exists(outfile + ext):
+                os.remove(outfile + ext)
+        if temporary_pdb:
+            os.remove(pdbname)
 
     return data[:, 0:2]
 
@@ -260,7 +265,7 @@ def ccs(M, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMod
                 except KeyError:
                     raise Exception("IMPACTPATH environment variable undefined")
 
-            if "win" in sys.platform:
+            if sys.platform.startswith("win"):
                 libfile = os.path.join(impact_path, "libimpact.dll")
             else:
                 libfile = os.path.join(impact_path, "libimpact.so")
@@ -319,7 +324,7 @@ def ccs(M, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMod
 
         f.close()
 
-        if "win" in sys.platform:
+        if sys.platform.startswith("win"):
             impact_name = os.path.join(impact_path, "impact.exe")
         else:
             impact_name = os.path.join(impact_path, "impact")

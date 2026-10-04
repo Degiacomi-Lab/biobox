@@ -965,6 +965,113 @@ class test_structures(unittest.TestCase):
         self.assertAlmostEqual(together, apart, places=6)
         self.assertLess(together, alone)
 
+    def test_SASA_threshold(self):
+
+        print("\n> testing that the SASA threshold only selects surface atoms")
+        # atoms exposed below the threshold still contribute to the area and the mesh
+        idx = range(200)
+        asa0, mesh0, surf0 = bb.sasa(self.M, targets=idx, n_sphere_point=200, threshold=0)
+        asa1, mesh1, surf1 = bb.sasa(self.M, targets=idx, n_sphere_point=200, threshold=0.05)
+        self.assertEqual(asa0, asa1)
+        self.assertEqual(mesh0.shape, mesh1.shape)
+        self.assertLess(len(surf1), len(surf0))
+        self.assertTrue(set(surf1) <= set(surf0))
+
+    def test_SASA_edge_cases(self):
+
+        print("\n> testing SASA of an empty structure and of missing radii")
+        S = bb.Structure(p=np.zeros((0, 3)))
+        S.data['radius'] = np.zeros(0)
+        asa, mesh, surf = bb.sasa(S)
+        self.assertEqual(asa, 0.0)
+        self.assertEqual(mesh.shape, (0, 3))
+        self.assertEqual(len(surf), 0)
+
+        S = bb.Structure(p=np.array([[0., 0, 0], [2, 0, 0]]))
+        S.data['radius'] = np.array([1.5, np.nan])
+        with self.assertRaises(ValueError):
+            bb.sasa(S)
+
+    def test_saxs_files(self):
+
+        print("\n> testing that saxs leaves the input file and removes its own")
+        import tempfile, shutil
+        from unittest import mock
+        import biobox.measures.calculators as C
+
+        calls = []
+        def fake_crysol(cmd, **kwargs):
+            # crysol writes its output in the working directory, named after the input file
+            calls.append(cmd)
+            base = os.path.splitext(os.path.basename(cmd[-1]))[0]
+            np.savetxt(base + "00.int", np.array([[0.01, 1.0, 0], [0.02, 0.9, 0]]), header="crysol")
+            for ext in ["00.alm", "00.log"]:
+                open(base + ext, "w").close()
+
+        here = os.getcwd()
+        tmp = tempfile.mkdtemp()
+        try:
+            os.chdir(tmp)
+            self.M.write_pdb("myprotein.pdb")
+            with mock.patch.object(C.subprocess, "check_call", side_effect=fake_crysol):
+                curve = C.saxs(self.M, crysol_path="atsas", pdbname="myprotein.pdb")
+                self.assertEqual(sorted(os.listdir(tmp)), ["myprotein.pdb"])
+                C.saxs(self.M, crysol_path="atsas")
+                self.assertEqual(sorted(os.listdir(tmp)), ["myprotein.pdb"])
+        finally:
+            os.chdir(here)
+            shutil.rmtree(tmp)
+
+        self.assertEqual(curve.shape, (2, 2))
+        # no shell redirection, which Windows cmd cannot resolve
+        self.assertEqual(calls[0], [os.path.join("atsas", "crysol"), "-lm", "20", "-ns", "500", "myprotein.pdb"])
+
+    def test_ccs_library_name(self):
+
+        print("\n> testing the IMPACT library name on each platform")
+        from unittest import mock
+        import biobox.measures.calculators as C
+
+        seen = []
+        def fake_ccs(libfile):
+            seen.append(libfile)
+            raise RuntimeError("stop")
+
+        with mock.patch.object(C, "CCS", side_effect=fake_ccs):
+            for platform in ["darwin", "linux", "win32"]:
+                with mock.patch.object(C.sys, "platform", platform):
+                    with self.assertRaises(Exception):
+                        C.ccs(self.M, impact_path="impact")
+        self.assertEqual([os.path.basename(f) for f in seen], ["libimpact.so", "libimpact.so", "libimpact.dll"])
+
+    def test_dipole_density_centred(self):
+
+        print("\n> testing that the dipole density is centred on the fluctuating voxel")
+        from unittest import mock
+        import biobox.lib.e_density as E
+        from biobox.classes.density import Density
+
+        nx, c = 15, 7
+        dm = np.zeros((2, nx, nx, nx, 3), np.float32)
+        dm[0, c, c, c] = [1, 0, 0]
+        dm[1, c, c, c] = [-1, 0, 0]
+        orig = np.array([np.arange(nx) * 1.0] * 3)
+
+        captured = []
+        def capture(self, fname):
+            captured.append(self.properties['density'].copy())
+
+        with mock.patch.object(Density, "write_dx", capture):
+            for vox in [3.0, 4.0]:
+                E.c_get_dipole_density(dm, orig, [0., 0., 0.], 5e-27, "x.dx", vox_in_window=vox)
+
+        # odd and even windows give kernels of 3 and 5 points per axis, centred on the voxel
+        for d, width in zip(captured, [3, 5]):
+            self.assertEqual(np.unravel_index(np.argmax(d), d.shape), (c, c, c))
+            com = [np.sum(d * np.indices(d.shape)[k]) / d.sum() for k in range(3)]
+            np.testing.assert_allclose(com, [c, c, c], atol=1e-6)
+            self.assertEqual(np.count_nonzero(d[:, c, c]), width)
+
     def test_rmsd_one_vs_all_no_reflection(self):
 
         print("\n> testing that alignment never mirrors a structure")

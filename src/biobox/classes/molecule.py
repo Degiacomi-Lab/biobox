@@ -2517,7 +2517,7 @@ class Molecule(Structure):
         :param min_val: Minimum coordinates of edge points for the voxel grid (i.e. a single x, y, z point defining the start point of the grid to match with the multipdb)
         :param V: Volume of a voxel (can be found by resolution**3, but left blank in case later version institute a sphere)
         :param outname: Name of electron density map file produced
-        :param vox_in_window: Amount of surrounding space to contribute to local dipole. vox_in_window * resolution gives window size (in Ang.)
+        :param vox_in_window: Amount of surrounding space to contribute to local dipole. vox_in_window * resolution gives window size (in Ang.). The density function of each voxel is sampled within this window, centred on the voxel
         :param eqn: Equation mode to model the electron density
         :param T: Temperature of MD
         :param P: Pressure of MD
