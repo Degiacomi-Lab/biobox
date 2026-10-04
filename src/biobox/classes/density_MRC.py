@@ -199,9 +199,7 @@ class MRC_Grid:
     #
     def update_transform(self):
 
-        #from Matrix import skew_axes
-        #saxes = skew_axes(self.cell_angles)
-        saxes=[[0.0,0.0,0.0],[0.0,0.0,0.0],[0.0,0.0,0.0]]
+        saxes = skew_axes(self.cell_angles)
         rsaxes = [apply_rotation(self.rotation, a) for a in saxes]
         tf, tf_inv = transformation_and_inverse(self.origin, self.step, rsaxes)
         if tf != self.ijk_to_xyz_transform or tf_inv != self.xyz_to_ijk_transform:
@@ -467,10 +465,10 @@ class MRC_Data:
         r = ((1,0,0),(0,1,0),(0,0,1))
         for lbl in v['labels']:
             if lbl.startswith(b'Chimera rotation: '):
-                ax,ay,az,angle = map(float, lbl.rstrip('\0').split()[2:])
+                ax,ay,az,angle = map(float, lbl.rstrip(b'\0').split()[2:])
 
                 #S = Structure()
-                r = self.rotation_matrix([ax, ay, az], angle)
+                r = self.rotation_matrix(np.array([ax, ay, az]), np.radians(angle))
                 #r = Matrix.rotation_from_axis_angle((ax,ay,az), angle)
 
         self.rotation = r
@@ -540,7 +538,7 @@ class MRC_Data:
         else:
             # MRC file
             user = file1.read(4*MRC_USER)
-            if user[-4:] == 'MAP ':
+            if user[-4:] == b'MAP ':
                 # New style MRC 2000 format file with xyz origin
                 v['user'] = self.read_values_from_string(user, i32, MRC_USER)[:-4]
                 xyz_origin = self.read_values_from_string(user[-16:-4], f32, 3)
@@ -576,6 +574,7 @@ class MRC_Data:
         MODE_char     = 0
         MODE_short    = 1
         MODE_float    = 2
+        MODE_ushort   = 6
 
         if mode == MODE_char:
             if unsigned_8_bit:
@@ -586,6 +585,8 @@ class MRC_Data:
             t = np.dtype(np.int16)
         elif mode == MODE_float:
             t = np.dtype(np.float32)
+        elif mode == MODE_ushort:
+            t = np.dtype(np.uint16)
         else:
             raise SyntaxError('MRC data value type (%d) ' % mode +
                                                     'is not 8 or 16 bit integers or 32 bit floats')
@@ -705,9 +706,8 @@ def transformation_and_inverse(origin, step, axes):
                 (d0*ax[1], d1*ay[1], d2*az[1], oy),
                 (d0*ax[2], d1*ay[2], d2*az[2], oz))
 
-    #from Matrix import invert_matrix
-    #tf_inv = invert_matrix(tf)
-    tf_inv=tf
+    full = np.vstack([np.array(tf, dtype=float), [0.0, 0.0, 0.0, 1.0]])
+    tf_inv = np.linalg.inv(full)[:3]
 
     # Replace array by tuples
     tf_inv = tuple(map(tuple, tf_inv))
@@ -716,6 +716,23 @@ def transformation_and_inverse(origin, step, axes):
 
 # -----------------------------------------------------------------------------
 # Apply scaling and skewing transformations.
+#
+def skew_axes(cell_angles):
+    '''
+    unit vectors along the cell axes a, b and c, for the given cell angles (in degrees), with a along x and b in the xy plane.
+    '''
+    alpha, beta, gamma = map(lambda a: a * np.pi / 180, cell_angles)
+
+    cg = np.cos(gamma)
+    sg = np.sin(gamma)
+    cb = np.cos(beta)
+    ca = np.cos(alpha)
+    c1 = (ca - cb*cg)/sg
+    c2 = np.sqrt(1 - cb*cb - c1*c1)
+
+    return ((1.0, 0.0, 0.0), (cg, sg, 0.0), (cb, c1, c2))
+
+# -----------------------------------------------------------------------------
 #
 def scale_and_skew(ijk, step, cell_angles):
 
@@ -952,7 +969,7 @@ def closest_mrc2000_type(type1):
                 ctype = np.float32
         elif type1 in (np.int16, np.uint8):
                 ctype = np.int16
-        elif type1 in (np.int8, np.int0, np.character):
+        elif type1 in (np.int8, np.intp, np.character):
                 ctype = np.int8
         else:
                 raise TypeError('Volume data has unrecognized type %s' % type1)
@@ -983,7 +1000,8 @@ def read_density(filename,extension):
 
         m.append(matrix)
 
-    data=np.squeeze(np.array(m).astype(float))
+    # every section has shape (1, ny, nx), so the stack is (nz, ny, nx)
+    data = np.concatenate(m, axis=0).astype(float)
 
     #return data, grid_data
     return np.swapaxes(data,0,2), grid_data
