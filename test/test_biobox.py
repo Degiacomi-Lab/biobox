@@ -1,6 +1,7 @@
 import unittest
 import sys, os
 import numpy as np
+import pandas as pd
 if 'CONDA_BUILD_STATE' in os.environ and os.environ['CONDA_BUILD_STATE']=='TEST':
     pass
 else:
@@ -1608,6 +1609,162 @@ class test_structures(unittest.TestCase):
             with self.assertRaises(Exception):
                 X.distance_matrix([i], flexible_sidechain=True, sphere_pts_surf=3.0, sphere_thresh=2.5, sphere_radii=[6.0, 5.0])
         self.assertEqual(seen[0], {"pts_surf": 3.0, "thresh": 2.5, "radii": [6.0, 5.0]})
+    def test_pdb2pqr_histidine(self):
+
+        print("\n> testing pdb2pqr histidines and default forcefield")
+        import pandas as pd
+        NALA = "N H1 H2 H3 CA HA CB HB1 HB2 HB3 C O".split()
+        CHID = "N H CA HA CB HB1 HB2 CG ND1 HD1 CE1 HE1 NE2 CD2 HD2 C O OXT".split()
+        CALA = "N H CA HA CB HB1 HB2 HB3 C O OXT".split()
+
+        def build(chains):
+            rows = []
+            xyz = []
+            x = 0.0
+            for ci, (cname, residues) in enumerate(chains):
+                for ri, (rn, names) in enumerate(residues):
+                    for a in names:
+                        rows.append(["ATOM", 0, a, rn, cname, ri + 1, 1.0, 0.0, a[0], 1.5, 0.0])
+                        xyz.append([x + (0.5 if a == "C" else 0.0), ci * 100.0, 0.0])
+                    x += 1.5
+            M = bb.Molecule()
+            M.data = pd.DataFrame(rows, columns=["atom", "index", "name", "resname", "chain", "resid", "occupancy", "beta", "atomtype", "radius", "charge"])
+            M.data["index"] = np.arange(len(rows))
+            M.coordinates = np.array([xyz])
+            M.current = 0
+            M.points = M.coordinates[0]
+            return M
+
+        ff = np.loadtxt(os.path.join(os.path.dirname(bb.__file__), "data", "amber14sb.dat"), usecols=(0, 1, 2), dtype=str)
+        q = {(r, n): float(c) for r, n, c in ff}
+
+        # a C-terminal HID followed by another chain, with the default forcefield path
+        M = build([("X", [("ALA", NALA), ("HIS", CHID)]), ("Y", [("ALA", NALA), ("ALA", CALA)])])
+        pqr = M.pdb2pqr()
+        first_Y = len(NALA) + len(CHID)
+        self.assertEqual(list(M.data["resname"][len(NALA):first_Y].unique()), ["CHID"])
+        self.assertEqual(M.data["resname"][first_Y], "NALA")
+        self.assertAlmostEqual(pqr["charge"][first_Y], q[("NALA", "N")])
+        expected = 2 * sum(q[("NALA", a)] for a in NALA) + sum(q[("CHID", a)] for a in CHID) + sum(q[("CALA", a)] for a in CALA)
+        self.assertAlmostEqual(pqr["charge"].sum(), expected, places=4)
+
+        # a C-terminal HID as the last residue of the structure
+        M = build([("X", [("ALA", NALA), ("HIS", CHID)])])
+        pqr = M.pdb2pqr()
+        self.assertEqual(list(M.data["resname"][len(NALA):].unique()), ["CHID"])
+
+    def test_renumber_resid_keep_chains(self):
+
+        print("\n> testing residue renumbering")
+        M = self.M
+        A = M.data["chain"] == "A"
+        M.data.loc[A, "resid"] = M.data["resid"][A] - M.data["resid"][A].min() - 2
+        # the second residue of chain C takes the number of the first one
+        C = np.flatnonzero(M.data["chain"].values == "C")
+        r = M.data["resid"].values[C]
+        M.data.loc[C[r == r.min() + 1], "resid"] = r.min()
+
+        M.renumber_resid_keep_chains(start_from=100)
+        CA = M.atomselect("*", "*", "CA", get_index=True)[1]
+        for c in np.unique(M.data["chain"]):
+            r = M.data["resid"].values[CA][M.data["chain"].values[CA] == c]
+            np.testing.assert_array_equal(r, np.arange(100, 100 + len(r)))
+
+        # every atom carries the number of its residue's CA
+        for i in CA:
+            idx = M.same_residue(i, get_index=True)[1]
+            self.assertTrue(np.all(M.data["resid"].values[idx] == M.data["resid"].values[i]))
+
+        M.renumber_resid_keep_chains(reset_resid_with_chain=False)
+        np.testing.assert_array_equal(M.data["resid"].values[CA], np.arange(1, len(CA) + 1))
+
+    def test_reorder_resid(self):
+
+        print("\n> testing residue reordering")
+        M = self.M
+        CA = M.atomselect("A", "*", "CA", get_index=True)[1]
+        resnames = M.data["resname"].values[CA]
+        ca_xyz = M.points[CA].copy()
+        chain_order = list(dict.fromkeys(M.data["chain"].values))
+        k = len(CA)
+
+        # 1-based values, as a list: the last 3 residues move to the front
+        order = list(np.r_[np.arange(k - 2, k + 1), np.arange(1, k - 2)])
+        M.reorder_resid(order, chain="A", renumber=False)
+
+        CA2 = M.atomselect("A", "*", "CA", get_index=True)[1]
+        expected = np.r_[np.arange(k - 3, k), np.arange(0, k - 3)]
+        np.testing.assert_array_equal(M.data["resname"].values[CA2], resnames[expected])
+        np.testing.assert_array_equal(M.points[CA2], ca_xyz[expected])
+        self.assertEqual(list(dict.fromkeys(M.data["chain"].values)), chain_order)
+        self.assertTrue(M.data.index.equals(pd.RangeIndex(len(M.data))))
+        np.testing.assert_array_equal(M.data["index"].values, np.arange(len(M.data)))
+
+        with self.assertRaises(ValueError):
+            M.reorder_resid(order[:-1], chain="A")
+
+    def test_match_residue(self):
+
+        print("\n> testing residue matching between strands")
+        A = self.M.get_subset(self.M.atomselect("A", "*", "*", get_index=True)[1])
+        res = A.data["resid"].values[A.atomselect("*", "*", "CA", get_index=True)[1]]
+
+        r1, r2 = A.match_residue(A.get_subset(np.flatnonzero(A.data["resid"].values != res[27])))
+        self.assertEqual(list(r1), list(np.delete(res, 27)))
+        self.assertEqual(list(r2), list(np.delete(res, 27)))
+
+        r1, r2 = A.match_residue(A.get_subset(np.flatnonzero(A.data["resid"].values > res[1])))
+        self.assertEqual(list(r1), list(res[2:]))
+
+    def test_get_fasta_variants(self):
+
+        print("\n> testing one-letter codes of residue variants")
+        M = self.M.get_subset(self.M.atomselect("A", "*", "*", get_index=True)[1])
+        reference = M.get_fasta()
+        resnames = M.data["resname"].values.copy()
+        for old, new in [("MET", "MSE"), ("HIS", "HIE"), ("CYS", "CYX")]:
+            M.data.loc[resnames == old, "resname"] = new
+        self.assertEqual(M.get_fasta(), reference)
+
+        first = M.data["resid"].values == M.data["resid"].values[0]
+        M.data.loc[first, "resname"] = "N" + resnames[0]
+        self.assertEqual(M.get_fasta(), reference)
+        M.data.loc[first, "resname"] = "UNK"
+        self.assertEqual(M.get_fasta(), "X" + reference[1:])
+
+    def test_guess_chain_split_capped(self):
+
+        print("\n> testing chain splitting of capped peptides")
+        import tempfile, shutil
+
+        def peptide(gap):
+            # ACE-ALA-ALA-NME along x, with a gap before the second ALA
+            residues = [("ACE", ["CH3", "C", "O"]), ("ALA", ["N", "CA", "C", "O"]),
+                        ("ALA", ["N", "CA", "C", "O"]), ("NME", ["N", "CH3"])]
+            lines = []
+            x = 0.0
+            for r, (resname, names) in enumerate(residues):
+                if r == 2:
+                    x += gap
+                for name in names:
+                    lines.append("ATOM  %5d %-4s %-3s A%4d    %8.3f%8.3f%8.3f  1.00  0.00           %s\n"
+                                 % (len(lines) + 1, " " + name if len(name) < 4 else name, resname, r + 1, x, 0.0, 0.0, name[0]))
+                    x += 1.3
+            return lines + ["END\n"]
+
+        tmp = tempfile.mkdtemp()
+        try:
+            for gap, expected in [(0.0, [0, 13]), (20.0, [0, 7, 13])]:
+                fname = os.path.join(tmp, "capped.pdb")
+                with open(fname, "w") as f:
+                    f.writelines(peptide(gap))
+                M = bb.Molecule()
+                M.import_pdb(fname)
+                n, intervals, gaps = M.guess_chain_split()
+                self.assertEqual(list(intervals), expected)
+                self.assertEqual(list(M.data["chain"]), (["A"] * 7 + ["B"] * 6) if gap else ["A"] * 13)
+        finally:
+            shutil.rmtree(tmp)
 
 
 if __name__ == '__main__':

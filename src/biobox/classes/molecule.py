@@ -90,7 +90,9 @@ class Molecule(Structure):
                                       "3HE":"H", "HN":"H",
                                       "SOD":"NA", "POT":"K", "CLA":"CL", "CAL":"CA", "CES":"CS"}
         self.knowledge['AA_mapping'] = {"GLY": "G", "ALA": "A", "LEU": "L", "MET": "M", "PHE": "F", "TRP": "W", "LYS": "K", "GLN": "Q", "GLU": "E", "SER": "S",
-                                        "PRO": "P", "VAL": "V", "ILE": "I", "CYS": "C", "TYR": "Y", "HIS": "H", "ARG": "R", "ASN": "N", "ASP": "D", "THR": "T", "NAN" : "Z"}
+                                        "PRO": "P", "VAL": "V", "ILE": "I", "CYS": "C", "TYR": "Y", "HIS": "H", "ARG": "R", "ASN": "N", "ASP": "D", "THR": "T", "NAN" : "Z",
+                                        "MSE": "M", "HID": "H", "HIE": "H", "HIP": "H", "HSD": "H", "HSE": "H", "HSP": "H",
+                                        "CYX": "C", "CYM": "C", "ASH": "D", "GLH": "E", "LYN": "K"}
 
         # if a filename is provided, attempt loading the file according to its file extension
         if fname != "":
@@ -1264,6 +1266,25 @@ class Molecule(Structure):
                 keep.append(i)
         return keep
 
+    def _residue_starts(self):
+        '''
+        mark the first atom of every residue. A residue is a contiguous run of atoms sharing chain, residue number,
+        insertion code and residue name, in which no atom name (with its alternate location) appears twice, so that two
+        adjacent residues with the same number are told apart.
+
+        :returns: boolean numpy array, one element per atom
+        '''
+        key = list(zip(self.data["chain"].values, self.data["resid"].values, self._column_or_blank("icode"), self.data["resname"].values))
+        atom = list(zip(self.data["name"].values, self._column_or_blank("altloc")))
+        starts = np.zeros(len(key), dtype=bool)
+        seen = set()
+        for i in range(len(key)):
+            if i == 0 or key[i] != key[i - 1] or atom[i] in seen:
+                starts[i] = True
+                seen = set()
+            seen.add(atom[i])
+        return starts
+
     def atomignore(self, chain, res, atom, get_index=False, use_resname=False):
         '''
         Select specific atoms that do not match a specific query (chain, residue ID and atom name).
@@ -1440,13 +1461,10 @@ class Molecule(Structure):
         reassign chain name, using distance cutoff (cannot be undone).
         If two consecutive atoms are beyond a cutoff, a new chain is assigned.
 
-        :param distance: distance cutoff distanceR: no atomtype found!
-
-        :param use_backbone: if True, splitting will be performed considering backbone atoms (N and C), all atoms in a sequence otherwise
+        :param distance: distance cutoff
+        :param use_backbone: if True, a new chain starts at a residue whose N is farther than the cutoff from the C of the closest preceding residue having one (residues without N, e.g. ACE, ligands or water, never start a chain). If False, consecutive atoms in the sequence are compared
+        :returns: number of chains, indices of the first atom of each chain followed by the number of atoms, and the gaps found
         '''
-
-        # wipe current chain assignment
-        self.data["chain"] = ""
 
         # identify different chains
         intervals = [0]
@@ -1459,29 +1477,29 @@ class Molecule(Structure):
                     intervals.append(i + 1)
 
         else:
-            #ACE doesn't start with an N, so we need to count from methyl group instead
-            if self.data['resname'][0] == 'ACE':
-                posN, idxN = self.atomselect("*", "*", ["CH3", "N"], get_index=True)
-            else:
-                #aminoacids start with N. Find where a C is too far from the next N.
-                posN, idxN = self.atomselect("*", "*", "N", get_index=True)
-            posC = self.atomselect("*", "*", "C")
-
-            if len(posN) != len(posC):
-                raise Exception("mismatch in N and C count")
-
-            for i in range(len(idxN)-1):
-                dist = np.sqrt(np.dot(posC[i] - posN[i+1], posC[i] - posN[i+1]))
-                if dist > distance:
-                    intervals.append(idxN[i+1])
-                    gaps.append(dist)
+            names = self.data["name"].values
+            starts = np.flatnonzero(self._residue_starts())
+            ends = np.r_[starts[1:], len(names)]
+            last_C = None
+            for a, b in zip(starts, ends):
+                n = np.flatnonzero(names[a:b] == "N")
+                if len(n) > 0 and last_C is not None:
+                    dist = np.linalg.norm(self.points[last_C] - self.points[a + n[0]])
+                    if dist > distance:
+                        intervals.append(a)
+                        gaps.append(dist)
+                c = np.flatnonzero(names[a:b] == "C")
+                if len(c) > 0:
+                    last_C = a + c[0]
 
         intervals.append(len(self.coordinates[0]))
 
         # separate chains
+        chain = np.empty(len(self.data), dtype=object)
         for i in range(len(intervals) - 1):
             thepos = i % len(self.chain_names)
-            self.data.loc[intervals[i]:intervals[i + 1], "chain"] = self.chain_names[thepos]
+            chain[intervals[i]:intervals[i + 1]] = self.chain_names[thepos]
+        self.data["chain"] = chain
 
         return len(intervals) - 1, intervals, np.round(np.array(gaps), decimals=3)
 
@@ -1956,95 +1974,69 @@ class Molecule(Structure):
 
         return np.array(secstruct) #(secstruct[0:210])
 
-    def renumber_resid_keep_chains(self, atom_thresh=30, start_from=1, reset_resid_with_chain=True):
+    def renumber_resid_keep_chains(self, start_from=1, reset_resid_with_chain=True):
         '''
-        Renumber resnumbers (starting from start_from variable), but base chain renumber resetting on pre-defined chain letters
+        Renumber residues consecutively in file order (starting from start_from variable), resetting the numbering per chain letter
         (i.e. not the structure.) Useful for insertion/grafting of motifs of arbitrary length, which disrupt the renumbering, or
         when the structure is broken and you want two or more discontinuous segements to have a single chain letter, and continuous resnums.
 
-        :param atom_thresh: Threshold number of atoms that we count within a single residue, before we consider other residues with similar properties (chain, resnum) as seperate. Warning - if you have a very small protein or segements this might cause an issue. (default 30 from typ with H)
+        Residues are delimited as in _residue_starts, so two residues with the same number are numbered separately, whether adjacent
+        or in different places of the file, and residues without a CA (ligands, ions, water) are renumbered too.
+        Insertion codes are cleared, since the new numbers are unique.
+
         :param start_from: Start counting resnums from this value (default 1)
-        :param reset_resid_with_chain: At a chain break, reset the residue numbering at 1 (default True), otherwise continue with arbitrary numbering
+        :param reset_resid_with_chain: Number each chain from start_from (default True), otherwise continue the numbering across chains
         '''
 
         self.data.reset_index(drop=True, inplace=True)
         self.data["index"] = np.arange(len(self.data))
 
-        CA_idx = np.asarray(self.atomselect("*", "*", "CA", get_index=True)[1])
-        resnum = np.asarray(self.data['resid'][CA_idx])
-        # chain for each resid
-        chains = np.asarray(self.data['chain'][CA_idx])
+        starts = self._residue_starts()
+        chains = self.data["chain"].values[starts]
 
-        # start residue numbering from 1. Change when chain break occurs (in file, not in structure)
-        res_count = 1
-        for cnt, val in enumerate(CA_idx):
-            # maximum AA length is 27 (tryp with hydrogens), set greater than 30 as threashold
-            # full residue index set
-            full_res = self.atomselect(chains[cnt], [resnum[cnt]], "*", get_index=True)[1]
+        # a chain whose residues appear in separate blocks of the file continues its own numbering
+        next_resid = {}
+        new_resid = np.zeros(len(chains), dtype=int)
+        for cnt, c in enumerate(chains):
+            key = c if reset_resid_with_chain else None
+            new_resid[cnt] = next_resid.get(key, start_from)
+            next_resid[key] = new_resid[cnt] + 1
 
-            # now remove residues that have similar properties, but are not the same
-            full_res = np.asarray([x for x in full_res - val if np.abs(x) <= 30]) + val
-
-            # now renumber
-            self.data.loc[full_res, "resid"] = res_count
-
-            try:
-                if reset_resid_with_chain and chains[cnt] != chains[cnt+1]:
-                    res_count = 1
-                else:
-                    res_count += 1 
-            except IndexError:
-                continue
+        self.data["resid"] = new_resid[np.cumsum(starts) - 1]
+        if "icode" in self.data.columns:
+            self.data["icode"] = ""
 
     def reorder_resid(self, idx, chain="A", renumber=True):
         """
         Reorder the internal resid of a PDB structure (retaining the topology) based on the idx list of resid.
-        Number of elements in idx list must == number of resid in the chain.
-        Note there can be no breaks in the resid ordering of the chain, otherwise this fails (will return the input topology)
-        :params idx: List of indices to reorder the internal ordering of a chain based on resid. Doesn't have to be same values as native resid, but must be in desired ascending order. There can be no numeric breaks (i.e., [1, 2, 3, 6, 7, 8, 4, 5] acceptable, [1, 2, 3, 8, 4, 5] is not
+        Number of elements in idx list must == number of resid in the chain. The chain keeps its place in the structure,
+        and the reordering applies to every conformation.
+        :params idx: List of indices to reorder the internal ordering of a chain based on resid. Doesn't have to be same values as native resid (the values are shifted so that the smallest one matches the smallest native resid), but must contain every residue once. There can be no numeric breaks (i.e., [1, 2, 3, 6, 7, 8, 4, 5] acceptable, [1, 2, 3, 8, 4, 5] is not
         :params chain: Chain to apply reordering to
         :params renumber: After restructuring metadata, reorder the resid values
         """
 
-        native_idx = self.atomselect(chain, "*", "CA", get_index=True)[1]
-        native_resid = self.get_subset(native_idx).data["resid"]
+        self.data.reset_index(drop=True, inplace=True)
 
-        # shift idx values so they match the values of the native idx
-        if np.min(native_resid) == np.min(idx):
-            pass
-        elif np.min(native_resid) < np.min(idx):
-            idx -= np.min(native_resid)
-        else:
-            idx += np.min(native_resid)
+        pos = np.flatnonzero(self.data["chain"].values == chain)
+        if len(pos) == 0:
+            raise ValueError("chain %s not found" % chain)
+        resid = self.data["resid"].values[pos]
 
-        native_resid = set(native_resid)
-        # next, create two seperate molecules, one with chain being changed, one without
-        M_sub = self.get_subset(self.atomselect(chain, "*", "*", get_index=True)[1])
-        Rest_idx = self.atomignore(chain, "*", "*", get_index=True)[1]
-        if len(Rest_idx) != 0: # if False, no second chain
-            Rest = self.get_subset(Rest_idx)
+        # shift idx values so they match the values of the native resid
+        idx = np.asarray(idx) + (np.min(resid) - np.min(idx))
+        if len(idx) != len(np.unique(resid)) or set(idx.tolist()) != set(resid.tolist()):
+            raise ValueError("idx must list every residue of chain %s once" % chain)
 
-        M_sub.data["neworder"] = "" # empty column placeholder
-        for i, n in enumerate(idx): # create column with desired sort order
-            M_sub.data.loc[M_sub.data["resid"] == n, "neworder"] = i
+        # the chain's atoms are sorted by the position of their resid in idx, keeping their order within a residue,
+        # and put back into the slots the chain occupied
+        rank = {r: i for i, r in enumerate(idx.tolist())}
+        order = np.arange(len(self.data))
+        order[pos] = pos[np.argsort([rank[r] for r in resid.tolist()], kind="stable")]
 
-        M_sub_reorder = M_sub.data.sort_values(by = ['neworder', 'index'])
-        index_reorder = np.asarray(M_sub_reorder["index"])
-        M_sub_cwd = M_sub.coordinates[:, index_reorder]
-
-        # replace metadata and coordaintes
-        # if separete chains, add back in
-        M_sub.data = M_sub_reorder; M_sub.coordinates = M_sub_cwd
-        if len(Rest_idx) != 0:
-            N = Rest + M_sub
-            self.data = N.data
-            self.coordinates = N.coordinates
-        else:
-            self.data = M_sub_reorder
-            self.coordinates = M_sub_cwd
-
-        # delete temporary neworder column
-        self.data.drop("neworder", axis=1, inplace=True)
+        self.data = self.data.iloc[order].reset_index(drop=True)
+        self.data["index"] = np.arange(len(self.data))
+        self.coordinates = self.coordinates[:, order]
         self.points = self.coordinates.view()[self.current]
 
         if renumber:
@@ -2079,7 +2071,7 @@ class Molecule(Structure):
     def match_residue(self, M2, sec = 3):
         '''
         Compares two bb.Molecule() peptide strands and returns the resids within both peptides when the two are homogenous
-        beyond a certain secondary structure threashold. The default is 5 amino acids (given by sec) in a row must be identical
+        beyond a certain secondary structure threashold. The default is 3 amino acids (given by sec) in a row must be identical
 
         Useful when aligning PDB structures that have been crystallised separately - so one may be missing the odd residue
         or have a few extra at the end.
@@ -2138,8 +2130,11 @@ class Molecule(Structure):
 
         while M1_cnt < len(M1_reslist):
 
-            # Initial check to see if we have a run of good matches (more than coincidence)
-            if np.all(M1_reslist[M1_cnt:(M1_cnt + sec)] == M2_reslist[M2_cnt:(M2_cnt + sec)]):
+            # Initial check to see if we have a run of good matches (more than coincidence).
+            # Near the end of the first strand, the run is as long as the residues left
+            run1 = M1_reslist[M1_cnt:(M1_cnt + sec)]
+            run2 = M2_reslist[M2_cnt:(M2_cnt + sec)]
+            if len(run1) == len(run2) and np.all(run1 == run2):
 
                 while M1_reslist[M1_cnt] == M2_reslist[M2_cnt]:
 
@@ -2193,6 +2188,9 @@ class Molecule(Structure):
         It outputs a panda dataframe with the pqr equivilent information. It requires a datafile forcefield input.
         The default is the amber14sb forcefield file held within the classes/ folder.
 
+        The molecule itself is modified: chain IDs are reassigned by guess_chain_split, and with amber_convert residues are
+        renamed in place to their forcefield names (e.g. NALA, CHID, HIE).
+
         :param ff: name of forcefield text file input that needs to be read to read charges / vdw radii.
         :param amber_convert: If True, will assume forcefield is amber and convert resnames as necessary
         '''
@@ -2218,16 +2216,6 @@ class Molecule(Structure):
                     newresnames = np.array(["N"+resname]*len(idxs))
                     self.data.loc[idxs, ["resname"]] = newresnames
 
-            HIP = np.array(["HIP"] * 18)    # create numpy array structures to possibly reassign later
-            HIE = np.array(["HIE"] * 17)    # create numpy array structures to possibly reassign later
-            HID = np.array(["HID"] * 17)    # create numpy array structures to possibly reassign later
-            NHIP = np.array(["NHIP"] * 20)
-            NHIE = np.array(["NHIE"] * 19)
-            NHID = np.array(["NHID"] * 19)
-            CHIP = np.array(["CHIP"] * 20)
-            CHIE = np.array(["CHIE"] * 18)
-            CHID = np.array(["CHID"] * 19)
-
             start_chain = self.data["resid"].iloc[0]   # This is in case we get 1 or 2 as the first chain ID start
             #end_chain = self.data["resid"].iloc[-1]    #  We don't know the end chain number so we find it here
             start_res = self.data["resname"].iloc[0]
@@ -2240,61 +2228,30 @@ class Molecule(Structure):
                 for N in start_index:
                     self.data["resname"].iloc[N] = 'N' + start_res   # First chain needs to be prefixed with N-termini resname
 
-             # Need to check whether it matches HIE, HID or HIP depending on what protons are present and where
-            his_check = self.data["resname"] == 'HIS'  # Check if we need to do following calculation
-            nhis_check = self.data["resname"] == 'NHIS' # Check for N termini HIS
-            chis_check = self.data["resname"] == 'CHIS'
-            if np.sum(his_check) != 0 or np.sum(nhis_check) != 0 or np.sum(chis_check) != 0:
+            # Need to check whether it matches HIE, HID or HIP depending on what protons are present
+            resnames = self.data["resname"].values
+            if np.any(np.isin(resnames, ["HIS", "NHIS", "CHIS"])):
                 print("WARNING: found residue with name HIS, checking to see what protonation state it is in and reassigning to HIP, HIE or HID.\nYou should check HIS in your pdb file is right to be sure!")
-                for ix in range(len(self.data["resname"])):
-                    H_length = 17 # Set this as it is more common, and also covers the basis to capture HD1 or HE2 later if necessary (as C and O tend to be last a
-                    # N is always the first atom (use that as basis)
-
-                    if self.data["name"][ix] == 'N' and self.data["resname"][ix] == 'HIS':
-
-                        if (self.data["name"][ix:(ix+H_length)] == 'HE2').any() and (self.data["name"][ix:(ix+H_length)] == 'HD1').any(): # If the residue contains HE2 and HD1, it is a HIP residue
-                            H_length = 18     #   number of atoms in histdine (HIP)
-                            self.data.loc[ix:(ix+H_length-1), "resname"] = HIP
-
-                        elif (self.data["name"][ix:(ix+H_length)] == 'HE2').any():
-                            self.data.loc[ix:(ix+H_length-1), "resname"] = HIE
-
-                        elif (self.data["name"][ix:(ix+H_length)] == 'HD1').any():
-                            self.data.loc[ix:(ix+H_length-1), "resname"] = HID
-
-                    elif self.data["name"][ix] == 'N' and self.data["resname"][ix] == 'NHIS':
-                        H_length = 19
-
-                        if (self.data["name"][ix:(ix+H_length)] == 'HE2').any() and (self.data["name"][ix:(ix+H_length)] == 'HD1').any(): # If the residue contains HE2 and HD1, it is a HIP residue
-                            H_length = 20     #   number of atoms in histdine (HIP)
-                            self.data.loc[ix:(ix+H_length-1), "resname"] = NHIP
-
-                        elif (self.data["name"][ix:(ix+H_length)] == 'HE2').any():
-                            self.data.loc[ix:(ix+H_length-1), "resname"] = NHIE
-
-                        elif (self.data["name"][ix:(ix+H_length)] == 'HD1').any():
-                            self.data.loc[ix:(ix+H_length-1), "resname"] = NHID
-
-                    elif self.data["name"][ix] == 'N' and self.data["resname"][ix] == 'CHIS':
-                        H_length = 19
-
-                        if (self.data["name"][ix:(ix+H_length)] == 'HE2').any() and (self.data["name"][ix:(ix+H_length)] == 'HD1').any(): # If the residue contains HE2 and HD1, it is a HIP residue
-                            H_length = 20     #   number of atoms in histdine (HIP)
-                            self.data.loc[ix:(ix+H_length-1), "resname"] = CHIP
-
-                        elif (self.data["name"][ix:(ix+H_length)] == 'HE2').any():
-                            H_length = 18
-                            self.data.loc[ix:(ix+H_length-1), "resname"] = CHIE
-
-                        elif (self.data["name"][ix:(ix+H_length)] == 'HD1').any():
-                            self.data.loc[ix:(ix+H_length-1), "resname"] = CHID
+                names = self.data["name"].values
+                bounds = np.r_[np.flatnonzero(self._residue_starts()), len(resnames)]
+                for a, b in zip(bounds[:-1], bounds[1:]):
+                    if resnames[a] not in ["HIS", "NHIS", "CHIS"]:
+                        continue
+                    has_hd1 = np.any(names[a:b] == "HD1")
+                    has_he2 = np.any(names[a:b] == "HE2")
+                    if has_hd1 and has_he2:
+                        new = "HIP"
+                    elif has_he2:
+                        new = "HIE"
+                    elif has_hd1:
+                        new = "HID"
+                    else:
+                        continue
+                    self.data.iloc[a:b, self.data.columns.get_loc("resname")] = resnames[a][:-3] + new
 
         if len(ff) == 0:
-            folder = os.path.dirname(os.path.realpath(__file__))
-            
-            folder = os.path.dirname(os.path.realpath(__file__))
-            folder = os.sep.join(folder.split(os.sep)[:-1])
-            ff = "%s%sdata%amber14sb.dat" %(folder, os.sep, os.sep)
+            folder = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+            ff = os.path.join(folder, "data", "amber14sb.dat")
 
         if os.path.isfile(ff) != 1:
             raise Exception("ERROR: %s not found!" % ff)
@@ -2528,6 +2485,20 @@ class Molecule(Structure):
         dummy = e_density.c_get_dipole_density(dipole_map = dipole_map, orig = orig, min_val = min_val, V = V, outname = outname, vox_in_window = vox_in_window, eqn = eqn, T = T, P = P, epsilonE = epsilonE, resolution = resolution)
         return dummy
 
+    def _one_letter(self, resname):
+        '''
+        one-letter code of a residue name, reading Amber terminal names (e.g. NALA, CHIE) without their prefix.
+
+        :param resname: residue name
+        :returns: one-letter code, X if unknown
+        '''
+        mapping = self.knowledge["AA_mapping"]
+        if resname in mapping:
+            return mapping[resname]
+        if len(resname) == 4 and resname[0] in "NC" and resname[1:] in mapping:
+            return mapping[resname[1:]]
+        return "X"
+
     def get_fasta(self, chains=True, chain_split=False):
         '''
         Generate the sequence associated with a moleule in a fasta approved format.
@@ -2538,6 +2509,9 @@ class Molecule(Structure):
 
         :param chains: Assign / between chains. Default: True
         :param chain_split: Let biobox decide where the chain splits are (based on structure). Default: False
+
+        Residue names are mapped through knowledge["AA_mapping"], which includes common variants (e.g. MSE, HIE, CYX).
+        Amber terminal names (e.g. NALA, CHIE) are read without their prefix, and unknown residues are written as X.
         '''
 
         seq = ""
@@ -2546,7 +2520,7 @@ class Molecule(Structure):
         if chains:
             for c in np.unique(self.data["chain"]):
                 M = self.get_subset(self._one_per_residue(self.atomselect(c, "*", "CA", get_index=True)[1]))
-                text = "".join([self.knowledge["AA_mapping"][S] for S in M.data["resname"]])
+                text = "".join([self._one_letter(S) for S in M.data["resname"]])
                 if len(seq) == 0:
                     seq = text
                 else:
@@ -2554,7 +2528,7 @@ class Molecule(Structure):
                     seq += text
         else:
             M = self.get_subset(self._one_per_residue(self.atomselect("*", "*", "CA", get_index=True)[1]))
-            text = "".join([self.knowledge["AA_mapping"][S] for S in M.data["resname"]])
+            text = "".join([self._one_letter(S) for S in M.data["resname"]])
             if len(seq) == 0:
                 seq = text
             else:
