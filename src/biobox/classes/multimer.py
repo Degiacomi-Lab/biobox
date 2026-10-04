@@ -20,7 +20,7 @@ from biobox.classes.molecule import Molecule
 
 class Multimer(Polyhedron):
     '''
-    Construct and manipulate a protein assembly composed of several :func:`Molecule <molecule.Molecule>` instances. Subclass of :func:`Polyhedron <polyhedron.Polyhedron>`.
+    Construct and manipulate a protein assembly composed of several :func:`Molecule <biobox.classes.molecule.Molecule>` instances. Subclass of :func:`Polyhedron <biobox.classes.polyhedron.Polyhedron>`.
     '''
 
     def query(self, query_text, get_index=False):
@@ -102,11 +102,11 @@ class Multimer(Polyhedron):
 
     def make_molecule(self, rename_chains=False):
         '''
-        Return a :func:`Molecule <molecule.Molecule>` object containing all the points of the assembly. Chain will indicate different units, original chain value is pushed in segment entry.
+        Return a :func:`Molecule <biobox.classes.molecule.Molecule>` object containing all the points of the assembly. Chain will indicate different units, original chain value is pushed in segment entry.
 
         :param rename_chains: if True, chains of the newly produced molecule will be named from scratch.
 
-        :returns: :func:`Molecule <molecule.Molecule>` object
+        :returns: :func:`Molecule <biobox.classes.molecule.Molecule>` object
         '''
 
         # create new data entry (renumber indices, reassign chain name), keeping every column of the units

@@ -109,8 +109,8 @@ class Cylinder(Structure):
         :param squeeze: create an elliptical base, having axes equal to r and squeeze*r
         :param skew: skewing with respect of vertical axis
         :param radius: size of the individual points composing it
-        :param pts_density_u density: of points along the u angle (using parametric function for cylinder)
-        :param pts_density_h density: of points along the v angle (using parametric function for cylinder)
+        :param pts_density_u: density of points along the u angle (using parametric function for cylinder)
+        :param pts_density_h: density of points along the v angle (using parametric function for cylinder)
         '''
 
         super(Cylinder, self).__init__(r=radius)

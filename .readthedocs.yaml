@@ -1,0 +1,21 @@
+# Read the Docs build configuration for the biobox documentation.
+# Reference: https://docs.readthedocs.io/en/stable/config-file/v2.html
+
+version: 2
+
+build:
+  os: ubuntu-24.04
+  tools:
+    python: "3.12"
+
+sphinx:
+  configuration: docs/source/conf.py
+  fail_on_warning: false
+
+# The package is not installed: docs/source/conf.py puts "src" on sys.path, and the
+# third-party packages that autodoc cannot do without are listed in the requirements
+# file below. The compiled Cython extensions (biobox.lib.fastmath, graph, e_density)
+# are mocked in conf.py, so they do not have to be built here.
+python:
+  install:
+    - requirements: docs/requirements.txt

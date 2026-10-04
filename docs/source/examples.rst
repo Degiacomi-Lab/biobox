@@ -10,14 +10,14 @@ Let's load a molecule, and identify only the backbone atoms of chain A.
 >>> M.import_pdb("protein.pdb")
 >>> pos, idx = M.atomselect("A", "*", ["CA","C","N","O"], get_index=True)
 
-:func:`atomselect <molecule.Molecule.atomselect>` accepts as parameters single strings, lists or "*" as wildcard.
+:func:`atomselect <biobox.classes.molecule.Molecule.atomselect>` accepts as parameters single strings, lists or "*" as wildcard.
 After this call, pos contains the coordinates of all selected atoms, and idx their indices.
-Another way to select atoms, is to use the :func:`atomselect <molecule.Molecule.query>` method. The following call will yield the same result as the atomselect above.
+Another way to select atoms, is to use the :func:`atomselect <biobox.classes.molecule.Molecule.query>` method. The following call will yield the same result as the atomselect above.
 
 >>> pos, idx = M.query('chain == "A" and name == ["CA","C","N","O"]', get_index=True)
 
 The query methods follows the pandas query syntax, and allows to be more expressive. Any column stored in M.data (call M.data.columns) can be addressed.
-Now that we have identified indices of interest, we can save a subset of the initial pdb in a new one, or to create a new :func:`Molecule <molecule.Molecule>` object containing only them.
+Now that we have identified indices of interest, we can save a subset of the initial pdb in a new one, or to create a new :func:`Molecule <biobox.classes.molecule.Molecule>` object containing only them.
 
 >>> M.write_pdb("chainA.pdb", index=idx)
 >>> M2 = M.get_subset(idx)
@@ -28,9 +28,9 @@ Is is possible to set as current another one as follows:
 >>> M.set_current(2)
 >>> pos2, idx2 = M.atomselect("A", "*", ["CA","C","N","O"], get_index=True)
 
-After this new :func:`atomselect <molecule.Molecule.atomselect>` call, idx2 will be equal to idx1 (atom selected are still the same), but pos2 will be different from pos (atoms positions differ between different conformations).
-Unless otherwise specified, :func:`get_subset <molecule.Molecule.get_subset>` selects all the alternative conformations from the atoms of interest.
-:func:`get_subset <molecule.Molecule.get_subset>` can however also be instructed to select a subset of conformations, for instance: 
+After this new :func:`atomselect <biobox.classes.molecule.Molecule.atomselect>` call, idx2 will be equal to idx1 (atom selected are still the same), but pos2 will be different from pos (atoms positions differ between different conformations).
+Unless otherwise specified, :func:`get_subset <biobox.classes.molecule.Molecule.get_subset>` selects all the alternative conformations from the atoms of interest.
+:func:`get_subset <biobox.classes.molecule.Molecule.get_subset>` can however also be instructed to select a subset of conformations, for instance: 
 
 >>> M2 = M.get_subset(idx, conformations=[0,1,2])
 
@@ -41,7 +41,7 @@ protein conformations clustering
 --------------------------------
 
 Suppose you have several PDB files of the same protein (same number of atoms), and you want to cluster them according to a hierarchical clustering.
-We can for example add the coordinates of all pdb files to the same :func:`Molecule <molecule.Molecule>` instance (supposing that they all have the same amount of atoms):
+We can for example add the coordinates of all pdb files to the same :func:`Molecule <biobox.classes.molecule.Molecule>` instance (supposing that they all have the same amount of atoms):
 
 >>> import glob
 >>> files = glob.glob("*pdb")
@@ -72,7 +72,7 @@ First, let's load our protein building block:
 >>> M = biobox.Molecule()
 >>> M.import_pdb("protein.pdb")
 
-Now, let's create a :func:`Multimer <multimer.Multimer>` arranged according to a tetrahedral symmetry.
+Now, let's create a :func:`Multimer <biobox.classes.multimer.Multimer>` arranged according to a tetrahedral symmetry.
 To do so, we have to load information about the tetrahedral scaffold BiobOx will exploit to align six monomers.
 By default this information is stored in the file classes/polyhedron_database.dat, though the user can import his own database.
 
@@ -99,7 +99,7 @@ Now, we want to calculate the RMSD between the created multimers' alpha carbons.
 >>> idxs = P.atomselect("*", "*" ,"*", "CA", get_index=True)[1]
 >>> dist_mat = P.rmsd_distance_matrix(points_indices=idxs)
 
-Note that, as for the case of :func:`atomselect <molecule.Molecule>` objects, a :func:`query <molecule.Multimer.query>` method is also available. The same selection as the command above can be obtained with:
+Note that, as for the case of :func:`atomselect <biobox.classes.molecule.Molecule>` objects, a :func:`query <biobox.classes.multimer.Multimer.query>` method is also available. The same selection as the command above can be obtained with:
 
 >>> idx = M.query('name == "CA"', get_index=True)[1]
 
@@ -124,7 +124,7 @@ Here, we will allow the first vertex to move radially. We will then build a tetr
 >>> P.add_deformation(0)
 >>> P.generate_polyhedron(10, np.array([90,180]), np.array([0,0]), np.array([0,0]), deformation=[5])
 
-Note that :func:`add_deformation <polyhedron.Polyhedron.add_deformation>` also accepts user-defined deformation vectors.
+Note that :func:`add_deformation <biobox.classes.polyhedron.Polyhedron.add_deformation>` also accepts user-defined deformation vectors.
 To see how your scaffold looks like, a pdb file containing the vertices and an associated TCL script for `VMD <http://www.ks.uiuc.edu/Research/vmd>`_ (drawing colored edges, as a function of grouping) can be produced.
 
 >>> P.write_poly_architecture("architecture", scale=10, deformation=[5])
@@ -140,7 +140,7 @@ super coarse-grain modelling
 ----------------------------
 
 In this example, we will arrange a group of cylinders in a ring.
-To do so, we have first to create a single collection of points arranged like a :func:`Cylinder <convex.Cylinder>`.
+To do so, we have first to create a single collection of points arranged like a :func:`Cylinder <biobox.classes.convex.Cylinder>`.
 Unless otherwise specified (using the optional keyword radius), every point composing the cylinder (and any other convex point cloud) will have a radius of 1.4 Angstrom.
 To simulate a smooth surface, one can either increase the points radius, or their density.
 Here, we will use default values, and the resulting cylinder will then be rotated by 45 degrees along the x axis.
@@ -164,14 +164,14 @@ This can be done by extracting all the assembly's points coordinates in a unique
 >>> width = np.max(xyz[:, 0]) - np.min(xyz[:, 0])
 >>> height = np.max(xyz[:, 2]) - np.min(xyz[:, 2])
 
-An alternative way to measure assembly dimensions, it to profit of methods in :func:`Structure <structure.Structure>` class.
-Here we collapse the Assembly's units coordinates in a single :func:`Structure <structure.Structure>` instance.
+An alternative way to measure assembly dimensions, it to profit of methods in :func:`Structure <biobox.classes.structure.Structure>` class.
+Here we collapse the Assembly's units coordinates in a single :func:`Structure <biobox.classes.structure.Structure>` instance.
 
 >>> S = A.make_structure()
 >>> print S.get_size()
 
 In case not all the subunits of the assembly are the same, a list of subunits can be loaded.
-In this case, we will load a :func:`Sphere <convex.Sphere>` (and call it "S") as well as two identical cylinders (called "C1" and "C2").
+In this case, we will load a :func:`Sphere <biobox.classes.convex.Sphere>` (and call it "S") as well as two identical cylinders (called "C1" and "C2").
 
 >>> sphere_radius = 20
 >>> cylinder_radius = 5
