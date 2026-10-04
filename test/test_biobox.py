@@ -917,6 +917,38 @@ class test_structures(unittest.TestCase):
             assert False
 
 
+    def test_convex_formulas(self):
+
+        print("\n> testing convex shape volumes, surfaces and CCS")
+        from scipy.spatial import ConvexHull
+
+        # sphere: the envelope of radius r, so an unsqueezed sphere has sphericity 1
+        S = bb.Sphere(10, radius=1.9)
+        self.assertAlmostEqual(S.get_volume(), 4 * np.pi * 10**3 / 3, places=6)
+        self.assertAlmostEqual(S.get_surface(), 4 * np.pi * 10**2, places=6)
+        self.assertAlmostEqual(S.get_sphericity(), 1.0, places=6)
+        inside = S.check_inclusion(np.array([[0, 0, 0], [9.9, 0, 0], [10.1, 0, 0], [15, 0, 0]]) + S.get_center())
+        self.assertEqual(list(inside), [True, True, False, False])
+        S.squeeze(2.0)
+        self.assertAlmostEqual(S.get_volume(), 4 * np.pi * 10**3 / 3, places=6)
+        self.assertLess(S.get_sphericity(), 1.0)
+
+        # prism: two bases plus the sides, and points on the same radius as the volume
+        P = bb.Prism(10, 20, 6, radius=1.1)
+        r, h, n = P.properties["r"], P.properties["h"], P.properties["n"]
+        side = 2 * r * np.sin(np.pi / n)
+        base = n * side * (r * np.cos(np.pi / n)) / 2
+        self.assertAlmostEqual(P.get_surface(), 2 * base + n * side * h, places=6)
+        self.assertAlmostEqual(P.get_volume(), base * h, places=6)
+        self.assertAlmostEqual(np.max(np.linalg.norm(P.points[:, :2], axis=1)), r, places=6)
+        hull = ConvexHull(P.points)
+        self.assertAlmostEqual(hull.volume / P.get_volume(), 1.0, delta=0.02)
+
+        # cylinder: CCS inflates every face by the gas radius
+        C = bb.Cylinder(10, 20, radius=1.1)
+        r1, h = C.properties["r1"], C.properties["h"]
+        self.assertAlmostEqual(C.ccs(gas=1), (2 * np.pi * (r1 + 1)**2 + 2 * np.pi * (r1 + 1) * (h + 2)) / 4, places=6)
+
     #create all convex shapes
     def test_shapes(self):
 
