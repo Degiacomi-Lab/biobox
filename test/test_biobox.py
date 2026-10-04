@@ -1065,13 +1065,13 @@ class test_structures(unittest.TestCase):
         A.align_axes()
         np.testing.assert_allclose(A.get_principal_axes(), np.eye(3), atol=1e-6)
 
-        # assemblies move the current conformation of their units
+        # assemblies move the current conformation of their units (that of the loaded structure)
         P = bb.Assembly()
         P.load(S, 2)
         P.translate(1, 0, 0)
         for u in P.unit:
-            np.testing.assert_allclose(u.coordinates[0], S.coordinates[0] + [1, 0, 0])
-            np.testing.assert_allclose(u.coordinates[1:], S.coordinates[1:])
+            np.testing.assert_allclose(u.coordinates[1], S.coordinates[1] + [1, 0, 0])
+            np.testing.assert_allclose(u.coordinates[untouched], S.coordinates[untouched])
 
     def test_structure_construction(self):
 
