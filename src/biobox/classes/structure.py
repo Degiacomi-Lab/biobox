@@ -21,17 +21,20 @@ class Structure(object):
     A Structure consists of an ensemble of points in 3D space, and metadata associated to each of them.
     '''
 
-    def __init__(self, p=np.array([[], []]), r=1.0):
+    def __init__(self, p=None, r=1.0):
         '''
         Point coordinates and properties data structures are first initialized.
         properties is a dictionary initially containing an entry for 'center' (center of geometry) and 'radius' (average radius of points).
 
-        :param p: coordinates data structure as a mxnx3 numpy array (alternative conformation x atom x 3D coordinate). nx3 numpy array can be supplied, in case a single conformation is present.
-        :param r: average radius of every point in dataset (float), or radius of every point (numpy array)
+        :param p: coordinates data structure as a mxnx3 numpy array (alternative conformation x atom x 3D coordinate). nx3 numpy array can be supplied, in case a single conformation is present. If not provided, the Structure is empty.
+        :param r: radius of every point in dataset (float), or radius of each point (list or numpy array, one value per point)
         '''
-        if p.ndim == 3:
-            self.coordinates = p
+        if p is None:
+            self.coordinates = np.empty((0, 0, 3))
             '''numpy array containing an ensemble of alternative coordinates in 3D space'''
+
+        elif p.ndim == 3:
+            self.coordinates = p
 
         elif p.ndim == 2:
             self.coordinates = np.array([p])
@@ -41,8 +44,7 @@ class Structure(object):
         self.current = 0
         '''index of currently selected conformation'''
 
-        #self.points = self.coordinates[self.current]
-        self.points = self.coordinates.view()[self.current]
+        self._point_to_current()
         '''pointer to currently selected conformation'''
 
         self.properties = {}
@@ -50,14 +52,24 @@ class Structure(object):
 
         self.properties['center'] = self.get_center()
 
-        idx = np.arange(len(self.points))
-        if isinstance(r, list) or type(r).__module__ == 'numpy':
-            if len(r) > 0:
-                self.data = pd.DataFrame(r, index=idx, columns=["radius"])
+        if np.ndim(r) == 0:
+            rad = float(r) * np.ones(len(self.points))
         else:
-                rad = r*np.ones(len(self.points))
-                self.data = pd.DataFrame(rad, index=idx, columns=["radius"])
-                ''' metadata about each atom (pandas Dataframe)'''
+            rad = np.asarray(r, dtype=float)
+            if len(rad) != len(self.points):
+                raise Exception("ERROR: %s radii provided for %s points" % (len(rad), len(self.points)))
+
+        self.data = pd.DataFrame(rad, index=np.arange(len(self.points)), columns=["radius"])
+        ''' metadata about each atom (pandas Dataframe)'''
+
+    def _point_to_current(self):
+        '''
+        point self.points to the current frame (an empty array if there are no frames).
+        '''
+        if len(self.coordinates) == 0:
+            self.points = np.empty((0, 3))
+        else:
+            self.points = self.coordinates.view()[self.current]
 
     def __len__(self, dim="atoms"):
         if dim == "atoms":
@@ -74,8 +86,7 @@ class Structure(object):
         '''
         if pos < self.coordinates.shape[0]:
             self.current = pos
-            #self.points = self.coordinates[self.current]
-            self.points = self.coordinates.view()[self.current]
+            self._point_to_current()
             self.properties['center'] = self.get_center()
         else:
             raise Exception("ERROR: position %s requested, but only %s conformations available" %(pos, self.coordinates.shape[0]))
@@ -87,7 +98,7 @@ class Structure(object):
         :param indices: indices of points to select. If none is provided, all points coordinates are returned.
         :returns: coordinates of all points indexed by the provided indices list, or all of them if no list is provided.
         '''
-        if indices == []:
+        if len(indices) == 0:
             return self.points
         else:
             return self.points[indices]
@@ -99,8 +110,7 @@ class Structure(object):
         :param coords: array of 3D points
         '''
         self.coordinates[self.current] = deepcopy(coords)
-        #self.points = self.coordinates[self.current]
-        self.points = self.coordinates.view()[self.current]
+        self._point_to_current()
 
     def add_xyz(self, coords):
         '''
@@ -120,17 +130,19 @@ class Structure(object):
             self.set_current(0)
 
         elif self.coordinates.size > 0 and coords.ndim == 3:
+            first = len(self.coordinates)
             self.coordinates = np.concatenate((self.coordinates, coords))
             # set new frame to the first of the newly inserted ones
-            self.set_current(self.current + 1)
+            self.set_current(first)
 
         elif self.coordinates.size > 0 and coords.ndim == 2:
+            first = len(self.coordinates)
             self.coordinates = np.concatenate((self.coordinates, np.array([coords])))
             # set new frame to the first of the newly inserted ones
-            self.set_current(self.current + 1)
+            self.set_current(first)
 
         else:
-            raise Exception("ERROR: expected numpy array with 2 or three dimensions, but %s dimensions were found" %np.ndim)
+            raise Exception("ERROR: expected numpy array with 2 or three dimensions, but %s dimensions were found" %coords.ndim)
 
 
     def delete_xyz(self, index):
@@ -151,14 +163,14 @@ class Structure(object):
         '''
         remove all the coordinates and empty metadata
         '''
-        self.coordinates = np.array([[[], []], [[], []]])
-        #self.points = self.coordinates[0]
-        self.points = self.coordinates.view()[0]
+        self.coordinates = np.empty((0, 0, 3))
+        self.current = 0
+        self._point_to_current()
         self.data = pd.DataFrame(index=[], columns=[])
 
     def translate(self, x, y, z):
         '''
-        translate the whole structure by a given amount.
+        translate the whole structure (all frames) by a given amount.
 
         :param x: translation around x axis
         :param y: translation around y axis
@@ -171,18 +183,17 @@ class Structure(object):
             self.get_center()
 
         # translate all points
-        self.properties['center'][0] += x
-        self.properties['center'][1] += y
-        self.properties['center'][2] += z
+        self.properties['center'] = self.properties['center'] + np.array([x, y, z], dtype=float)
 
         # move every frame with first :
         self.coordinates[:, :, 0] += x
         self.coordinates[:, :, 1] += y
         self.coordinates[:, :, 2] += z
+        self._point_to_current()
 
     def rotate(self, x, y, z):
         '''
-        rotate the structure provided angles of rotation around x, y and z axes (in degrees).
+        rotate the whole structure (all frames) provided angles of rotation around x, y and z axes (in degrees).
 
         This is a rotation with respect of the origin.
         Make sure that the center of your structure is at the origin, if you don't want to get a translation as well!
@@ -211,14 +222,12 @@ class Structure(object):
 
     def apply_transformation(self, M):
         '''
-        apply a 3x3 transformation matrix
+        apply a 3x3 transformation matrix to the whole structure (all frames), as points multiplied on the right (p' = p M).
 
         :param M: 3x3 transformation matrix (2D numpy array)
         '''
-        self.coordinates[self.current, :, :] = np.dot(self.points, M)
-        # new memory allocated? Pointer needs to be moved
-        #self.points = self.coordinates[self.current]
-        self.points = self.coordinates.view()[self.current]
+        self.coordinates[:] = np.dot(self.coordinates, M)
+        self._point_to_current()
 
     def get_center(self):
         '''
@@ -229,7 +238,7 @@ class Structure(object):
         else:
             self.properties['center'] = np.array([0.0, 0.0, 0.0])
 
-        return self.properties['center']
+        return self.properties['center'].copy()
 
     def center_to_origin(self):
         '''
@@ -275,27 +284,15 @@ class Structure(object):
 
     def get_principal_axes(self):
         '''
-        compute Structure's principal axes.
+        compute Structure's principal axes, from the inertia tensor of the current frame about its center of geometry.
 
-        :returns: 3x3 numpy array, containing the 3 principal axes ranked from smallest to biggest.
+        The sign of the first two axes is chosen so that their largest component is positive, and the third axis is their cross product, so that the three axes form a right-handed frame (a rotation matrix).
+
+        :returns: 3x3 numpy array, containing the 3 principal axes as rows, ranked from smallest to biggest moment of inertia.
         '''
-        # method taken from chempy source code, geometry.py, method
-        # getMomentOfInertiaTensor()
-
-        # compute moment of inertia tensor
-        I0 = np.zeros((3, 3), np.float64)
-        for i in range(0, len(self.points), 1):
-            mass = 1  # self.mass[atom] / constants.Na
-            I0[0, 0] += mass * (self.points[i, 1] * self.points[i, 1] + self.points[i, 2] * self.points[i, 2])
-            I0[1, 1] += mass * (self.points[i, 0] * self.points[i, 0] + self.points[i, 2] * self.points[i, 2])
-            I0[2, 2] += mass * (self.points[i, 0] * self.points[i, 0] + self.points[i, 1] * self.points[i, 1])
-            I0[0, 1] -= mass * self.points[i, 0] * self.points[i, 1]
-            I0[0, 2] -= mass * self.points[i, 0] * self.points[i, 2]
-            I0[1, 2] -= mass * self.points[i, 1] * self.points[i, 2]
-
-        I0[1, 0] = I0[0, 1]
-        I0[2, 0] = I0[0, 2]
-        I0[2, 1] = I0[1, 2]
+        # compute moment of inertia tensor (unit masses) about the center of geometry
+        pts = self.points - np.mean(self.points, axis=0)
+        I0 = np.identity(3) * np.sum(pts * pts) - np.dot(pts.T, pts)
 
         # Calculate and return the principal moments of inertia and corresponding
         # principal axes for the current geometry. The inertia tensor is symmetric, so eigh
@@ -308,15 +305,16 @@ class Structure(object):
 
         # the sign of an eigenvector is arbitrary and depends on the linear algebra library.
         # Fix it (largest component positive), so that align_axes is reproducible across
-        # platforms
-        largest = e_vectors[np.arange(3), np.argmax(np.abs(e_vectors), axis=1)]
-        e_vectors = e_vectors * np.sign(largest)[:, np.newaxis]
+        # platforms, and complete a right-handed frame with the cross product
+        largest = e_vectors[np.arange(2), np.argmax(np.abs(e_vectors[:2]), axis=1)]
+        e_vectors[:2] = e_vectors[:2] * np.sign(largest)[:, np.newaxis]
+        e_vectors[2] = np.cross(e_vectors[0], e_vectors[1])
 
         return e_vectors
 
     def align_axes(self):
         '''
-        Align structure on its principal axes.
+        Align structure on the principal axes of its current frame. The same rototranslation is applied to all frames.
 
         First principal axis aligned along x, second along y and third along z.
         '''
@@ -385,28 +383,19 @@ class Structure(object):
 
         fout = open(filename, "w")
 
+        idx_val = [self._hybrid36(i + 1) for i in range(self.coordinates.shape[1])]
+
         for f in frames:
 
-            # Build our hexidecimal array if num. of atoms > 99999
-            idx_val = np.arange(1, self.coordinates.shape[1] + 1, 1)
-
-            if len(idx_val) > 99999:
-                vhex = np.vectorize(hex)
-                idx_val = vhex(idx_val)   # convert index values to hexidecimal
-                idx_val = [num[2:] for num in idx_val]  # remove 0x at start of hexidecimal number
-
             for i in range(0, len(self.coordinates[0]), 1):
-                #if i > 99999:
-                #    nb = hex(i).split('x')[1]
-                #else:
-                #    nb = str(i)
 
+                # occupancy 1, radius in the beta factor column
                 l = (idx_val[i], "SPH", "SPH", "A", np.mod(i, 9999),
                      self.coordinates[f, i, 0],
                      self.coordinates[f, i, 1],
                      self.coordinates[f, i, 2],
-                     self.data['radius'].values[i],
-                     1.0, "Z")
+                     1.0,
+                     self.data['radius'].values[i], "Z")
                 L = 'ATOM  %5s  %-4s%-4s%1s%4i    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % l
                 fout.write(L)
 
@@ -414,21 +403,43 @@ class Structure(object):
 
         fout.close()
 
+    @staticmethod
+    def _hybrid36(value, width=5):
+        '''
+        encode a positive integer in hybrid-36, the PDB convention for numbers too large for their field.
+
+        Numbers that fit the field are written in decimal, larger ones in base 36 starting with a letter (e.g. 100000 is A0000 for width 5).
+
+        :param value: integer to encode
+        :param width: width of the field
+        :returns: string of at most width characters
+        '''
+        if value < 10**width:
+            return str(value)
+
+        block = 26 * 36**(width - 1)
+        value -= 10**width
+        for digits in ["0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", "0123456789abcdefghijklmnopqrstuvwxyz"]:
+            if value < block:
+                value += 10 * 36**(width - 1)
+                code = ""
+                while value > 0:
+                    value, r = divmod(value, 36)
+                    code = digits[r] + code
+                return code
+            value -= block
+
+        raise Exception("ERROR: %s is too large for a hybrid-36 field of width %s" % (value, width))
+
     def convex_hull(self):
         '''
-        compute Structure's convex Hull using QuickHull algorithm.
-
-        .. note:: Qhull available only on scipy >=0.12
+        compute the convex hull of the current frame using the QuickHull algorithm.
 
         :returns: :func:`Structure <structure.Structure>` object, containing the coordinates of vertices composing the convex hull
         '''
-        try:
-            from scipy.spatial import ConvexHull
-            verts = ConvexHull(self.points)
-            return Structure(verts)
-
-        except Exception as e:
-            raise Exception("Quick Hull algorithm available in scipy >=0.12!")
+        from scipy.spatial import ConvexHull
+        hull = ConvexHull(self.points)
+        return Structure(self.points[hull.vertices])
 
     def get_density(self, step=1.0, sigma=1.0, kernel_half_width=5, buff=3):
         '''
@@ -519,12 +530,13 @@ class Structure(object):
 
         return b
 
-    def rmsf(self, indices=-1, step=1):
+    def rmsf(self, indices=-1):
         '''
-        compute Root Mean Square Fluctuation (RMSF) of selected atoms.
+        compute Root Mean Square Fluctuation (RMSF) of selected atoms over all conformations: the square root of the mean squared displacement of each point from its mean position.
+
+        No superposition is performed, so conformations should be aligned beforehand (e.g. with :func:`rmsd_one_vs_all <structure.Structure.rmsd_one_vs_all>` and align=True).
 
         :param indices: indices of points for which RMSF will be calculated. If no indices list is provided, RMSF of all points will be calculated.
-        :param step: timestep between two conformations (useful when using conformations extracted from molecular dynamics)
         :returns: numpy aray with RMSF of all provided indices, in the same order
         '''
 
@@ -532,8 +544,8 @@ class Structure(object):
             raise Exception("ERROR: to compute RMSF several conformations must be available!")
 
         # if no index is provided, compute RMSF of all points
-        if indices == -1:
-            indices = np.linspace(0, len(self.coordinates[0, :, 0]) - 1, len(self.coordinates[0, :, 0])).astype(int)
+        if np.ndim(indices) == 0 and indices == -1:
+            indices = np.arange(self.coordinates.shape[1])
 
         means = np.mean(self.coordinates[:, indices], axis=0)
 
@@ -544,7 +556,7 @@ class Structure(object):
 
         # compute square root of sum of mean squared distances
         dist = np.array(d)
-        return np.sqrt(np.sum(dist, axis=0) / (float(self.coordinates.shape[0]) * step))
+        return np.sqrt(np.sum(dist, axis=0) / float(self.coordinates.shape[0]))
 
     def pca(self, components, indices=-1):
         '''
@@ -559,9 +571,9 @@ class Structure(object):
         from sklearn.decomposition import PCA
 
         # define conformational space (flatten coordinates of desired atoms
-        if indices != -1:
+        if not (np.ndim(indices) == 0 and indices == -1):
             X = self.coordinates[:, indices].reshape(
-                     (len(self.coordinates), len(indices) * 3))
+                     (len(self.coordinates), -1))
         else:
             X = self.coordinates.reshape(
                      (self.coordinates.shape[0], self.coordinates.shape[1]*3))
@@ -635,14 +647,11 @@ class Structure(object):
                     S[-1] = -S[-1]
                     V[:, -1] = -V[:, -1]
 
-                # if alignement is required, move pointer to current frame, and
-                # apply rotation matrix
+                # if alignement is required, rotate frame i about its center and move it
+                # onto the center of the reference frame
                 if align:
-                    self.set_current(i)
-                    self.coordinates[i] -= COM2 # should center on origin
                     rotation = np.dot(V, Wt)
-                    self.apply_transformation(rotation)
-                    self.coordinates[i] += COM1 # now should center on reference frame
+                    self.coordinates[i] = np.dot(self.coordinates[i] - COM2, rotation) + COM1
 
                 rmsdval = E0 - (2.0 * sum(S))
                 rmsdval = np.sqrt(abs(rmsdval / L))
