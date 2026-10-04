@@ -138,7 +138,7 @@ cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_
     :param dipole_map: Dimensions of (t, x, y, z, [v_x, v_y, v_z]) where [v_x, v_y, v_z] is the vector dipole values for points x, y, z at time t.
     :param orig: Coordinate system (x, y, z) we measure our dipole from. MUST be the same as that used in get_dipole_map
     :param min_val: Minimum coorinates (x, y, z) from which to define our origin. Wrong choice could cause a shift in real space of the density.
-    :param vox_in_window: Number of voxels to define our gaussian from. Essentially the number of voxels within our sliding window
+    :param vox_in_window: Width of the sliding window in voxels. Each voxel's function is sampled at whole-voxel offsets within half this width of the voxel centre, i.e. 2*floor(vox_in_window/2)+1 points per axis
     :param V: The partial specific volume for the protein (worth investigating further). Units of m^3.
     :param outname: Filename for output dx file.
     :param eqn: Type of equation used for convolution. OPtions are Gaussian, Slater or Lorentzian
@@ -201,34 +201,24 @@ cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_
     
         # Create 3D function kernal
 
-        mesh = np.arange(0, window_size+0.0001, window_size/vox_in_window) - window_size / 2.
-     
-        x, y, z = np.meshgrid(mesh, mesh, mesh)
+        # kernel sampled at whole-voxel offsets from the voxel centre, within the window
+        # get_dipole_map uses for each voxel, [-window_size/2, window_size/2]
+        half = int(np.floor(vox_in_window / 2. + 1e-6))
+        mesh = np.arange(-half, half + 1) * resolution
+
+        x, y, z = np.meshgrid(mesh, mesh, mesh, indexing='ij')
+        r2 = x * x + y * y + z * z
 
         # We should have a buffer (default is 2 * window_size) at the edges of our box, so should be able to sum contributing gaussians across entire system.
         sigmanonzero = np.nonzero(sigma) #  Get only contributing sigmas for faster calculations.
-        if len(mesh) % 2. == 0.: # Number is even (no point doing this check later - saves time)
-            for i in range(np.shape(sigmanonzero)[1]):
-                if eqn == 'gauss':
-                    gauss = np.exp(-(x * x + y * y + z * z) / (2. * sigma[sigmanonzero[0][i]][sigmanonzero[1][i]][sigmanonzero[2][i]]**2))   # Create gaussian with specific sigma from e density
-                elif eqn == 'slater':
-                    gauss = np.exp(-np.sqrt((x * x + y * y + z * z)) / (2. * sigma[sigmanonzero[0][i]][sigmanonzero[1][i]][sigmanonzero[2][i]]**2))   # Create Slater functional with specific sigma from e density
-                pts_range = int(((len(mesh) + 1.) / 2.))
-                # an error of 'operands could not be broadcast together with shapes (4,3,4) (4,4,4) (4,3,4) ' etc. indicates a lack of buffer zone in the coordinates
-                # so fix in build_maps.py
-                pts[sigmanonzero[0][i] - pts_range : sigmanonzero[0][i] + pts_range ,
-                    sigmanonzero[1][i] - pts_range : sigmanonzero[1][i] + pts_range ,
-                    sigmanonzero[2][i] - pts_range : sigmanonzero[2][i] + pts_range ] += gauss # move 1 ahead duye to python numbering
-        else:  # number is odd
-            for i in range(np.shape(sigmanonzero)[1]):
-                if eqn == 'gauss':
-                    gauss = np.exp(-(x * x + y * y + z * z) / (2. * sigma[sigmanonzero[0][i]][sigmanonzero[1][i]][sigmanonzero[2][i]]**2))   # Create gaussian with specific sigma from e density
-                elif eqn == 'slater':
-                    gauss = np.exp(-np.sqrt((x * x + y * y + z * z)) / (2. * sigma[sigmanonzero[0][i]][sigmanonzero[1][i]][sigmanonzero[2][i]]**2))   # Create Slater functional with specific sigma from e density
-                pts_range = int(((len(mesh)) / 2.))
-                pts[sigmanonzero[0][i] - pts_range : sigmanonzero[0][i] + pts_range + 1,
-                    sigmanonzero[1][i] - pts_range : sigmanonzero[1][i] + pts_range + 1,
-                    sigmanonzero[2][i] - pts_range : sigmanonzero[2][i] + pts_range + 1] += gauss # move 1 ahead duye to python numbering
+        for i in range(np.shape(sigmanonzero)[1]):
+            ix, iy, iz = sigmanonzero[0][i], sigmanonzero[1][i], sigmanonzero[2][i]
+            if eqn == 'gauss':
+                gauss = np.exp(-r2 / (2. * sigma[ix][iy][iz]**2))   # Create gaussian with specific sigma from e density
+            elif eqn == 'slater':
+                gauss = np.exp(-np.sqrt(r2) / (2. * sigma[ix][iy][iz]**2))   # Create Slater functional with specific sigma from e density
+            # an error of 'operands could not be broadcast together' indicates a lack of buffer zone in the coordinates
+            pts[ix - half : ix + half + 1, iy - half : iy + half + 1, iz - half : iz + half + 1] += gauss
     
     except MemoryError:
         print("Size of protein is too large for electron density map production. Breaking calculations down into smaller chunks (may take longer, or not work if data structure too big).\n")
@@ -268,33 +258,24 @@ cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_
 
         # Create 3D function kernal
 
-        #mesh = np.linspace(0, window_size, vox_in_window) - window_size / 2.
-        mesh = np.arange(0, window_size+0.0001, window_size/vox_in_window) - window_size / 2.
-            
-        x, y, z = np.meshgrid(mesh, mesh, mesh)
+        # kernel sampled at whole-voxel offsets from the voxel centre, within the window
+        # get_dipole_map uses for each voxel, [-window_size/2, window_size/2]
+        half = int(np.floor(vox_in_window / 2. + 1e-6))
+        mesh = np.arange(-half, half + 1) * resolution
+
+        x, y, z = np.meshgrid(mesh, mesh, mesh, indexing='ij')
+        r2 = x * x + y * y + z * z
 
         # We should have a buffer (default is 2 * window_size) at the edges of our box, so should be able to sum contributing gaussians across entire system.
         sigmanonzero = np.nonzero(sigma) #  Get only contributing sigmas for faster calculations.
-        if len(mesh) % 2. == 0.: # Number is even (no point doing this check later - saves time)
-            for i in range(np.shape(sigmanonzero)[1]):
-                if eqn == 'gauss':
-                    gauss = np.exp(-(x * x + y * y + z * z) / (2. * sigma[sigmanonzero[0][i]][sigmanonzero[1][i]][sigmanonzero[2][i]]**2))   # Create gaussian with specific sigma from e density
-                elif eqn == 'slater':
-                    gauss = np.exp(-np.sqrt((x * x + y * y + z * z)) / (2. * sigma[sigmanonzero[0][i]][sigmanonzero[1][i]][sigmanonzero[2][i]]**2))   # Create Slater functional with specific sigma from e density
-                pts_range = int(((len(mesh) + 1.) / 2.))
-                pts[sigmanonzero[0][i] - pts_range : sigmanonzero[0][i] + pts_range ,
-                    sigmanonzero[1][i] - pts_range : sigmanonzero[1][i] + pts_range ,
-                    sigmanonzero[2][i] - pts_range : sigmanonzero[2][i] + pts_range ] += gauss # move 1 ahead duye to python numbering
-        else:  # number is odd
-            for i in range(np.shape(sigmanonzero)[1]):
-                if eqn == 'gauss':
-                    gauss = np.exp(-(x * x + y * y + z * z) / (2. * sigma[sigmanonzero[0][i]][sigmanonzero[1][i]][sigmanonzero[2][i]]**2))   # Create gaussian with specific sigma from e density
-                elif eqn == 'slater':
-                    gauss = np.exp(-np.sqrt((x * x + y * y + z * z)) / (2. * sigma[sigmanonzero[0][i]][sigmanonzero[1][i]][sigmanonzero[2][i]]**2))   # Create Slater functional with specific sigma from e density
-                pts_range = int(((len(mesh)) / 2.))
-                pts[sigmanonzero[0][i] - pts_range : sigmanonzero[0][i] + pts_range + 1,
-                    sigmanonzero[1][i] - pts_range : sigmanonzero[1][i] + pts_range + 1,
-                    sigmanonzero[2][i] - pts_range : sigmanonzero[2][i] + pts_range + 1] += gauss # move 1 ahead duye to python numbering
+        for i in range(np.shape(sigmanonzero)[1]):
+            ix, iy, iz = sigmanonzero[0][i], sigmanonzero[1][i], sigmanonzero[2][i]
+            if eqn == 'gauss':
+                gauss = np.exp(-r2 / (2. * sigma[ix][iy][iz]**2))   # Create gaussian with specific sigma from e density
+            elif eqn == 'slater':
+                gauss = np.exp(-np.sqrt(r2) / (2. * sigma[ix][iy][iz]**2))   # Create Slater functional with specific sigma from e density
+            # an error of 'operands could not be broadcast together' indicates a lack of buffer zone in the coordinates
+            pts[ix - half : ix + half + 1, iy - half : iy + half + 1, iz - half : iz + half + 1] += gauss
     
     # prepare density structure export
   
