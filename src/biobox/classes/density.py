@@ -164,9 +164,41 @@ class Density(Structure):
         delta = self.properties['delta'] / 2
         radius = self.properties['radius'] * 2 / 3
 
-        # oversampled voxel i sits at origin + i * delta / 2
-        points = np.transpose(np.where(oversampled_data > thresh)) * np.diag(delta) + self.properties['origin']
+        # define scaling to shrink everything by a size equal to spheres radius
+        idx = np.transpose(np.where(oversampled_data > thresh))
+        scaling = 8.0 / 3.0
+        scale = self._shrink_scale(idx, np.diag(delta), radius * scaling, unit_voxel_branch=False)
+
+        # create structure data (ensemble of points and their center, and store
+        # its geometric center)
+        points = idx * scale + self.properties['origin'] + np.ones(3) * self.properties['radius'] * 2 / 3
         return points, radius
+
+    @staticmethod
+    def _shrink_scale(idx, delta, shrink, unit_voxel_branch=True):
+        '''
+        per-axis scaling of voxel indices that shrinks the points arrangement by the size of its spheres.
+
+        Along an axis, the scaling is (delta - 1) / (scaled_size - size) * (scaled_size - shrink), where size is the extent of the indices and scaled_size the same extent in Angstrom.
+        With unit_voxel_branch, an axis whose voxel size is 1 is not scaled. An axis along which all indices are equal has no extent to shrink, and is scaled by its voxel size.
+
+        :param idx: voxel indices, as an (n, 3) array
+        :param delta: voxel size along each axis
+        :param shrink: length the arrangement is shrunk by, in Angstrom
+        :param unit_voxel_branch: if True, axes with voxel size 1 are left unscaled
+        :returns: scaling along each axis
+        '''
+        size = np.max(idx, axis=0) - np.min(idx, axis=0)
+        scaled_size = np.max(idx * delta, axis=0) - np.min(idx * delta, axis=0)
+        scale = np.zeros(3)
+        for a in range(3):
+            if unit_voxel_branch and delta[a] == 1:
+                scale[a] = 1.0
+            elif scaled_size[a] - size[a] == 0:
+                scale[a] = delta[a]
+            else:
+                scale[a] = (delta[a] - 1.0) / (scaled_size[a] - size[a]) * (scaled_size[a] - shrink)
+        return scale
 
     def get_thresh_from_sigma(self, val):
         '''
@@ -204,8 +236,13 @@ class Density(Structure):
         if noise_filter >= 1 or noise_filter < 0:
             raise IOError("noise_filter should be between 0 and 1")
 
-        # one point per voxel above threshold: voxel i sits at origin + i * delta
-        points = np.transpose(np.where(self.properties['density'] > thresh)) * np.diag(self.properties['delta']) + self.properties['origin']
+        # define scaling to shrink everything by a size equal to spheres radius
+        idx = np.transpose(np.where(self.properties['density'] > thresh))
+        scale = self._shrink_scale(idx, np.diag(self.properties['delta']), self.properties['radius'])
+
+        # create structure data (ensemble of points and their center, and store
+        # its geometric center)
+        points = idx * scale + self.properties['origin'] + np.ones(3) * self.properties['radius']
 
         # remove previous points arrangement, and create new one (necessary,
         # since the amount of points will change, and cannot therefore be

@@ -235,6 +235,7 @@ class Molecule(Structure):
         Models are split according to ENDMDL and END statement.
         All alternative coordinates are expected to have the same atoms.
         After loading, the first model (M.current_model=0) will be set as active.
+        The chain name is column 22, unless the segment identifier (columns 73-76) has two characters, the first of which is that chain: the segment identifier is then the chain name, as written by :func:`write_pdb <biobox.classes.molecule.Molecule.write_pdb>`.
 
         :param pdb: PDB filename
         :param include_hetatm: if True, HETATM will be included (they get skipped if False)
@@ -352,7 +353,7 @@ class Molecule(Structure):
                     w.append(line[6:12].strip())  # extract atom index
                     w.append(line[12:16].strip())  # extract atomname
                     w.append(line[17:21].strip())  # extract resname
-                    w.append(line[21].strip())  # extract chain name
+                    w.append(self._parse_pdb_chain(line))  # extract chain name
                     w.append(self._parse_resid(line[22:26]))  # extract residue ID
                     alt.append(line[16].strip())  # extract alternate location indicator
                     ins.append(line[26].strip())  # extract insertion code
@@ -898,9 +899,15 @@ class Molecule(Structure):
         # convolve point mesh with 3d coulomb hyperbola
         e = scipy.signal.fftconvolve(d, kernel, mode='same')
 
-        # define mass-occupied space of the selected atoms, on the same grid
+        # define mass-occupied space of all atoms, on the same grid. The grid is padded by the
+        # kernel width, so that atoms just outside it still contribute their density, then cropped
         from biobox.classes.density import Density
-        dens = self._vdw_density_on_grid(idx, axes, step, vdw_kernel_half_width)
+        pad = vdw_kernel_half_width
+        padded = [np.concatenate((ax[0] - step * np.arange(pad, 0, -1), ax, ax[-1] + step * np.arange(1, pad + 1))) for ax in axes]
+        lo = np.array([ax[0] for ax in padded]) - step / 2.0
+        hi = np.array([ax[-1] for ax in padded]) + step / 2.0
+        inside = np.where(np.all((self.points >= lo) & (self.points <= hi), axis=1))[0]
+        dens = self._vdw_density_on_grid(inside, padded, step, vdw_kernel_half_width)[pad:-pad, pad:-pad, pad:-pad]
         mass_density = Density()
         mass_density.properties['density'] = dens
         mass_density.properties['size'] = np.array(dens.shape)
@@ -945,7 +952,7 @@ class Molecule(Structure):
         build a molecule made of copies of chains of this molecule, each transformed as x' = Rx + t.
 
         The first copy of a chain keeps its name, and later copies take chain names not used in this molecule, with one character first and two characters once those run out.
-        All conformations are transformed.
+        Only the current conformation is transformed, and the new molecule holds a single conformation.
 
         :param groups: list of (chains, matrices) pairs, where chains is a list of chain names (None for all chains) and matrices is an array of 3x4 [R|t] matrices
         :returns: new Molecule
@@ -978,7 +985,7 @@ class Molecule(Structure):
                 continue
 
             for m in mats:
-                xyz.append(np.dot(self.coordinates[:, idx], m[:, 0:3].T) + m[:, 3])
+                xyz.append(np.dot(self.points[idx], m[:, 0:3].T) + m[:, 3])
 
                 d = self.data.iloc[idx].copy()
                 names = {}
@@ -999,8 +1006,7 @@ class Molecule(Structure):
         M.knowledge = deepcopy(self.knowledge)
         M.data = pd.concat(data, ignore_index=True)
         M.data["index"] = np.arange(len(M.data))
-        M.add_xyz(np.concatenate(xyz, axis=1))
-        M.set_current(self.current)
+        M.add_xyz(np.concatenate(xyz, axis=0))
 
         return M
 
@@ -1531,6 +1537,39 @@ class Molecule(Structure):
         return int(str(resid)[-4:])
 
     @staticmethod
+    def _parse_pdb_chain(line):
+        '''
+        chain name of an ATOM or HETATM line.
+
+        A two-character segment identifier (columns 73-76) whose first character is the chain in column 22 holds the full chain name.
+
+        :param line: ATOM or HETATM line
+        :returns: chain name
+        '''
+        chain = line[21].strip()
+        segid = line[72:76].strip()
+        if len(segid) == 2 and segid[0] == chain:
+            return segid
+        return chain
+
+    @staticmethod
+    def _pdb_chain_segid(chain):
+        '''
+        split a chain name into the chain column (22) and the segment identifier (columns 73-76) of a PDB line.
+
+        A one-character chain has an empty segment identifier. A two-character chain is written as its first character, and in full as segment identifier.
+
+        :param chain: chain name, of one or two characters
+        :returns: chain column
+        :returns: segment identifier
+        '''
+        if len(chain) <= 1:
+            return chain, ""
+        if len(chain) == 2:
+            return chain[0], chain
+        raise Exception("ERROR: chain name %s is longer than two characters, which the PDB format cannot hold" % chain)
+
+    @staticmethod
     def _pdb_atom_prefix(record, serial, name, resname, chain, resid, altloc="", icode=""):
         '''
         first 30 columns of an ATOM or HETATM line, up to the x coordinate, following the PDB format.
@@ -1575,6 +1614,8 @@ class Molecule(Structure):
         :param conformations: list of conformation indices to write to file. By default, a multipdb with all conformations will be produced.
         :param split_struc: Guess chain split on the atoms being written, rename their chains accordingly and close each chain with TER. The molecule itself is not changed. Default: False. Set to False if protein is broken, but should retain chain lettering and doesn't have chain breaks.
         :param dssp: If using DSSP secondary structure check, requires that CRYST be the first line by default (hence write that line)
+
+        Chain names of two characters are written as their first character in column 22, and in full as segment identifier (columns 73-76), which :func:`import_pdb <biobox.classes.molecule.Molecule.import_pdb>` reads back.
         '''
 
         # store current frame, so it will be reestablished after file output is
@@ -1619,11 +1660,11 @@ class Molecule(Structure):
             d = self.get_pdb_data(index)
 
             for i in range(0, len(d), 1):
-                chain = chains[i] if split_struc else d[i][4]
+                chain, segid = self._pdb_chain_segid(chains[i] if split_struc else d[i][4])
 
                 # create and write PDB line
                 L = self._pdb_atom_prefix(d[i][0], serials[i], d[i][2], d[i][3], chain, d[i][5], d[i][12], d[i][13])
-                L += '%8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
+                L += '%8.3f%8.3f%8.3f%6.2f%6.2f      %-4s%2s\n' % (float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), segid, d[i][11])
                 f_out.write(L)
 
                 # Terminate chain if applicable
