@@ -13,7 +13,7 @@
 
 import os
 
-import scipy.ndimage.filters
+import scipy.ndimage
 from sklearn.cluster import DBSCAN
 import numpy as np
 import pandas as pd
@@ -79,49 +79,37 @@ class Density(Structure):
         # call format-specific loading functions.
         # function should fill up all required properties in _reset_info(), and
         # load the map as a 3D array, containing intensity values.
+        if fileformat not in ('dx', 'ccp4', 'mrc', 'imod'):
+            raise Exception("sorry, format %s is not supported" % fileformat)
+
         try:
             if fileformat == 'dx':
                 self._import_dx(filename)
-            elif fileformat == 'ccp4':
-                self._import_mrc(filename, 'ccp4')
-            elif fileformat == 'mrc':
-                self._import_mrc(filename, 'mrc')
-            elif fileformat == 'imod':
-                self._import_mrc(filename, 'imod')
             else:
-                raise Exception("sorry, format %s is not supported" % fileformat)
+                self._import_mrc(filename, fileformat)
+
+            # if any error went undetected during loading (missing information),
+            # data structures may be inconsistent
+            for key, message in [('density', "density map could not be correctly loaded"),
+                                 ('size', "density map information missing"),
+                                 ('origin', "map origin information missing"),
+                                 ('delta', "voxel size information missing")]:
+                if len(self.properties[key]) == 0:
+                    raise Exception(message)
 
         except Exception as e:
             self._reset_info()
-            Exception("ERROR: %s" % e)
+            raise Exception("ERROR: could not load %s: %s" % (filename, e))
 
-        # if any error went undetected during loading (missing information),
-        # data structures may be inconsistent. Call cleaning procedure!
-        if len(self.properties['density']) == 0:
-            print("density map could not be correctly loaded!")
-            self._reset_info(self)
-        elif len(self.properties['size']) == 0:
-            print("density map information missing!")
-            self._reset_info(self)
-        elif len(self.properties['origin']) == 0:
-            print("map origin information missing!")
-            self._reset_info(self)
-        elif len(self.properties['delta']) == 0:
-            print("voxel size information missing!")
-            self._reset_info(self)
-
-        # if all required information is present, place points instead of
-        # voxels
-        else:
-            try:
-                self.place_points()
-            except Exception as e:
-                pass
-
-            self.properties['format'] = format
-            self.properties['filename'] = filename
-
+        self.properties['format'] = fileformat
+        self.properties['filename'] = filename
         self.properties["sigma"] = np.std(self.properties['density'])
+
+        # place points instead of voxels (a map with nothing above threshold has no points)
+        try:
+            self.place_points()
+        except IOError:
+            pass
 
     def import_numpy(self, data, origin=[0, 0, 0], delta=np.identity(3)):
         '''
@@ -143,6 +131,7 @@ class Density(Structure):
         # sphere size corresponding to the volume of one voxel
         voxel_volume = self.properties['delta'][0, 0] * self.properties['delta'][1, 1] * self.properties['delta'][2, 2]
         self.properties['radius'] = (voxel_volume * 3 / (4 * np.pi))**(1 / 3.0)
+        self.properties["sigma"] = np.std(self.properties['density'])
 
 
     def get_oversampled_points(self, sigma=0):
@@ -175,18 +164,8 @@ class Density(Structure):
         delta = self.properties['delta'] / 2
         radius = self.properties['radius'] * 2 / 3
 
-        # define scaling to shrink everything by a size equal to spheres radius
-        size = np.max(np.transpose(np.where(oversampled_data > thresh)), axis=0) - np.min(np.transpose(np.where(oversampled_data > thresh)), axis=0)
-        scaled_size = np.max(np.transpose(np.where(oversampled_data > thresh)) * np.diag(delta), axis=0) - np.min(np.transpose(np.where(oversampled_data > thresh)) * np.diag(delta), axis=0)
-
-        scaling = 8.0 / 3.0
-        scale_x = (delta[0, 0] - 1.0) / (scaled_size[0] - size[0]) * (scaled_size[0] - radius * scaling)
-        scale_y = (delta[1, 1] - 1.0) / (scaled_size[1] - size[1]) * (scaled_size[1] - radius * scaling)
-        scale_z = (delta[2, 2] - 1.0) / (scaled_size[2] - size[2]) * (scaled_size[2] - radius * scaling)
-
-        # create structure data (ensemble of points and their center, and store
-        # its geometric center)
-        points = np.transpose(np.where(oversampled_data > thresh)) * np.array([scale_x, scale_y, scale_z]) + self.properties['origin'] + np.ones(3) * self.properties['radius'] * 2 / 3
+        # oversampled voxel i sits at origin + i * delta / 2
+        points = np.transpose(np.where(oversampled_data > thresh)) * np.diag(delta) + self.properties['origin']
         return points, radius
 
     def get_thresh_from_sigma(self, val):
@@ -225,27 +204,8 @@ class Density(Structure):
         if noise_filter >= 1 or noise_filter < 0:
             raise IOError("noise_filter should be between 0 and 1")
 
-        # define scaling to shrink everything by a size equal to spheres radius
-        size = np.max(np.transpose(np.where(self.properties['density'] > thresh)), axis=0) - np.min(np.transpose(np.where(self.properties['density'] > thresh)), axis=0)
-        scaled_size = np.max(np.transpose(np.where(self.properties['density'] > thresh)) * np.diag(self.properties['delta']), axis=0)-np.min(np.transpose(np.where(self.properties['density'] > thresh)) * np.diag(self.properties['delta']), axis=0)
-
-        if self.properties['delta'][0, 0] != 1:
-            scale_x = (self.properties['delta'][0, 0] - 1.0) / (scaled_size[0] - size[0]) * (scaled_size[0] - self.properties['radius'])
-        else:
-            scale_x = 1.0
-
-        if self.properties['delta'][1, 1] != 1:
-            scale_y = (self.properties['delta'][1, 1] - 1.0) / (scaled_size[1] - size[1]) * (scaled_size[1] - self.properties['radius'])
-        else:
-            scale_y = 1.0
-
-        if self.properties['delta'][2, 2] != 1:
-            scale_z = (self.properties['delta'][2, 2] - 1.0) / (scaled_size[2] - size[2]) * (scaled_size[2] - self.properties['radius'])
-        else:
-            scale_z = 1
-        # create structure data (ensemble of points and their center, and store
-        # its geometric center)
-        points = np.transpose(np.where(self.properties['density'] > thresh)) * np.array([scale_x, scale_y, scale_z]) + self.properties['origin'] + np.ones(3) * self.properties['radius']
+        # one point per voxel above threshold: voxel i sits at origin + i * delta
+        points = np.transpose(np.where(self.properties['density'] > thresh)) * np.diag(self.properties['delta']) + self.properties['origin']
 
         # remove previous points arrangement, and create new one (necessary,
         # since the amount of points will change, and cannot therefore be
@@ -256,15 +216,15 @@ class Density(Structure):
         if noise_filter != 0:
             step = self.properties['delta'][0, 0] * np.sqrt(3)
             db = DBSCAN(eps=step, min_samples=10).fit(points)
-            pts2 = []
+            keep = np.zeros(len(points), dtype=bool)
             for i in np.unique(db.labels_):
-                if np.sum(db.labels_ == i) / float(len(points)) > 0.01 and i != -1:
-                    if len(pts2) == 0:
-                        pts2 = points[db.labels_ == i]
-                    else:
-                        pts2 = np.concatenate((pts2, points[db.labels_ == i]))
+                if np.sum(db.labels_ == i) / float(len(points)) > noise_filter and i != -1:
+                    keep = np.logical_or(keep, db.labels_ == i)
 
-            self.add_xyz(pts2)
+            if not np.any(keep):
+                raise IOError("noise filter removed every point")
+
+            self.add_xyz(points[keep])
 
         else:
             self.add_xyz(points)
@@ -333,7 +293,7 @@ class Density(Structure):
         data[:,1]/=1000.0
 
         #get mass threshold
-        dtest1=np.argmin(np.abs(data[:,2]-ccs))
+        dtest1=np.nanargmin(np.abs(data[:,2]-ccs))
         thresh=data[dtest1,0]
 
         #rescale mass threshold
@@ -384,30 +344,59 @@ class Density(Structure):
 
         return r
 
+    def _volume_and_ccs(self, sigma, noise_filter):
+        '''
+        place points at a threshold and measure the volume and CCS of the result.
+
+        A threshold leaving no points gives volume and CCS 0. A CCS that cannot be computed (e.g. IMPACT unavailable) is NaN, and the volume is kept.
+
+        :param sigma: density threshold, in multiples of the map standard deviation
+        :param noise_filter: see :func:`place_points <density.Density.place_points>`
+        :returns: volume, CCS
+        '''
+        import biobox as bb
+
+        try:
+            self.place_points(sigma, noise_filter=noise_filter)
+        except IOError:
+            return 0.0, 0.0
+
+        vol = self.get_volume()
+        try:
+            ccs = bb.ccs(self)
+        except Exception as ex:
+            print("WARNING: CCS not computed at sigma %s: %s" % (sigma, ex))
+            ccs = np.nan
+
+        return vol, ccs
+
+    def _append_scan(self, rows):
+        '''
+        add rows of [sigma, volume, CCS] to the scan already stored.
+        '''
+        rows = np.atleast_2d(rows)
+        if self.properties['scan'].size == 0:
+            self.properties['scan'] = rows
+        else:
+            self.properties['scan'] = np.vstack((self.properties['scan'], rows))
+
     def find_data_from_sigma(self, sigma, exact=True, append=False, noise_filter=0.01):
         '''
         map experimental data to given threshold
 
-        :param sigma: density threshold
-        :param noise_filter: launch DBSCAN clustering algorithm to detect connected regions in density map. Regions representing less than noise_filter of the total will be removed. This is a ratio, value should be between 0 and 1.        '''
-
-        thresh = self.get_sigma_from_thresh(sigma)
+        :param sigma: density threshold, in multiples of the map standard deviation
+        :param exact: if True, measure volume and CCS at this threshold. Otherwise, return the closest row of the scan already stored.
+        :param append: if True, add the measurement to the stored scan
+        :param noise_filter: launch DBSCAN clustering algorithm to detect connected regions in density map. Regions representing less than noise_filter of the total will be removed. This is a ratio, value should be between 0 and 1.
+        :returns: array [sigma, volume, CCS]
+        '''
 
         if exact:
-            import biobox as bb
-
-            try:
-                self.place_points(thresh, noise_filter)
-                vol = self.get_volume()
-                ccs = bb.ccs(self)
-            except Exception as ex:
-                vol = 0
-                ccs = 0
-
-            res = np.array([thresh, vol, ccs])
+            vol, ccs = self._volume_and_ccs(sigma, noise_filter)
+            res = np.array([sigma, vol, ccs])
 
             if append:
-                self.properties['scan'] = np.concatenate((self.properties['scan'], res))
+                self._append_scan(res)
 
             return res
 
@@ -434,17 +423,15 @@ class Density(Structure):
         '''
 
         return self.properties['scan'][
-            np.argmin(np.abs(self.properties['scan'][:, 2] - ccs))]
+            np.nanargmin(np.abs(self.properties['scan'][:, 2] - ccs))]
 
     def threshold_vol_ccs(self, low="", high="", sampling_points=1000, append=False, noise_filter=0.01, verbose=False):
         '''
         return the volume to threshold to CCS relationship
 
         :param sampling_points: number of measures to perform between min and max intensity in density map
-        :returns: array reporting tested values and error on mass ([threshold, model_mass-target_mass])
+        :returns: array reporting tested values, volumes and CCS ([sigma, volume, CCS]). A CCS that could not be computed is NaN.
         '''
-
-        import biobox as bb
 
         if low == "":
             low = self.get_sigma_from_thresh(np.min(self.properties['density']))
@@ -453,13 +440,7 @@ class Density(Structure):
 
         result = []
         for thresh in np.linspace(low, high, num=sampling_points):
-            try:
-                self.place_points(thresh, noise_filter=noise_filter)
-                vol = self.get_volume()
-                ccs = bb.ccs(self)
-            except Exception as ex:
-                vol = 0
-                ccs = 0
+            vol, ccs = self._volume_and_ccs(thresh, noise_filter)
 
             if verbose:
                 print("thresh: %s, vol=%s, ccs=%s (%s points)" % (thresh, vol, ccs, len(self.points)))
@@ -469,7 +450,7 @@ class Density(Structure):
         r = np.array(result)
 
         if append:
-            self.properties['scan'] = np.concatenate((self.properties['scan'], r))
+            self._append_scan(r)
 
         else:
             self.properties['scan'] = r
@@ -558,13 +539,13 @@ class Density(Structure):
         z_ = np.arange(-k, k + 1, 1).astype(int)
         x, y, z = np.meshgrid(x_, y_, z_)
 
-        h = np.exp(-(x * x + y * y) / (2. * sigma * sigma))
+        h = np.exp(-(x * x + y * y + z * z) / (2. * sigma * sigma))
         h[h < np.finfo(h.dtype).eps * h.max()] = 0
         sumh = h.sum()
         if sumh != 0:
             h /= sumh
 
-        dens = scipy.ndimage.filters.convolve(self.properties['density'], h, mode='constant')
+        dens = scipy.ndimage.convolve(self.properties['density'], h, mode='constant')
         self.properties['density'] = dens
         self.properties["sigma"] = np.std(self.properties['density'])
 
@@ -651,7 +632,7 @@ class Density(Structure):
         dlt = []
         for line in fin:
             w = line.split()
-            if w[0] == "#":
+            if len(w) == 0 or w[0] == "#":
                 continue
             elif len(w) <= 3: #and np.array(list(w)).dtype == ('float'):
                 try:

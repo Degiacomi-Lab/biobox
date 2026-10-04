@@ -23,7 +23,7 @@ class Prism(Structure):
     def __init__(self, r, h, n, skew=0.0, radius=1.1,
                  pts_density_u=np.pi / 32, pts_density_h=0.2):
         '''
-        :param r: distance of sides from center of symmetry
+        :param r: distance of the vertices from the axis of symmetry (circumradius), points included
         :param h: height
         :param n: number of side faces
         :param skew: skewing with respect of vertical axis
@@ -44,7 +44,7 @@ class Prism(Structure):
         p = []
         for u in ulist:
             for v in hlist:
-                radial = np.cos(np.pi / n) / np.cos(u - np.pi / n * (2 * np.floor(n * u / (2 * np.pi)) + 1)) * r
+                radial = np.cos(np.pi / n) / np.cos(u - np.pi / n * (2 * np.floor(n * u / (2 * np.pi)) + 1)) * new_r
                 p.append([radial * np.cos(u), radial * np.sin(u) + skew * v / hlist.max(), v])
 
         # parametric function for prism bottom and top
@@ -72,7 +72,8 @@ class Prism(Structure):
         '''
         side = 2 * self.properties['r'] * np.sin(np.pi / self.properties['n'])
         apothem = side / (2 * np.tan(np.pi / self.properties['n']))
-        return self.properties['n'] * side * apothem / 2.0 + self.properties['n'] * side * self.properties['h']
+        base = self.properties['n'] * side * apothem / 2.0
+        return 2 * base + self.properties['n'] * side * self.properties['h']
 
     def get_volume(self):
         '''
@@ -92,7 +93,8 @@ class Prism(Structure):
         '''
         side = 2 * (self.properties['r'] + gas) * np.sin(np.pi / self.properties['n'])
         apothem = side / (2 * np.tan(np.pi / self.properties['n']))
-        return (self.properties['n'] * side * apothem / 2.0 + self.properties['n'] * side * (self.properties['h'] + 2 * gas)) / 4.0
+        base = self.properties['n'] * side * apothem / 2.0
+        return (2 * base + self.properties['n'] * side * (self.properties['h'] + 2 * gas)) / 4.0
 
 
 class Cylinder(Structure):
@@ -181,7 +183,7 @@ class Cylinder(Structure):
         '''
         r1 = self.properties['r1'] + gas
         r2 = self.properties['r2'] + gas
-        h = self.properties['h'] + gas
+        h = self.properties['h'] + 2 * gas
 
         basis_area = np.pi * r1 * r2
         perimeter = np.pi * (3 * (r1 + r2) - np.sqrt((3 * r1 + r2) * (r1 + 3 * r2)))
@@ -315,25 +317,33 @@ class Sphere(Structure):
         '''
         return 4 * np.pi * np.power(self.properties['r'], 3) / 3.0
 
+    def _semi_axes(self):
+        '''
+        semi-axes of the ellipsoid enveloping the points (the sphere of radius r passed at creation, squeezed).
+
+        :returns: semi-axes along x, y and z
+        '''
+        outer = self.properties['r'] + self.properties["pt_radius"]
+        return outer * self.properties['p1'], outer * self.properties['p2'], outer * self.properties['p3']
+
     def get_surface(self):
         '''
-        compute sphere surface.
+        compute the surface of the ellipsoid enveloping the points (Knud Thomsen approximation).
 
         :returns: surface in A^2
         '''
-        a = (self.properties['r']+self.properties["pt_radius"]) * self.properties['p1']
-        b = (self.properties['r']+self.properties["pt_radius"]) * self.properties['p2']
-        c = (self.properties['r']+self.properties["pt_radius"]) * self.properties['p3']
+        a, b, c = self._semi_axes()
         p = 1.6075
         return 4 * np.pi * np.power((a**p * b**p + a**p * c**p + b**p * c**p) / 3.0, 1.0 / p)
 
     def get_volume(self):
         '''
-        compute ellipsoid volume.
+        compute the volume of the ellipsoid enveloping the points.
 
         :returns: volume in A^3
         '''
-        return 4 * np.pi * (self.properties['r'] * self.properties['a'] * self.properties['r'] * self.properties['b'] * self.properties['r'] * self.properties['c']) / 3
+        a, b, c = self._semi_axes()
+        return 4 * np.pi * a * b * c / 3.0
 
 
     #def ccs(self, gas=1):
@@ -411,17 +421,17 @@ class Sphere(Structure):
 
     def check_inclusion(self, p):
         '''
-        count how many points in the array p are included in the sphere.
+        test which points in the array p lie inside the ellipsoid enveloping the points.
 
         overloading of superclass function, which is slower (here we can use the ellipsoid functional form to speed up things)
 
         :param p: list of points (numpy array)
-        :returns: quantity of points located inside the sphere
+        :returns: boolean array, True for points inside
         '''
-        self.get_center()
+        center = self.get_center()
+        a, b, c = self._semi_axes()
 
-        test = (p[:, 0] - self.properties['center'][0])**2 / (self.properties['r'] * self.properties['a'])**2 + (p[:, 1] - self.properties['center'][1])**2 / (self.properties['r'] * self.properties['b'])**2 + (p[:, 2] - self.properties['center'][2])**2 / (self.properties['c'] * self.properties['r'])**2
-        #return len(np.where(test < 1.0)[0])
+        test = (p[:, 0] - center[0])**2 / a**2 + (p[:, 1] - center[1])**2 / b**2 + (p[:, 2] - center[2])**2 / c**2
         return test < 1.0 #is True, inside ellipsoid, if False, outside
 
 

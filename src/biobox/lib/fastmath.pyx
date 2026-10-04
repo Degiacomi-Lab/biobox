@@ -50,7 +50,7 @@ cdef cython_line_of_sight(np.ndarray access_grid, np.ndarray a, np.ndarray b):
     cdef int err1
     cdef int err2
     
-    point=a[:]
+    point=a.copy()
     delta=b-a 
     
     if delta[0]<0:
@@ -117,8 +117,8 @@ cdef cython_line_of_sight(np.ndarray access_grid, np.ndarray a, np.ndarray b):
                 return False       
     
     else:
-        err_1 = dy2 - m
-        err_2 = dx2 - m
+        err_1 = dy2 - n
+        err_2 = dx2 - n
         for i in range(0, n, 1):
     
             if err_1 > 0:

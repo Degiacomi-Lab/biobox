@@ -31,6 +31,166 @@ class test_density(unittest.TestCase):
         except Exception:
             assert False
 
+    def _write_mrc(self, fname, data, mode=2, voxel=(1.0, 1.0, 1.0), origin=(0.0, 0.0, 0.0), nstart=(0, 0, 0), label=b""):
+        # MRC2014 file of a map given in x, y, z order (columns, rows, sections)
+        nx, ny, nz = data.shape
+        dtype = {0: np.int8, 1: np.int16, 2: np.float32, 6: np.uint16}[mode]
+        ints = np.zeros(256, dtype="<i4")
+        floats = ints.view("<f4")
+        ints[0:3] = (nx, ny, nz)
+        ints[3] = mode
+        ints[4:7] = nstart
+        ints[7:10] = (nx, ny, nz)
+        floats[10:13] = (voxel[0] * nx, voxel[1] * ny, voxel[2] * nz)
+        floats[13:16] = (90.0, 90.0, 90.0)
+        ints[16:19] = (1, 2, 3)
+        floats[19:22] = (data.min(), data.max(), data.mean())
+        floats[49:52] = origin
+        header = bytearray(ints.tobytes())
+        header[52 * 4:53 * 4] = b"MAP "
+        header[53 * 4:54 * 4] = bytes([0x44, 0x44, 0, 0])
+        if label:
+            ints2 = np.frombuffer(bytes(header), dtype="<i4").copy()
+            ints2[55] = 1
+            header = bytearray(ints2.tobytes())
+            header[224:224 + len(label)] = label
+        with open(fname, "wb") as f:
+            f.write(bytes(header))
+            f.write(np.ascontiguousarray(data.transpose(2, 1, 0)).astype(dtype).tobytes())
+
+    def test_mrc_reading(self):
+
+        print("\n> density: MRC axes, voxel size, origin and data types")
+        import tempfile
+        data = np.zeros((7, 5, 3), dtype=np.float32)
+        data[4, 1, 2] = 100.0
+        with tempfile.TemporaryDirectory() as tmp:
+            fname = os.path.join(tmp, "map.mrc")
+
+            # the ORIGIN field of MRC2000/2014 files
+            self._write_mrc(fname, data, voxel=(2, 3, 4), origin=(10, -20, 30))
+            D = bb.Density()
+            D.import_map(fname, "mrc")
+            self.assertEqual(D.properties["density"].shape, (7, 5, 3))
+            np.testing.assert_array_equal(np.argwhere(D.properties["density"] == 100), [[4, 1, 2]])
+            # values derived from float32 header fields, compared to well below a picometre
+            np.testing.assert_allclose(np.diag(D.properties["delta"]), [2, 3, 4], atol=1e-5)
+            np.testing.assert_allclose(D.properties["origin"], [10, -20, 30], atol=1e-5)
+            self.assertEqual(D.properties["format"], "mrc")
+
+            # nstart, when the ORIGIN field is empty
+            self._write_mrc(fname, data, voxel=(2, 3, 4), nstart=(1, 2, 3))
+            D.import_map(fname, "mrc")
+            np.testing.assert_allclose(D.properties["origin"], [2, 6, 12], atol=1e-5)
+
+            # mode 0 is signed, mode 6 unsigned 16-bit, single sections are kept
+            signed = np.full((3, 3, 3), -5)
+            self._write_mrc(fname, signed, mode=0)
+            D.import_map(fname, "mrc")
+            np.testing.assert_allclose(D.properties["density"], -5)
+            self._write_mrc(fname, data * 600, mode=6)
+            D.import_map(fname, "mrc")
+            self.assertAlmostEqual(D.properties["density"][4, 1, 2], 60000)
+            self._write_mrc(fname, data[:, :, :1], voxel=(2, 3, 4))
+            D.import_map(fname, "mrc")
+            self.assertEqual(D.properties["density"].shape, (7, 5, 1))
+
+            # a Chimera rotation label does not prevent loading
+            self._write_mrc(fname, data, label=b"Chimera rotation: 0 0 1 90")
+            D.import_map(fname, "mrc")
+            self.assertEqual(D.properties["density"].shape, (7, 5, 3))
+
+            # index to coordinates, and back
+            import biobox.classes.density_MRC as MRC
+            self._write_mrc(fname, data, voxel=(2, 3, 4), nstart=(1, 2, 3))
+            G = MRC.MRC_Grid(fname, "mrc")
+            np.testing.assert_allclose(G.ijk_to_xyz((4, 1, 2)), (10, 9, 20), atol=1e-5)
+            np.testing.assert_allclose(G.xyz_to_ijk((10, 9, 20)), (4, 1, 2), atol=1e-5)
+
+            # load failures are reported
+            with open(fname, "wb") as f:
+                f.write(b"not a map")
+            with self.assertRaises(Exception):
+                bb.Density().import_map(fname, "mrc")
+
+    def test_density_points_placement(self):
+
+        print("\n> density: points sit on their voxels")
+        for delta, corner in [(1.0, 20), (2.0, 20), (2.0, 40)]:
+            data = np.zeros((60, 60, 60))
+            data[corner:corner + 4, corner:corner + 4, corner:corner + 4] = 1.0
+            D = bb.Density()
+            D.import_numpy(data, origin=[1.0, 2.0, 3.0], delta=np.identity(3) * delta)
+            D.place_points(sigma=0.5, noise_filter=0)
+            np.testing.assert_allclose(D.points.min(axis=0), np.array([1.0, 2.0, 3.0]) + corner * delta)
+            np.testing.assert_allclose(D.points.max(axis=0), np.array([1.0, 2.0, 3.0]) + (corner + 3) * delta)
+
+        # a single voxel
+        data = np.zeros((10, 10, 10))
+        data[5, 5, 5] = 1.0
+        D = bb.Density()
+        D.import_numpy(data, delta=np.identity(3) * 2)
+        D.place_points(sigma=0.5, noise_filter=0)
+        np.testing.assert_allclose(D.points, [[10, 10, 10]])
+
+        # a blob holding 3% of the points survives a noise filter of 1% but not one of 5%
+        data = np.zeros((40, 40, 40))
+        data[2:22, 2:22, 2:10] = 1.0
+        data[30:35, 30:35, 30:35] = 1.0
+        D = bb.Density()
+        D.import_numpy(data)
+        D.place_points(sigma=0.5, noise_filter=0.01)
+        self.assertEqual(len(D.points), 3200 + 125)
+        D.place_points(sigma=0.5, noise_filter=0.05)
+        self.assertEqual(len(D.points), 3200)
+
+    def test_density_scan(self):
+
+        print("\n> density: thresholds, volumes and appended scans")
+        data = np.zeros((20, 20, 20))
+        data[5:15, 5:15, 5:15] = 10.0
+        D = bb.Density()
+        D.import_numpy(data)
+        sigma = D.get_sigma_from_thresh(5.0)
+
+        # the threshold is given in sigma units, and the volume survives a failed CCS
+        row = D.find_data_from_sigma(sigma, noise_filter=0, append=True)
+        self.assertAlmostEqual(row[0], sigma)
+        self.assertAlmostEqual(row[1], 1000.0)
+        self.assertEqual(D.properties["scan"].shape, (1, 3))
+        D.find_data_from_sigma(sigma, noise_filter=0, append=True)
+        self.assertEqual(D.properties["scan"].shape, (2, 3))
+        D.threshold_vol_ccs(low=sigma, high=sigma, sampling_points=1, noise_filter=0, append=True)
+        self.assertEqual(D.properties["scan"].shape, (3, 3))
+        np.testing.assert_allclose(D.properties["scan"][:, 1], 1000.0)
+
+        # a threshold above the maximum gives an empty map
+        self.assertEqual(list(D.find_data_from_sigma(D.get_sigma_from_thresh(20.0))[1:]), [0.0, 0.0])
+
+    def test_density_blur_and_dx(self):
+
+        print("\n> density: isotropic blur, and dx files")
+        import tempfile
+        data = np.zeros((9, 9, 9))
+        data[4, 4, 4] = 1.0
+        D = bb.Density()
+        D.import_numpy(data)
+        D.blur(dimension=5, sigma=0.8)
+        d = D.properties["density"]
+        np.testing.assert_allclose(d[2:7, 4, 4], d[4, 2:7, 4])
+        np.testing.assert_allclose(d[2:7, 4, 4], d[4, 4, 2:7])
+        self.assertGreater(d[4, 4, 4], d[4, 4, 5])
+
+        with tempfile.TemporaryDirectory() as tmp:
+            fname = os.path.join(tmp, "map.dx")
+            D.write_dx(fname)
+            text = open(fname).read().replace("data follows\n", "data follows\n\n")
+            with open(fname, "w") as f:
+                f.write(text)
+            E = bb.Density()
+            E.import_map(fname, "dx")
+            np.testing.assert_allclose(E.properties["density"], d)
+
 
 class test_structures(unittest.TestCase):
 
@@ -570,6 +730,146 @@ class test_structures(unittest.TestCase):
             assert False
 
 
+    def _wall_path(self, step=1.0):
+        # a 13 x 13 sheet of points at x = 0, in a global grid spanning -14 to 14 A
+        from biobox.measures.path import Path
+        ys = np.arange(-6, 6.01, 1.0)
+        wall = np.array([[0, y, z] for y in ys for z in ys], float)
+        P = Path(wall)
+        P.setup_global_search(step=step, maxdist=60, use_hull=False, boundaries=[[-14, 14]] * 3)
+        return P
+
+    def _path_clear(self, P, wp):
+        # every segment of a path stays in accessible space, except next to its two ends
+        exempt = P._target_exemptions(wp[0], wp[-1])
+        return all(P._segment_clear(a, b, exempt) for a, b in zip(wp[:-1], wp[1:]))
+
+    def test_line_of_sight(self):
+
+        print("\n> testing line of sight along every dominant axis")
+        import biobox.lib.fastmath as FM
+        for axis in range(3):
+            grid = np.ones((20, 20, 20), dtype=bool)
+            a = np.array([5, 5, 5])
+            b = a.copy()
+            b[axis] += 10
+            b[(axis + 1) % 3] += 1
+            on = a.copy()
+            on[axis] += 2
+            off = on.copy()
+            off[(axis + 1) % 3] += 1
+            grid[tuple(on)] = False
+            self.assertFalse(FM.c_line_of_sight(grid, a, b))
+            grid[tuple(on)] = True
+            grid[tuple(off)] = False
+            self.assertTrue(FM.c_line_of_sight(grid, a, b))
+            np.testing.assert_array_equal(a, [5, 5, 5])
+
+    def test_path_grid(self):
+
+        print("\n> testing path grid coordinates, costs and extent")
+        from biobox.lib.graph import Graph
+        P = self._wall_path()
+        g = P.graph
+        np.testing.assert_allclose(g.get_points_from_idx(np.array([0., 0., 0.])), [-14, -14, -14])
+        np.testing.assert_allclose(g.get_points_from_idx(np.array([14., 14., 14.])), [0, 0, 0])
+        self.assertFalse(g.is_accessible(np.array([[0., 0., 0.]]))[0])
+        self.assertTrue(g.is_accessible(np.array([[-8., 0., 0.]]))[0])
+
+        # euclidean step costs and heuristic, in grid steps
+        flat = lambda i: int(g.get_flat_index(np.array(i)))
+        self.assertAlmostEqual(g.cost(flat([1, 1, 1]), flat([2, 2, 2])), np.sqrt(3))
+        self.assertAlmostEqual(g.heuristic(np.array(flat([1, 1, 1])), np.array(flat([4, 5, 1]))), 5.0)
+
+        # the default grid encloses a lopsided cloud
+        rng = np.random.default_rng(0)
+        cloud = np.vstack([rng.normal(0, 2, (200, 3)), [[20, 0, 0]] * 4])
+        G = Graph(cloud)
+        G.make_grid(step=1.0)
+        lo = G.get_points_from_idx(np.array([0., 0., 0.]))
+        hi = G.get_points_from_idx(np.array(G.access_grid_shape - 1, dtype=float)) if G.access_grid_shape is not None else None
+        G.make_global_grid(step=1.0)
+        hi = G.get_points_from_idx(np.array(G.access_grid_shape - 1, dtype=float))
+        self.assertTrue(np.all(cloud.min(axis=0) >= lo) and np.all(cloud.max(axis=0) <= hi))
+
+    def test_astar_optimal(self):
+
+        print("\n> testing that A* returns the shortest path on the grid")
+        from scipy.sparse import coo_matrix
+        from scipy.sparse.csgraph import dijkstra
+        P = self._wall_path()
+        g = P.graph
+        acc = g.access_grid
+        shape = acc.shape
+        rows, cols, w = [], [], []
+        idx = np.array(np.where(acc)).T
+        for d in [np.array(v) for v in np.ndindex(3, 3, 3)]:
+            d = d - 1
+            if not np.any(d):
+                continue
+            nb = idx + d
+            ok = np.all((nb >= 0) & (nb < shape), axis=1)
+            ok[ok] = acc[tuple(nb[ok].T)]
+            rows.extend(np.ravel_multi_index(tuple(idx[ok].T), shape))
+            cols.extend(np.ravel_multi_index(tuple(nb[ok].T), shape))
+            w.extend([np.linalg.norm(d)] * int(ok.sum()))
+        n = int(np.prod(shape))
+        A = coo_matrix((w, (rows, cols)), shape=(n, n)).tocsr()
+
+        for s, e in [([-5, 0, 0], [5, 0, 0]), ([-6, 2, 3], [7, -1, -2])]:
+            s = np.array(s, float)
+            e = np.array(e, float)
+            si = int(np.ravel_multi_index(tuple(g.get_idx_from_points(np.array([s]))[0]), shape))
+            ei = int(np.ravel_multi_index(tuple(g.get_idx_from_points(np.array([e]))[0]), shape))
+            d, wp = P.search_path(s, e, method="astar", get_path=False, test_los=False)
+            nodes = wp[1:-1]
+            chain = np.sum(np.linalg.norm(np.diff(nodes, axis=0), axis=1))
+            self.assertAlmostEqual(chain, dijkstra(A, indices=si)[ei], places=6)
+
+    def test_path_search(self):
+
+        print("\n> testing shortest paths around and through obstacles")
+        P = self._wall_path()
+
+        # paths around the wall stay in accessible space, before and after smoothing, and are
+        # never shorter than the shortest way around its edge
+        bound = 2 * np.sqrt(5**2 + 6**2)
+        for method in ["theta", "astar", "old_theta"]:
+            for los in [False, True]:
+                d, wp = P.search_path(np.array([-5., 0, 0]), np.array([5., 0, 0]), method=method, get_path=False, test_los=los)
+                self.assertTrue(self._path_clear(P, wp), (method, los))
+                self.assertGreaterEqual(d, bound)
+                ds, chain = P.smooth(P._get_trails(wp))
+                self.assertTrue(self._path_clear(P, chain), (method, los))
+                self.assertGreaterEqual(ds, bound)
+
+        # points seeing each other are joined by a straight line
+        rng = np.random.default_rng(0)
+        for k in range(20):
+            s = np.array([-8., 0, 0]) + rng.uniform(-3, 3, 3)
+            e = np.array([-8., 0, 0]) + rng.uniform(-3, 3, 3)
+            d, wp = P.search_path(s, e, get_path=False)
+            self.assertAlmostEqual(d, np.linalg.norm(s - e))
+
+        # a point inside a sealed shell cannot be reached
+        from biobox.measures.path import Path
+        n = int(4 * np.pi * 49 / 0.25)
+        k = np.arange(n)
+        y = k * 2.0 / n - 1 + 1.0 / n
+        r = np.sqrt(1 - y * y)
+        shell = 7 * np.column_stack((np.cos(k * np.pi * (3 - np.sqrt(5))) * r, y, np.sin(k * np.pi * (3 - np.sqrt(5))) * r))
+        Q = Path(shell)
+        Q.setup_global_search(step=1.0, maxdist=60, use_hull=False, boundaries=[[-14, 14]] * 3)
+        for method in ["theta", "astar"]:
+            d, wp = Q.search_path(np.array([11., 0, 0]), np.array([0.3, 0.2, 0.1]), method=method, get_path=False)
+            self.assertEqual(d, -1)
+            self.assertEqual(len(wp), 0)
+
+        # a local grid without obstacles is fully accessible
+        Q = Path(np.array([[100., 100, 100], [101, 100, 100]]))
+        Q.setup_local_search(step=1.0, maxdist=28)
+        self.assertAlmostEqual(Q.search_path(np.array([0., 0, 0]), np.array([5., 0, 0]))[0], 5.0)
+
     def test_SASA(self):
 
         print("\n> testing molecule's SASA")
@@ -814,6 +1114,37 @@ class test_structures(unittest.TestCase):
         colors = ['blue', 'red', 'gray', 'orange', 'yellow', 'tan', 'silver', 'green', 'white', 'pink', 'cyan', 'purple', 'lime',
                   'mauve', 'ochre', 'iceblue', 'black', 'yellow2', 'green2', 'cyan2', 'blue2', 'violet', 'magenta', 'red2', 'orange2']
         self.assertEqual(lines, [colors[(3 * k) % 25] for k in range(len(P.conn))])
+    def test_convex_formulas(self):
+
+        print("\n> testing convex shape volumes, surfaces and CCS")
+        from scipy.spatial import ConvexHull
+
+        # sphere: the envelope of radius r, so an unsqueezed sphere has sphericity 1
+        S = bb.Sphere(10, radius=1.9)
+        self.assertAlmostEqual(S.get_volume(), 4 * np.pi * 10**3 / 3, places=6)
+        self.assertAlmostEqual(S.get_surface(), 4 * np.pi * 10**2, places=6)
+        self.assertAlmostEqual(S.get_sphericity(), 1.0, places=6)
+        inside = S.check_inclusion(np.array([[0, 0, 0], [9.9, 0, 0], [10.1, 0, 0], [15, 0, 0]]) + S.get_center())
+        self.assertEqual(list(inside), [True, True, False, False])
+        S.squeeze(2.0)
+        self.assertAlmostEqual(S.get_volume(), 4 * np.pi * 10**3 / 3, places=6)
+        self.assertLess(S.get_sphericity(), 1.0)
+
+        # prism: two bases plus the sides, and points on the same radius as the volume
+        P = bb.Prism(10, 20, 6, radius=1.1)
+        r, h, n = P.properties["r"], P.properties["h"], P.properties["n"]
+        side = 2 * r * np.sin(np.pi / n)
+        base = n * side * (r * np.cos(np.pi / n)) / 2
+        self.assertAlmostEqual(P.get_surface(), 2 * base + n * side * h, places=6)
+        self.assertAlmostEqual(P.get_volume(), base * h, places=6)
+        self.assertAlmostEqual(np.max(np.linalg.norm(P.points[:, :2], axis=1)), r, places=6)
+        hull = ConvexHull(P.points)
+        self.assertAlmostEqual(hull.volume / P.get_volume(), 1.0, delta=0.02)
+
+        # cylinder: CCS inflates every face by the gas radius
+        C = bb.Cylinder(10, 20, radius=1.1)
+        r1, h = C.properties["r1"], C.properties["h"]
+        self.assertAlmostEqual(C.ccs(gas=1), (2 * np.pi * (r1 + 1)**2 + 2 * np.pi * (r1 + 1) * (h + 2)) / 4, places=6)
 
     #create all convex shapes
     def test_shapes(self):
