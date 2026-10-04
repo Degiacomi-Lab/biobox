@@ -748,7 +748,7 @@ class Xlink(Path):
         S.write_pdb(filename)
 
 
-    def distance_matrix(self, indices, method="theta", get_path=False, smooth=True, verbose=False, test_los=True, flexible_sidechain=False, sphere_pts_surf=4.0):
+    def distance_matrix(self, indices, method="theta", get_path=False, smooth=True, verbose=False, test_los=True, flexible_sidechain=False, sphere_pts_surf=4.0, sphere_thresh=2.0, sphere_radii=[6.3, 5.9, 5.4, 4.8]):
         '''
         compute distance matrix between provided indices.
 
@@ -757,7 +757,9 @@ class Xlink(Path):
         :param get_path: if true, a list containing all the paths is also returned
         :param smooth: if True, path will be refined to make turns less angular.
         :param verbose: if True, the algorithm will dump text in console
-        :param sphere_pts_surf: surface occupied per sphere point, in A2. The smaller, the higher the points density
+        :param sphere_pts_surf: surface occupied per sphere point, in A2. The smaller, the higher the points density (flexible_sidechain only, see :func:`get_half_sphere <biobox.measures.path.Xlink.get_half_sphere>`)
+        :param sphere_thresh: minimal distance in A between a sphere point and any atom of the molecule (flexible_sidechain only)
+        :param sphere_radii: radii in A of the concentric spheres built around each CA (flexible_sidechain only)
         :param test_los: if true, a line of sight postprocessing will be performed to make paths straighter
         :param flexible_sidechain: if True, the selected atoms will be rotated around their associated CA, in order to scan for alternative sidechain arrangements. A sphere of clash-free alternative conformations is generated, and the shortest distance accounting for all these different possibilities is returned. Note that this method is computationally expensive.
         :returns: distance matrix (numpy 2d array). matrix will contain -1 if atoms are too far, and -2 if one of the two atoms is buried. If get_path is True, a list of paths is also returned (format: [[id1, id2], [path]]).
@@ -768,8 +770,7 @@ class Xlink(Path):
             spheres = []
             for i in indices:
                 try:
-                #s = self._get_sphere(i)
-                    s = self._get_half_sphere(i, pts_surf=sphere_pts_surf)
+                    s = self.get_half_sphere(i, pts_surf=sphere_pts_surf, thresh=sphere_thresh, radii=sphere_radii)
 
                 except Exception as ex:
                     raise Exception(str(ex))
@@ -965,8 +966,21 @@ class Xlink(Path):
 
         return np.array(res)
 
-    # build sphere around a sidechain atom. List of radii is valid for lysine
-    def _get_half_sphere(self, i, pts_surf=4.0, thresh=2.0, radii=[6.3, 5.9, 5.4, 4.8]):
+    def get_half_sphere(self, i, pts_surf=4.0, thresh=2.0, radii=[6.3, 5.9, 5.4, 4.8]):
+        '''
+        positions a side chain atom can reach by rotating around the CA of its residue, used by
+        :func:`distance_matrix <biobox.measures.path.Xlink.distance_matrix>` with flexible_sidechain.
+
+        Points are placed on concentric spheres centred on the CA. A point closer than thresh to any atom of the molecule
+        is discarded and retested on the next sphere of the list. Only points on the same side of the backbone plane
+        (through N, C and O) as the CB are kept, and of these only the cluster connected to the atom's current position.
+
+        :param i: index of a side chain atom
+        :param pts_surf: surface occupied per sphere point on the first sphere, in A2. The smaller, the higher the points density
+        :param thresh: minimal distance in A between a sphere point and any atom of the molecule
+        :param radii: radii in A of the concentric spheres, the first setting the number of points. The default suits lysine. If empty, a single sphere is built at the distance between the atom and its CA
+        :returns: numpy array of points, the atom's current position first
+        '''
 
         D = self.molecule.data.values
         l = D[i]
@@ -1048,7 +1062,7 @@ class Xlink(Path):
         rds = np.sort(np.array(radii)) #sorted radii list
         dists = np.array([rds[i+1]-rds[i] for i in range(len(rds)-1)]) #distances between adjacent spherical shells
 
-        step = np.max([pts_dist, np.max(dists), 3.0])
+        step = np.max([pts_dist, 3.0] + list(dists))
         db = DBSCAN(eps=step, min_samples=2).fit(res3)
         if db.labels_[0] != -1:
             R = res3[db.labels_ == db.labels_[0]]
