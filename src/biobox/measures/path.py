@@ -1,12 +1,12 @@
-# Copyright (c) 2014-2022 Matteo Degiacomi
+# Copyright (c) 2014-2026 Matteo Degiacomi
 #
-# BiobOx is free software ;
+# biobox is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
 # either version 2 of the License, or (at your option) any later version.
-# BiobOx is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;
+# biobox is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 # See the GNU General Public License for more details.
-# You should have received a copy of the GNU General Public License along with BiobOx ;
+# You should have received a copy of the GNU General Public License along with biobox ;
 # if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #
 # Author : Matteo Degiacomi, matteo.degiacomi@gmail.com
@@ -29,26 +29,33 @@ class PriorityQueue(object):
     '''
 
     def __init__(self):
+        '''
+        Create an empty queue.
+        '''
         self.elements = []
 
     def empty(self):
         '''
-        clear priority queue
+        test whether the priority queue is empty.
+
+        :returns: True if the queue contains no element
         '''
         return len(self.elements) == 0
 
     def put(self, item, priority):
         '''
-        add element in priority queue"
+        add element in priority queue.
 
         :param item: item to add in queue
-        :param priority: item's priority
+        :param priority: item's priority (the lower, the earlier the item is popped)
         '''
         heapq.heappush(self.elements, (priority, item))
 
     def get(self):
         '''
-        pop top priority element from queue
+        pop top priority element from queue.
+
+        :returns: the item having the lowest priority value
         '''
         return heapq.heappop(self.elements)[1]
 
@@ -73,7 +80,7 @@ class Path(object):
         This is a mesh where none of its nodes clashes with any of the provided point in the cloud.
         After instantiation, :func:`setup_local_search <biobox.measures.path.Path.setup_local_search>` or :func:`setup_global_search <biobox.measures.path.Path.setup_global_search>` must first be called (depending on whether one wants to generate a single grid encompassing all the protein, or a smaller, moving grid).
 
-        :param points: points for representing obstacles.
+        :param points: points for representing obstacles, as an (n, 3) numpy array.
         '''
         self.graph = Graph(points)
         self.kind = "none"
@@ -83,8 +90,9 @@ class Path(object):
         setup Path to perform path search using the local grid method.
         This method (or :func:`setup_global_search <biobox.measures.path.Path.setup_global_search>`) must be called before and path detection can be launched with :func:`search_path <biobox.measures.path.Path.search_path>`.
 
-        :param step: grid step size
-        :param maxdist: clash detection threshold
+        :param step: grid step size, in A
+        :param maxdist: edge length of the cubic local grid, in A. Pairs of points further apart than this Euclidean distance are not searched (see :func:`search_path <biobox.measures.path.Path.search_path>`)
+        :param params: per obstacle point parameters ([type, sigma, amplitude] rows, as built by :func:`set_clashing_atoms <biobox.measures.path.Xlink.set_clashing_atoms>` with atoms_vdw). If empty, a single Gaussian density is used for all obstacle points
         '''
         self.graph.make_grid(step=step, maxdist=maxdist, params=params)
         self.maxdist = maxdist
@@ -95,11 +103,12 @@ class Path(object):
         setup Path to perform path search using the a global grid wrapping all the obtacles region.
         This method (or :func:`setup_local_search <biobox.measures.path.Path.setup_local_search>`) must be called before and path detection can be lauched with :func:`search_path <biobox.measures.path.Path.search_path>`.
 
-        :param step: grid step size.
-        :param maxdist: clash detection threshold
+        :param step: grid step size, in A.
+        :param maxdist: pairs of points further apart than this Euclidean distance (in A) are not searched (see :func:`search_path <biobox.measures.path.Path.search_path>`). It does not affect the grid size
         :param use_hull: if True, points not laying within the convex hull wrapping around obtacles will be excluded
-        :param boundaries: build a grid within the desired box boundaries (if defined, maxdist parameter is ignored)
-        :param cloud: build a grid using a points cloud as extrema for the construction of the box. If defined, maxdist and boundaries parameters are ignored.
+        :param boundaries: build a grid within the desired box boundaries, given as [[xmin, xmax], [ymin, ymax], [zmin, zmax]]. If neither boundaries nor cloud is defined, the grid wraps all obstacle points
+        :param cloud: build a grid using a points cloud as extrema for the construction of the box (extended by one step on every side). If defined, the boundaries parameter is ignored.
+        :param params: per obstacle point parameters ([type, sigma, amplitude] rows, as built by :func:`set_clashing_atoms <biobox.measures.path.Xlink.set_clashing_atoms>` with atoms_vdw). If empty, a single Gaussian density is used for all obstacle points
         '''
 
         # if len(boundaries) == 0:
@@ -115,12 +124,14 @@ class Path(object):
         '''
         Find the shortest accessible path between two points.
 
-        :param start: coordinates of starting point
-        :param end: coordinates of target point
-        :param method: can be theta or astar
-        :param get_path: return full path (not only waypoints)
+        :param start: coordinates of starting point (numpy array of 3 floats)
+        :param end: coordinates of target point (numpy array of 3 floats)
+        :param method: "theta" or "lazytheta" (Lazy Theta*), "old_theta" (Theta*), "astar" (A*) or "euclidean" (straight line, ignoring obstacles)
+        :param get_path: if True, the returned path is filled with intermediate points spaced by about 1 A (not only waypoints)
         :param update_grid: if True, grid will be recalculated (for local search only)
         :param test_los: if true, a line of sight postprocessing will be performed to make paths straighter
+        :returns: path length in A. It is -1 if the points are further apart than maxdist, are disconnected or method is unknown, and -2 (likely buried target) if no accessible grid point is found next to start or end, or if the squared distance to the closest one exceeds maxdist + step
+        :returns: path coordinates as an (n, 3) numpy array ordered from end to start, or an empty array on failure
         '''
 
         ###INITIALIZE PATH SEARCH###
@@ -207,6 +218,17 @@ class Path(object):
 
     # interpret shortest path algorithm output
     def _get_waypoints(self, came_from, idx_start, best_end_idx, endpoint, start, clean_lineofsight=True):
+        '''
+        build the list of waypoints from the output of a shortest path algorithm.
+
+        :param came_from: dictionary associating each flat grid index to its predecessor, as returned by the path search methods
+        :param idx_start: flat index of the grid point closest to the start
+        :param best_end_idx: flat index of the grid point closest to the end
+        :param endpoint: coordinates of the end point
+        :param start: coordinates of the start point
+        :param clean_lineofsight: if True, grid points located between two mutually visible grid points of the path are removed
+        :returns: waypoints coordinates as an (n, 3) numpy array, from endpoint to start, or an empty array if start and end are disconnected
+        '''
 
         # build path form search algorithm output and compute cost
         # flattened indices (start with graph endpoint)
@@ -269,6 +291,14 @@ class Path(object):
     # the line of sight test used by the path search. Grid points closer to a center c than a
     # radius r, for every (c, r) in exempt, count as accessible
     def _segment_clear(self, p, q, exempt=()):
+        '''
+        test whether the segment between two positions crosses only accessible grid points.
+
+        :param p: coordinates of the first position
+        :param q: coordinates of the second position
+        :param exempt: list of (center, radius) tuples. Grid points within radius of a center count as accessible during the test
+        :returns: True if both positions are within the grid, the grid point of p is accessible and the line of sight between the grid points of p and q is clear
+        '''
 
         g = self.graph
         shape = np.array(g.access_grid_shape)
@@ -287,6 +317,12 @@ class Path(object):
     # temporarily mark as accessible the grid points closer to a center c than a radius r, for
     # every (c, r) in exempt. Returns what _close_exemptions needs to restore them
     def _open_exemptions(self, exempt):
+        '''
+        temporarily mark as accessible the grid points within a radius of given centers (and the grid point of each center).
+
+        :param exempt: list of (center, radius) tuples
+        :returns: list of (grid indices, previous accessibility values) tuples, to be passed to :func:`_close_exemptions <biobox.measures.path.Path._close_exemptions>`
+        '''
 
         g = self.graph
         shape = np.array(g.access_grid_shape)
@@ -305,6 +341,11 @@ class Path(object):
         return changed
 
     def _close_exemptions(self, changed):
+        '''
+        restore the accessibility of grid points modified by :func:`_open_exemptions <biobox.measures.path.Path._open_exemptions>`.
+
+        :param changed: list of (grid indices, previous accessibility values) tuples, as returned by :func:`_open_exemptions <biobox.measures.path.Path._open_exemptions>`
+        '''
 
         for near, values in reversed(changed):
             self.graph.access_grid[tuple(near.T)] = values
@@ -312,6 +353,12 @@ class Path(object):
     # regions around the targets of a path not tested by _segment_clear. Targets lie in
     # inaccessible space, so the region extends from each target to its closest accessible grid point
     def _target_exemptions(self, *targets):
+        '''
+        build the regions around path targets to be considered accessible.
+
+        :param targets: coordinates of the targets
+        :returns: list of (target coordinates, radius) tuples, the radius being the distance between the target and its closest accessible grid point (0 if none is found)
+        '''
 
         exempt = []
         for t in targets:
@@ -325,6 +372,14 @@ class Path(object):
     # fill intermediate regions between waypoints with points
     # points are separated with steps of 1A (or less)
     def _get_trails(self, waypoints):
+        '''
+        fill the segments between consecutive waypoints with intermediate points.
+
+        For each segment of length d >= 1 A, int(d) evenly spaced points are added, starting from the previous waypoint (repeated), followed by the next waypoint. A waypoint closer than 1 A to the previous one is not added.
+
+        :param waypoints: waypoints coordinates, as an (n, 3) numpy array
+        :returns: path coordinates, as an (m, 3) numpy array
+        '''
 
         wpts = [waypoints[0]]
 
@@ -349,6 +404,12 @@ class Path(object):
 
     # measure the length of a path, provided as waypoints
     def _measure_path(self, waypoints):
+        '''
+        measure the length of a path.
+
+        :param waypoints: path coordinates, as an (n, 3) numpy array
+        :returns: sum of the Euclidean distances between consecutive points
+        '''
 
         # distance initialized with distance between best starting point and
         # closes graph node
@@ -362,6 +423,13 @@ class Path(object):
     # line-of-sight established if all voxels are true in
     # self.graph.access_grid
     def _line_of_sight(self, a, b):
+        '''
+        test the line of sight between two grid points, drawing a line between them with Bresenham algorithm.
+
+        :param a: 3D index of the first grid point
+        :param b: 3D index of the second grid point
+        :returns: True if all grid points along the line are accessible
+        '''
         return FM.c_line_of_sight(self.graph.access_grid, a, b)
 
     # def _heuristic(self, a, b):
@@ -376,6 +444,8 @@ class Path(object):
 
         :param start: starting point (flattened coordinate of a graph grid point).
         :param goal: end point (flattened coordinate of a graph grid point).
+        :returns: dictionary associating each visited flat grid index to its predecessor (the start is its own predecessor)
+        :returns: dictionary associating each visited flat grid index to its path cost from start, in grid steps
         '''
 
         self.frontier = PriorityQueue()
@@ -410,6 +480,8 @@ class Path(object):
 
         :param start: starting point (flattened coordinate of a graph grid point).
         :param goal: end point (flattened coordinate of a graph grid point).
+        :returns: dictionary associating each visited flat grid index to its predecessor (the start is its own predecessor)
+        :returns: dictionary associating each visited flat grid index to its path cost from start, in grid steps
         '''
 
         self.frontier = PriorityQueue()
@@ -465,6 +537,8 @@ class Path(object):
 
         :param start: starting point (flattened coordinate of a graph grid point).
         :param goal: end point (flattened coordinate of a graph grid point).
+        :returns: dictionary associating each visited flat grid index to its predecessor (the start is its own predecessor)
+        :returns: dictionary associating each visited flat grid index to its path cost from start, in grid steps
         '''
 
         self.frontier = PriorityQueue()
@@ -523,8 +597,9 @@ class Path(object):
         A point is moved only if the path stays in accessible space, except next to the chain ends (the targets, which lie in inaccessible space).
 
         :param chain: numpy array containing the list of points composing the path
-        :param move_angle_thresh: if angle between three consecutive points is greater than this threshold, smoothing is performed
-        :returns: smoothed chain (3xN numpy array)
+        :param move_angle_thresh: if angle between three consecutive points is greater than this threshold (in degrees), smoothing is performed
+        :returns: length of the smoothed chain, in A (0.0 if the chain contains less than two points)
+        :returns: smoothed chain (Nx3 numpy array, the input is not modified)
         '''
         # if chain is too short, return
         if len(chain) <= 1:
@@ -577,6 +652,12 @@ class Path(object):
     # move the middle point of every flagged angle of a chain halfway between its neighbours,
     # if the path stays clear
     def _straighten(self, chain, angles_test):
+        '''
+        move the middle point of every flagged angle halfway between its neighbours, if both new segments are clear. The untested neighbouring angles of a moved point are flagged in turn. Both arrays are modified in place.
+
+        :param chain: path coordinates, as an (n, 3) numpy array of floats
+        :param angles_test: numpy array of n-2 flags, 1 for angles to straighten. Tested angles are set to -1
+        '''
 
         while np.any(angles_test == 1):
 
@@ -605,7 +686,7 @@ class Path(object):
 
     def write_grid(self, filename="grid.pdb"):
         '''
-        Write the accessibility graph to a PBB file
+        Write the accessible grid points to a PDB file
 
         :param filename: output file name
         '''
@@ -623,7 +704,7 @@ class Xlink(Path):
     subclass of :func:`Path <biobox.measures.path.Path>`, measure cross-linking distance between atom pairs in a molecule.
 
     * after instantiation, call first :func:`set_clashing_atoms <biobox.measures.path.Xlink.set_clashing_atoms>` to define molecule's atoms of interest for clash detection.
-    * Subsequently, call either :func:`setup_local_search <biobox.measures.path.Xlink.setup_local_search>` or :func:`setup_local_search <biobox.measures.path.Xlink.setup_global_search>` to prepare the points grid used for path detection.
+    * Subsequently, call either :func:`setup_local_search <biobox.measures.path.Xlink.setup_local_search>` or :func:`setup_global_search <biobox.measures.path.Xlink.setup_global_search>` to prepare the points grid used for path detection.
     * Physical distances between a list of atom indices can be finally computed with :func:`distance_matrix <biobox.measures.path.Xlink.distance_matrix>` or, between two atoms only, with :func:`search_path <biobox.measures.path.Path.search_path>`.
 
     If molecule contains multiple conformations, conformation i can be chosen by calling Xlink.molecule.set_current(i) before performing the procedure described in superclass.
@@ -641,7 +722,10 @@ class Xlink(Path):
         define atoms to consider for clash detection.
 
         :param atoms: atomnames to consider for clash detection. If undefined, protein backbone and C beta will be considered.
-        :param densify: if True, all atoms not solvent exposed will be considered for clash detection.
+        :param densify: if True, all atoms not solvent exposed will be considered for clash detection, in addition to the solvent exposed atoms named in atoms.
+        :param atoms_vdw: if True, every obstacle point is given a density width and amplitude according to its atom type (C, H, O, S or N, guessed if missing), used when building the grid. If False, a single Gaussian density is used for all points
+        :param points: if not empty, these coordinates (an (n, 3) array) are used as obstacles instead of the molecule's atoms, and all other parameters are ignored
+        :returns: if densify is True, boolean mask over the molecule's atoms flagging those used as obstacles. If densify is False, indices of the atoms used as obstacles. None if points is provided
         '''
 
         if len(points) > 0:
@@ -717,8 +801,8 @@ class Xlink(Path):
 
         This method (or :func:`setup_global_search <biobox.measures.path.Path.setup_global_search>`) must be called before and path detection can be launched with :func:`search_path <biobox.measures.path.Path.search_path>`.
 
-        :param step: grid step size
-        :param maxdist: clash detection threshold
+        :param step: grid step size, in A
+        :param maxdist: edge length of the cubic local grid, in A. Pairs of points further apart than this Euclidean distance are not searched
         '''
         super(Xlink, self).setup_local_search(step=step, maxdist=maxdist, params=self.params)
 
@@ -728,11 +812,11 @@ class Xlink(Path):
         setup Path to perform path search using the a global grid wrapping all the obtacles region.
         This method (or :func:`setup_local_search <biobox.measures.path.Path.setup_local_search>`) must be called before and path detection can be lauched with :func:`search_path <biobox.measures.path.Path.search_path>`.
 
-        :param step: grid step size.
-        :param maxdist: clash detection threshold
+        :param step: grid step size, in A.
+        :param maxdist: pairs of points further apart than this Euclidean distance (in A) are not searched. It does not affect the grid size
         :param use_hull: if True, points not laying within the convex hull wrapping around obtacles will be excluded
-        :param boundaries: build a grid within the desired box boundaries (if defined, maxdist parameter is ignored)
-        :param cloud: build a grid using a points cloud as extrema for the construction of the box. If defined, maxdist and boundaries parameters are ignored.
+        :param boundaries: build a grid within the desired box boundaries, given as [[xmin, xmax], [ymin, ymax], [zmin, zmax]]. If neither boundaries nor cloud is defined, the grid wraps all obstacle points
+        :param cloud: build a grid using a points cloud as extrema for the construction of the box (extended by one step on every side). If defined, the boundaries parameter is ignored.
         '''
 
         super(Xlink, self).setup_global_search(step=step, maxdist=maxdist, use_hull=use_hull, boundaries=boundaries, cloud=cloud, params=self.params)
@@ -753,8 +837,8 @@ class Xlink(Path):
         compute distance matrix between provided indices.
 
         :param indices: atoms indices (within the data structure, not the original pdb file). Get the indices via molecule.atomselect(...) command.
-        :param method: can be "theta" or "astar".
-        :param get_path: if true, a list containing all the paths is also returned
+        :param method: path search method, see :func:`search_path <biobox.measures.path.Path.search_path>` ("theta", "lazytheta", "old_theta", "astar" or "euclidean").
+        :param get_path: if true, a list containing all the paths is also returned, each filled with intermediate points spaced by about 1 A
         :param smooth: if True, path will be refined to make turns less angular.
         :param verbose: if True, the algorithm will dump text in console
         :param sphere_pts_surf: surface occupied per sphere point, in A2. The smaller, the higher the points density (flexible_sidechain only, see :func:`get_half_sphere <biobox.measures.path.Xlink.get_half_sphere>`)
@@ -762,7 +846,8 @@ class Xlink(Path):
         :param sphere_radii: radii in A of the concentric spheres built around each CA (flexible_sidechain only)
         :param test_los: if true, a line of sight postprocessing will be performed to make paths straighter
         :param flexible_sidechain: if True, the selected atoms will be rotated around their associated CA, in order to scan for alternative sidechain arrangements. A sphere of clash-free alternative conformations is generated, and the shortest distance accounting for all these different possibilities is returned. Note that this method is computationally expensive.
-        :returns: distance matrix (numpy 2d array). matrix will contain -1 if atoms are too far, and -2 if one of the two atoms is buried. If get_path is True, a list of paths is also returned (format: [[id1, id2], [path]]).
+        :returns: distance matrix in A (numpy 2d array, len(indices) x len(indices)). matrix will contain -1 if atoms are too far or cannot be linked, and -2 if one of the two atoms is buried (rigid side chains only). With flexible_sidechain, distances shorter than the grid step are set to the grid step.
+        :returns: only if get_path is True, list of paths, each formatted as [[i, j], path], where i and j are positions in indices and path is an (n, 3) numpy array. With rigid side chains, failed pairs have no entry.
         '''
 
         # if flexible sidechain is needed
@@ -928,6 +1013,13 @@ class Xlink(Path):
 
     # build sphere around a sidechain atom
     def _get_sphere(self, i, thresh=2.0):
+        '''
+        positions a side chain atom can reach by rotating around the CA of its residue, on a single sphere of radius equal to the atom-CA distance (one point per 4 A2).
+
+        :param i: index of a side chain atom
+        :param thresh: minimal distance in A between a sphere point and any atom of the molecule
+        :returns: numpy array of clash free points, the atom's current position first, or an empty list if the CA of the residue is not uniquely found
+        '''
 
         D = self.molecule.data
         l = D[i]

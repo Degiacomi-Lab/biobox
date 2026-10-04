@@ -1,12 +1,12 @@
-# Copyright (c) 2014-2022 Matteo Degiacomi
+# Copyright (c) 2014-2026 Matteo Degiacomi
 #
-# Biobox is free software ;
+# biobox is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
 # either version 2 of the License, or (at your option) any later version.
-# Biobox is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;
+# biobox is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 # See the GNU General Public License for more details.
-# You should have received a copy of the GNU General Public License along with Biobox ;
+# You should have received a copy of the GNU General Public License along with biobox ;
 # if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #
 # Author : Matteo Degiacomi, matteo.degiacomi@gmail.com
@@ -41,8 +41,8 @@ class Polyhedron(Assembly):
         .. note:: This method has to be called first.
 
         :param polyname: name of the polyhedron to be assembled. The name should be located in the polyhedra database.
-        :param M: monomer to be used as building block. Should be an instance of Structure class.
-        :param dbfilename: polyhedra database file.
+        :param M: monomer to be used as building block. Should be an instance of Structure class. A copy is used, M is not modified.
+        :param dbfilename: polyhedra database file. If empty, the database shipped with biobox (data/polyhedron_database.dat) is used.
         '''
 
         if len(dbfilename) == 0:
@@ -78,7 +78,7 @@ class Polyhedron(Assembly):
         # box size along third axis (height)
         self.H = dimensions[2]
 
-        # deformation database: [edge_id class x y z]. Edges having the same class will be scaled by the same coefficient.
+        # deformation database: [vertex_id class x y z]. Vertices having the same class will be scaled by the same coefficient.
         #@todo insert information about deformations directly into database. At the moment, it has to be explicitely provided via add_deformation method.
         self.deform = np.array([])
 
@@ -86,8 +86,10 @@ class Polyhedron(Assembly):
         '''
         Add entry in deformation database. Can be called only after the setup_polyhedron method.
 
-        :param edges: integer or list of integers, defining edges indices that should be subjected to deformation.
-        :param vector: axis along which deformation should take place. If not given, radial deformation will be assumed.
+        All the indices provided in one call form a new deformation class, scaled by the same coefficient in :func:`generate_polyhedron <biobox.classes.polyhedron.Polyhedron.generate_polyhedron>` and :func:`write_poly_architecture <biobox.classes.polyhedron.Polyhedron.write_poly_architecture>`.
+
+        :param edges: integer or list of integers, defining the indices of the vertices that should be subjected to deformation (each is displaced along the deformation axis).
+        :param vector: axis along which deformation should take place, list or numpy array of 3 floats, normalised (a numpy array is normalised in place). If not given, radial deformation will be assumed.
         '''
 
         # determine index for new entry in database
@@ -101,7 +103,7 @@ class Polyhedron(Assembly):
             e = [edges]
             edges = e
 
-        # iterate over all edges and create new entries for database
+        # iterate over all vertices and create new entries for database
         tmp = []
         for i in edges:
 
@@ -125,20 +127,21 @@ class Polyhedron(Assembly):
         '''
         Given polyhedron information previously loaded (using setup_polyhedron), generate an appropriate symmetry figure.
 
-        :param S: polyhedron size (radius of mean sphere).
-        :param alpha: rotation on molecule's first principal axis.
-        :param beta: rotation on molecule's second principal axis.
-        :param gamma: rotation on molecule's third principal axis.
-        :param deformation: if list is provided, deformations will be applied according to self.deformation database.\n
-               deformation list length should be equal to the amount of deformation classes)
+        :param S: polyhedron size, in A. The database vertex coordinates (unit edge length for most polyhedra) are multiplied by S and by a truncation factor depending on the building block dimensions.
+        :param alpha: rotation on molecule's first principal axis, in degrees. Either a number, or a numpy array with one angle per connection type.
+        :param beta: rotation on molecule's second principal axis, in degrees. Either a number, or a numpy array with one angle per connection type.
+        :param gamma: rotation on molecule's third principal axis, in degrees. Either a number, or a numpy array with one angle per connection type.
+        :param deformation: if list is provided, deformations will be applied according to the deformation database (see :func:`add_deformation <biobox.classes.polyhedron.Polyhedron.add_deformation>`).\n
+               deformation list length should be equal to the amount of deformation classes. Coefficient c displaces the vertices of class c along their axis, in A.
         :param add_conformation: if True, the coordinates of the new poyhedron will be added to the conformational database as a new alternative conformation.\n
                 If False, old polyhedron coordianates will be substituted.
+        :returns: -1 if alpha, beta and gamma are arrays of inconsistent length (no coordinates are generated), None otherwise
         '''
 
         # if deformation coefficients are given, check first that they match
         # the number of classes in deformation database
         if len(deformation) > 0 and len(deformation) != len(np.unique(self.deform[:, 1])):
-            raise Exception("ERROR: %s deformation coefficients expected, but %s found" % (len(deformation), np.unique(self.deform[:, 1])))
+            raise Exception("ERROR: %s deformation coefficients expected, but %s found" % (len(np.unique(self.deform[:, 1])), len(deformation)))
 
         self.psi, self.phi, self.nu, self.circumradius, self.midradius = self.get_polyhedron_properties(S)
 
@@ -206,11 +209,11 @@ class Polyhedron(Assembly):
 
     def rmsd_distance_matrix(self, points_indices=[]):
         '''
-        Calculate the RMSD between all structures with respect of a reference structure.
+        Calculate the RMSD between all pairs of polyhedral conformations.
         uses Kabsch alignement algorithm.
 
-        :param points_indices: indices of points of interest. This must be a list of indices of atoms in unites, i.e. [[unit1_indices],[unit2_indices],...]
-        :returns: RMSD of all structures with respect of reference structure (in a numpy array)
+        :param points_indices: indices of points of interest. This must be a list of indices of atoms in unites, i.e. [[unit1_indices],[unit2_indices],...]. If empty, all points are used
+        :returns: RMSD between every pair of polyhedral conformations, as a square numpy array
         '''
 
         # this method exploits the RMSD method implemented in Structure class.
@@ -242,8 +245,8 @@ class Polyhedron(Assembly):
         pseudoatoms are placed in vertices, cylinders connect them. Cylinder color code matches connection type.
 
         :param scale: vertices scaling factor (i.e. how much you want to blow up your architecture)
-        :param colors: list of colors to be used when coloring the cylinders in VMD session. By default, the following 25 VMD colors are available (in this order): blue, red, gray, orange, yellow, tan ,silver, green, white, pink, cyan, purple, lime, mauve, ochre, iceblue, black, yellow2, green2, cyan2, blue2, violet, magenta, red2, orange2.
-        :param deformation: if provided, deformations will be applied as described in deformation database
+        :param colors: list of colors to be used when coloring the cylinders in VMD session. By default, the following 25 VMD colors are available (in this order): blue, red, gray, orange, yellow, tan ,silver, green, white, pink, cyan, purple, lime, mauve, ochre, iceblue, black, yellow2, green2, cyan2, blue2, violet, magenta, red2, orange2. Colors are reused cyclically if there are more connection types than colors.
+        :param deformation: if provided, deformations will be applied as described in deformation database (see :func:`add_deformation <biobox.classes.polyhedron.Polyhedron.add_deformation>`). Its length must equal the number of deformation classes, and coefficient c displaces the vertices of class c along their axis (added to the scaled vertices).
         :param output: name of output files (without extension. .pdb and .tcl will be automatically added). By default, the name will be the polyhedron name.
         '''
 
@@ -260,12 +263,12 @@ class Polyhedron(Assembly):
             if len(self.deform) == 0:
                 raise Exception("ERROR: %s deformation coefficients provided, but no deformation axis found!" % len(deformation))
 
-            elif len(deformation) == len(self.deform[:, 1]):
+            elif len(deformation) == len(np.unique(self.deform[:, 1])):
                 for d in self.deform:
                     pos[int(d[0])] += deformation[int(d[1])] * d[2:5]
 
             else:
-                raise Exception("ERROR: %s deformation coefficients expected, but %s found" % (len(deformation), np.unique(self.deform[:, 1])))
+                raise Exception("ERROR: %s deformation coefficients expected, but %s found" % (len(np.unique(self.deform[:, 1])), len(deformation)))
 
         # output vertices coordinates
         S = Structure(pos)
@@ -319,6 +322,13 @@ class Polyhedron(Assembly):
     def _search_database(self, polyname, dbfilename="polyhedron_database_complete.dat"):
         '''
         search new style database (with plain formatting and containing connectivity information)
+
+        :param polyname: name of the polyhedron
+        :param dbfilename: polyhedra database file
+        :returns: number of edges
+        :returns: vertices coordinates, as an (n_vertices, 3) numpy array
+        :returns: connectivity, as an (n_edges, 2) numpy array of vertex indices
+        :returns: connection type of every edge, as a numpy array of n_edges elements (all zero if the database provides none)
         '''
 
         # check polyhedra database existence
@@ -370,6 +380,13 @@ class Polyhedron(Assembly):
     def get_polyhedron_properties(self, S):
         '''
         retrieve polyhedron properties
+
+        :param S: polyhedron size (edge length of the reference polyhedron)
+        :returns: psi, in radians
+        :returns: phi (average facial angle), in radians
+        :returns: nu (tangent curvature angle), in radians
+        :returns: circumradius, in the same unit as S
+        :returns: midradius, in the same unit as S
         '''
 
         x = self.edges * 1.0  # x=number of edges
@@ -389,6 +406,19 @@ class Polyhedron(Assembly):
     def _polycalc_core(self, W, L, H, S, nu, phi, alpha, beta, gamma, deformation=[], get_box_edges=False):
         '''
         launch polyhedron assembly
+
+        :param W: building block width
+        :param L: building block length
+        :param H: building block height
+        :param S: polyhedron size
+        :param nu: tangent curvature angle, in radians
+        :param phi: average facial angle, in radians
+        :param alpha: rotation on molecule's first principal axis, in radians (number, or numpy array with one angle per connection type)
+        :param beta: rotation on molecule's second principal axis, in radians (number, or numpy array with one angle per connection type)
+        :param gamma: rotation on molecule's third principal axis, in radians (number, or numpy array with one angle per connection type)
+        :param deformation: deformation coefficients, one per deformation class
+        :param get_box_edges: if True, the vertices of the boxes enclosing every unit are written in edges.pdb
+        :returns: coordinates of every unit, as an (n_edges, n_atoms, 3) numpy array
         '''
 
         kay = (2 * H * np.tan(nu) + W / (np.tan(phi / 2) * np.cos(nu))) / L + 1  # scaling factor for truncation
@@ -454,6 +484,13 @@ class Polyhedron(Assembly):
     def _rectanglify(self, vscale, L, W, H, kay):
         '''
         take a vertex list and return a rectanglified vertex list
+
+        :param vscale: vertices coordinates, as an (n, 3) numpy array
+        :param L: building block length
+        :param W: building block width
+        :param H: building block height
+        :param kay: truncation scaling factor
+        :returns: list with one entry per ordered pair of connected vertices, formatted as [i, j, p1, p2, p3, p4], where p1 to p4 are the corners of the box face next to vertex i
         '''
 
         vrecty = []
@@ -501,6 +538,14 @@ class Polyhedron(Assembly):
         '''
         take a cuboid and a source cuboid and data file, and output vertex array with data and box transposed into target position
         ii parameter: if second element not 0, indicates the number of elements per ring (second half rotated by 180 degrees)
+
+        :param vcuby: box vertices, as an (8, 3) numpy array
+        :param v_data: coordinates of the building block, as an (n, 3) numpy array
+        :param alpha: alpha rotation angle, in radians
+        :param beta: beta rotation angle, in radians
+        :param gamma: gamma rotation angle, in radians
+        :param ii: tuple (unit index, number of elements per ring)
+        :returns: coordinates of the building block placed in the box, as an (n, 3) numpy array, or -1 if the box alignment does not converge
         '''
 
         lim = 1E-7
@@ -619,6 +664,12 @@ class Polyhedron(Assembly):
         0 -sina cosa  #sinb 0 cosb   #0 0 1
         convention is X,Y,Z and right handed
         expects angles to be provided in in radians
+
+        :param v_in: points coordinates, as an (n, 3) array
+        :param a: rotation angle around x axis, in radians
+        :param b: rotation angle around y axis, in radians
+        :param c: rotation angle around z axis, in radians
+        :returns: rotated coordinates, as an (n, 3) numpy array
         '''
 
         v = np.array(v_in)

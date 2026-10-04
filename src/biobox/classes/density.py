@@ -1,12 +1,12 @@
-# Copyright (c) 2014-2022 Matteo Degiacomi
+# Copyright (c) 2014-2026 Matteo Degiacomi
 #
-# BiobOx is free software ;
+# biobox is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
 # either version 2 of the License, or (at your option) any later version.
-# BiobOx is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;
+# biobox is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 # See the GNU General Public License for more details.
-# You should have received a copy of the GNU General Public License along with BiobOx ;
+# You should have received a copy of the GNU General Public License along with biobox ;
 # if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #
 # Author : Matteo Degiacomi, matteo.degiacomi@gmail.com
@@ -22,19 +22,22 @@ from biobox.classes.structure import Structure
 
 class Density(Structure):
     '''
-    Subclass of :func:`Structure <biobox.classes.structure.Structure>`, allows importing density map, and transform them in a PDB file containing a collection of spheres placed on the map's high density regions.
+    Subclass of :class:`Structure <biobox.classes.structure.Structure>`, allows importing density maps and representing them as a collection of spheres placed on the map's high density regions.
     '''
 
     def __init__(self):
         '''
-        A density map is fully described by the following attributes, stored in the self.properties dictionary:
+        Create an empty density map. A density map is described by the following keys of the self.properties dictionary:
 
-        :param density: density map
-        :param delta:   scaling factor for voxels (default is [1, 1, 1] Angstrom)
-        :param size:    dimensions in voxels
-        :param origin:  bottom-left-front corner of the cube
-        :param radius: radius of points composing the density map
-        :param format: format name (only dx supported at the moment)
+        * density: density map, as a 3D numpy array indexed as [x, y, z]
+        * delta: voxel shape, as a 3x3 matrix (voxel size in Angstrom on the diagonal)
+        * size: dimensions in voxels
+        * origin: coordinates of the bottom-left-front corner of the map, in Angstrom
+        * radius: radius of points composing the density map, in Angstrom (default 1.9)
+        * sigma: standard deviation of the map intensities (set when a map is loaded)
+        * format: format of the loaded file (dx, ccp4, mrc or imod)
+        * filename: name of the loaded file
+        * scan: rows of [sigma, volume, CCS] filled by :func:`threshold_vol_ccs <biobox.classes.density.Density.threshold_vol_ccs>`
         '''
 
         super(Density, self).__init__()
@@ -42,7 +45,9 @@ class Density(Structure):
 
     def _reset_info(self, r=1.9):
         '''
-        reset all properties related to a density map (clean)
+        reset all properties related to a density map, and remove all points.
+
+        :param r: radius of points composing the density map, in Angstrom
         '''
 
         self.properties['density'] = np.array([])  # density map
@@ -61,7 +66,7 @@ class Density(Structure):
 
     def return_density_map(self):
         '''
-        :returns: density map as 3D numpy array
+        :returns: density map as 3D numpy array, indexed as [x, y, z]
         '''
         return self.properties['density']
 
@@ -69,8 +74,11 @@ class Density(Structure):
         '''
         Import density map and fill up the points and properties data structures.
 
-        :param  filename: name of density file to load
-        :param  fileformat: at the moment supports dx, ccp4, mrc and imod
+        Points are placed with :func:`place_points <biobox.classes.density.Density.place_points>` default parameters, and no points are placed if that fails.
+        On failure to load, properties are reset and an Exception is raised.
+
+        :param filename: name of density file to load
+        :param fileformat: dx (default), ccp4, mrc or imod
         '''
 
         if not os.path.exists(filename):
@@ -113,11 +121,13 @@ class Density(Structure):
 
     def import_numpy(self, data, origin=[0, 0, 0], delta=np.identity(3)):
         '''
-        import a numpy 3D array to allow manipulation as a density map
+        import a numpy 3D array to allow manipulation as a density map. Points are not placed.
+
+        The points radius is set to that of a sphere having the volume of one voxel.
 
         :param data: numpy 3D array
-        :param origin: coordinates of bottom left corner of the map
-        :param delta: voxels' shape (default is a cubic voxel of 1 Angstrom-long sides).
+        :param origin: coordinates of bottom left corner of the map, in Angstrom
+        :param delta: voxels' shape, as a 3x3 matrix with voxel sizes in Angstrom on the diagonal (default is a cubic voxel of 1 Angstrom-long sides).
         '''
 
         if len(data.shape) != 3:
@@ -136,11 +146,13 @@ class Density(Structure):
 
     def get_oversampled_points(self, sigma=0):
         '''
-        return points obtained by oversampling the map (doule points on every axis)
+        return points obtained by oversampling the map (double points on every axis). The points stored in the structure are not changed.
 
-        :param sigma: place points only on voxels having intensity greater than threshold
-        :returns: points 3D points placed on voxels having value higher than threshold
-        :returns: radius radius of produced points
+        Each voxel above threshold (border voxels excluded) fills its oversampled voxel and six oversampled neighbours. The arrangement is shrunk by the sphere radius via ``_shrink_scale``.
+
+        :param sigma: place points only on voxels having intensity greater than this threshold, in multiples of the map standard deviation
+        :returns: points placed on oversampled voxels above threshold, as an (n, 3) numpy array
+        :returns: radius of produced points (2/3 of the map points radius), in Angstrom
        '''
 
         thresh = self.get_thresh_from_sigma(sigma)
@@ -204,8 +216,8 @@ class Density(Structure):
         '''
         convert cutoff value from sigma multiples into actual threshold
 
-        :param val: sigma scaling
-        :returns: cutoff
+        :param val: threshold in multiples of the map standard deviation
+        :returns: threshold in map intensity units
         '''
 
         return self.properties["sigma"] * val
@@ -214,18 +226,21 @@ class Density(Structure):
         '''
         convert cutoff value from actual threshold to sigma multiple
 
-        :param threshold value
-        :returns sigma multiple
+        :param t: threshold in map intensity units
+        :returns: threshold in multiples of the map standard deviation
         '''
 
         return t / float(self.properties["sigma"])
 
     def place_points(self, sigma=0, noise_filter=0.01):
         '''
-        given density information, place points on every voxel above a given threshold.
+        given density information, place points on every voxel above a given threshold. Existing points are removed, and every point gets the map points radius.
 
-        :param sigma: intensity threshold value.
-        :param noise_filter: launch DBSCAN clustering algorithm to detect connected regions in density map. Regions representing less than noise_filter of the total will be removed. This is a ratio, value should be between 0 and 1.
+        The arrangement is shrunk by the sphere radius via ``_shrink_scale``.
+        Raises IOError if no voxel is above threshold, if noise_filter is out of range, or if the noise filter removes every point.
+
+        :param sigma: intensity threshold, in multiples of the map standard deviation (default 0)
+        :param noise_filter: launch DBSCAN clustering algorithm (eps equal to the voxel diagonal, 10 minimum samples) to detect connected regions in density map. Regions representing less than noise_filter of the total, and points labelled as noise, are removed. This is a ratio, value should be between 0 and 1 (default 0.01). If 0, no filtering is done.
         '''
 
         thresh = self.get_thresh_from_sigma(sigma)
@@ -277,14 +292,17 @@ class Density(Structure):
         '''
         given target mass and map resolution, predict CCS. Mass threshold is rescaled using the fitting function c / (1 + exp(-k*(resolution-x0))) + y0.
 
-        :param resolution: map resolution in 1/Angstrom
+        Requires a scan produced by :func:`threshold_vol_ccs <biobox.classes.density.Density.threshold_vol_ccs>`.
+
+        :param resolution: map resolution in Angstrom
         :param mass: protein mass in kDa
         :param density: protein density in Da/A3
         :param x0: sigmoid parameter
         :param y0: sigmoid parameter
         :param c: sigmoid parameter
         :param k: sigmoid parameter
-        :returns: CCS estimated from mass and density map resolution (in A^2), and the threshold it corresponds to (in sigma units)
+        :returns: CCS estimated from mass and density map resolution, in A^2
+        :returns: threshold the CCS corresponds to, in multiples of the map standard deviation
         '''
 
         if 'scan' not in list(self.properties):
@@ -312,14 +330,17 @@ class Density(Structure):
         '''
         given target CCS and map resolution, predict mass. The CCS threshold is rescaled using the fitting function c / (1 + exp(-k*(resolution-x0))) + y0.
 
-        :param resolution: map resolution in 1/Angstrom
+        Requires a scan produced by :func:`threshold_vol_ccs <biobox.classes.density.Density.threshold_vol_ccs>`.
+
+        :param resolution: map resolution in Angstrom
         :param ccs: target CCS in A^2
         :param density: protein density in Da/A3
         :param x0: sigmoid parameter
         :param y0: sigmoid parameter
         :param c: sigmoid parameter
         :param k: sigmoid parameter
-        :returns: mass estimated from CCS and density map resolution (in kDa), and the threshold it corresponds to (in sigma units)
+        :returns: mass estimated from CCS and density map resolution, in kDa
+        :returns: threshold the mass corresponds to, in multiples of the map standard deviation
         '''
 
         if 'scan' not in list(self.properties):
@@ -345,15 +366,16 @@ class Density(Structure):
     def scan_threshold(self, mass, density=0.782878356, sampling_points=1000):
         '''
         if mass and density of object are known, filter the map on a linear scale of threshold values, and compare the obtained mass to the experimental one.
+        Each tested value is printed. Points are finally placed at the threshold giving the smallest absolute mass error.
 
-        .. note:: in proteins, an average value of 1.3 g/cm^3 (0.782878356 Da/A^3) can be assumed. Alternatively, the relation density=1.410+0.145*exp(-mass(kDa)/13) can be used.
+        .. note:: in proteins, an average value of 1.3 g/cm^3 (0.782878356 Da/A^3) can be assumed. Alternatively, the relation density=1.410+0.145*exp(-mass(kDa)/13) (in g/cm^3) can be used.
 
-        .. note:: 1 Da/A^3=0.602214120 g/cm^3
+        .. note:: 1 g/cm^3=0.602214120 Da/A^3
 
         :param mass: target mass in Da
         :param density: target density in Da/A^3
         :param sampling_points: number of measures to perform between min and max intensity in density map
-        :returns: array reporting tested values and error on mass ([threshold, model_mass-target_mass])
+        :returns: array of shape (sampling_points, 2) reporting tested values and error on mass ([sigma, model_mass-target_mass]), with mass in Da
         '''
 
         low = self.get_sigma_from_thresh(np.min(self.properties['density']))
@@ -389,7 +411,8 @@ class Density(Structure):
 
         :param sigma: density threshold, in multiples of the map standard deviation
         :param noise_filter: see :func:`place_points <biobox.classes.density.Density.place_points>`
-        :returns: volume, CCS
+        :returns: volume, in A^3
+        :returns: CCS, in A^2
         '''
         import biobox as bb
 
@@ -410,6 +433,8 @@ class Density(Structure):
     def _append_scan(self, rows):
         '''
         add rows of [sigma, volume, CCS] to the scan already stored.
+
+        :param rows: a row or an (n, 3) array of rows
         '''
         rows = np.atleast_2d(rows)
         if self.properties['scan'].size == 0:
@@ -422,10 +447,10 @@ class Density(Structure):
         map experimental data to given threshold
 
         :param sigma: density threshold, in multiples of the map standard deviation
-        :param exact: if True, measure volume and CCS at this threshold. Otherwise, return the closest row of the scan already stored.
-        :param append: if True, add the measurement to the stored scan
-        :param noise_filter: launch DBSCAN clustering algorithm to detect connected regions in density map. Regions representing less than noise_filter of the total will be removed. This is a ratio, value should be between 0 and 1.
-        :returns: array [sigma, volume, CCS]
+        :param exact: if True, measure volume and CCS at this threshold (points are placed at this threshold). Otherwise, return the row of the scan already stored having the closest sigma.
+        :param append: if True and exact is True, add the measurement to the stored scan
+        :param noise_filter: launch DBSCAN clustering algorithm to detect connected regions in density map. Regions representing less than noise_filter of the total will be removed. This is a ratio, value should be between 0 and 1. Used only if exact is True.
+        :returns: array [sigma, volume (A^3), CCS (A^2)]
         '''
 
         if exact:
@@ -444,9 +469,10 @@ class Density(Structure):
 
     def find_data_from_volume(self, vol):
         '''
-        map experimental data to given volume
+        map experimental data to given volume, using the scan already stored
 
-        :param vol: volume
+        :param vol: target volume, in A^3
+        :returns: row of the stored scan having the closest volume, as array [sigma, volume (A^3), CCS (A^2)]
         '''
 
         return self.properties['scan'][
@@ -454,9 +480,10 @@ class Density(Structure):
 
     def find_data_from_ccs(self, ccs):
         '''
-        map experimental data to given ccs
+        map experimental data to given ccs, using the scan already stored (NaN CCS are ignored)
 
         :param ccs: target CCS (in A^2)
+        :returns: row of the stored scan having the closest CCS, as array [sigma, volume (A^3), CCS (A^2)]
         '''
 
         return self.properties['scan'][
@@ -464,10 +491,15 @@ class Density(Structure):
 
     def threshold_vol_ccs(self, low="", high="", sampling_points=1000, append=False, noise_filter=0.01, verbose=False):
         '''
-        return the volume to threshold to CCS relationship
+        return the volume to threshold to CCS relationship, and store it in self.properties['scan']. Points are left placed at the last tested threshold.
 
-        :param sampling_points: number of measures to perform between min and max intensity in density map
-        :returns: array reporting tested values, volumes and CCS ([sigma, volume, CCS]). A CCS that could not be computed is NaN.
+        :param low: lowest threshold tested, in multiples of the map standard deviation (default: the minimum map intensity, expressed in the same units)
+        :param high: highest threshold tested, in multiples of the map standard deviation (default: the maximum map intensity, expressed in the same units)
+        :param sampling_points: number of thresholds tested, linearly spaced between low and high
+        :param append: if True, add the results to the scan already stored, otherwise replace it
+        :param noise_filter: see :func:`place_points <biobox.classes.density.Density.place_points>`
+        :param verbose: if True, print each measure
+        :returns: array of shape (sampling_points, 3) reporting tested values, volumes and CCS ([sigma, volume (A^3), CCS (A^2)]). A threshold leaving no points gives volume and CCS 0, and a CCS that could not be computed is NaN.
         '''
 
         if low == "":
@@ -498,16 +530,16 @@ class Density(Structure):
         '''
         If mass and density of object are known, try to filter the map so that the mass is best matched.
 
-        search for best threshold using bissection method.
+        search for best threshold using bisection method, until the mass error repeats or is zero. Points are finally placed at the last tested threshold.
 
-        .. note:: in proteins, an average value of 1.3 g/cm^3 (0.782878356 Da/A^3) can be assumed. Alternatively, the relation density=1.410+0.145*exp(-mass(kDa)/13) can be used.
+        .. note:: in proteins, an average value of 1.3 g/cm^3 (0.782878356 Da/A^3) can be assumed. Alternatively, the relation density=1.410+0.145*exp(-mass(kDa)/13) (in g/cm^3) can be used.
 
         .. note:: 1 Da/A^3=1.660538946 g/cm^3
         .. note:: 1 g/cm^3=0.602214120 Da/A^3
 
         :param mass: target mass in Da
         :param density: target density in Da/A^3
-        :returns: array reporting tested values and error on mass ([sigma, model_mass-target_mass])
+        :returns: array reporting tested values and error on mass ([sigma, model_mass-target_mass]), with mass in Da, one row per bisection step
         '''
 
         high = self.get_sigma_from_thresh(np.max(self.properties['density']))
@@ -559,12 +591,12 @@ class Density(Structure):
 
     def blur(self, dimension=5, sigma=0.5):
         '''
-        blur density applying a cubic gaussian kernel of given kernel dimension (cubic grid size).
+        blur density applying a cubic gaussian kernel of given kernel dimension (cubic grid size), and update the map standard deviation. Points are not updated.
 
         .. warning:: cannot be undone
 
-        :param dimension: size of the kernel grid.
-        :param sigma: standard deviation of gaussian kernel.
+        :param dimension: size of the kernel grid, in voxels.
+        :param sigma: standard deviation of gaussian kernel, in voxels.
         '''
 
         shape = (dimension, dimension, dimension)
@@ -620,11 +652,11 @@ class Density(Structure):
 
     def export_as_pdb(self, outname, step, threshold=0.1):
         '''
-        Write a pdb file with points where the density exceeds a threshold
+        Write a pdb file with points where the density exceeds a threshold. A voxel of index i is written at coordinate i/step + origin.
 
         :param outname: output file name
-        :param step: stepsize used to generate the density map
-        :param threshold: density to be exceeded to generate a point in pdb
+        :param step: number of voxels per Angstrom
+        :param threshold: density (in map intensity units) to be exceeded to generate a point in pdb
         '''
 
         # @todo assign spheres beta factor to associated density value
@@ -655,7 +687,7 @@ class Density(Structure):
 
     def _import_dx(self, filename):
         '''
-        import density map and fill up the points and properties data structures.
+        import density map in dx format, and fill up the density, size, origin and delta properties.
 
         :param filename: name of dx file to load
         '''
@@ -703,13 +735,13 @@ class Density(Structure):
 
     def _import_mrc(self, filename, fileformat):
         '''
-        import density map in MRC, CCP4 or IMOD format.
+        import density map in MRC, CCP4 or IMOD format, and fill up the density, origin, size, delta and radius properties.
 
         MRC format here: www2.mrc-lmb.cam.ac.uk/image2000.html
 
         CCP4 format here: www.ccp4.ac.uk/html/maplib.html
 
-        :param filename name of MRC or CCP4 file to load
+        :param filename: name of MRC or CCP4 file to load
         :param fileformat: can be mrc, imod or ccp4
         '''
 
@@ -736,6 +768,8 @@ class Density(Structure):
         .. warning:: can be called only after :func:`place_points <biobox.classes.density.Density.place_points>` has been called.
 
         .. warning:: supposes unskewed voxels.
+
+        :returns: volume in A^3
         '''
         return self.properties['delta'][0, 0] * self.properties['delta'][1, 1] * self.properties['delta'][2, 2] * len(self.points)
 

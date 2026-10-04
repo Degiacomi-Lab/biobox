@@ -1,12 +1,12 @@
-# Copyright (c) 2014-2017 Matteo Degiacomi
+# Copyright (c) 2014-2026 Matteo Degiacomi
 #
-# BiobOx is free software ;
+# biobox is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
 # either version 2 of the License, or (at your option) any later version.
-# BiobOx is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;
+# biobox is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 # See the GNU General Public License for more details.
-# You should have received a copy of the GNU General Public License along with BiobOx ;
+# You should have received a copy of the GNU General Public License along with biobox ;
 # if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #
 # Author : Matteo Degiacomi, matteothomas.degiacomi@gmail.com
@@ -23,13 +23,15 @@ class Prism(Structure):
     def __init__(self, r, h, n, skew=0.0, radius=1.1,
                  pts_density_u=np.pi / 32, pts_density_h=0.2):
         '''
-        :param r: distance of the vertices from the axis of symmetry (circumradius), points included
-        :param h: height
+        Points centres are placed on a prism of circumradius r - radius and height h - 2*radius (stored as properties r and h), centred at the origin.
+
+        :param r: distance of the vertices from the axis of symmetry (circumradius), points included, in Angstrom
+        :param h: height, points included, in Angstrom
         :param n: number of side faces
-        :param skew: skewing with respect of vertical axis
-        :param radius: size of the individual points composing it
-        :param pts_density_u: density of points along the r axis (polar coordinates)
-        :param pts_density_h: the density of points along the vertical axis
+        :param skew: shift of the top face along y with respect to the bottom one, in Angstrom
+        :param radius: radius of the individual points composing it, in Angstrom
+        :param pts_density_u: angular step between points (radians), also used as radial step on bottom and top faces (Angstrom)
+        :param pts_density_h: step between points along the vertical axis, in Angstrom
         '''
 
         super(Prism, self).__init__(r=radius)
@@ -66,7 +68,7 @@ class Prism(Structure):
 
     def get_surface(self):
         '''
-        compute prism surface.
+        compute the surface of the prism passing through the points centres (properties r and h).
 
         :returns: surface in A^2
         '''
@@ -77,7 +79,7 @@ class Prism(Structure):
 
     def get_volume(self):
         '''
-        compute prism volume.
+        compute the volume of the prism passing through the points centres (properties r and h).
 
         :returns: volume in A^3
         '''
@@ -87,8 +89,9 @@ class Prism(Structure):
 
     def ccs(self, gas=1):
         '''
-        compute prism CCS.
+        compute prism CCS, as a quarter of the surface of the prism passing through the points centres, enlarged by the gas radius.
 
+        :param gas: probe gas radius in Angstrom, added to the circumradius and to both ends of the height
         :returns: CCS in A^2
         '''
         side = 2 * (self.properties['r'] + gas) * np.sin(np.pi / self.properties['n'])
@@ -104,13 +107,15 @@ class Cylinder(Structure):
 
     def __init__(self, r, h, squeeze=1.0, skew=0.0, radius=1.1, pts_density_u=np.pi / 32, pts_density_h=0.2):
         '''
-        :param r: radius
-        :param h: height
-        :param squeeze: create an elliptical base, having axes equal to r and squeeze*r
-        :param skew: skewing with respect of vertical axis
-        :param radius: size of the individual points composing it
-        :param pts_density_u: density of points along the u angle (using parametric function for cylinder)
-        :param pts_density_h: density of points along the v angle (using parametric function for cylinder)
+        Points centres are placed on a cylinder of semi-axes r1 = r - radius and r2 = (r - radius)*squeeze, and height h - 2*radius (stored as properties r1, r2 and h), centred at the origin.
+
+        :param r: radius, points included, in Angstrom
+        :param h: height, points included, in Angstrom
+        :param squeeze: create an elliptical base, having the y semi-axis equal to squeeze times the x one
+        :param skew: shift of the top face along y with respect to the bottom one, in Angstrom
+        :param radius: radius of the individual points composing it, in Angstrom
+        :param pts_density_u: angular step between points along the u angle, in radians (using parametric function for cylinder)
+        :param pts_density_h: step between points along the height, in Angstrom
         '''
 
         super(Cylinder, self).__init__(r=radius)
@@ -154,7 +159,7 @@ class Cylinder(Structure):
 
     def get_surface(self):
         '''
-        Compute cylinder surface.
+        Compute the surface of the cylinder passing through the points centres (properties r1, r2 and h).
 
         Uses Ramanujan approximation for base perimeter. Good, but not perfect for very elliptical cylinders!
 
@@ -166,7 +171,7 @@ class Cylinder(Structure):
 
     def get_volume(self):
         '''
-        Compute cylinder volume.
+        Compute the volume of the cylinder passing through the points centres (properties r1, r2 and h).
 
         :returns: volume in A^3
         '''
@@ -175,10 +180,11 @@ class Cylinder(Structure):
 
     def ccs(self, gas=1):
         '''
-        Compute cylinder CCS.
+        Compute cylinder CCS, as a quarter of the surface of the cylinder passing through the points centres, enlarged by the gas radius.
 
         Uses Ramanujan approximation for base perimeter. Good, but not perfect for very elliptical cylinders!
 
+        :param gas: probe gas radius in Angstrom, added to both semi-axes and to both ends of the height
         :returns: CCS in A^2
         '''
         r1 = self.properties['r1'] + gas
@@ -198,12 +204,14 @@ class Cone(Structure):
     def __init__(self, r, h, skew=0, radius=1.1,
                  pts_density_r=np.pi / 32, pts_density_h=0.2):
         '''
-        :param r: radius
-        :param h: height
-        :param skew: skewing with respect of vertical axis
-        :param radius: size of the individual points composing it
-        :param pts_density_r: density of points along the rotation axis (using parametric function for cylinder)
-        :param pts_density_h: density of points along height (using parametric function for cylinder)
+        Points centres are placed on a cone of base radius r - radius and height h - 2*radius (stored as properties r and h), centred at the origin.
+
+        :param r: base radius, points included, in Angstrom
+        :param h: height, points included, in Angstrom
+        :param skew: shift of the apex along y with respect to the base, in Angstrom
+        :param radius: radius of the individual points composing it, in Angstrom
+        :param pts_density_r: angular step between points around the vertical axis, in radians
+        :param pts_density_h: step between points along the height, and along the radius of the base, in Angstrom
         '''
 
         # @todo allow to squeeze the base
@@ -238,7 +246,7 @@ class Cone(Structure):
 
     def get_surface(self):
         '''
-        compute cone surface.
+        compute the surface of the cone passing through the points centres (properties r and h).
 
         :returns: surface in A^2
         '''
@@ -247,7 +255,7 @@ class Cone(Structure):
 
     def get_volume(self):
         '''
-        Compute cone volume.
+        Compute the volume of the cone passing through the points centres (properties r and h).
 
         :returns: volume in A^3
         '''
@@ -255,8 +263,9 @@ class Cone(Structure):
 
     def ccs(self, gas=1):
         '''
-        compute cone CCS (use analytical solution using surface and gas effect)
+        compute cone CCS, as a quarter of the surface of the cone passing through the points centres. The gas radius enters only the slant height, computed with base radius r + gas and height h + 2*gas.
 
+        :param gas: probe gas radius in Angstrom
         :returns: CCS in A^2
         '''
         lateral_height = np.sqrt((self.properties['r'] + gas)**2 + (self.properties['h'] + 2 * gas)**2)
@@ -265,16 +274,18 @@ class Cone(Structure):
 
 class Sphere(Structure):
     '''
-    Create an ensemble of points arranged as a sphere.
+    Create an ensemble of points arranged as a sphere, which can be squeezed into an ellipsoid.
 
-    using golden spiral to approximate an even distribution
+    Uses a golden spiral to approximate an even distribution.
     '''
 
     def __init__(self, r, radius=1.9, n_sphere_point=960):
         '''
-        :param r: radius of the ellipsoid
-        :param radius: size of the individual points composing it
-        :param n_sphere_point: This parameter defines the amount of points in the sphere
+        Points centres are placed on a sphere of radius r - radius (stored as properties r, a, b and c), centred at the origin.
+
+        :param r: radius of the sphere, points included, in Angstrom
+        :param radius: radius of the individual points composing it, in Angstrom
+        :param n_sphere_point: number of points in the sphere
         '''
 
         pts = []
@@ -303,7 +314,7 @@ class Sphere(Structure):
 
     def _old_get_surface(self):
         '''
-        compute sphere surface.
+        compute the surface of the unsqueezed sphere passing through the points centres (property r).
 
         :returns: surface in A^2
         '''
@@ -311,7 +322,7 @@ class Sphere(Structure):
 
     def _old_get_volume(self):
         '''
-        compute sphere volume.
+        compute the volume of the unsqueezed sphere passing through the points centres (property r).
 
         :returns: volume in A^3
         '''
@@ -321,7 +332,9 @@ class Sphere(Structure):
         '''
         semi-axes of the ellipsoid enveloping the points (the sphere of radius r passed at creation, squeezed).
 
-        :returns: semi-axes along x, y and z
+        :returns: semi-axis along x, in Angstrom
+        :returns: semi-axis along y, in Angstrom
+        :returns: semi-axis along z, in Angstrom
         '''
         outer = self.properties['r'] + self.properties["pt_radius"]
         return outer * self.properties['p1'], outer * self.properties['p2'], outer * self.properties['p3']
@@ -356,11 +369,12 @@ class Sphere(Structure):
 
     def ccs(self, gas=1):
         '''
-        compute spheroid CCS.
+        compute spheroid CCS, as a quarter of the surface of an ellipsoid having semi-axes a + pt_radius + gas, b + pt_radius + gas and c + pt_radius + gas (properties a, b and c are the squeezed semi-axes through the points centres).
 
-        Uses analytical approximation to surface area.
+        Uses analytical approximation to surface area (Knud Thomsen).
 
-        :returns: surface in A^2
+        :param gas: probe gas radius in Angstrom
+        :returns: CCS in A^2
         '''
 
         a = self.properties['a']+self.properties["pt_radius"] + gas
@@ -372,10 +386,10 @@ class Sphere(Structure):
 
     def squeeze(self, deformation, preserve_volume=True):
         '''
-        squeeze sphere according to deformation coefficient(s)
+        squeeze sphere according to deformation coefficient(s). Coefficients are stored as properties p1, p2 and p3, and the current conformation is scaled by them around its center.
 
-        :param deformation: deformation coefficient. Can be a float (deformation of one axis), or a list of 2 or 3 floats.
-        :param preserve_volume: If true and deformation is either a float or a list of 2 floats, correct remaining axes to preserve volume.
+        :param deformation: deformation coefficient. Can be a float (deformation of the x axis), or a list of 2 (x and y axes) or 3 (x, y and z axes) floats.
+        :param preserve_volume: If true and deformation is either a float or a list of 2 floats, correct remaining axes to preserve volume. Otherwise, the remaining coefficients keep their previous value.
         '''
 
         if isinstance(deformation, float):
@@ -421,12 +435,10 @@ class Sphere(Structure):
 
     def check_inclusion(self, p):
         '''
-        test which points in the array p lie inside the ellipsoid enveloping the points.
+        test which points in the array p lie inside the ellipsoid enveloping the points, centred at the current center of geometry.
 
-        overloading of superclass function, which is slower (here we can use the ellipsoid functional form to speed up things)
-
-        :param p: list of points (numpy array)
-        :returns: boolean array, True for points inside
+        :param p: points, as an (n, 3) numpy array
+        :returns: boolean array of length n, True for points inside
         '''
         center = self.get_center()
         a, b, c = self._semi_axes()
@@ -437,7 +449,7 @@ class Sphere(Structure):
 
     def get_sphericity(self):
         '''
-        compute sphericity (makes sense only for squeezed spheres, obviously..)
+        compute sphericity of the ellipsoid enveloping the points (makes sense only for squeezed spheres, obviously..)
 
         :returns: shape sphericity
         '''
@@ -452,12 +464,14 @@ class Ellipsoid(Structure):
     def __init__(self, a, b, c, radius=1.9, pts_density_u=np.pi /
                  36, pts_density_v=np.pi / 36):
         '''
-        :param a: x radius of the ellipsoid
-        :param b: y radius of the ellipsoid
-        :param c: z radius of the ellipsoid
-        :param radius: size of the individual points composing it
-        :param pts_density_u: This parameter defines the density of points along the u angle (using parametric function for ellipsoid)
-        :param pts_density_v: This parameter defines the density of points along the v angle (using parametric function for ellipsoid)
+        Points centres are placed on an ellipsoid of semi-axes a - radius, b - radius and c - radius (stored as properties a, b and c), centred at the origin.
+
+        :param a: x radius of the ellipsoid, points included, in Angstrom
+        :param b: y radius of the ellipsoid, points included, in Angstrom
+        :param c: z radius of the ellipsoid, points included, in Angstrom
+        :param radius: radius of the individual points composing it, in Angstrom
+        :param pts_density_u: angular step between points along the u angle, in radians (using parametric function for ellipsoid)
+        :param pts_density_v: angular step between points along the v angle, in radians (using parametric function for ellipsoid)
         '''
 
         new_a = a - radius
@@ -488,11 +502,9 @@ class Ellipsoid(Structure):
 
     def check_inclusion(self, p):
         '''
-        count how many points in the array p are included in the ellipsoid.
+        count how many points in the array p are included in the ellipsoid passing through the points centres (properties a, b and c), centred at self.properties['center'].
 
-        overloading of superclass function, which is slower (here we can use the ellipsoid functional form to speed up things)
-
-        :param p: list of points (numpy array)
+        :param p: points, as an (n, 3) numpy array
         :returns: quantity of points located inside the ellipsoid
         '''
         test = (p[:, 0] - self.properties['center'][0])**2 / self.properties['a']**2 + (p[:, 1] - self.properties['center'][1])**2 / self.properties['b']**2 + (p[:, 2] - self.properties['center'][2])**2 / self.properties['c']**2
@@ -500,9 +512,9 @@ class Ellipsoid(Structure):
 
     def get_surface(self):
         '''
-        compute ellipsoid surface.
+        compute the surface of the ellipsoid passing through the points centres (properties a, b and c).
 
-        Note: using analytical value, uses analytical approximation to surface area
+        Uses analytical approximation to surface area (Knud Thomsen).
 
         :returns: surface in A^2
         '''
@@ -514,7 +526,7 @@ class Ellipsoid(Structure):
 
     def get_volume(self):
         '''
-        compute ellipsoid volume.
+        compute the volume of the ellipsoid passing through the points centres (properties a, b and c).
 
         :returns: volume in A^3
         '''
@@ -523,7 +535,7 @@ class Ellipsoid(Structure):
 
     def get_sphericity(self):
         '''
-        compute ellipsoid sphericity.
+        compute sphericity of the ellipsoid passing through the points centres.
 
         :returns: ellipsoid sphericity
         '''
@@ -532,11 +544,12 @@ class Ellipsoid(Structure):
 
     def ccs(self, gas=1):
         '''
-        compute ellipsoid CCS.
+        compute ellipsoid CCS, as a quarter of the surface of an ellipsoid having semi-axes a + pt_radius + gas, b + pt_radius + gas and c + pt_radius + gas.
 
-        Uses analytical approximation to surface area.
+        Uses analytical approximation to surface area (Knud Thomsen).
 
-        :returns: surface in A^2
+        :param gas: probe gas radius in Angstrom
+        :returns: CCS in A^2
         '''
         a = self.properties['a'] + self.properties["pt_radius"] + gas
         b = self.properties['b'] + self.properties["pt_radius"] + gas

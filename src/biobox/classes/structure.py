@@ -1,12 +1,12 @@
-# Copyright (c) 2014-2022 Matteo Degiacomi
+# Copyright (c) 2014-2026 Matteo Degiacomi
 #
-# BiobOx is free software ;
+# biobox is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
 # either version 2 of the License, or (at your option) any later version.
-# BiobOx is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;
+# biobox is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 # See the GNU General Public License for more details.
-# You should have received a copy of the GNU General Public License along with BiobOx ;
+# You should have received a copy of the GNU General Public License along with biobox ;
 # if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #
 # Author : Matteo Degiacomi, matteo.degiacomi@gmail.com
@@ -72,10 +72,22 @@ class Structure(object):
             self.points = self.coordinates.view()[self.current]
 
     def __len__(self, dim="atoms"):
+        '''
+        number of points in the current conformation.
+
+        :param dim: dimension to measure. Only "atoms" is supported (any other value returns None).
+        :returns: number of points (int)
+        '''
         if dim == "atoms":
             return len(self.points)
 
     def __getitem__(self, key):
+        '''
+        index the conformations database.
+
+        :param key: index or slice, applied to the first (conformation) axis of the coordinates array
+        :returns: self.coordinates[key], e.g. an nx3 numpy array for a single integer key
+        '''
         return self.coordinates[key]
 
     def set_current(self, pos):
@@ -93,10 +105,10 @@ class Structure(object):
 
     def get_xyz(self, indices=[]):
         '''
-        get points coordinates.
+        get points coordinates of the current conformation.
 
         :param indices: indices of points to select. If none is provided, all points coordinates are returned.
-        :returns: coordinates of all points indexed by the provided indices list, or all of them if no list is provided.
+        :returns: kx3 numpy array with the coordinates of the points indexed by the provided indices list, or nx3 array of all of them if no list is provided (in that case a view of the coordinates, not a copy).
         '''
         if len(indices) == 0:
             return self.points
@@ -105,18 +117,18 @@ class Structure(object):
 
     def set_xyz(self, coords):
         '''
-        set point coordinates.
+        set point coordinates of the current conformation (a copy of coords is stored).
 
-        :param coords: array of 3D points
+        :param coords: nx3 numpy array of 3D points, one per point of the Structure
         '''
         self.coordinates[self.current] = deepcopy(coords)
         self._point_to_current()
 
     def add_xyz(self, coords):
         '''
-        add a new alternative conformation to the database
+        add a new alternative conformation to the database. The current conformation is set to the first of the added ones.
 
-        :param coords: array of 3D points, or array of arrays of 3D points (in case multiple alternative coordinates must be added at the same time)
+        :param coords: nx3 numpy array of 3D points, or mxnx3 numpy array (in case multiple alternative coordinates must be added at the same time)
         '''
         # self.coordinates numpy array containing an ensemble of alternative
         # coordinates in 3D space
@@ -149,9 +161,9 @@ class Structure(object):
         '''
         remove one conformation from the conformations database.
 
-        the new current conformation will be the previous one.
+        the new current conformation is the one preceding the removed one (or the first one, if index is 0).
 
-        :param index: alternative coordinates set to remove
+        :param index: index of the alternative coordinates set to remove
         '''
         self.coordinates = np.delete(self.coordinates, index, axis=0)
         if index > 0:
@@ -172,9 +184,9 @@ class Structure(object):
         '''
         translate the current conformation by a given amount. Other conformations are not moved.
 
-        :param x: translation around x axis
-        :param y: translation around y axis
-        :param z: translation around z axis
+        :param x: translation along x axis
+        :param y: translation along y axis
+        :param z: translation along z axis
         '''
 
         # if center has not been defined yet (may happen when using
@@ -195,9 +207,9 @@ class Structure(object):
         Make sure that the center of your structure is at the origin, if you don't want to get a translation as well!
         rotating an object being not centered requires to first translate the ellipsoid at the origin, rotate it, and bringing it back.
 
-        :param x: rotation around x axis
-        :param y: rotation around y axis
-        :param z: rotation around z axis
+        :param x: rotation around x axis, in degrees
+        :param y: rotation around y axis, in degrees
+        :param z: rotation around z axis, in degrees
         '''
         alpha = np.radians(x)
         beta = np.radians(y)
@@ -228,7 +240,9 @@ class Structure(object):
 
     def get_center(self):
         '''
-        compute protein center of geometry (also assigns it to self.properties["center"] key).
+        compute the center of geometry of the current conformation (also assigns it to self.properties["center"] key).
+
+        :returns: numpy array of 3 elements (a copy), [0, 0, 0] if the Structure has no points
         '''
         if len(self.points) > 0:
             self.properties['center'] = np.mean(self.points, axis=0)
@@ -246,9 +260,11 @@ class Structure(object):
 
     def get_size(self):
         '''
-        compute the dimensions of the object along x, y and z.
+        compute the dimensions of the current conformation along x, y and z.
 
-        .. note: points radii are not kept into account.
+        .. note:: points radii are not kept into account.
+
+        :returns: numpy array with the extent along x, y and z
         '''
         x = np.max(self.points[:, 0]) - np.min(self.points[:, 0])
         # +self.properties['radius']*2
@@ -261,8 +277,10 @@ class Structure(object):
         '''
         compute matrix needed to rotate the system around an arbitrary axis (using Euler-Rodrigues formula).
 
-        :param axis: 3d vector (numpy array), representing the axis around which to rotate
-        :param theta: desired rotation angle
+        The matrix is meant to multiply points on the right (p' = p M), as in :func:`apply_transformation <biobox.classes.structure.Structure.apply_transformation>`, and then rotates them counterclockwise by theta around axis.
+
+        :param axis: 3d vector (numpy array), representing the axis around which to rotate (it does not need to be normalized)
+        :param theta: desired rotation angle, in radians
         :returns: 3x3 rotation matrix
         '''
 
@@ -313,7 +331,11 @@ class Structure(object):
         '''
         Align the current conformation on its principal axes. Other conformations are not moved.
 
-        First principal axis aligned along x, second along y and third along z.
+        The conformation is first centered at the origin, then the first principal axis (smallest moment of inertia) is aligned along x, the second along y and the third along z.
+
+        :returns: center of geometry before alignment (numpy array of 3 elements)
+        :returns: 3x3 rotation matrix applied first (as p' = p M)
+        :returns: 3x3 rotation matrix applied second (as p' = p M)
         '''
 
         # this method is inspired from the procedure followed in in VMD's orient package:
@@ -362,7 +384,9 @@ class Structure(object):
 
     def write_pdb(self, filename, index=[]):
         '''
-        write a multi PDB file where every point is a sphere. VdW radius is written into beta factor.
+        write a multi PDB file where every point is a sphere. VdW radius is written into beta factor, and occupancy is 1.
+
+        Every point is named SPH, in chain A, with residue number equal to its index (modulo 9999). Every frame is terminated by an END record.
 
         :param filename: name of file to output
         :param index: list of frame indices to write to file. By default, a multipdb with all frames will be produced.
@@ -443,10 +467,10 @@ class Structure(object):
         generate density map from points
 
         :param step: size of cubic voxels, in Angstrom
-        :param sigma: gaussian kernel sigma
+        :param sigma: gaussian kernel sigma, in voxels
         :param kernel_half_width: kernel half width, in voxels
-        :param buff: padding to add at points cloud boundaries
-        :returns: :func:`Density <biobox.classes.density.Density>` object, containing a simulated density map
+        :param buff: padding to add at points cloud boundaries, in Angstrom
+        :returns: :func:`Density <biobox.classes.density.Density>` object, containing a simulated density map of the current conformation, scaled to a maximum of 1
         '''
         axes = self._grid_axes(self.points, step, buff)
         b = self._density_on_grid(self.points, axes, step, sigma, kernel_half_width)
@@ -471,7 +495,7 @@ class Structure(object):
 
         :param pts: points the grid encloses
         :param step: size of cubic voxels, in Angstrom
-        :param buff: padding to add at points cloud boundaries
+        :param buff: padding to add at points cloud boundaries, in Angstrom
         :returns: list of three arrays, the coordinates of grid points along x, y and z
         '''
         return [np.arange(np.min(pts[:, i]) - buff, np.max(pts[:, i]) + buff + step, step) for i in range(3)]
@@ -533,8 +557,8 @@ class Structure(object):
 
         No superposition is performed, so conformations should be aligned beforehand (e.g. with :func:`rmsd_one_vs_all <biobox.classes.structure.Structure.rmsd_one_vs_all>` and align=True).
 
-        :param indices: indices of points for which RMSF will be calculated. If no indices list is provided, RMSF of all points will be calculated.
-        :returns: numpy aray with RMSF of all provided indices, in the same order
+        :param indices: indices of points for which RMSF will be calculated. If no indices list is provided (default -1), RMSF of all points will be calculated.
+        :returns: numpy array with RMSF of all provided indices, in the same order (same units as the coordinates)
         '''
 
         if self.coordinates.shape[0] < 2:
@@ -559,10 +583,10 @@ class Structure(object):
         '''
         compute Principal Components Analysis (PCA) on specific points within all the alternative coordinates.
 
-        :param components: eigenspace dimensions
-        :param indices: points indices to be considered for PCA
-        :returns: numpy array of projection of each conformation into the n-dimensional eigenspace
-        :returns: sklearn PCA object
+        :param components: eigenspace dimensions (passed as n_components to sklearn PCA)
+        :param indices: points indices to be considered for PCA. By default (-1), all points are used.
+        :returns: numpy array of projection of each conformation into the eigenspace (one row per conformation, one column per component)
+        :returns: fitted sklearn PCA object
         '''
 
         from sklearn.decomposition import PCA
@@ -588,9 +612,9 @@ class Structure(object):
         uses Kabsch alignement algorithm.
 
         :param ref_index: index of reference structure in conformations database
-        :param points_index: if set, only specific points will be considered for comparison
-        :param align: if set to true, all conformations will be aligned to reference (note: cannot be undone!)
-        :returns: RMSD of all structures with respect of reference structure (in a numpy array)
+        :param points_index: if set, only specific points will be considered for comparison (and for the alignment)
+        :param align: if set to true, all conformations (all their points) are rotated and translated onto the reference (note: cannot be undone!)
+        :returns: RMSD of all structures with respect of reference structure (numpy array with one value per conformation, 0 for the reference)
         '''
 
         # see: http://www.pymolwiki.org/index.php/Kabsch#The_Code
@@ -666,8 +690,9 @@ class Structure(object):
         :param i: index of the first structure
         :param j: index of the second structure
         :param points_index: if set, only specific points will be considered for comparison
-        :param full: if True, RMSD an rotation matrx are returned, RMSD only otherwise
-        :returns: RMSD of the two structures. If full is True, the rotation matrix is also returned
+        :param full: if True, RMSD and rotation matrix are returned, RMSD only otherwise
+        :returns: RMSD of the two structures (float)
+        :returns: only if full is True, 3x3 rotation matrix M superimposing structure j onto structure i once both are centered at their centers of geometry (as p' = p M)
         '''
 
         # see: http://www.pymolwiki.org/index.php/Kabsch#The_Code
@@ -727,7 +752,7 @@ class Structure(object):
 
         :param points_index: if set, only specific points will be considered for comparison
         :param flat: if True, returns flattened distance matrix
-        :returns: RMSD distance matrix
+        :returns: RMSD distance matrix, as a symmetric mxm numpy array (m conformations), or, if flat is True, a 1D numpy array of the m(m-1)/2 values above the diagonal, in row order
         '''
 
         if flat:

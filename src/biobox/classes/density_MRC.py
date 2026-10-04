@@ -10,6 +10,13 @@ from functools import reduce, cmp_to_key
 #from density import Structure
 
 def cmp(a, b):
+    '''
+    three-way comparison (Python 2 cmp).
+
+    :param a: first value
+    :param b: second value
+    :returns: 1 if a > b, -1 if a < b, 0 otherwise
+    '''
     return (a > b) - (a < b)
 
 # -----------------------------------------------------------------------------
@@ -18,8 +25,14 @@ def cmp(a, b):
 # -----------------------------------------------------------------------------
 #
 class Data_Cache:
+    '''
+    cache of data objects using a limited amount of memory. The least recently accessed data, not referenced elsewhere, is released first.
+    '''
 
     def __init__(self, size):
+        '''
+        :param size: maximum memory to use, in bytes
+        '''
         self.size = size
         self.used = 0
         self.time = 1
@@ -30,6 +43,15 @@ class Data_Cache:
     # ---------------------------------------------------------------------------
     #
     def cache_data(self, key, value, size, description, groups = []):
+        '''
+        store a value in the cache (replacing any value having the same key), then release data if the memory limit is exceeded.
+
+        :param key: key identifying the value
+        :param value: data to store
+        :param size: memory used by the value, in bytes
+        :param description: text describing the value
+        :param groups: list of groups the value belongs to
+        '''
 
         self.remove_key(key)
         d = Cached_Data(key, value, size, description, self.time_stamp(), groups)
@@ -47,6 +69,12 @@ class Data_Cache:
     # ---------------------------------------------------------------------------
     #
     def lookup_data(self, key):
+        '''
+        retrieve a value from the cache and update its access time, then release data if the memory limit is exceeded.
+
+        :param key: key identifying the value
+        :returns: cached value, or None if the key is not in the cache
+        '''
 
         data = self.data
         if key in data: #data.has_key(key):
@@ -62,6 +90,11 @@ class Data_Cache:
     # ---------------------------------------------------------------------------
     #
     def remove_key(self, key):
+        '''
+        remove the value having the given key (if present), then release data if the memory limit is exceeded.
+
+        :param key: key identifying the value
+        '''
 
         data = self.data
         if key in data: #.has_key(key):
@@ -71,6 +104,10 @@ class Data_Cache:
     # ---------------------------------------------------------------------------
     #
     def group_keys_and_data(self, group):
+        '''
+        :param group: group identifier
+        :returns: iterable of (key, value) pairs of the values belonging to the group (empty list if the group is unknown)
+        '''
 
         groups = self.groups
         if not group in groups: #.has_key(group):
@@ -82,6 +119,11 @@ class Data_Cache:
     # ---------------------------------------------------------------------------
     #
     def resize(self, size):
+        '''
+        change the memory limit, and release data if it is exceeded.
+
+        :param size: maximum memory to use, in bytes
+        '''
 
         self.size = size
         self.reduce_use()
@@ -89,6 +131,9 @@ class Data_Cache:
     # ---------------------------------------------------------------------------
     #
     def reduce_use(self):
+        '''
+        if the memory limit is exceeded, release values not referenced outside the cache, least recently accessed first, until the memory used is within the limit.
+        '''
 
         if self.used <= self.size:
             return
@@ -106,6 +151,11 @@ class Data_Cache:
     # ---------------------------------------------------------------------------
     #
     def remove_data(self, d):
+        '''
+        remove a cached entry from the cache and from its groups.
+
+        :param d: :class:`Cached_Data <biobox.classes.density_MRC.Cached_Data>` entry to remove
+        '''
 
         del self.data[d.key]
         self.used = self.used - d.size
@@ -120,6 +170,9 @@ class Data_Cache:
     # ---------------------------------------------------------------------------
     #
     def time_stamp(self):
+        '''
+        :returns: current value of the access counter (incremented at each call)
+        '''
 
         t = self.time
         self.time = t + 1
@@ -128,8 +181,19 @@ class Data_Cache:
 ###############################################################################
 
 class Cached_Data:
+    '''
+    entry of a :class:`Data_Cache <biobox.classes.density_MRC.Data_Cache>`.
+    '''
 
     def __init__(self, key, value, size, description, time_stamp, groups):
+        '''
+        :param key: key identifying the value
+        :param value: cached data
+        :param size: memory used by the value, in bytes
+        :param description: text describing the value
+        :param time_stamp: access counter value at last access
+        :param groups: list of groups the value belongs to
+        '''
 
         self.key = key
         self.value = value
@@ -141,8 +205,17 @@ class Cached_Data:
 ###############################################################################
 
 class MRC_Grid:
+    '''
+    grid data read from an MRC, CCP4 or IMOD file, and its placement in space.
+    '''
 
     def __init__(self, path, file_type = 'mrc'):
+        '''
+        read the file header and set up the grid size, value type, origin, voxel size, cell angles, rotation and index to coordinate transforms.
+
+        :param path: file name (or list or tuple whose first element is the file name)
+        :param file_type: mrc (default), ccp4 or imod
+        '''
 
         d = MRC_Data(path, file_type)
         self.mrc_data = d
@@ -185,6 +258,10 @@ class MRC_Grid:
     # ---------------------------------------------------------------------------
     #
     def name_from_path(self, path):
+        '''
+        :param path: file name (or list or tuple whose first element is the file name)
+        :returns: base name of the file
+        '''
 
         if isinstance(path, (list,tuple)):
                 p = path[0]
@@ -198,6 +275,9 @@ class MRC_Grid:
     # Compute 3 by 4 matrices encoding rotation and translation.
     #
     def update_transform(self):
+        '''
+        compute the 3x4 matrices mapping matrix indices to xyz coordinates and back (from origin, step, cell angles and rotation), and call the change callbacks if they changed.
+        '''
 
         saxes = skew_axes(self.cell_angles)
         rsaxes = [apply_rotation(self.rotation, a) for a in saxes]
@@ -213,6 +293,12 @@ class MRC_Grid:
     # The returned matrix index need not be integers.
     #
     def xyz_to_ijk(self, xyz):
+        '''
+        map an xyz point to the (not necessarily integer) matrix index.
+
+        :param xyz: point coordinates, in Angstrom
+        :returns: matrix index (i, j, k), as a tuple of floats
+        '''
 
         return map_point(xyz, self.xyz_to_ijk_transform)
 
@@ -221,6 +307,12 @@ class MRC_Grid:
     # This function maps the matrix index to the xyz point.
     #
     def ijk_to_xyz(self, ijk):
+        '''
+        map a matrix index to an xyz point.
+
+        :param ijk: matrix index (i, j, k)
+        :returns: point coordinates, in Angstrom, as a tuple
+        '''
 
         return map_point(ijk, self.ijk_to_xyz_transform)
 
@@ -228,6 +320,16 @@ class MRC_Grid:
     #
     def matrix(self, ijk_origin = (0,0,0), ijk_size = None,
                          ijk_step = (1,1,1), progress = None, from_cache_only = False):
+        '''
+        return a submatrix of the data, from the cache if available, otherwise read from file (and cached).
+
+        :param ijk_origin: index of the first element along x, y and z
+        :param ijk_size: number of elements along x, y and z (default: the full grid)
+        :param ijk_step: step between elements along x, y and z
+        :param progress: progress reporter, or None
+        :param from_cache_only: if True, do not read the file when the data is not cached
+        :returns: numpy array where element ijk is accessed as m[k,j,i], or None if from_cache_only is True and the data is not cached
+        '''
 
         if ijk_size == None:
             ijk_size = self.size
@@ -248,11 +350,28 @@ class MRC_Grid:
     # callers responsibility to make sure the arguments are valid.
     #
     def read_matrix(self, ijk_origin, ijk_size, ijk_step, progress):
+        '''
+        read a submatrix from file, see :func:`MRC_Data.read_matrix <biobox.classes.density_MRC.MRC_Data.read_matrix>`.
+
+        :param ijk_origin: index of the first element along x, y and z
+        :param ijk_size: number of elements along x, y and z
+        :param ijk_step: step between elements along x, y and z
+        :param progress: progress reporter, or None
+        :returns: numpy array where element ijk is accessed as m[k,j,i]
+        '''
 
         return self.mrc_data.read_matrix(ijk_origin, ijk_size, ijk_step, progress)
 
 
     def cached_data(self, origin, size, step):
+        '''
+        look for the requested submatrix in the cache, either stored as such or contained in a larger cached matrix.
+
+        :param origin: index of the first element along x, y and z
+        :param size: number of elements along x, y and z
+        :param step: step between elements along x, y and z
+        :returns: numpy array where element ijk is accessed as m[k,j,i], or None if not found (or if there is no cache)
+        '''
 
         dcache = self.data_cache
         if dcache is None:
@@ -293,6 +412,14 @@ class MRC_Grid:
     # ---------------------------------------------------------------------------
     #
     def cache_data(self, m, origin, size, step):
+        '''
+        store a submatrix in the cache (if there is one).
+
+        :param m: numpy array to store
+        :param origin: index of the first element along x, y and z
+        :param size: number of elements along x, y and z
+        :param step: step between elements along x, y and z
+        '''
 
         dcache = self.data_cache
         if dcache is None:
@@ -308,6 +435,12 @@ class MRC_Grid:
     # ---------------------------------------------------------------------------
     #
     def data_description(self, origin, size, step):
+        '''
+        :param origin: index of the first element along x, y and z
+        :param size: number of elements along x, y and z
+        :param step: step between elements along x, y and z
+        :returns: text describing a submatrix: grid name, index bounds and step (if not 1)
+        '''
 
         description = self.name
 
@@ -328,6 +461,9 @@ class MRC_Grid:
     # ---------------------------------------------------------------------------
     #
     def clear_cache(self):
+        '''
+        remove all cached submatrices of this grid.
+        '''
 
         dcache = self.data_cache
         if dcache is None:
@@ -339,12 +475,18 @@ class MRC_Grid:
     # ---------------------------------------------------------------------------
     #
     def add_change_callback(self, cb):
+        '''
+        :param cb: function to call, with a reason string, when values or coordinates change
+        '''
 
         self.change_callbacks.append(cb)
 
     # ---------------------------------------------------------------------------
     #
     def remove_change_callback(self, cb):
+        '''
+        :param cb: callback function to remove
+        '''
 
         self.change_callbacks.remove(cb)
 
@@ -352,6 +494,9 @@ class MRC_Grid:
     # Code has modified matrix elements, or the value type has changed.
     #
     def values_changed(self):
+        '''
+        call the change callbacks with reason 'values changed'.
+        '''
 
         self.call_callbacks('values changed')
 
@@ -359,12 +504,18 @@ class MRC_Grid:
     # Mapping of array indices to xyz coordinates has changed.
     #
     def coordinates_changed(self):
+        '''
+        call the change callbacks with reason 'coordinates changed'.
+        '''
 
         self.call_callbacks('coordinates changed')
 
     # ---------------------------------------------------------------------------
     #
     def call_callbacks(self, reason):
+        '''
+        :param reason: string passed to every change callback
+        '''
 
         for cb in self.change_callbacks:
             cb(reason)
@@ -372,8 +523,18 @@ class MRC_Grid:
 ###############################################################################
 
 class MRC_Data:
+    '''
+    header information of an MRC, CCP4 or IMOD file, and access to its data.
+    '''
 
     def __init__(self, path, file_type):
+        '''
+        read the file header, detecting byte order, and derive value type, axes order, size, voxel size, cell angles, origin and rotation.
+        Raises SyntaxError if the header is invalid or the file is too small, and Exception if cell angles are invalid.
+
+        :param path: file name
+        :param file_type: mrc, ccp4 or imod
+        '''
 
 
         self.path = path
@@ -483,7 +644,7 @@ class MRC_Data:
         compute matrix needed to rotate the system around an arbitrary axis (using Euler-Rodrigues formula).
 
         :param axis: 3d vector (numpy array), representing the axis around which to rotate
-        :param theta: desired rotation angle
+        :param theta: desired rotation angle, in radians
         :returns: 3x3 rotation matrix
         '''
 
@@ -506,6 +667,15 @@ class MRC_Data:
     # Format derived from C header file mrc.h.
     #
     def read_header_values(self, file1, file_size, file_type):
+        '''
+        read the header (format derived from C header file mrc.h), leaving the file positioned after the symmetry operators.
+        Raises SyntaxError if the size of the symmetry operators block is invalid.
+
+        :param file1: file object open in binary mode, positioned at the beginning of the file
+        :param file_size: file size, in bytes
+        :param file_type: mrc, ccp4 or imod (ccp4 reads the CCP4 header layout, others the MRC one)
+        :returns: dictionary of header values
+        '''
 
         MRC_USER = 29
         CCP4_USER = 15
@@ -570,6 +740,11 @@ class MRC_Data:
 
     #
     def value_type(self, mode, unsigned_8_bit):
+        '''
+        :param mode: MRC data mode (0: 8 bit integers, 1: 16 bit integers, 2: 32 bit floats, 6: unsigned 16 bit integers)
+        :param unsigned_8_bit: if True, mode 0 is read as unsigned
+        :returns: numpy dtype of data values. Raises SyntaxError for other modes.
+        '''
 
         MODE_char     = 0
         MODE_short    = 1
@@ -595,6 +770,15 @@ class MRC_Data:
 
     #
     def check_header_values(self, v, file_size, file1):
+        '''
+        check that grid size is positive and that the file is large enough to contain the data.
+        If the header declares symmetry operators that are missing, the file is moved back to the data start and v['symop'] is emptied.
+        Raises SyntaxError otherwise.
+
+        :param v: dictionary of header values
+        :param file_size: file size, in bytes
+        :param file1: file object, positioned at the end of the header
+        '''
 
         if v['nc'] <= 0 or v['nr'] <= 0 or v['ns'] <= 0:
             raise SyntaxError('Bad MRC grid size (%d,%d,%d)'
@@ -620,6 +804,14 @@ class MRC_Data:
 
     #
     def read_values(self, file1, etype, count):
+        '''
+        read binary values from file, swapping bytes if needed. Raises SyntaxError if the file is truncated.
+
+        :param file1: file object open in binary mode
+        :param etype: numpy type of the values
+        :param count: number of values to read
+        :returns: a single value if count is 1, otherwise a numpy array
+        '''
 
         esize = np.array((), etype).itemsize
         string = file1.read(esize * count)
@@ -630,6 +822,14 @@ class MRC_Data:
 
     #
     def read_values_from_string(self, string, etype, count):
+        '''
+        convert bytes into values, swapping bytes if needed.
+
+        :param string: bytes to convert
+        :param etype: numpy type of the values
+        :param count: if 1, return only the first value
+        :returns: a single value if count is 1, otherwise a numpy array
+        '''
 
         values = np.frombuffer(string, etype)
         if self.swap_bytes:
@@ -642,6 +842,15 @@ class MRC_Data:
     # Returns 3d numpy matrix with zyx index order.
     #
     def read_matrix(self, ijk_origin, ijk_size, ijk_step, progress):
+        '''
+        read a submatrix from the file, accounting for the file axes order.
+
+        :param ijk_origin: index of the first element along x, y and z
+        :param ijk_size: number of elements along x, y and z
+        :param ijk_step: step between elements along x, y and z
+        :param progress: progress reporter, or None
+        :returns: numpy array with zyx index order
+        '''
 
         # ijk correspond to xyz.    crs refers to fast,medium,slow matrix file axes.
         crs_origin = [ijk_origin[a] for a in self.crs_to_ijk]
@@ -659,6 +868,10 @@ class MRC_Data:
 
     #
     def permute_matrix_to_xyz_axis_order(self, matrix):
+        '''
+        :param matrix: numpy array with indices in file axes order (slow, medium, fast)
+        :returns: numpy array with zyx index order
+        '''
 
         if self.ijk_to_crs == (0,1,2):
             return matrix
@@ -671,6 +884,15 @@ class MRC_Data:
 ###############################################################################
 
 def valid_cell_angles(alpha, beta, gamma, path):
+    '''
+    check cell angles. Raises Exception if any angle is not between 0 and 180, if their sum is not less than 360, or if the largest is not less than the sum of the other two.
+
+    :param alpha: alpha angle, in degrees
+    :param beta: beta angle, in degrees
+    :param gamma: gamma angle, in degrees
+    :param path: file name, used in the error message
+    :returns: True if angles are valid
+    '''
 
     err = None
 
@@ -697,6 +919,13 @@ def valid_cell_angles(alpha, beta, gamma, path):
 # is translation.
 #
 def transformation_and_inverse(origin, step, axes):
+    '''
+    :param origin: xyz coordinates of the grid origin, in Angstrom
+    :param step: voxel size along each axis, in Angstrom
+    :param axes: unit vectors of the three grid axes
+    :returns: 3x4 matrix mapping indices to xyz coordinates (first 3 columns give rotation and scaling, last column the translation), as nested tuples
+    :returns: 3x4 matrix of the inverse transform, as nested tuples
+    '''
 
     ox, oy, oz = origin
     d0, d1, d2 = step
@@ -720,6 +949,9 @@ def transformation_and_inverse(origin, step, axes):
 def skew_axes(cell_angles):
     '''
     unit vectors along the cell axes a, b and c, for the given cell angles (in degrees), with a along x and b in the xy plane.
+
+    :param cell_angles: alpha, beta and gamma angles, in degrees
+    :returns: three unit vectors, as a tuple of 3-tuples
     '''
     alpha, beta, gamma = map(lambda a: a * np.pi / 180, cell_angles)
 
@@ -735,6 +967,14 @@ def skew_axes(cell_angles):
 # -----------------------------------------------------------------------------
 #
 def scale_and_skew(ijk, step, cell_angles):
+    '''
+    convert a grid index into xyz coordinates, applying voxel size and cell skewing.
+
+    :param ijk: grid index (i, j, k)
+    :param step: voxel size along each axis, in Angstrom
+    :param cell_angles: alpha, beta and gamma angles, in degrees
+    :returns: xyz coordinates, as a tuple
+    '''
 
     # Convert to radians
     alpha, beta, gamma = map(lambda a: a * np.pi / 180, cell_angles)
@@ -756,6 +996,11 @@ def scale_and_skew(ijk, step, cell_angles):
 # -----------------------------------------------------------------------------
 #
 def apply_rotation(r, v):
+    '''
+    :param r: 3x3 rotation matrix
+    :param v: 3D vector
+    :returns: rotated vector, as a tuple
+    '''
 
     rv = [r[a][0]*v[0] + r[a][1]*v[1] + r[a][2]*v[2] for a in (0,1,2)]
     return tuple(rv)
@@ -763,6 +1008,11 @@ def apply_rotation(r, v):
 # -----------------------------------------------------------------------------
 #
 def map_point(p, tf):
+    '''
+    :param p: 3D point
+    :param tf: 3x4 transformation matrix (rotation in the first 3 columns, translation in the last)
+    :returns: transformed point, as a tuple
+    '''
 
     tfp = [0,0,0]
     for r in range(3):
@@ -775,6 +1025,20 @@ def map_point(p, tf):
 
 def read_array(path, byte_offset, ijk_origin, ijk_size, ijk_step,
                              full_size, type1, byte_swap, progress = None):
+        '''
+        read a submatrix from a binary file, where the first axis varies fastest.
+
+        :param path: file name
+        :param byte_offset: position of the data start in the file, in bytes
+        :param ijk_origin: index of the first element along each file axis
+        :param ijk_size: number of elements along each file axis
+        :param ijk_step: step between elements along each file axis
+        :param full_size: size of the full data along each file axis
+        :param type1: numpy type of the values
+        :param byte_swap: if True, swap bytes after reading
+        :param progress: progress reporter, or None
+        :returns: numpy array with indices in reverse order with respect to the file axes
+        '''
 
         if (tuple(ijk_origin) == (0,0,0) and
                 tuple(ijk_size) == tuple(full_size) and
@@ -823,6 +1087,18 @@ def read_array(path, byte_offset, ijk_origin, ijk_size, ijk_step,
 #
 def read_full_array(path, byte_offset, size, type1, byte_swap,
                                         progress = None, block_size = 2**20):
+        '''
+        read a full array from a binary file making at most one copy of array in memory.
+
+        :param path: file name
+        :param byte_offset: position of the data start in the file, in bytes
+        :param size: size of the data along each file axis
+        :param type1: numpy type of the values
+        :param byte_swap: if True, swap bytes after reading
+        :param progress: progress reporter, or None
+        :param block_size: number of elements read at a time when a progress reporter is given
+        :returns: numpy array with indices in reverse order with respect to the file axes
+        '''
 
         a = allocate_array(size, type1)
 
@@ -854,6 +1130,18 @@ def read_full_array(path, byte_offset, size, type1, byte_swap,
 #
 def read_text_floats(path, byte_offset, size, array = None,
                                          transpose = False, line_format = None, progress = None):
+        '''
+        read ascii float values on as many lines as needed to fill an array.
+
+        :param path: file name
+        :param byte_offset: position of the data start in the file, in bytes
+        :param size: size of the data along each axis
+        :param array: array to fill (default: a new float32 array with indices in reverse order with respect to size)
+        :param transpose: if True, a new array has shape size, and the returned array is transposed
+        :param line_format: (field_size, max_fields) for fixed-width fields, or None for whitespace-separated values
+        :param progress: progress reporter, or None
+        :returns: filled numpy array
+        '''
 
         if array is None:
                 shape = list(size)
@@ -891,6 +1179,14 @@ def read_text_floats(path, byte_offset, size, array = None,
 # -----------------------------------------------------------------------------
 #
 def read_float_lines(f, array, line_format, progress = None):
+        '''
+        fill an array with float values read from file lines, skipping lines starting with #. Raises SyntaxError if values are too few or badly formatted.
+
+        :param f: file object
+        :param array: numpy array to fill (in flattened order)
+        :param line_format: (field_size, max_fields) for fixed-width fields, or None for whitespace-separated values
+        :param progress: progress reporter, or None
+        '''
 
         a_1d = array.ravel()
         count = len(a_1d)
@@ -924,6 +1220,14 @@ def read_float_lines(f, array, line_format, progress = None):
 # -----------------------------------------------------------------------------
 #
 def split_fields(line, field_size, max_fields):
+    '''
+    split a line into fixed-width fields, stopping at the first empty field.
+
+    :param line: text line
+    :param field_size: width of each field, in characters
+    :param max_fields: maximum number of fields returned
+    :returns: list of stripped fields
+    '''
 
     fields = []
     for k in range(0, len(line), field_size):
@@ -938,6 +1242,17 @@ def split_fields(line, field_size, max_fields):
 #
 def allocate_array(size, value_type = np.float32, step = None, progress = None,
                                      reverse_indices = True, zero_fill = False):
+        '''
+        allocate an array able to hold data of the given size, subsampled with the given step.
+
+        :param size: number of elements along each axis
+        :param value_type: numpy type of the values
+        :param step: step between elements along each axis (default: 1). Each axis gets 1 + (size - 1) // step elements.
+        :param progress: not used
+        :param reverse_indices: if True, the array shape is in reverse axes order
+        :param zero_fill: if True, the array is filled with zeros, otherwise it is not initialised
+        :returns: numpy array
+        '''
 
 
 
@@ -964,6 +1279,10 @@ def allocate_array(size, value_type = np.float32, step = None, progress = None,
 # -----------------------------------------------------------------------------
 #
 def closest_mrc2000_type(type1):
+        '''
+        :param type1: numpy type of the data values
+        :returns: numpy type to convert the data to (float32, int16 or int8). Raises TypeError if the type is not recognised.
+        '''
 
         if type1 in (np.float32, np.float64, np.int32, np.uint32, np.uint, np.uint16):
                 ctype = np.float32
@@ -979,6 +1298,14 @@ def closest_mrc2000_type(type1):
 # -----------------------------------------------------------------------------
 #can read 'mrc' or 'ccp4' or 'imod'
 def read_density(filename,extension):
+    '''
+    read a density map in MRC, CCP4 or IMOD format, one z section at a time.
+
+    :param filename: name of the file to read
+    :param extension: file format: mrc, ccp4 or imod
+    :returns: density map as a float64 numpy array, indexed as [x, y, z]
+    :returns: :class:`MRC_Grid <biobox.classes.density_MRC.MRC_Grid>` object, holding header information (e.g. origin and voxel size)
+    '''
 
     try:
         grid_data= MRC_Grid(filename, extension)

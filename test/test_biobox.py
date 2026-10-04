@@ -1766,6 +1766,64 @@ class test_structures(unittest.TestCase):
         finally:
             shutil.rmtree(tmp)
 
+    def test_assembly_radii_and_pdb(self):
+
+        print("\n> testing Assembly radii, buried surface and PDB output")
+        import tempfile
+        A = bb.Assembly()
+        A.load(bb.Sphere(10, radius=2.5), 2)
+        A.translate(30, 0, 0, unit=["1"])
+
+        # radii are carried into the merged structure, so units out of contact bury nothing
+        np.testing.assert_array_equal(np.unique(A.make_structure().data["radius"]), [2.5])
+        self.assertAlmostEqual(A.get_buried(), 0.0, places=6)
+
+        # as in Structure.write_pdb: serials in file order, occupancy 1, radius in beta
+        with tempfile.TemporaryDirectory() as tmp:
+            fname = os.path.join(tmp, "assembly.pdb")
+            A.write_pdb(fname)
+            lines = open(fname).readlines()
+        n = sum(len(u.points) for u in A.unit)
+        self.assertEqual([int(l[6:11]) for l in lines], list(range(1, n + 1)))
+        self.assertTrue(all(float(l[54:60]) == 1.0 and float(l[60:66]) == 2.5 for l in lines))
+
+    def test_polyhedron_measures_and_deformation(self):
+
+        print("\n> testing measures and deformation classes of a Polyhedron")
+        import tempfile
+        import biobox.measures.calculators as C
+        block = bb.Structure(np.random.default_rng(5).normal(size=(6, 3)))
+        P = bb.Polyhedron()
+        P.setup_polyhedron("Octahedron", block)
+        P.generate_polyhedron(40, 180, 0, 0)
+
+        # a Polyhedron is measured through make_structure
+        self.assertAlmostEqual(C.rgyr(P), C.rgyr(P.make_structure()), places=6)
+        self.assertAlmostEqual(C.sasa(P)[0], C.sasa(P.make_structure())[0], places=6)
+
+        # three vertices in two deformation classes: one coefficient per class, in both methods
+        P.add_deformation([0, 1])
+        P.add_deformation(2)
+        P.generate_polyhedron(40, 180, 0, 0, deformation=[1, 2])
+        with tempfile.TemporaryDirectory() as tmp:
+            P.write_poly_architecture(output=os.path.join(tmp, "arch"), deformation=[1, 2])
+            with self.assertRaises(Exception):
+                P.write_poly_architecture(output=os.path.join(tmp, "arch"), deformation=[1, 2, 3])
+        with self.assertRaises(Exception):
+            P.generate_polyhedron(40, 180, 0, 0, deformation=[1, 2, 3])
+
+    def test_global_grid_hull(self):
+
+        print("\n> testing that the convex hull of a global grid follows the obstacles")
+        from biobox.measures.path import Path
+        # the swollen hull is centred on the obstacles, so translating them does not change the grid
+        counts = []
+        for shift in [0.0, 50.0]:
+            P = Path(self.M.points + shift)
+            P.setup_global_search(step=1.0, use_hull=True)
+            counts.append(int(P.graph.access_grid.sum()))
+        self.assertLess(abs(counts[0] - counts[1]), 0.01 * counts[0])
+
 
 if __name__ == '__main__':
     unittest.main()

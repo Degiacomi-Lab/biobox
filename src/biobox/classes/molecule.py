@@ -1,12 +1,12 @@
-# Copyright (c) 2014-2022 Matteo Degiacomi
+# Copyright (c) 2014-2026 Matteo Degiacomi
 #
-# BiobOx is free software ;
+# biobox is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
 # either version 2 of the License, or (at your option) any later version.
-# BiobOx is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;
+# biobox is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 # See the GNU General Public License for more details.
-# You should have received a copy of the GNU General Public License along with BiobOx ;
+# You should have received a copy of the GNU General Public License along with biobox ;
 # if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #
 # Author : Matteo Degiacomi, matteo.degiacomi@gmail.com
@@ -41,17 +41,22 @@ class Molecule(Structure):
 
     def __init__(self, fname=""):
         '''
-        At instantiation, properties associated to every individual atoms are stored in a pandas Dataframe self.data.
-        The columns of the self.data have the following names:
-        atom, index, name, resname, chain, resid, beta, occupancy, atomtype, radius, charge.
+        Properties associated to every individual atom are stored in a pandas Dataframe self.data.
+        After loading a pdb, pqr or gro file, the columns of self.data have the following names:
+        atom, index, name, resname, chain, resid, occupancy, beta, atomtype, radius, charge, altloc, icode.
 
-        self.knowledge contains a knowledge base about atoms and residues properties. Default values are:
+        self.knowledge contains a knowledge base about atoms and residues properties. Default entries are:
 
-        * 'residue_mass' property stores the average mass for most common aminoacids (values from Expasy website)
-        * 'atom_vdw' vdw radius of common atoms
-        * 'atom_mass' mass of common atoms
+        * 'residue_mass' average mass of the most common amino acids, in Dalton (values from Expasy website)
+        * 'atom_vdw' vdw radius of common atoms, in Angstrom
+        * 'atom_ccs' radius of common atoms used for CCS calculations, in Angstrom
+        * 'atom_mass' mass of common atoms, in Dalton
+        * 'atomtype' element associated to common atom names
+        * 'AA_mapping' one-letter code of amino acid residue names
 
-        The knowledge base can be edited. For instance, to add information about residue "TST" mass in molecule M type: M.knowledge['mass_residue']["TST"]=142.42
+        The knowledge base can be edited. For instance, to add information about residue "TST" mass in molecule M type: M.knowledge['residue_mass']["TST"]=142.42
+
+        :param fname: name of a file to load. The file is parsed according to its extension (pdb, pqr, md or gro). If empty (default), an empty Molecule is created.
         '''
 
         super(Molecule, self).__init__(r=np.array([]))
@@ -115,6 +120,15 @@ class Molecule(Structure):
 
 
     def __add__(self, other):
+        '''
+        combine the current conformations of two molecules into a new molecule, via :class:`biobox.classes.multimer.Multimer`.
+
+        Atoms of self come first, followed by those of other. Chain names are kept as they are, so that chains of the two molecules having the same name share it.
+        The charge column is kept only if both molecules have it.
+
+        :param other: :class:`biobox.classes.molecule.Molecule` to add to self
+        :returns: new :class:`biobox.classes.molecule.Molecule` with a single conformation
+        '''
         from biobox.classes.multimer import Multimer
         M = Multimer()
         M.load_list([self, other], ["A", "B"])
@@ -129,8 +143,8 @@ class Molecule(Structure):
         Use as: N = self.addall(other)
 
         :param other: Other molecule object to add with self
-        :param conformations: List of specific conformations you with to add together (default == all)
-        :returns: New molecule object (as __add__) 
+        :param conformations: List of specific conformations you wish to add together (default == all)
+        :returns: New molecule object (as __add__), with one conformation per requested frame
         '''
         current_self = self.current; current_other = other.current
 
@@ -166,7 +180,7 @@ class Molecule(Structure):
         return information from knowledge base
 
         :param prop: desired property to extract from knowledge base
-        :returns: value associated to requested property, or nan if failed
+        :returns: value associated to requested property. An Exception is raised if the property is not in the knowledge base.
         '''
         if str(prop) in self.knowledge:
             return self.knowledge[str(prop)]
@@ -236,7 +250,7 @@ class Molecule(Structure):
 
         Models are split according to ENDMDL and END statement.
         All alternative coordinates are expected to have the same atoms.
-        After loading, the first model (M.current_model=0) will be set as active.
+        After loading, the first model (M.current=0) will be set as active.
         The chain name is column 22, unless the segment identifier (columns 73-76) has two characters, the first of which is that chain: the segment identifier is then the chain name, as written by :func:`write_pdb <biobox.classes.molecule.Molecule.write_pdb>`.
 
         :param pdb: PDB filename
@@ -482,7 +496,11 @@ class Molecule(Structure):
 
     def import_md(self, fname):
         '''
-        Import a .md structure file, as output by CASTEP
+        Import a .md structure file, as output by CASTEP, loading one conformation per MD step.
+
+        All atoms are assigned to residue TMP, number 0, of chain X, and their atomtype is their element name.
+        The radius, charge, altloc and icode columns are not created.
+
         :param fname: The filename of the md file
         '''
 
@@ -542,7 +560,9 @@ class Molecule(Structure):
 
         models are split according to ENDMDL and END statement.
         All alternative coordinates are expected to have the same atoms.
-        After loading, the first model (M.current_model=0) will be set as active.
+        After loading, the first model (M.current=0) will be set as active.
+        Charges are read from columns 55-62 and radii from columns 63-69, the chain name is column 22,
+        occupancy is set to 1, beta factor to 0, and atomtype to the first letter of the atom name.
 
         :param pqr: PQR filename
         :param include_hetatm: if True, HETATM will be included (they get skipped if False)
@@ -720,6 +740,9 @@ class Molecule(Structure):
         '''
         read a gro possibly containing multiple structures.
 
+        Any data already in the molecule is cleared first. Coordinates and box sizes are converted from nm to Angstrom,
+        and the box of every frame is stored in properties['box']. All atoms are assigned to chain A, and their atomtype is guessed from atom and residue names.
+
         :param filename: name of .gro file to import
         '''
 
@@ -785,7 +808,7 @@ class Molecule(Structure):
 
     def assign_atomtype(self):
         '''
-        guess atomtype from atom names
+        guess atomtype from atom names, using knowledge['atomtype'], and overwrite the atomtype column of all atoms. Atoms with an unknown name get an empty atomtype.
         '''
 
         a_type = []
@@ -800,11 +823,11 @@ class Molecule(Structure):
 
     def get_vdw_density(self, buff=3, step=0.5, kernel_half_width=10):
         '''
-        generate density map from points based on the van der Waals readius of the atoms
+        generate density map of all atoms in the current conformation, convolving each atom with a gaussian kernel whose sigma depends on its atomtype (C, H, O, S or N, see _vdw_density_on_grid).
 
-        :param buff: Buffer used to create the boundaries of the density map
-        :param step: Stepsize for creating the density object
-        :param kernel_half_width: Kernel half width of the gaussian kernel, will be scaled by atom specific sigma
+        :param buff: padding to add at points cloud boundaries, in Angstrom
+        :param step: size of cubic voxels, in Angstrom
+        :param kernel_half_width: kernel half width, in voxels
         :returns: :func:`Density <biobox.classes.density.Density>` object, containing a density map
         '''
         axes = self._grid_axes(self.points, step, buff)
@@ -826,10 +849,14 @@ class Molecule(Structure):
         '''
         sum of the density maps of each atom type, each built from the atoms of that type on a common grid.
 
+        Only atomtypes C, H, O, S and N contribute, each with its own gaussian sigma (in voxels), and each map is scaled to a maximum of 1 before summing.
+        If any selected atom has an empty atomtype, :func:`assign_atomtype <biobox.classes.molecule.Molecule.assign_atomtype>` is called first,
+        and an Exception is raised if some atomtype is still unknown.
+
         :param idx: indices of atoms to include
         :param axes: grid axes, as returned by _grid_axes
         :param step: size of cubic voxels, in Angstrom
-        :param kernel_half_width: Kernel half width of the gaussian kernel, will be scaled by atom specific sigma
+        :param kernel_half_width: kernel half width, in voxels
         :returns: 3D numpy array
         '''
         atomdata = [["C", 1.7, 1.455, 0.51], ["H", 1.2, 0.72, 0.25],
@@ -856,18 +883,20 @@ class Molecule(Structure):
 
     def get_electrostatics(self, step=1.0, buff=3, threshold=0.01, vdw_kernel_half_width=5, elect_kernel_half_width=12, chain='*', clear_mass=True):
         '''
-        generate electrostatics map from points
+        generate electrostatic potential maps of the current conformation, convolving the atomic charges (charge column) with a Coulomb kernel k/r, set to zero within 0.9 Angstrom of its centre.
+
+        The grid encloses the atoms of the selected chains, while the mass density is built from all atoms falling on the grid.
 
         :param step: size of cubic voxels, in Angstrom
-        :param buff: padding to add at points cloud boundaries
-        :param threshold: Threshold used for removing mass occupied space from the electron density map
-        :param vdw_kernel_half_width: kernel half width, in voxels
-        :param elect_kernel_half_width: kernel half width, in Angstrom
-        :param chain: select chain to use, default all chains
+        :param buff: padding to add at points cloud boundaries, in Angstrom
+        :param threshold: mass density value above which a voxel is considered occupied by atoms (see clear_mass)
+        :param vdw_kernel_half_width: half width of the kernel used for the mass density, in voxels
+        :param elect_kernel_half_width: half width of the Coulomb kernel, in Angstrom
+        :param chain: select chain to use (accepts * as wildcard, or a list of chain names), default all chains
         :param clear_mass: if True, set the potential to zero where the mass density exceeds threshold
-        :returns: positive :func:`Density <biobox.classes.density.Density>` object
-        :returns: negative :func:`Density <biobox.classes.density.Density>` object
-        :returns: mass density object
+        :returns: :func:`Density <biobox.classes.density.Density>` object of the positive potential (negative values set to zero)
+        :returns: :func:`Density <biobox.classes.density.Density>` object of the negative potential, sign inverted so that its values are positive (positive values set to zero)
+        :returns: :func:`Density <biobox.classes.density.Density>` object of the mass density, on the same grid
         '''
 
         pts, idx = self.atomselect(chain, '*', '*', get_index=True)
@@ -1017,8 +1046,9 @@ class Molecule(Structure):
         if biomatrix information is provided, generate a new molecule with the biological assembly described by REMARK 350.
 
         Each BIOMT operator is applied only to the chains listed for it, and chains not listed are left out, as in the assembly files of the PDB.
+        Only the current conformation is transformed. The first copy of a chain keeps its name, and later copies take chain names not used in the molecule.
 
-        :param biomolecule: id of the BIOMOLECULE to build
+        :param biomolecule: id of the BIOMOLECULE to build (default 1)
         :returns: new Molecule containing the transformed copies of the chains, arranged according to the BIOMT statements of the requested biomolecule
         '''
 
@@ -1035,7 +1065,9 @@ class Molecule(Structure):
         '''
         if symmetry information is provided, generate a new molecule with all symmetry operators applied to all chains.
 
-        :returns: new Molecule containing several copies of the current Molecule, arranged according to SMTRY statements contained in pdb
+        Only the current conformation is transformed. The first copy of a chain keeps its name, and later copies take chain names not used in the molecule.
+
+        :returns: new Molecule containing several copies of the current conformation, arranged according to SMTRY statements contained in pdb
         '''
 
         # if no symmetry statement is found, return with error
@@ -1046,9 +1078,11 @@ class Molecule(Structure):
 
     def get_atoms_ccs(self):
         '''
-        return array with atomic CCS radii of every atom in molecule
+        return the atomic radii used for CCS calculations of every atom in molecule, assigned by atomtype from knowledge['atom_ccs'] (atomtypes not listed there take the '.' value).
 
-        :returns: CCS in Angstrom^2
+        The radii are stored in the atom_ccs column of self.data, and returned from there by later calls.
+
+        :returns: radius of every atom, in Angstrom (numpy array when computed, pandas Series when read from self.data)
         '''
 
         if "atom_ccs" in self.data.columns:
@@ -1087,11 +1121,11 @@ class Molecule(Structure):
 
     def set_data(self, value, indices=[], columns=[]):
         '''
-        Return information about atoms of interest (i.e., slice the data DataFrame)
+        Set information about atoms of interest (i.e., assign values to a slice of the data DataFrame)
 
-        :param indices: list of indices, if not provided all atom data is returned
-        :param columns: list of columns (e.g. ["resname", "resid", "chain"]), if not provided all columns are returned
-        :returns: numpy array containing a slice of molecule's data
+        :param value: value(s) to assign to the selected slice
+        :param indices: list of indices, if not provided all atoms are modified
+        :param columns: list of columns (e.g. ["resname", "resid", "chain"]), if not provided all columns are modified. Indices, columns or both must be provided.
         '''
 
         if len(indices) == 0 and len(columns) == 0:
@@ -1109,11 +1143,11 @@ class Molecule(Structure):
 
     def query(self, query_text, get_index=False):
         '''
-        Select specific atoms in a multimer un the basis of a text query.
+        Select specific atoms in the molecule on the basis of a text query.
 
         :param query_text: string selecting atoms of interest. Uses the pandas query syntax, can access all columns in the dataframe self.data.
         :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)
-        :returns: coordinates of the selected points (in a unique array) and, if get_index is set to true, a list of their indices in subunits' self.points array.
+        :returns: coordinates of the selected points in the current conformation and, if get_index is set to true, a list [coordinates, indices] containing also their indices in self.points array.
         '''
 
         idx = self.data.query(query_text).index.values
@@ -1133,7 +1167,7 @@ class Molecule(Structure):
         :param atom: name of desired atom (accepts * as wildcard). Can also be a list or numpy array of strings.
         :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)
         :param use_resname: if set to True, consider information in "res" variable as resnames, and not resids
-        :returns: coordinates of the selected points and, if get_index is set to true, their indices in self.points array.
+        :returns: coordinates of the selected points in the current conformation and, if get_index is set to true, a list [coordinates, indices] containing also their indices in self.points array.
         '''
 
         # chain name boolean selector
@@ -1291,11 +1325,11 @@ class Molecule(Structure):
         Useful to remove from a molecule atoms unwanted for further analysis, alternative conformations, etc...
 
         :param chain: chain name (accepts * as wildcard). Can also be a list or numpy array of strings.
-        :param res: residue ID (accepts * as wildcard). Can also be a list or numpy array of of int.
+        :param res: residue ID (accepts * as wildcard). Can also be a list or numpy array of of int. Residue IDs are interpreted as in :func:`atomselect <biobox.classes.molecule.Molecule.atomselect>`.
         :param atom: atom name (accepts * as wildcard). Can also be a list or numpy array of strings.
         :param get_index: if set to True, returns the indices of atoms in self.points array (and self.data)
         :param use_resname: if set to True, consider information in "res" variable as resnames, and not resids
-        :returns: coordinates of the selected points not matching the query, if get_index is set to true, their indices in self.points array.
+        :returns: coordinates of the points not matching the query in the current conformation and, if get_index is set to true, a list [coordinates, indices] containing also their indices in self.points array.
         '''
 
         #extract indices of atoms matching the query
@@ -1314,11 +1348,11 @@ class Molecule(Structure):
 
     def same_residue(self, index, get_index=False):
         '''
-        Select atoms having the same residue and chain as a given atom (or list of atoms)
+        Select all atoms belonging to the same residue (same chain, residue number and insertion code) as a given atom (or list of atoms)
 
         :param index: indices of atoms of choice (integer or list of integers)
         :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)
-        :returns: coordinates of the selected points and, if get_index is set to true, their indices in self.points array.
+        :returns: coordinates of the selected points in the current conformation (an empty list if none is found) and, if get_index is set to true, also their indices in self.points array.
         '''
 
         chain = self.data["chain"].values
@@ -1343,11 +1377,12 @@ class Molecule(Structure):
 
     def same_residue_unique(self, index, get_index=False):
         '''
-        Select atoms having the same residue and chain as a given atom (or list of atoms)
+        Select atoms having the same residue (chain, residue number and insertion code) as a given atom (or list of atoms),
+        considering only the contiguous run of atoms around the given atom in file order. Each atom is returned once.
 
-        :param index: indices of atoms of choice (integer of list of integers)
+        :param index: indices of atoms of choice (integer or list of integers)
         :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)
-        :returns: coordinates of the selected points and, if get_index is set to true, their indices in self.points array.
+        :returns: numpy array of coordinates of the selected points in the current conformation and, if get_index is set to true, also a numpy array of their indices in self.points array.
         '''
 
         try:
@@ -1412,10 +1447,10 @@ class Molecule(Structure):
         '''
         Return a :func:`Molecule <biobox.classes.molecule.Molecule>` object containing only the selected atoms and frames
 
-        :param ixds: atoms to extract
+        :param idxs: indices of atoms to extract, or boolean mask with one element per atom
         :param conformations: frames to extract (by default, all)
         :param flip: If true, extract atoms that DON'T match idxs (default is False)
-        :returns: :func:`Molecule <biobox.classes.molecule.Molecule>` object
+        :returns: :func:`Molecule <biobox.classes.molecule.Molecule>` object, with its current conformation set to the first extracted frame
         '''
 
         idxs = np.asarray(idxs)
@@ -1459,11 +1494,13 @@ class Molecule(Structure):
     def guess_chain_split(self, distance=3, use_backbone=True):
         '''
         reassign chain name, using distance cutoff (cannot be undone).
-        If two consecutive atoms are beyond a cutoff, a new chain is assigned.
+        If two consecutive atoms (or residues, see use_backbone) are beyond a cutoff, a new chain is assigned. Chains are named in the order of chain_names. Distances are measured in the current conformation.
 
-        :param distance: distance cutoff
+        :param distance: distance cutoff, in Angstrom
         :param use_backbone: if True, a new chain starts at a residue whose N is farther than the cutoff from the C of the closest preceding residue having one (residues without N, e.g. ACE, ligands or water, never start a chain). If False, consecutive atoms in the sequence are compared
-        :returns: number of chains, indices of the first atom of each chain followed by the number of atoms, and the gaps found
+        :returns: number of chains
+        :returns: list of indices of the first atom of each chain, followed by the number of atoms
+        :returns: numpy array of the N-C distances, in Angstrom and rounded to 3 decimals, at which a new chain starts (empty if use_backbone is False)
         '''
 
         # identify different chains
@@ -1505,13 +1542,14 @@ class Molecule(Structure):
 
     def get_pdb_data(self, index=[]):
         '''
-        aggregate data and point coordinates, and return in a unique data structure
+        aggregate data and point coordinates of the current conformation, and return in a unique data structure
 
-        Returned data is a list containing strings for points data and floats for point coordinates
+        Returned data contains, for every atom, its data and coordinates
         in the same order as a pdb file, i.e.
         ATOM/HETATM, index, name, resname, chain name, residue ID, x, y, z, occupancy, beta factor, atomtype, alternate location, insertion code.
 
-        :returns: list aggregated data and coordinates for every point, as string.
+        :param index: indices of atoms of interest. If empty (default), all atoms are returned.
+        :returns: list containing, for every atom, a list of its 14 fields (values keep the type of the corresponding data column, coordinates are floats).
         '''
 
         if len(index) == 0:
@@ -1593,7 +1631,16 @@ class Molecule(Structure):
         first 30 columns of an ATOM or HETATM line, up to the x coordinate, following the PDB format.
 
         Atom names of 4 characters, or starting with a digit, begin in column 13, shorter ones in column 14.
+        An Exception is raised if the chain name is longer than one character.
 
+        :param record: record name (ATOM or HETATM)
+        :param serial: atom serial number, as it should be written
+        :param name: atom name
+        :param resname: residue name
+        :param chain: chain name, of one character
+        :param resid: residue number, written with its last 4 digits if it does not fit
+        :param altloc: alternate location indicator (default empty)
+        :param icode: insertion code (default empty)
         :returns: string of 30 characters
         '''
         if len(chain) > 1:
@@ -1625,10 +1672,10 @@ class Molecule(Structure):
 
     def write_pdb(self, outname, conformations=[], index=[], split_struc=False, dssp=False):
         '''
-        overload superclass method for writing (multi)pdb.
+        overload superclass method for writing (multi)pdb. Every conformation is written as a MODEL/ENDMDL block.
 
         :param outname: name of pdb file to be generated.
-        :param index: indices of atoms to write to file. If empty, all atoms are returned. Index values obtaineable with a call like: index=molecule.atomselect("A", [1, 2, 3], "CA", True)[1]
+        :param index: indices of atoms to write to file. If empty, all atoms are written. Index values obtaineable with a call like: index=molecule.atomselect("A", [1, 2, 3], "CA", True)[1]
         :param conformations: list of conformation indices to write to file. By default, a multipdb with all conformations will be produced.
         :param split_struc: Guess chain split on the atoms being written, rename their chains accordingly and close each chain with TER. The molecule itself is not changed. Default: False. Set to False if protein is broken, but should retain chain lettering and doesn't have chain breaks.
         :param dssp: If using DSSP secondary structure check, requires that CRYST be the first line by default (hence write that line)
@@ -1701,12 +1748,14 @@ class Molecule(Structure):
 
     def write_gro(self, outname, conformations=[], index="", gmx_correction=False):
         '''
-        write structure(s) in .gro format.
+        write structure(s) in .gro format, converting coordinates from Angstrom to nm.
+
+        The box of every frame is read from properties['box'] if available, otherwise it is the extent of the written atoms.
 
         :param outname: name of .gro file to be generated.
-        :param index: indices of atoms to write to file. If empty, all atoms are returned. Index values obtaineable with a call like: index=molecule.atomselect("A", [1, 2, 3], "CA", True)[1]
-        :param conformations: list of conformation indices to write to file. By default, all conformations will be returned.
-        :param gmx_correction: kept for compatibility. Atom numbers always run from 1 and restart after 99999, as in GROMACS, and residue IDs above 99999 restart likewise.
+        :param index: indices of atoms to write to file. If empty, all atoms are written. Index values obtaineable with a call like: index=molecule.atomselect("A", [1, 2, 3], "CA", True)[1]
+        :param conformations: list of conformation indices to write to file. By default, all conformations will be written.
+        :param gmx_correction: unused, kept for compatibility. Atom numbers always run from 1 and restart after 99999, as in GROMACS, and residue IDs above 99999 restart likewise.
         '''
 
         # store current frame, so it will be reestablished after file output is
@@ -1762,18 +1811,21 @@ class Molecule(Structure):
 
     def beta_factor_from_rmsf(self, indices=-1):
         '''
-        estimate atoms beta factor on the base of their RMSF (B = 8 pi^2 RMSF^2 / 3).
+        estimate atoms beta factor on the base of their RMSF over all conformations (B = 8 pi^2 RMSF^2 / 3), see :func:`rmsf <biobox.classes.structure.Structure.rmsf>`.
+        The beta column of self.data is not modified.
 
-        :param indices: indices of atoms of interest. If not set all atoms will be considered.
+        :param indices: indices of atoms of interest. If not set (default -1) all atoms will be considered.
+        :returns: numpy array of beta factors, in Angstrom^2
         '''
         rmsf = self.rmsf(indices)
         return 8.0 * (np.pi**2) * (rmsf**2) / 3.0
 
     def rmsf_from_beta_factor(self, indices=[]):
         '''
-        calculate RMSF from atoms beta factors.
+        calculate RMSF from atoms beta factors (RMSF = sqrt(3 B / (8 pi^2))).
 
         :param indices: indices of atoms of interest. If not set all atoms will be considered.
+        :returns: numpy array of RMSF values, in Angstrom
         '''
 
         try:
@@ -1791,8 +1843,10 @@ class Molecule(Structure):
         '''
         Compute protein mass using residues (i.e. account also for atoms not present in the structure)
 
-        Sum the average mass all every residue (using a knowledge base of atom masses in Dalton)
-        The knowledge base can be expanded or edited by adding entries to the molecule's mass dictionary, e.g. to add the residue "TST" mass in molecule M type: M.knowledge['mass_residue']["TST"]=142.42
+        Sum the average mass of every residue (using the knowledge base of residue masses in Dalton, knowledge['residue_mass']).
+        Residues are identified by chain, residue number and insertion code. Masses are residue masses within a chain, so the water of the chain termini is not added.
+        An Exception is raised if a residue name is not in the knowledge base.
+        The knowledge base can be expanded or edited by adding entries to the molecule's residue mass dictionary, e.g. to add the residue "TST" mass in molecule M type: M.knowledge['residue_mass']["TST"]=142.42
 
         :param skip_resname: list of resnames to skip. Useful to exclude ions water or other ligands from the calculation.
         :returns: mass of molecule in Dalton
@@ -1824,7 +1878,8 @@ class Molecule(Structure):
         '''
         compute protein mass using atoms in pdb
 
-        sum the mass of all atoms (using a knowledge base of atom masses in Dalton)
+        sum the mass of all atoms, according to their atomtype (using the knowledge base of atom masses in Dalton, knowledge['atom_mass']).
+        An Exception is raised if an atomtype is empty or not in the knowledge base.
         The knowledge base can be expanded or edited by adding or editing entries to the molecule's mass dictionary, e.g. to add the atom "PI" mass in molecule M type: M.knowledge['atom_mass']["PI"]=3.141592
 
         :param skip_resname: list of resnames to skip. Useful to exclude ions water or other ligands from the calculation.
@@ -1850,12 +1905,14 @@ class Molecule(Structure):
 
     def s2(self, atomname1="N", atomname2="H"):
         '''
-        compute s2, given two atoms defining the vector of interest.
+        compute the order parameter s2 over all conformations, given two atoms defining the vector of interest in every residue.
 
-        :param atomname1: name of the first atom
-        :param atomname2: name of the second atom
-        :returns: data numpy array containing information about residues for which measuring has been performed (i.e.[chain, resid, insertion code])
-        :returns: s2 s2 of residues for which both provided input atoms have been found
+        A residue is measured if it contains exactly one atom named atomname2 (and an atom named atomname1). No superposition is performed.
+
+        :param atomname1: name of the first atom (default N)
+        :param atomname2: name of the second atom (default H)
+        :returns: data numpy array (object dtype) containing information about residues for which measuring has been performed, one row [chain, resid, insertion code] per residue
+        :returns: numpy array of s2 values of the residues for which both provided input atoms have been found, in the same order
         '''
 
         Nidx = self.atomselect("*", "*", atomname1, get_index=True)[1]
@@ -1923,9 +1980,12 @@ class Molecule(Structure):
 
     def get_secondary_structure(self, dssp_path=''):
         '''
-        compute the protein's secondary structure, calling DSSP
+        compute the protein's secondary structure of the current conformation, calling DSSP.
+
+        The temporary files tmp.pdb and result.dssp are written in, and removed from, the current working directory.
+
         :param dssp_path: DSSP executable (path and filename). If not provided, the default behaviour is to seek for this information in the environment variable DSSPPATH
-        :returns: numpy array of characters, with one-letter-coded secondary sctructure according to DSSP.
+        :returns: numpy array of characters, with one-letter-coded secondary structure according to DSSP, one per residue listed by DSSP (chain breaks skipped, "-" where DSSP assigns none).
         '''
         #dssp="~/bin/dssp-2.0.4-linux-amd64"
         if dssp_path == '':
@@ -2011,9 +2071,10 @@ class Molecule(Structure):
         Reorder the internal resid of a PDB structure (retaining the topology) based on the idx list of resid.
         Number of elements in idx list must == number of resid in the chain. The chain keeps its place in the structure,
         and the reordering applies to every conformation.
-        :params idx: List of indices to reorder the internal ordering of a chain based on resid. Doesn't have to be same values as native resid (the values are shifted so that the smallest one matches the smallest native resid), but must contain every residue once. There can be no numeric breaks (i.e., [1, 2, 3, 6, 7, 8, 4, 5] acceptable, [1, 2, 3, 8, 4, 5] is not
-        :params chain: Chain to apply reordering to
-        :params renumber: After restructuring metadata, reorder the resid values
+
+        :param idx: List of indices to reorder the internal ordering of a chain based on resid. Doesn't have to be same values as native resid (the values are shifted so that the smallest one matches the smallest native resid), but must contain every residue once. There can be no numeric breaks (i.e., [1, 2, 3, 6, 7, 8, 4, 5] acceptable, [1, 2, 3, 8, 4, 5] is not
+        :param chain: Chain to apply reordering to (default A)
+        :param renumber: After restructuring metadata, renumber residues of the whole molecule with :func:`renumber_resid_keep_chains <biobox.classes.molecule.Molecule.renumber_resid_keep_chains>` (default True)
         """
 
         self.data.reset_index(drop=True, inplace=True)
@@ -2044,13 +2105,13 @@ class Molecule(Structure):
 
     def get_couples(self, idx, cutoff):
         '''
-        given a list of indices, compute the all-vs-all distance and return only couples below a given cutoff distance
+        given a list of indices, compute the all-vs-all distance in the current conformation and return only couples below a given cutoff distance
 
         useful for the detection of disulfide bridges or linkable sites via cross-linking (approximation, supposing euclidean distances)'
 
         :param idx: indices of atoms to check.
-        :param cutoff: minimal distance to consider a couple as linkable.
-        :returns: nx3 numpy array containing, for every valid connection, id of first atom, id of second atom and distance between the two.
+        :param cutoff: maximal distance, in Angstrom, to consider a couple as linkable. Only couples strictly closer than cutoff are returned.
+        :returns: nx3 numpy array of floats containing, for every valid connection (each reported once), id of first atom, id of second atom and distance between the two. The first atom is the one appearing later in idx. If no couple is found, an empty array of shape (0,) is returned.
         '''
 
         import biobox.measures.interaction as I
@@ -2070,14 +2131,17 @@ class Molecule(Structure):
 
     def match_residue(self, M2, sec = 3):
         '''
-        Compares two bb.Molecule() peptide strands and returns the resids within both peptides when the two are homogenous
-        beyond a certain secondary structure threashold. The default is 3 amino acids (given by sec) in a row must be identical
+        Compares the sequences of two bb.Molecule() peptide strands (residue names of their CA atoms) and returns the resids within both peptides when the two are homogenous
+        beyond a certain threshold. The default is 3 amino acids (given by sec) in a row must be identical.
+        HIE, HIP and HID are compared as HIS, and four-letter residue names lose their first letter (e.g. Amber terminal names NALA, CHIE).
 
-        Useful when aligning PDB structures that have been crystallised separately - so one may be missing the odd residue
+        Useful when aligning PDB structures that have been crystallised separately, so one may be missing the odd residue
         or have a few extra at the end.
 
         :param M2: The second bb.Molecule() to compare with
         :param sec: Number of consecutive amino acids in a row that must match before resid's are recorded
+        :returns: list of matching resids in self
+        :returns: list of the corresponding resids in M2
         '''
         # First run the match residue using the expected inputs
         M1_res, M2_res = self._match_residue_maths(M2, sec = sec)
@@ -2099,6 +2163,8 @@ class Molecule(Structure):
 
         :param M2: The second bb.Molecule() to compare with
         :param sec: Number of consecutive amino acids in a row that must match before resid's are recorded
+        :returns: list of matching resids in self
+        :returns: list of the corresponding resids in M2
         '''
 
         # Get residue names / unique IDs
@@ -2185,14 +2251,16 @@ class Molecule(Structure):
         '''
         Parses data from the pdb input into a pqr format. This uses the panda dataframe with the information
         regarding atom indexes, types etc. in the self.data files.
-        It outputs a panda dataframe with the pqr equivilent information. It requires a datafile forcefield input.
-        The default is the amber14sb forcefield file held within the classes/ folder.
+        It outputs a panda dataframe with the pqr equivalent information. It requires a datafile forcefield input.
+        The default is the amber14sb.dat forcefield file held within the package data/ folder.
 
         The molecule itself is modified: chain IDs are reassigned by guess_chain_split, and with amber_convert residues are
-        renamed in place to their forcefield names (e.g. NALA, CHID, HIE).
+        renamed in place to their forcefield names (e.g. NALA, CHID, HIE). The atomtype, radius and charge columns of self.data are not modified.
+        An Exception is raised if an atom (residue name and atom name) is not found in the forcefield file.
 
-        :param ff: name of forcefield text file input that needs to be read to read charges / vdw radii.
+        :param ff: name of forcefield text file input that needs to be read to read charges / vdw radii. If empty (default), amber14sb.dat is used.
         :param amber_convert: If True, will assume forcefield is amber and convert resnames as necessary
+        :returns: pandas DataFrame, a copy of self.data whose atomtype, radius and charge columns hold the forcefield values
         '''
 
         intervals = self.guess_chain_split()[1]
@@ -2293,11 +2361,13 @@ class Molecule(Structure):
 
     def write_pqr(self, outname, conformations=[], index=[]):
         '''
-        overload superclass method for writing (multi)pqr.
+        write (multi)pqr, with charges and radii from :func:`pdb2pqr <biobox.classes.molecule.Molecule.pdb2pqr>` called with its default arguments (which modifies the molecule in place).
+
+        Every conformation is followed by an END statement. Charges are written in columns 55-62 and radii in columns 63-69.
 
         :param outname: name of pqr file to be generated.
-        :param index: indices of atoms to write to file. If empty, all atoms are returned. Index values obtaineable with a call like: index=molecule.atomselect("A", [1, 2, 3], "CA", True)[1]
-        :param conformations: list of conformation indices to write to file. By default, a multipdb with all conformations will be produced.
+        :param index: indices of atoms to write to file. If empty, all atoms are written. Index values obtaineable with a call like: index=molecule.atomselect("A", [1, 2, 3], "CA", True)[1]
+        :param conformations: list of conformation indices to write to file. By default, a multi-model pqr with all conformations will be produced.
         '''
 
         # store current frame, so it will be reestablished after file output is
@@ -2352,7 +2422,9 @@ class Molecule(Structure):
         This removes residues with the least certainty (based on beta factor).
         If no beta factor is present, it removes all residue conformations after the first
 
-        :param path: Path to the removing alt conf. bash script (in current folder by default)
+        The script is called on a temporary file tmp2.pdb and must write clean_tmp2.pdb, both in the current working directory and removed afterwards.
+
+        :param path: Path to the removing alt conf. bash script (default ~/biobox/classes/remove_alt_conf.sh)
         :param remove_non_amino: Remove all non-standard amino acids (including water, metals etc. which are defined as ATOMS)
         :returns: Returns a new Molecule object that has been cleaned
         '''
@@ -2444,14 +2516,15 @@ class Molecule(Structure):
         '''
         Method for generating dipole maps to be used for electron density map generation. Also prints a dipole map as a result (and if desired). It calls a cython code in lib.
 
-        :param orig: Origin points for voxel grid
-        :param pqr: PQR file for self. Can be generated by calling pdb2pqr above
-        :param time_start: First frame to parse in multipdb
-        :param time_end: Last frame to parse in multipdb
-        :param resolution: Desired resolution of voxel
+        :param orig: Origin points for voxel grid, as three arrays of voxel centre coordinates along x, y and z
+        :param pqr: pandas DataFrame with a charge column, one row per atom. Can be generated by calling :func:`pdb2pqr <biobox.classes.molecule.Molecule.pdb2pqr>`
+        :param time_start: First frame to parse in multipdb (default 0)
+        :param time_end: frame at which parsing stops, excluded (default 2)
+        :param resolution: Desired resolution of voxel, in Angstrom
         :param vox_in_window: Amount of surrounding space to contribute to local dipole. vox_in_window * resolution gives window size (in Ang.)
-        :param write_dipole_map: Write a dipole map in TCL format to be read in via VMD.
+        :param write_dipole_map: Write a dipole map in TCL format to be read in via VMD (default True).
         :param fname: Name of desired dipole map to be written
+        :returns: float32 numpy array of shape (time_end-time_start, nx, ny, nz, 3), the dipole vector of every voxel in every frame, where nx, ny and nz are the lengths of the three arrays of orig
         '''
 
         charges = pqr["charge"].values[:]
@@ -2467,7 +2540,7 @@ class Molecule(Structure):
 
     def get_dipole_density(self, dipole_map, orig, min_val, V, outname, vox_in_window = 3., eqn = 'gauss', T = 310.15, P = 101. * 10**3, epsilonE = 54., resolution = 1.):
         '''
-        Method to generate an electron density map based on a voxel grid of dipole vectors
+        Method to generate an electron density map based on a voxel grid of dipole vectors, and write it to a dx file. It calls a cython code in lib.
 
         :param dipole_map: The dipole map input. Can be generated with get_dipole_map above
         :param orig: Origin points for voxel grid
@@ -2475,11 +2548,12 @@ class Molecule(Structure):
         :param V: Volume of a voxel (can be found by resolution**3, but left blank in case later version institute a sphere)
         :param outname: Name of electron density map file produced
         :param vox_in_window: Amount of surrounding space to contribute to local dipole. vox_in_window * resolution gives window size (in Ang.). The density function of each voxel is sampled within this window, centred on the voxel
-        :param eqn: Equation mode to model the electron density
-        :param T: Temperature of MD
-        :param P: Pressure of MD
+        :param eqn: Equation mode to model the electron density, 'gauss' (default) or 'slater'
+        :param T: Temperature of MD, in K
+        :param P: Pressure of MD, in Pa
         :param epsilonE: Continuum dielectric surrounding the protein
-        :param resolution: Desired resolution of voxel
+        :param resolution: Desired resolution of voxel, in Angstrom
+        :returns: 0 once the map is written to outname
         '''
 
         dummy = e_density.c_get_dipole_density(dipole_map = dipole_map, orig = orig, min_val = min_val, V = V, outname = outname, vox_in_window = vox_in_window, eqn = eqn, T = T, P = P, epsilonE = epsilonE, resolution = resolution)
@@ -2507,11 +2581,13 @@ class Molecule(Structure):
         If chain_split is set to True, biobox will automatically split your protein according to where it sees gaps in the structure, and place / where these new chains begin.
         If you have gaps in your structure (e.g. from disordered regions), this can result in incorrect assignment of novel chains.
 
-        :param chains: Assign / between chains. Default: True
-        :param chain_split: Let biobox decide where the chain splits are (based on structure). Default: False
-
         Residue names are mapped through knowledge["AA_mapping"], which includes common variants (e.g. MSE, HIE, CYX).
         Amber terminal names (e.g. NALA, CHIE) are read without their prefix, and unknown residues are written as X.
+        Only residues having a CA atom are included, and chains are written in sorted order of their names.
+
+        :param chains: Assign / between chains. Default: True
+        :param chain_split: Let biobox decide where the chain splits are (based on structure), with :func:`guess_chain_split <biobox.classes.molecule.Molecule.guess_chain_split>`, which renames the chains of the molecule in place. Default: False
+        :returns: sequence string
         '''
 
         seq = ""

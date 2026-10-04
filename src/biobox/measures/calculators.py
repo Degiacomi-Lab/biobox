@@ -1,12 +1,12 @@
-# Copyright (c) 2014-2022 Matteo Degiacomi
+# Copyright (c) 2014-2026 Matteo Degiacomi
 #
-# BiobOx is free software ;
+# biobox is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
 # either version 2 of the License, or (at your option) any later version.
-# BiobOx is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;
+# biobox is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY ;
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 # See the GNU General Public License for more details.
-# You should have received a copy of the GNU General Public License along with BiobOx ;
+# You should have received a copy of the GNU General Public License along with biobox ;
 # if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #
 # Author : Matteo Degiacomi, matteo.degiacomi@gmail.com
@@ -32,18 +32,16 @@ def sasa_c(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
     '''
     compute the accessible surface area using the Shrake-Rupley algorithm ("rolling ball method").
 
-    Kept for backwards compatibility: this is now an alias of :func:`sasa`, whose vectorised
-    implementation is faster than the former compiled one, and which also fixes two errors
-    it carried (an atom occluding its own mesh, and neighbours being missed).
+    Alias of :func:`sasa <biobox.measures.calculators.sasa>`, kept for backwards compatibility.
 
     :param M: any biobox object
-    :param targets: indices to be used for surface estimation. By default, all indices are kept into account.
-    :param probe: radius of the "rolling ball"
+    :param targets: indices of the atoms whose surface is estimated. By default (empty list), all atoms are used.
+    :param probe: radius of the "rolling ball", in A
     :param n_sphere_point: number of mesh points per atom
     :param threshold: fraction of mesh points that must be exposed for an atom to be listed among the surface atoms. It does not affect the area or the mesh.
     :returns: accessible surface area in A^2, summed over all target atoms
-    :returns: mesh numpy array containing the found points forming the accessible surface mesh
-    :returns: IDs of surface atoms, i.e. target atoms whose exposed fraction exceeds threshold
+    :returns: mx3 numpy array of the exposed mesh points forming the accessible surface mesh
+    :returns: numpy array of int, indices of the surface atoms, i.e. target atoms whose exposed fraction exceeds threshold
     '''
     return sasa(M, targets=targets, probe=probe, n_sphere_point=n_sphere_point, threshold=threshold)
 
@@ -72,16 +70,18 @@ def sasa(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
     i.e. the positions the centre of a probe touching the atom can take. A mesh point is exposed
     when it lies farther than radius+probe from every other atom, and the area of the atom is the
     exposed fraction of its sphere. All atoms of M act as occluders, whether or not they are
-    targets.
+    targets. Atomic radii are read from the "radius" column of M.data, and only the current
+    conformation is measured. A ValueError is raised if any radius is not finite, and an empty
+    structure returns an area of 0.0.
 
     :param M: any biobox object
-    :param targets: indices to be used for surface estimation. By default, all indices are kept into account.
-    :param probe: radius of the "rolling ball"
+    :param targets: indices of the atoms whose surface is estimated. By default (empty list), all atoms are used.
+    :param probe: radius of the "rolling ball", in A
     :param n_sphere_point: number of mesh points per atom
-    :param threshold: fraction of mesh points that must be exposed for an atom to be listed among the surface atoms. It does not affect the area or the mesh.
+    :param threshold: fraction of mesh points (between 0 and 1) that must be exposed for an atom to be listed among the surface atoms. It does not affect the area or the mesh.
     :returns: accessible surface area in A^2, summed over all target atoms
-    :returns: mesh numpy array containing the found points forming the accessible surface mesh
-    :returns: IDs of surface atoms, i.e. target atoms whose exposed fraction exceeds threshold
+    :returns: mx3 numpy array of the exposed mesh points forming the accessible surface mesh
+    :returns: numpy array of int, indices of the surface atoms, i.e. target atoms whose exposed fraction exceeds threshold
     '''
 
     from scipy.spatial import cKDTree
@@ -92,7 +92,7 @@ def sasa(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
     if this_inst == "Multimer":
         M = M.make_molecule()
 
-    elif this_inst in ["Assembly", "Polyhedra"]:
+    elif this_inst in ["Assembly", "Polyhedron"]:
         M = M.make_structure()
 
     if len(targets) == 0:
@@ -157,10 +157,10 @@ def sasa(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
 
 def rgyr(M):
     '''
-    compute radius of gyration.
+    compute the radius of gyration of the current conformation, unweighted (every atom counts equally) and relative to the center of geometry.
 
     :param M: any biobox object
-    :returns: radius of gyration
+    :returns: radius of gyration (float), in the units of the coordinates (A)
     '''
 
     #make sure that everything is collected as a Structure object, and radii are available
@@ -168,7 +168,7 @@ def rgyr(M):
     if this_inst == "Multimer":
         M = M.make_molecule()
 
-    elif this_inst in ["Assembly", "Polyhedra"]:
+    elif this_inst in ["Assembly", "Polyhedron"]:
         M = M.make_structure()
 
     d_square = np.sum((M.points - M.get_center())**2, axis=1)
@@ -179,11 +179,14 @@ def saxs(M, crysol_path='', crysol_options="-lm 20 -ns 500", pdbname=""):
     '''
     compute SAXS curve using crysol (from ATSAS suite)
 
+    Unless pdbname is given, the current conformation of M is written to a temporary PDB file in the
+    working directory, deleted afterwards together with the crysol output files.
+
     :param M: any biobox object
-    :param crysol_path: path to crysol executable. If not provided, the environment variable ATSASPATH is sought instead. This allows redirecting to a specific ATSAS bin folder.
-    :param crysol_options: flags to be passes to impact executable
-    :param pdbname: if a file has been already written, crysol can be asked to analyze it
-    :returns: SAXS curve (nx2 numpy array)
+    :param crysol_path: folder containing the crysol executable. If not provided, the environment variable ATSASPATH is sought instead. This allows redirecting to a specific ATSAS bin folder.
+    :param crysol_options: flags to be passed to crysol executable
+    :param pdbname: if a file has been already written, crysol analyzes it instead of M
+    :returns: SAXS curve (nx2 numpy array), i.e. the first two columns of the crysol .int file: scattering vector and intensity in solution
     '''
 
     if crysol_path == '':
@@ -226,17 +229,20 @@ def saxs(M, crysol_path='', crysol_options="-lm 20 -ns 500", pdbname=""):
 
 def ccs(M, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMode sem -convergence 0.01", pdbname="", tjm_scale=False, proberad=1.0):
     '''
-    compute CCS calling either impact.
+    compute CCS with IMPACT, either via its library or via a system call to its executable.
+
+    The library is used when use_lib is True and pdbname is not given. Otherwise, the executable is called on
+    pdbname or on a temporary PDB file of the current conformation, and a "params" file is written in the working directory.
+    If M is a Molecule without an "atom_ccs" column, atom types and CCS radii are assigned to it first.
 
     :param M: any biobox object
     :param use_lib: if true, impact library will be used, if false a system call to impact executable will be performed instead
-    :param impact_path: by default, the environment variable IMPACTPATH is sought. This allows redirecting to a specific impact root folder.
-    :param impact_options: flags to be passes to impact executable
-    :param pdbname: if a file has been already written, impact can be asked to analyze it
+    :param impact_path: folder containing libimpact (library mode) or the impact executable (executable mode). By default, the "lib" or "bin" subfolder of the environment variable IMPACTPATH is used.
+    :param impact_options: flags to be passed to impact executable (executable mode only)
+    :param pdbname: if a file has been already written, impact executable analyzes it instead of M
     :param tjm_scale: if True, CCS value calculated with PA method is scaled to better match trajectory method.
-    :param proberad: radius of probe. Do find out if your impact library already adds this value by default or not (old ones do)!
-    :returns: CCS value in A^2. Error return: -1 = input filename not found, -2 = unknown code for CCS calculation\n
-              -3 CCS calculator failed, -4 = parsing of CCS calculation results failed
+    :param proberad: radius of probe in A, added to the atomic radii. Do find out if your impact library already adds this value by default or not (old ones do)!
+    :returns: CCS value in A^2, or -4 if parsing the output of impact executable fails
     '''
 
     #make sure that everything is collected as a Structure object, and radii are available
@@ -246,7 +252,7 @@ def ccs(M, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMod
         M.assign_atomtype()
         M.get_atoms_ccs()
 
-    elif this_inst in ["Assembly", "Polyhedra"]:
+    elif this_inst in ["Assembly", "Polyhedron"]:
         M = M.make_structure()
 
     elif this_inst == "Molecule" and "atom_ccs" not in M.data.columns:
@@ -400,8 +406,8 @@ class CCS(object):
         :param radii: van der Waals radii associated to every point (numpy array with n elements)
         :param a: power-law factor for calibration with TJM
         :param b: power-law exponent for calibration with TJM
-        :returns: TJM CCS
-        :returns: standard error
+        :returns: PA CCS rescaled by IMPACT's pa2tjm power law with parameters a and b, in A^2
+        :returns: standard error of the PA CCS
         :returns: number of iterations
         '''
 
@@ -420,9 +426,10 @@ class CCS(object):
 
 def random_string(length=32):
     '''
-    generate a random string of arbitrary characters. Useful to generate temporary file names.
+    generate a random string of ASCII letters. Useful to generate temporary file names.
 
     :param length: length of random string
+    :returns: random string
     '''
     return ''.join([random.choice(string.ascii_letters)
                     for n in range(length)])
