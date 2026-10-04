@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2022 Matteo Degiacomi
+# Copyright (c) 2014-2026 Matteo Degiacomi
 #
 # BiobOx is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
@@ -32,7 +32,7 @@ class Assembly(object):
     def __init__(self):
         '''
         An Assembly is composed of several building blocks (instances of Structure class) referred to as "unit", and stored in the self.unit list.
-        User-friendly names for these unites are stored in the self.unit_labels list. If no name is provided, a number will be assigned (as a string, starting from 0).
+        User-friendly names for these units are stored in the self.unit_labels dictionary, mapping every label to the position of its unit in self.unit. If no name is provided, a number will be assigned (as a string, starting from 0).
         '''
 
         # list of Structure instances (or subclasses).
@@ -50,7 +50,7 @@ class Assembly(object):
 
     def clear(self):
         '''
-        remove all elements loaded in the assembly.
+        remove all elements loaded in the assembly (units and their labels). The self.data DataFrame is not emptied.
         '''
         # restart arrays
         self.unit = []
@@ -58,10 +58,10 @@ class Assembly(object):
 
     def load(self, struct, n):
         '''
-        load a list of identical structures (homo assembly).
+        load n identical structures (homo assembly), as deep copies of struct appended to the existing units. Every copy keeps the current frame of struct, and is labelled with its position in the assembly (as a string).
 
-        :param n: number of units
         :param struct: object of class Structure (or subclasses)
+        :param n: number of units
         '''
         dfs = [self.data]
         for i in range(len(self.unit), len(self.unit) + n, 1):
@@ -86,10 +86,10 @@ class Assembly(object):
 
     def merge(self, assembly, n=1):
         '''
-        add the structures contained in another assembly in the current one.
+        add the structures contained in another assembly in the current one, via :func:`load <biobox.classes.assembly.Assembly.load>`. The added units are labelled with their position in the assembly, the labels of the merged assembly are not kept.
 
         :param assembly: object of class Assembly
-        :param n: number if instances of assembly to merge (only one by default)
+        :param n: number of instances of assembly to merge (only one by default)
         '''
         atmp = deepcopy(assembly)
         for i in range(0, n, 1):
@@ -98,10 +98,10 @@ class Assembly(object):
 
     def append(self, structure, label=""):
         '''
-        append a new :func:`Structure <biobox.classes.structure.Structure>` instance into an existing assembly
+        append a new :func:`Structure <biobox.classes.structure.Structure>` instance into an existing assembly. The structure is not copied, and "unit" and "unit_index" columns are added to its data.
 
         :param structure: :func:`Structure <biobox.classes.structure.Structure>` object to be appended to assembly
-        :param label: name to give to the assembly. If not provided a default value equal to the rank of the new Structure in the assembly will be assigned.
+        :param label: name to give to the new unit. If not provided a default value equal to the rank of the new Structure in the assembly (as a string) will be assigned.
         :returns: label assigned to the new Structure in the assembly
         '''
 
@@ -126,9 +126,11 @@ class Assembly(object):
 
     def add_conformation(self, new_assembly):
         '''
-        append a new :func:`Assembly <biobox.classes.assembly.Assembly>` instance into an existing assembly, as alternate conformation
+        append a new :func:`Assembly <biobox.classes.assembly.Assembly>` instance into an existing assembly, as alternate conformation.
 
-        :param new_assembly: :func:`Assembly <biobox.classes.assembly.Assembly>` object to be appended as alternative conformation
+        The current coordinates of every unit of new_assembly are added as a new conformation of the corresponding unit. The assembly's current conformation index is then increased by one, and every unit is set to that index.
+
+        :param new_assembly: :func:`Assembly <biobox.classes.assembly.Assembly>` object to be appended as alternative conformation, with as many units as this assembly, each with the same number of points
         '''
         if len(self.unit) != len(new_assembly.unit):
             raise Exception("ERROR: expecting %s subunits, found %s!" %(len(self.unit), len(new_assembly.unit)))
@@ -144,10 +146,10 @@ class Assembly(object):
 
     def load_list(self, struct_list, labels=[]):
         '''
-        load a list of :func:`Structure <biobox.classes.structure.Structure>` objects with their associated labels list (typically for hetero assemblies).
+        load a list of :func:`Structure <biobox.classes.structure.Structure>` objects with their associated labels list (typically for hetero assemblies). Deep copies of the structures are appended to the existing units, each keeping the current frame of its original.
 
-        :param struct_list: :func:`Structure <biobox.classes.structure.Structure>` objects (or subclasses of it)
-        :param labels: user-friendly names used to identify every structure. If empty, simple incremental integers are used.
+        :param struct_list: list of :func:`Structure <biobox.classes.structure.Structure>` objects (or subclasses of it)
+        :param labels: user-friendly names used to identify every structure (stored as strings). If empty, the position of every unit in the assembly is used.
         '''
 
         # check labels consistency
@@ -197,19 +199,22 @@ class Assembly(object):
 
     def make_structure(self):
         '''
-        returns a :func:`Structure <biobox.classes.structure.Structure>` object containing all the points of the assembly.
+        returns a :func:`Structure <biobox.classes.structure.Structure>` object containing all the points of the current conformation of all units, as a single conformation, with their radii.
 
         :returns: :func:`Structure <biobox.classes.structure.Structure>` object
         '''
-        return Structure(p=self.get_all_xyz())
+        radii = np.concatenate([u.data["radius"].values for u in self.unit])
+        return Structure(p=self.get_all_xyz(), r=radii)
 
     def make_curved_chain(self, angle, dist, groups=None):
         '''
-        move loaded units so that they arrange in a bent chain.
+        move loaded units so that they arrange in a bent chain in the xy plane.
 
-        :param angle: chain curvature
-        :param dist: distance between centers of mass
-        :param groups: if set, a chain is formed by considering groups of loaded structures as unique objects.
+        The i-th group is centered at the origin, rotated around z by i*angle, and translated by dist along the direction at i*angle from x, starting from the center of the previous group (or from the origin, for the first group).
+
+        :param angle: chain curvature, i.e. rotation angle between consecutive groups, in degrees
+        :param dist: distance between centers of geometry of consecutive groups
+        :param groups: if set, list of lists of unit positions (in self.unit). A chain is formed by considering every group of loaded structures as a unique object.
                        If unset, every object is independently moved.
         '''
 
@@ -250,11 +255,13 @@ class Assembly(object):
 
     def make_circular_symmetry(self, radius, displacement=0):
         '''
-        assemble the loaded units in a circular symmetry.
+        assemble the loaded units in a circular symmetry around the z axis.
         Supposes that all units are centered at the origin and oriented in the same way.
 
+        Every unit is translated so that its point with largest x coordinate is placed at x = -radius and y = displacement (z is unchanged), and the i-th unit is then rotated around z by i*360/n degrees (n units).
+
         :param radius: radial displacement with respect of the origin (along x axis)
-        :param displacement: tangential displacement
+        :param displacement: tangential displacement (along y axis)
         '''
         for i in range(0, len(self.unit), 1):
 
@@ -274,10 +281,12 @@ class Assembly(object):
 
     def make_stacked_rings(self, radius, z, t=0):
         '''
-        construct a prism (two superimposed discs)
+        construct a prism (two superimposed discs). Requires an even number of units.
+
+        The second half of the units is rotated by 180 degrees around x, all units are translated by radius along x and t along y (the second half also by z along z), and the i-th unit of each half is then rotated around z by i*360/(n/2) degrees (n units).
 
         :param radius: radial displacement with respect of the origin (along x axis)
-        :param z: vertical displacement
+        :param z: vertical displacement of the second disc
         :param t: tangential displacement after radial displacement (along y axis)
         '''
 
@@ -303,13 +312,15 @@ class Assembly(object):
 
     def make_prism(self, radius, z, a, b, c, t=0):
         '''
-        construct a prism (bases only). For a perfect stacking, units should be first aligned along their principal axes.
+        construct a prism (bases only). Requires an even number of units. For a perfect stacking, units should be first aligned along their principal axes.
+
+        Like :func:`make_stacked_rings <biobox.classes.assembly.Assembly.make_stacked_rings>`, with the units of the first half additionally rotated by (a, b, c) and those of the second half by (-a, -b, c) before being translated.
 
         :param radius: radial displacement with respect of the origin (along x axis)
-        :param z: vertical displacement
-        :param a: rotation along x axis
-        :param b: rotation along y axis
-        :param c: rotation along z axis
+        :param z: vertical displacement of the second base
+        :param a: rotation around x axis, in degrees
+        :param b: rotation around y axis, in degrees
+        :param c: rotation around z axis, in degrees
         :param t: tangential displacement after radial displacement (along y axis)
         '''
 
@@ -339,12 +350,12 @@ class Assembly(object):
 
     def rotate(self, x, y, z, unit=[]):
         '''
-        rotate desired units in the assembly.
+        rotate desired units in the assembly around the origin (see :func:`Structure.rotate <biobox.classes.structure.Structure.rotate>`).
 
-        :param x: rotation around x
-        :param y: rotation around y
-        :param z: rotation around z
-        :param unit: list of labels indicating which units to rotate (string or integer also accepted, for a single subunit). If undefind, all units will be rotated.
+        :param x: rotation around x, in degrees
+        :param y: rotation around y, in degrees
+        :param z: rotation around z, in degrees
+        :param unit: list of labels indicating which units to rotate (string or integer also accepted, for a single subunit). If undefined, all units will be rotated.
         '''
         if isinstance(unit, list):
             # rotate everything
@@ -371,7 +382,7 @@ class Assembly(object):
         :param x: translation along x
         :param y: translation along y
         :param z: translation along z
-        :param unit: list of labels indicating which units to translate (string or integer also accepted, for a single subunit). If undefind, all units will be translated.
+        :param unit: list of labels indicating which units to translate (string or integer also accepted, for a single subunit). If undefined, all units will be translated.
         '''
 
         if isinstance(unit, list):
@@ -408,7 +419,7 @@ class Assembly(object):
 
     def center_assembly(self):
         '''
-        center whole assembly to origin.
+        center whole assembly to origin, i.e. translate all units so that the center of geometry of all their points is at the origin.
         '''
         pos = self.get_all_xyz()
         center = np.mean(pos, axis=0)
@@ -416,9 +427,9 @@ class Assembly(object):
 
     def get_all_xyz(self):
         '''
-        extract all structures coordinates in a unique array.
+        extract all structures coordinates (current conformation of every unit) in a unique array.
 
-        :returns: collapsed version of assembly's atoms coordinates.
+        :returns: nx3 numpy array of the coordinates of all units, concatenated in unit order.
         '''
         pts = self.unit[0].get_xyz()
         for i in range(1, len(self.unit), 1):
@@ -428,26 +439,30 @@ class Assembly(object):
 
     def get_uxyz(self):
         '''
-        extract all structures coordinates in a a list, where every element contains an array of coordinates of a unit.
+        extract all structures coordinates in a list, where every element contains an array of coordinates of a unit (current conformation).
 
-        :returns: list of units coordinates.
+        :returns: list of numpy arrays, one per unit.
         '''
         return [self.unit[i].get_xyz() for i in range(len(self.unit))]
 
     def get_size(self):
         '''
-        compute dimensions of the structure along the x,y and z axes.
+        compute dimensions of the assembly along the x,y and z axes.
 
         .. note:: points VdW radii are not kept into account
+
+        :returns: numpy array with the extent along x, y and z
         '''
         p = self.get_all_xyz()
         return np.max(p, axis=0) - np.min(p, axis=0)
 
     def contact_ratio(self, unit1, unit2):
         '''
-        count the number of surface points in contact between two Structures part of the assembly.
+        count the number of points of a unit falling within another unit, as tested by the check_inclusion method of the first unit (e.g. :func:`Ellipsoid.check_inclusion <biobox.classes.convex.Ellipsoid.check_inclusion>`).
 
-        :returns: number of contacts
+        :param unit1: label of the unit whose volume is tested
+        :param unit2: label of the unit whose points are tested
+        :returns: number of points of unit2 inside unit1 (float)
         '''
         u1 = self.unit_labels[str(unit1)]
         u2 = self.unit_labels[str(unit2)]
@@ -456,9 +471,9 @@ class Assembly(object):
 
     def get_buried(self):
         '''
-        compute buried surface (assembly sum of components asa minus assembly asa).
+        compute buried surface (assembly sum of components asa minus assembly asa), with :func:`sasa <biobox.measures.calculators.sasa>` and its default parameters.
 
-        :returns: buried_surface in A^2
+        :returns: buried surface in A^2
         '''
 
         from biobox.measures.calculators import sasa
@@ -474,23 +489,26 @@ class Assembly(object):
 
     def write_pdb(self, filename):
         '''
-        write a PDB file where every atom is a bid. VdW radius is written into beta factor.
+        write a PDB file where every point is a bead, using the current conformation of every unit.
+
+        As in :func:`Structure.write_pdb <biobox.classes.structure.Structure.write_pdb>`, every point is named SPH, occupancy is 1 and the radius is written in the beta factor column.
+        The i-th unit (starting from 0) is given chain name chain_names[i] and residue number i. Atom serials run from 1 in file order, in hybrid-36 above 99999.
 
         :param filename: name of pdb file to be produced
         '''
 
         fout = open(filename, "w")
 
+        serial = 0
         for i in range(0, len(self.unit), 1):
+            radii = self.unit[i].data["radius"].values
             for j in range(0, len(self.unit[i].points), 1):
-                if len(self.data) > 99999:
-                    idx_val = hex(1 + i + len(self.unit) * j).split('x')[1]  # remove 0x at start of hexadecimal number
-                else:
-                    idx_val = 1 + i + len(self.unit) * j
+                serial += 1
 
-                l = (idx_val, "SPH", "SPH", self.chain_names[i],
+                # occupancy 1, radius in the beta factor column
+                l = (Structure._hybrid36(serial), "SPH", "SPH", self.chain_names[i],
                      i, self.unit[i].points[j, 0], self.unit[i].points[j, 1],
-                     self.unit[i].points[j, 2], self.unit[i].data["radius"][j], 1.0, "C")
+                     self.unit[i].points[j, 2], 1.0, radii[j], "C")
                 L = 'ATOM  %5s  %-4s%-4s%1s%4i    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % l
                 fout.write(L)
 
@@ -499,6 +517,12 @@ class Assembly(object):
 
     @ staticmethod
     def _components(fibertype):
+        '''
+        decompose a fiber type into the basic fiber types it is composed of.
+
+        :param fibertype: name of the fiber type
+        :returns: ['p2', 'pm'] for 'pmm', ['p2', 'cm'] for 'cmm', None for the types not implemented ('pmg', 'pgg', 'p31m', 'p3m1', 'p4g', 'p4m', 'p6m'), and [fibertype] for any other type
+        '''
         if fibertype == 'pmm':
             return ['p2', 'pm']
 
@@ -547,11 +571,14 @@ class Assembly(object):
     @ staticmethod
     def num_units_fiber(Lpx, Lpy, min_height=10, fibertype=None):
         '''
-        calculate number of repeting units to be used to form a fiber.
+        calculate number of repeating units to be used to form a fiber.
 
         :param Lpx: distance of the partner (point that will be superimposed to the origin) along x as number of steps in a 2D tiling.
         :param Lpy: distance of the partner (point that will be superimposed to the origin) along y as number of steps in a 2D tiling.
-        :param min_height: optional, minimal height (number of repeting units along y) of the fiber (if min_height < Lpy, Lpy will be used as height of the fiber). Default is 10.
+        :param min_height: optional, minimal height (number of repeating units along y) of the fiber (if min_height < Lpy, Lpy will be used as height of the fiber). Default is 10.
+        :param fibertype: optional, fiber type. If set, the number of units along x is multiplied by the number of basic fiber types it is composed of (see make_fiber).
+        :returns: number of units along x (Lpx, times the number of components of fibertype if set)
+        :returns: number of units along y, max(min_height, Lpy)
         '''
 
         Nx = Lpx
@@ -569,14 +596,17 @@ class Assembly(object):
         '''
         create a fiber, seen as the rolling of a plane with (vx, vy) tiling such that the repeating unit in position (Lpx, Lpy) will be overlapped to the origin.
 
+        The n-th unit is placed in the tiling at column n % Lpx and row n / Lpx, and the current coordinates of every unit (taken as coordinates relative to its tile) are replaced by their position in the rolled fiber.
+        Lpx must be a multiple of the number of units per tile of the fiber type, and Lpy must be even for fiber types involving 'p1hexagonal', 'p2', 'p3', 'p4', 'p6', 'pg' or 'pm'.
+
         :param vx: distance between two first neighbors along x in a 2D tiling.
         :param Lpx: distance of the partner (point that will be superimposed to the origin) along x as number of steps in a 2D tiling.
         :param Lpy: distance of the partner (point that will be superimposed to the origin) along y as number of steps in a 2D tiling.
-        :param vy: optional, distance between two first neighbors along y in a 2D tiling (needed for 'p1oblique', 'p1rectangular', 'pm', 'pg', 'p2', ... fiber types).
-        :param gamma: optional, angle between vx and vy in rad, needed for 'p1oblique' fiber type and ignored for other fiber types (default is pi/2 - equivalent to p1rectangular).
-        :param min_height: optional, minimal height (number of repeting units along y) of the fiber (if min_height < Lpy, Lpy will be used as height of the fiber). Default is 2.
-        :param fibertype: optional, can be 'p1rectangular', 'p1hexagonal', 'p1oblique', pm', 'pg', 'cm', ... (default is 'p1oblique').
-        :param v: optional, additional parameter needed for 'pm', 'pg', 'cm', 'p2', ... fiber types (default is None). List for composite fibertypes.
+        :param vy: optional, distance between two first neighbors along y in a 2D tiling. Used only by 'p1oblique' and 'p1rectangular' fiber types, for the other types it is computed from vx.
+        :param gamma: optional, angle between vx and vy in rad, used by 'p1oblique' fiber type and ignored for other fiber types (default is pi/2, equivalent to p1rectangular).
+        :param v: optional, additional parameter needed for 'pm', 'pg', 'cm', 'p2', ... fiber types (default is 0). List with one value per component for composite fibertypes ('pmm', 'cmm').
+        :param min_height: optional, passed to :func:`num_units_fiber <biobox.classes.assembly.Assembly.num_units_fiber>`, of which only the number of units along x is used, so it does not affect the result. Default is 2.
+        :param fibertype: optional, one of 'p1rectangular', 'p1oblique', 'p1hexagonal', 'pm', 'pg', 'cm', 'p2', 'p3', 'p4', 'p6', 'pmm', 'cmm' (default is 'p1oblique').
         '''
 
         if type(v) == int or type(v) == float:

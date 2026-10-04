@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2022 Matteo Degiacomi
+# Copyright (c) 2014-2026 Matteo Degiacomi
 #
 # BiobOx is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
@@ -25,11 +25,11 @@ class Multimer(Polyhedron):
 
     def query(self, query_text, get_index=False):
         '''
-        ## select specific atoms in a multimer un the basis of a text query.
+        select specific atoms in a multimer on the basis of a text query.
 
-        :param query_text: string selecting atoms of interest. Uses the pandas query syntax, can access all columns in the dataframe self.data.
-        :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)
-        :returns: coordinates of the selected points (in a unique array) and, if get_index is set to true, a list of their indices in subunits' self.points array.
+        :param query_text: string selecting atoms of interest. Uses the pandas query syntax, can access all columns in the dataframe self.data (including "unit" and "unit_index").
+        :param get_index: if set to True, the indices of selected atoms in the multimer's self.data are also returned
+        :returns: coordinates of the selected points of the units' current conformations (in a unique kx3 numpy array), grouped by unit. If get_index is set to True, a list [coordinates, indices] is returned instead, where indices is a numpy array of row indices in the multimer's self.data.
         '''
 
         idx = self.data.query(query_text).index.values
@@ -52,15 +52,15 @@ class Multimer(Polyhedron):
 
     def atomselect(self, u, chain, resid, atom, get_index=False, use_resname=False):
         '''
-        ## select specific atoms in a multimer providing unit, chain, residue ID and atom name.
+        select specific atoms in a multimer providing unit, chain, residue ID and atom name.
 
-        :param u: number of desired unit to select in the multimer
+        :param u: label of desired unit to select in the multimer (str or int, accepts '*' as wildcard). Can also be a list or numpy array of labels.
         :param chain: selection of a specific chain name (accepts '*' as wildcard). Can also be a list or numpy array of strings.
-        :param resid: residue ID of desired atoms (accepts '*' as wildcard). Can also be a list or numpy array of of int.
+        :param resid: residue ID of desired atoms (accepts '*' as wildcard). Can also be a list or numpy array of int.
         :param atom: name of desired atom (accepts '*' as wildcard). Can also be a list or numpy array of strings.
-        :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)
-        :param use_resname: if set to True, consider information in "res" variable as resnames, and not resids
-        :returns: coordinates of the selected points (in a unique array) and, if get_index is set to true, a list of their indices in subunits' self.points array.
+        :param get_index: if set to True, the indices of selected atoms within each unit are also returned
+        :param use_resname: if set to True, consider information in "resid" variable as resnames, and not resids
+        :returns: coordinates of the selected points of the units' current conformations (in a unique kx3 numpy array). If get_index is set to True, a list [coordinates, indices] is returned instead, where indices has one entry per unit (in unit order): the indices of selected atoms in that unit's self.points array, or an empty list for units not selected.
         '''
 
         # extract id of units of interest
@@ -102,10 +102,11 @@ class Multimer(Polyhedron):
 
     def make_molecule(self, rename_chains=False):
         '''
-        Return a :func:`Molecule <biobox.classes.molecule.Molecule>` object containing all the points of the assembly. Chain will indicate different units, original chain value is pushed in segment entry.
+        Return a :func:`Molecule <biobox.classes.molecule.Molecule>` object containing all the points of the assembly, taken from the current conformation of every unit, with a single conformation.
 
-        :param rename_chains: if True, chains of the newly produced molecule will be named from scratch.
+        The data of all units is concatenated, keeping all their columns (including "unit" and "unit_index", which identify the unit every atom comes from) and renumbering the "index" column. The "charge" column is kept only if every unit has it. Knowledge about atom CCS is merged across units.
 
+        :param rename_chains: if False (default), every atom keeps its original chain name, so that chain names are repeated across units. If True, all atoms of the i-th unit are given chain name chain_names[i] (A, B, C...), and the original chain names are discarded.
         :returns: :func:`Molecule <biobox.classes.molecule.Molecule>` object
         '''
 
@@ -165,19 +166,21 @@ class Multimer(Polyhedron):
         '''
         Return information about atom of interest (i.e., slice the data DataFrame)
 
-        :param indices: list of indices
+        :param indices: list of row indices in the multimer's self.data
         :param columns: list of columns (e.g. ["resname", "resid", "chain"])
-        :returns: slice of molecule's data DataFrame
+        :returns: numpy array of the values in the selected rows and columns of the multimer's data DataFrame
         '''
 
         return self.data.loc[indices, columns].values
 
     def write_pdb(self, outname, rename_chains=False):
         '''
-        Write a pdb of the multimeric assembly, one MODEL per frame. Every unit is written as a chain of its own.
+        Write a pdb of the multimeric assembly, one MODEL per frame. Every unit is written as a chain of its own (the i-th unit is chain i of chain_names, A, B, C...), replacing the original chain names, and is followed by a TER record. Atoms are renumbered sequentially across units.
+
+        All units must have the same number of frames. Their current frames are restored after writing.
 
         :param outname: name of PDB file to generate
-        :param rename_chains: kept for compatibility, every unit is always given its own chain name
+        :param rename_chains: unused. Every unit is always given its own chain name
         '''
         nframes = len(self.unit[0].coordinates)
         if any(len(u.coordinates) != nframes for u in self.unit):

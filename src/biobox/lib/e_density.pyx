@@ -9,24 +9,28 @@ from cpython cimport bool
 
 cpdef np.ndarray c_get_dipole_map(np.ndarray crd, np.ndarray orig, np.ndarray charges, int time_start = 0, int time_end = 2, float resolution = 1.0, float vox_in_window = 3, bool write_dipole_map = False, str fname = "dipole_map.tcl"):
     '''
-    Generate a vector (x, y, z) of instantaneous dipole moments at time_val within voxels centred at orig. 
-    The size of the voxels is governed by the number of orig points and the size of the system. In essence,
-    orig contains the inherent desired shift for the sliding window.
-       
-    Orig should be built in a separate function that looks at the entirety of the multipdb to account for atomic 
+    Generate a vector (x, y, z) of instantaneous dipole moments, for every frame from time_start to time_end-1,
+    within voxels centred on the grid defined by orig.
+    For every voxel centre c and frame, the dipole is the sum of q_i*(r_i - c) over the atoms i whose coordinates
+    lie in [c - window_size/2, c + window_size/2) along each axis, where window_size = resolution*vox_in_window.
+    Voxels containing no atom have a zero dipole.
+
+    Orig should be built in a separate function that looks at the entirety of the multipdb to account for atomic
     coordinates outside our current investigated bounds (and to keep the number of voxels the same for different
     cartisian sized systems).
-    
-    :param crd: coordinate system. Given by bb.molecule.coordinates
-    :param orig: Origin of voxels from which we'll find our dipole for (this must be constant across timeframes)
-    :param pqr: PQR converted file of PDB file. See pdb2pqr for more details.
+
+    :param crd: coordinates of all frames (numpy array of shape frames x atoms x 3, in A). Given by bb.molecule.coordinates
+    :param orig: voxel centres, as three 1D numpy arrays with the x, y and z grid coordinates (in A). Must be constant across timeframes
+    :param charges: numpy array with the partial charge of every atom, in units of e (e.g. from a PQR file, see pdb2pqr)
     :param time_start: Start frame for finding the dipole map
-    :param time_end: End frame for finding the dipole map (for just 1 frame, it needs to be one more than time_start)
-    :param window_size: Size of the window we're calculating dipole moments for. Should account for electrostatics falling to zero
-    (or close) at the boundaries. Shouldn't be too small otherwise the memory demand will be too high. 1 nm is default in +- x, y, z.
-    :param write_dipole_map: Boolean. If true, write a dipole map for time_val in the tcl format to be read in with VMD command: source dipole_map.tcl
+    :param time_end: End frame for finding the dipole map, excluded (for just 1 frame, it needs to be one more than time_start)
+    :param resolution: voxel size, in A
+    :param vox_in_window: width of the window around each voxel centre in which atoms contribute to its dipole, in voxels.
+        Should account for electrostatics falling to zero (or close) at the boundaries.
+    :param write_dipole_map: Boolean. If true, write a tcl file of VMD "draw cone" commands, to be read in with VMD command: source dipole_map.tcl.
+        Each cone goes from a voxel centre to the centre plus its dipole averaged over frames, and is written only for voxels selected by a 0.7 threshold on the averaged dipole.
     :param fname: Name of dipole_map tcl file.
-    :returns: Vector map of dipoles in x, y and z in the shape of the no. or orig points in x, y and z.
+    :returns: float32 numpy array of shape (frames, nx, ny, nz, 3), with nx, ny, nz the number of orig points in x, y and z: dipole vector of every voxel in every frame, in e*A
     '''
 
     window_size = resolution * vox_in_window
@@ -132,21 +136,27 @@ cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_
     Dielectric properties of proteins from simulation; The effects of solvent, ligands, pH and temperature.
     
     It also requires the approximation that polarisability can be defined using the permitivitty of local space, and subsequently a van der Waal
-    object can also be defined in terms of polarisability, this relies on the Clausius-Moletti relation between molecular
-    polarisability and dielectric constant. 
-    
-    :param dipole_map: Dimensions of (t, x, y, z, [v_x, v_y, v_z]) where [v_x, v_y, v_z] is the vector dipole values for points x, y, z at time t.
+    object can also be defined in terms of polarisability, this relies on the Clausius-Mossotti relation between molecular
+    polarisability and dielectric constant.
+
+    The dipole fluctuations of every voxel give its dielectric permittivity (clamped to a minimum of 1), hence a polarisability
+    and a van der Waals radius, which sets the width sigma (r_vdw/(2*sqrt(2*ln 2)), i.e. r_vdw is the FWHM of the Gaussian)
+    of a function centred on the voxel. The sum of these functions, normalised
+    to a maximum of 1, is written as a dx file. The grid needs a buffer of at least floor(vox_in_window/2) voxels at its edges.
+
+    :param dipole_map: Dimensions of (t, x, y, z, [v_x, v_y, v_z]) where [v_x, v_y, v_z] is the vector dipole values (in e*A) for points x, y, z at time t. At least 2 frames are required.
     :param orig: Coordinate system (x, y, z) we measure our dipole from. MUST be the same as that used in get_dipole_map
-    :param min_val: Minimum coorinates (x, y, z) from which to define our origin. Wrong choice could cause a shift in real space of the density.
-    :param vox_in_window: Width of the sliding window in voxels. Each voxel's function is sampled at whole-voxel offsets within half this width of the voxel centre, i.e. 2*floor(vox_in_window/2)+1 points per axis
+    :param min_val: Minimum coordinates (x, y, z) from which to define our origin, used as the origin of the dx file. Wrong choice could cause a shift in real space of the density.
     :param V: The partial specific volume for the protein (worth investigating further). Units of m^3.
     :param outname: Filename for output dx file.
-    :param eqn: Type of equation used for convolution. OPtions are Gaussian, Slater or Lorentzian
+    :param vox_in_window: Width of the sliding window in voxels. Each voxel's function is sampled at whole-voxel offsets within half this width of the voxel centre, i.e. 2*floor(vox_in_window/2)+1 points per axis
+    :param eqn: Type of equation used for convolution. Options are 'gauss' (Gaussian) and 'slater' (Slater)
     :param T: Temperature of simulation. Default is body temp (K).
-    :param P: Pressure of simulation. Default is atmospheric (Pa).
-    :param epsilonE: External permitivitty outside the protein. Another variable worth investigating. Default is from 2001 paper regarding a salt water solvent.
-    :param window_size: Size of the window we're calculating dipole moments for. Should account for electrostatics falling to zero and be same as get_dipole_map
-    '''    
+    :param P: Pressure of simulation (Pa). Not used in the calculation.
+    :param epsilonE: External relative permittivity outside the protein. Another variable worth investigating. Default is from 2001 paper regarding a salt water solvent.
+    :param resolution: voxel size in A, setting the spacing of the sampled functions and of the dx grid. Should be the same as in get_dipole_map
+    :returns: 0, once the dx file is written
+    '''
     window_size = resolution * vox_in_window
     test = dipole_map.shape
 

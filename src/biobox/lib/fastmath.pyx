@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2021 Matteo Degiacomi
+# Copyright (c) 2014-2026 Matteo Degiacomi
 #
 # BiobOx is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
@@ -141,6 +141,23 @@ cdef cython_line_of_sight(np.ndarray access_grid, np.ndarray a, np.ndarray b):
 
 ### SASA ###
 cpdef cython_get_surface(np.ndarray points, np.ndarray radii, float probe, int n_sphere_point, float threshold):
+    '''
+    compute the accessible surface area of a set of atoms with the Shrake-Rupley algorithm.
+
+    Every atom is surrounded by n_sphere_point mesh points at distance radius+probe from its centre, placed
+    along a golden spiral. A mesh point is exposed when it lies farther than radius+probe from every other atom.
+    Unlike :func:`sasa <biobox.measures.calculators.sasa>`, only atoms whose number of exposed points exceeds
+    n_sphere_point*threshold contribute to the area.
+
+    :param points: nx3 numpy array of atomic coordinates, in A
+    :param radii: numpy array of n atomic radii, in A
+    :param probe: radius of the "rolling ball", in A
+    :param n_sphere_point: number of mesh points per atom
+    :param threshold: fraction of mesh points that must be exposed for an atom to count as a surface atom
+    :returns: accessible surface area in A^2, summed over surface atoms only
+    :returns: mx3 numpy array of the exposed mesh points of all atoms
+    :returns: numpy array of int, indices of the surface atoms
+    '''
 
     cdef np.ndarray mesh
     cdef np.ndarray dist
@@ -216,13 +233,47 @@ cdef cython_ravel(np.ndarray thepos, np.ndarray theshape):
 ### EXPORTS ###
 #a: all possible targets, b: starting points
 def c_heuristic(np.ndarray a, np.ndarray b):
+    '''
+    minimal Manhattan distance between a point and a set of points, used as heuristic for shortest path search.
+
+    :param a: nx3 numpy array of candidate points (e.g. all possible targets)
+    :param b: numpy array with 3 elements, the starting point
+    :returns: smallest Manhattan distance between b and any row of a (float, single precision). 1000000 if a is empty
+    '''
     return cython_min_manhattan(a,b)
 
 def c_line_of_sight(np.ndarray access_grid, np.ndarray a, np.ndarray b):
+    '''
+    check whether a straight line between two grid cells crosses only accessible cells (3D Bresenham algorithm).
+
+    :param access_grid: 3D boolean numpy array, True where a cell is accessible
+    :param a: numpy array of 3 integer indices, starting cell
+    :param b: numpy array of 3 integer indices, end cell
+    :returns: True if every cell traversed from a to b (a excluded, b included) is accessible, False otherwise
+    '''
     return cython_line_of_sight(access_grid,a,b)
 
 def c_get_surface(np.ndarray points, np.ndarray radii, float probe, int n_sphere_point, float threshold):
+    '''
+    compute the accessible surface area of a set of atoms with the Shrake-Rupley algorithm. Wrapper of cython_get_surface.
+
+    :param points: nx3 numpy array of atomic coordinates, in A
+    :param radii: numpy array of n atomic radii, in A
+    :param probe: radius of the "rolling ball", in A
+    :param n_sphere_point: number of mesh points per atom
+    :param threshold: fraction of mesh points that must be exposed for an atom to count as a surface atom
+    :returns: accessible surface area in A^2, summed over surface atoms only
+    :returns: mx3 numpy array of the exposed mesh points of all atoms
+    :returns: numpy array of int, indices of the surface atoms
+    '''
     return cython_get_surface(points, radii, probe, n_sphere_point, threshold)
 
 def c_ravel(np.ndarray thepos, np.ndarray theshape):
+    '''
+    convert a 3D index into the flat index of a C-ordered array.
+
+    :param thepos: numpy array of 3 integer indices
+    :param theshape: numpy array with the 3 dimensions of the array
+    :returns: flat index of thepos (integer)
+    '''
     return cython_ravel(thepos, theshape)

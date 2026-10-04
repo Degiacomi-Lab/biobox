@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Matteo Degiacomi
+# Copyright (c) 2014-2026 Matteo Degiacomi
 #
 # SBT is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
@@ -33,9 +33,9 @@ def get_neighbors(dist, cutoff):
     '''
     detect interfacing points (couples at less than a certain cutoff distance)
 
-    :param dist: distance matrix
-    :param cutoff: maximal distance at which lennard-jones interaction is considered
-    :returns: list of interacting couples
+    :param dist: nxm distance matrix (numpy array)
+    :param cutoff: couples with a distance strictly smaller than cutoff are returned
+    :returns: 2xk numpy array of interacting couples: first row contains row indices in dist, second row column indices
     '''
     return np.array(np.where(dist < cutoff))
 
@@ -43,14 +43,17 @@ def lennard_jones(points1, points2, epsilon=1.0, sigma=2.7, cutoff=12.0, coeff1=
     '''
     Compute m-n lennard-jones potential between two ensembles of points.
 
+    The energy is the sum over all couples (one point from each ensemble) closer than cutoff of
+    ``4*epsilon*((sigma/r)**coeff1 - (sigma/r)**coeff2)``.
+
     :param points1: nx3 numpy array containing points coordinates
     :param points2: mx3 numpy array containing points coordinates
-    :param epsilon: epsilon parameter
-    :param sigma: sigma parameter
-    :param cutoff: maximal distance at which lennard-jones interaction is considered
-    :param coeff1: coefficient of repulsive term (m coefficient)
-    :param coeff2: coefficient of attractive term (n coefficient)
-    :returns: m-n lennard-jones potential (kJ/mol)
+    :param epsilon: epsilon parameter (well depth)
+    :param sigma: sigma parameter, in the units of the coordinates
+    :param cutoff: couples at a distance strictly smaller than cutoff are considered
+    :param coeff1: exponent of repulsive term (m coefficient)
+    :param coeff2: exponent of attractive term (n coefficient)
+    :returns: m-n lennard-jones potential (float), in the units of epsilon
     '''
 
     # get contacting residues

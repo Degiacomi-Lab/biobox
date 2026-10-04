@@ -6,8 +6,14 @@ from distutils.command.build_ext import build_ext
 from Cython.Build import cythonize
 
 class InstallCommand(build_ext):
+    '''
+    build_ext command, registered as "install", that moves the compiled extension into the current folder.
+    '''
 
     def run(self):
+        '''
+        build the extension, move every .pyd or .so file found under the "build" folder into the current folder, then delete the "build" folder.
+        '''
 
         build_ext.run(self)
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2021 Matteo Degiacomi
+# Copyright (c) 2014-2026 Matteo Degiacomi
 #
 # BiobOx is free software ;
 # you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ;
@@ -22,6 +22,10 @@ from scipy.spatial import Delaunay
 
 
 cdef class Graph(object):
+        '''
+        Accessibility grid built around a cloud of obstacle points, and the graph operations used for path search on it.
+        Grid points are addressed by 3D indices or by flat indices (row-major order over the grid shape).
+        '''
 
         cdef np.ndarray xax
         cdef np.ndarray yax
@@ -39,6 +43,9 @@ cdef class Graph(object):
         ## Load protein and make an accessibility grid out of it.
         #@param prot_points atoms to consider for clash detection
         def __init__(self, prot_points):
+            '''
+            :param prot_points: obstacle points, as an (n, 3) numpy array
+            '''
             self.prot_points=prot_points
 
 
@@ -46,6 +53,16 @@ cdef class Graph(object):
         #@param maxdist maximal grid size. If equal to -1, a grid around the whole points ensemble is built
         #@param boundaries build a grid within the desired box boundaries (if defined, maxdist parameter is ignored)
         cpdef make_grid(self, float step=1.0, float maxdist=-1, np.ndarray boundaries=np.array([]), int degree=5, int sigma=2, np.ndarray params=np.array([])):
+            '''
+            define the grid axes and center, and the Gaussian kernel used for density maps. The accessibility map is not computed here.
+
+            :param step: grid step size, in A
+            :param maxdist: edge length of a cubic grid centred on the origin, in A. If equal to -1, a grid around the whole obstacle points ensemble (plus one step on every side) is built
+            :param boundaries: build a grid within the desired box boundaries, given as a 3x2 array [[xmin, xmax], [ymin, ymax], [zmin, zmax]] (if defined, maxdist parameter is ignored)
+            :param degree: half size of the Gaussian kernel, in grid points
+            :param sigma: standard deviation of the Gaussian kernel, in grid points
+            :param params: per obstacle point parameters ([type, sigma, amplitude] rows), stored for the computation of the accessibility map. If empty, the single Gaussian kernel is used for all points
+            '''
 
             self.g=self._make_3d_gaussian(degree, sigma)
 
@@ -91,6 +108,15 @@ cdef class Graph(object):
         #@param boundaries build a grid within the desired box boundaries (if defined, maxdist parameter is ignored)
         #@param cloud build a grid using a points cloud as extrema for the construction of the box. If defined, maxdist and boundaries parameters are ignored.
         cpdef make_global_grid(self, float step=1.0, bool use_hull=False, np.ndarray boundaries=np.array([]), np.ndarray cloud=np.array([]), params=np.array([])):
+            '''
+            build a grid and compute its accessibility map. Obstacle points are binned in the grid and convolved with a Gaussian kernel. Without params, grid points where the density is below its maximum minus 3 standard deviations are accessible. With params, each point type has its own kernel (sigma scaled by 1.5) and amplitude, and grid points where the summed density is below 1 are accessible.
+
+            :param step: grid step size, in A
+            :param use_hull: if True, grid points not laying within the convex hull of the obstacle points (or of cloud, if provided), scaled about their centroid by a swelling factor, are made inaccessible
+            :param boundaries: build a grid within the desired box boundaries, given as a 3x2 array [[xmin, xmax], [ymin, ymax], [zmin, zmax]]. If neither boundaries nor cloud is defined, the grid wraps all obstacle points
+            :param cloud: build a grid using a points cloud as extrema for the construction of the box (extended by one step on every side). If defined, the boundaries parameter is ignored.
+            :param params: per obstacle point parameters ([type, sigma, amplitude] rows). If empty, a single Gaussian kernel is used for all points
+            '''
 
             #if cloud is provided, use that as reference for grid building
             if len(cloud)>0:
@@ -162,15 +188,17 @@ cdef class Graph(object):
             # if true, accept only access grid points inside of the point cloud convex hull
             if use_hull:
                 
-                #scaling factor artificially "swelling the protein", to allow the convex hull to wrap around the points cloud)
+                #scaling factor artificially "swelling the protein" about its centroid, to allow the convex hull to wrap around the points cloud
                 minbox=np.min(np.array(self.access_grid_shape)*self.step).astype(float)
                 scaling=(minbox+self.step*10)/minbox
-                
+
                 #compute Delaunay triangulation
                 if len(cloud)==0:
-                    hull=Delaunay(self.prot_points*scaling)
+                    hull_points=self.prot_points
                 else:
-                    hull=Delaunay(cloud*scaling)
+                    hull_points=cloud
+                centroid=np.mean(hull_points, axis=0)
+                hull=Delaunay((hull_points-centroid)*scaling+centroid)
 
                 #extract accessible gridpoints coordinates
                 w=np.array(np.where(self.access_grid)).T.astype(float)
@@ -188,6 +216,13 @@ cdef class Graph(object):
         #@param end coordinates of the second point to link
         #@param stds number of standard deviations for electron density boundaries definition
         cpdef place_local_grid(self, np.ndarray start, np.ndarray end, float stds=3.0):
+                '''
+                center the grid on the midpoint between two points, and compute its accessibility map from the obstacle points inside the grid. Nothing is done if the grid is already centred there. With params, each point type has its own kernel (sigma scaled by 2) and amplitude, and grid points where the summed density is below 1 are accessible.
+
+                :param start: coordinates of the first point to link
+                :param end: coordinates of the second point to link
+                :param stds: without params, grid points where the density is below its maximum minus stds standard deviations are accessible
+                '''
 
                 cdef np.ndarray grid
                 cdef int xpos
@@ -270,6 +305,12 @@ cdef class Graph(object):
         # @param accessibility grid index, can be either flat or 3D
         # @param flat_index if true, the index will be first converted into 3D
         cpdef np.ndarray get_points_from_idx_flat(self, int idx2):
+                '''
+                convert a flat grid index into a position.
+
+                :param idx2: flat index of a grid point
+                :returns: coordinates of the grid point, as a numpy array of 3 floats
+                '''
                 cdef np.ndarray idx=np.array(self.get_3d_index(idx2))
                 return idx*self.step+self.get_origin()
 
@@ -278,23 +319,44 @@ cdef class Graph(object):
         # @param accessibility grid index, can be either flat or 3D
         # @param flat_index if true, the index will be first converted into 3D
         cpdef np.ndarray get_points_from_idx(self, np.ndarray idx):
+                '''
+                convert 3D grid indices into positions.
+
+                :param idx: 3D index of a grid point, or an (n, 3) numpy array of 3D indices
+                :returns: coordinates of the grid points, with the same shape as idx
+                '''
                 return idx*self.step+self.get_origin()
 
 
         ## coordinates of the grid point with index [0, 0, 0]
         cpdef np.ndarray get_origin(self):
+                '''
+                :returns: coordinates of the grid point with index [0, 0, 0], as a numpy array of 3 floats
+                '''
                 return self.center+np.array([self.xax[0], self.yax[0], self.zax[0]])
 
 
         ## indices of the grid points closest to a list of positions
         #@param pts positions, as an (n, 3) array
         cpdef np.ndarray get_idx_from_points(self, np.ndarray pts):
+                '''
+                indices of the grid points closest to a list of positions. Positions outside the grid give indices out of the grid bounds.
+
+                :param pts: positions, as an (n, 3) array
+                :returns: 3D indices, as an (n, 3) numpy array of integers
+                '''
                 return np.rint((pts-self.get_origin())/self.step).astype(int)
 
 
         ## test whether the grid points closest to a list of positions are accessible (positions outside the grid are not)
         #@param pts positions, as an (n, 3) array
         cpdef np.ndarray is_accessible(self, np.ndarray pts):
+                '''
+                test whether the grid points closest to a list of positions are accessible (positions outside the grid are not).
+
+                :param pts: positions, as an (n, 3) array
+                :returns: numpy array of n booleans
+                '''
                 cdef np.ndarray idx=self.get_idx_from_points(pts)
                 cdef np.ndarray inside=np.all((idx>=0) & (idx<self.access_grid_shape), axis=1)
                 cdef np.ndarray result=np.zeros(len(pts), dtype=bool)
@@ -305,6 +367,13 @@ cdef class Graph(object):
         ##given a target point, give the closest node in accessibility graph.
         #@param target point in space next to protein (typically an atom coordinate selected with atomselect)
         cpdef get_closest_nodes(self, np.ndarray[double, ndim=2] target):
+                '''
+                for each target, find the closest accessible grid point among the 5x5x5 grid points around the grid point nearest to it.
+
+                :param target: positions, as an (n, 3) numpy array of floats (typically atom coordinates selected with atomselect)
+                :returns: list of the squared distances (in A2) between each target and its closest accessible grid point (10000 if none is found)
+                :returns: 3D indices of the closest accessible grid points, as an (n, 3) numpy array (an empty index for a target without accessible grid point)
+                '''
    
                 cdef int pos
                 cdef list idx=[]
@@ -366,6 +435,13 @@ cdef class Graph(object):
         #return indices of neighbors of point p (3d position).
         #@param position of point p
         cpdef np.ndarray neighbors(self, int idx, bool flattened):
+                '''
+                accessible neighbors of a grid point, among the 26 grid points around it.
+
+                :param idx: flat index of the grid point
+                :param flattened: if True, neighbors are returned as flat indices, otherwise as 3D indices
+                :returns: numpy array of flat indices, or (m, 3) numpy array of 3D indices
+                '''
         
                 cdef int x
                 cdef int y
@@ -401,12 +477,24 @@ cdef class Graph(object):
         #cpdef get_flat_index(self,idx):
         #        return np.ravel_multi_index(idx,self.access_grid_shape)
         cpdef get_flat_index(self, np.ndarray thepos):
+            '''
+            convert 3D grid indices into flat indices.
+
+            :param thepos: 3D index of a grid point, or a (3, n) numpy array of 3D indices (one column per grid point)
+            :returns: flat index, or numpy array of n flat indices
+            '''
             return self.access_grid_shape[1]*self.access_grid_shape[2]*thepos[0]+self.access_grid_shape[2]*thepos[1]+thepos[2]
 
 
         ##return 3d index from flattened one
         #@param idx flattened coordinate of a point in the graph
         cpdef list get_3d_index(self, int idx):
+            '''
+            convert a flat grid index into a 3D index.
+
+            :param idx: flat index of a grid point
+            :returns: 3D index, as a list [x, y, z]
+            '''
 
             #unravelling explicitely implemented (faster than calling numpy unravel)
             cdef int p1 = idx%self.access_grid_shape[2]
@@ -418,6 +506,13 @@ cdef class Graph(object):
         
         ##euclidean distance between two points in the graph, in grid steps (admissible heuristic for A*)
         cpdef double heuristic(self, a, b):
+            '''
+            Euclidean distance between two grid points, in grid steps (admissible heuristic for A*).
+
+            :param a: flat index of the first grid point (a numpy integer)
+            :param b: flat index of the second grid point (a numpy integer)
+            :returns: distance in grid steps
+            '''
             cdef list aa=self.get_3d_index(a.T)
             cdef list bb=self.get_3d_index(b.T)
             cdef int dx=bb[0]-aa[0]
@@ -430,6 +525,13 @@ cdef class Graph(object):
         #@param a point (in flat coordiantes)
         #@param b point (in flat coordiantes)
         cpdef double cost(self, int a, int b):
+                '''
+                cost of moving between two grid points: their Euclidean distance, in grid steps.
+
+                :param a: flat index of the first grid point
+                :param b: flat index of the second grid point
+                :returns: distance in grid steps
+                '''
                 cdef list aa=self.get_3d_index(a)
                 cdef list bb=self.get_3d_index(b)
                 cdef int dx=bb[0]-aa[0]
@@ -443,6 +545,13 @@ cdef class Graph(object):
         # @param gaussian standard deviation
         # @retval 3d grid containing a binned gaussian density
         cdef _make_3d_gaussian(self, int degree=5, float sigma=0.5):
+                '''
+                generate a 3D Gaussian kernel, used for density map generation.
+
+                :param degree: half size of the kernel, in grid points
+                :param sigma: standard deviation of the Gaussian, in grid points
+                :returns: (2*degree+1)x(2*degree+1)x(2*degree+1) numpy array, normalised to sum 1
+                '''
 
                 cdef int window=degree*2+1
                 shape=(window,window,window)
