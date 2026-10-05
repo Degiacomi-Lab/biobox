@@ -92,7 +92,7 @@ class Path(object):
 
         :param step: grid step size, in A
         :param maxdist: edge length of the cubic local grid, in A. Pairs of points further apart than this Euclidean distance are not searched (see :func:`search_path <biobox.measures.path.Path.search_path>`)
-        :param params: per obstacle point parameters ([type, sigma, amplitude] rows, as built by :func:`set_clashing_atoms <biobox.measures.path.Xlink.set_clashing_atoms>` with atoms_vdw). If empty, a single Gaussian density is used for all obstacle points
+        :param params: exclusion radius in A per obstacle point (1D array), as built by :func:`set_clashing_atoms <biobox.measures.path.Xlink.set_clashing_atoms>` with atoms_vdw. A grid point closer to an obstacle point than its exclusion radius is inaccessible, whatever the grid step. If empty, the default density model is used (obstacle points convolved with a single Gaussian kernel)
         '''
         self.graph.make_grid(step=step, maxdist=maxdist, params=params)
         self.maxdist = maxdist
@@ -108,7 +108,7 @@ class Path(object):
         :param use_hull: if True, points not laying within the convex hull wrapping around obtacles will be excluded
         :param boundaries: build a grid within the desired box boundaries, given as [[xmin, xmax], [ymin, ymax], [zmin, zmax]]. If neither boundaries nor cloud is defined, the grid wraps all obstacle points
         :param cloud: build a grid using a points cloud as extrema for the construction of the box (extended by one step on every side). If defined, the boundaries parameter is ignored.
-        :param params: per obstacle point parameters ([type, sigma, amplitude] rows, as built by :func:`set_clashing_atoms <biobox.measures.path.Xlink.set_clashing_atoms>` with atoms_vdw). If empty, a single Gaussian density is used for all obstacle points
+        :param params: exclusion radius in A per obstacle point (1D array), as built by :func:`set_clashing_atoms <biobox.measures.path.Xlink.set_clashing_atoms>` with atoms_vdw. A grid point closer to an obstacle point than its exclusion radius is inaccessible, whatever the grid step. If empty, the default density model is used (obstacle points convolved with a single Gaussian kernel)
         '''
 
         # if len(boundaries) == 0:
@@ -127,10 +127,10 @@ class Path(object):
         :param start: coordinates of starting point (numpy array of 3 floats)
         :param end: coordinates of target point (numpy array of 3 floats)
         :param method: "theta" or "lazytheta" (Lazy Theta*), "old_theta" (Theta*), "astar" (A*) or "euclidean" (straight line, ignoring obstacles)
-        :param get_path: if True, the returned path is filled with intermediate points spaced by about 1 A (not only waypoints)
+        :param get_path: if True, the returned path is filled with intermediate points spaced by at most 1 A (not only waypoints), see :func:`_get_trails <biobox.measures.path.Path._get_trails>`. The returned length is measured on the waypoints either way
         :param update_grid: if True, grid will be recalculated (for local search only)
         :param test_los: if true, a line of sight postprocessing will be performed to make paths straighter
-        :returns: path length in A. It is -1 if the points are further apart than maxdist, are disconnected or method is unknown, and -2 (likely buried target) if no accessible grid point is found next to start or end, or if the squared distance to the closest one exceeds maxdist + step
+        :returns: path length in A. It is -1 if the points are further apart than maxdist, are disconnected or method is unknown, and -2 (likely buried target) if no accessible grid point is found next to start or end, or if the SQUARED distance (in A2) to the closest one, as returned by :func:`Graph.get_closest_nodes <biobox.lib.graph.Graph.get_closest_nodes>`, exceeds maxdist + step (a value in A, compared as is)
         :returns: path coordinates as an (n, 3) numpy array ordered from end to start, or an empty array on failure
         '''
 
@@ -164,13 +164,15 @@ class Path(object):
 
         # get indices of closest graph neighbors in graph, corresponding to points to connect
         # in this case start and end will be picked within the same ensemble of coordinates
-        # first, check if atoms are accessible, exit if likely to be buried
+        # first, check if atoms are accessible, exit if likely to be buried. The squared distance
+        # to the closest grid point is compared with connect_thresh, and a target without
+        # accessible grid point (placeholder index -1) is buried
         dists_start, idx_3d_start = self.graph.get_closest_nodes(np.array([start]))
-        if dists_start[0] > connect_thresh:
+        if dists_start[0] > connect_thresh or idx_3d_start[0][0] < 0:
             return -2, np.array([])
 
         dists_end, idx_3d_end = self.graph.get_closest_nodes(np.array([end]))
-        if dists_end[0] > connect_thresh:
+        if dists_end[0] > connect_thresh or idx_3d_end[0][0] < 0:
             return -2, np.array([])
 
         idx_start = self.graph.get_flat_index(np.array(idx_3d_start.T))[0]
@@ -363,7 +365,7 @@ class Path(object):
         exempt = []
         for t in targets:
             dist, idx = self.graph.get_closest_nodes(np.array([t], dtype=float))
-            if len(idx[0]) == 0:
+            if idx[0][0] < 0:
                 exempt.append((np.asarray(t, dtype=float), 0.0))
             else:
                 exempt.append((np.asarray(t, dtype=float), np.sqrt(dist[0]) + 1e-9))
@@ -373,30 +375,32 @@ class Path(object):
     # points are separated with steps of 1A (or less)
     def _get_trails(self, waypoints):
         '''
-        fill the segments between consecutive waypoints with intermediate points.
+        fill the segments between consecutive waypoints with intermediate points, keeping the waypoints order.
 
-        For each segment of length d >= 1 A, int(d) evenly spaced points are added, starting from the previous waypoint (repeated), followed by the next waypoint. A waypoint closer than 1 A to the previous one is not added.
+        A segment of length d is split into ceil(d) intervals of equal length (at most 1 A). Every waypoint appears once, the first and last waypoints included. A waypoint coinciding with the previous one is not repeated.
 
         :param waypoints: waypoints coordinates, as an (n, 3) numpy array
         :returns: path coordinates, as an (m, 3) numpy array
         '''
 
+        waypoints = np.asarray(waypoints, dtype=float)
+        if len(waypoints) == 0:
+            return waypoints
+
         wpts = [waypoints[0]]
 
         for i in range(1, len(waypoints), 1):
 
-            # add points in interval between old and new point
-            vec = waypoints[i - 1] - waypoints[i]
+            # add points in interval between old and new point, ending on the new point
+            vec = waypoints[i] - waypoints[i - 1]
             distance = np.sqrt(np.dot(vec, vec))
 
-            if distance < 1: #was 0.01A
+            if distance == 0:
                 continue
 
-            vec /= np.linalg.norm(vec)
-            start_here = waypoints[i]
-            for a in np.linspace(distance, 1, int(distance)):
-                pt = start_here + a * vec
-                wpts.append(pt)
+            n = int(np.ceil(distance))
+            for k in range(1, n, 1):
+                wpts.append(waypoints[i - 1] + vec * (k / float(n)))
 
             wpts.append(waypoints[i])
 
@@ -717,13 +721,14 @@ class Xlink(Path):
         self.molecule = molecule
 
 
-    def set_clashing_atoms(self, atoms=[], densify=True, atoms_vdw=False, points=[]):
+    def set_clashing_atoms(self, atoms=[], densify=True, atoms_vdw=False, probe=1.7, points=[]):
         '''
         define atoms to consider for clash detection.
 
         :param atoms: atomnames to consider for clash detection. If undefined, protein backbone and C beta will be considered.
         :param densify: if True, all atoms not solvent exposed will be considered for clash detection, in addition to the solvent exposed atoms named in atoms.
-        :param atoms_vdw: if True, every obstacle point is given a density width and amplitude according to its atom type (C, H, O, S or N, guessed if missing), used when building the grid. If False, a single Gaussian density is used for all points
+        :param atoms_vdw: if True, every obstacle point is given an exclusion radius equal to its van der Waals radius plus probe: grid points closer than that to the atom are inaccessible, whatever the grid step (stored in self.params). Van der Waals radii are taken from knowledge['atom_vdw'] by atomtype (the '.' entry for unknown atomtypes, atomtypes being guessed from atom names if any is missing). The molecule's 'radius' column is not used, since import_pqr and pdb2pqr fill it with force field radii. If False, the default density model is used (obstacle points convolved with a single Gaussian kernel)
+        :param probe: probe radius in A (the linker thickness) added to the van der Waals radii (atoms_vdw only). The default is the van der Waals radius of carbon
         :param points: if not empty, these coordinates (an (n, 3) array) are used as obstacles instead of the molecule's atoms, and all other parameters are ignored
         :returns: if densify is True, boolean mask over the molecule's atoms flagging those used as obstacles. If densify is False, indices of the atoms used as obstacles. None if points is provided
         '''
@@ -766,21 +771,10 @@ class Xlink(Path):
             if np.any(self.molecule.data["atomtype"] == ''):
                 self.molecule.assign_atomtype()
 
-            # knowledge base: define points standard deviations
-            atomdata = [["C", 1.7, 1.455, 0.51],
-                        ["H", 1.2, 0.72, 0.25],
-                        ["O", 1.52, 1.15, 0.42],
-                        ["S", 1.8, 1.62, 0.54],
-                        ["N", 1.55, 1.2, 0.44]]
-            self.params = np.zeros((len(points), 3)).astype(float)
-            self.params[:, 1] = 1.0  # set defaults
-            a_cnt = 1
-            for a in atomdata:
-                pos = self.molecule.data["atomtype"][idxs] == a[0]
-                self.params[pos, 0] = a_cnt
-                self.params[pos, 1] = a[2]  # *2.0
-                self.params[pos, 2] = a[3]
-                a_cnt += 1
+            # exclusion radius of every obstacle point: van der Waals radius plus probe
+            vdw = self.molecule.know('atom_vdw')
+            atomtypes = self.molecule.data["atomtype"].values[idxs]
+            self.params = np.array([vdw.get(str(a).strip().upper(), vdw['.']) for a in atomtypes], dtype=float) + probe
 
         else:
             self.params = np.array([])
@@ -803,6 +797,8 @@ class Xlink(Path):
 
         :param step: grid step size, in A
         :param maxdist: edge length of the cubic local grid, in A. Pairs of points further apart than this Euclidean distance are not searched
+
+        Grid accessibility follows the model chosen in :func:`set_clashing_atoms <biobox.measures.path.Xlink.set_clashing_atoms>` (atoms_vdw).
         '''
         super(Xlink, self).setup_local_search(step=step, maxdist=maxdist, params=self.params)
 
@@ -817,6 +813,8 @@ class Xlink(Path):
         :param use_hull: if True, points not laying within the convex hull wrapping around obtacles will be excluded
         :param boundaries: build a grid within the desired box boundaries, given as [[xmin, xmax], [ymin, ymax], [zmin, zmax]]. If neither boundaries nor cloud is defined, the grid wraps all obstacle points
         :param cloud: build a grid using a points cloud as extrema for the construction of the box (extended by one step on every side). If defined, the boundaries parameter is ignored.
+
+        Grid accessibility follows the model chosen in :func:`set_clashing_atoms <biobox.measures.path.Xlink.set_clashing_atoms>` (atoms_vdw).
         '''
 
         super(Xlink, self).setup_global_search(step=step, maxdist=maxdist, use_hull=use_hull, boundaries=boundaries, cloud=cloud, params=self.params)
@@ -838,7 +836,7 @@ class Xlink(Path):
 
         :param indices: atoms indices (within the data structure, not the original pdb file). Get the indices via molecule.atomselect(...) command.
         :param method: path search method, see :func:`search_path <biobox.measures.path.Path.search_path>` ("theta", "lazytheta", "old_theta", "astar" or "euclidean").
-        :param get_path: if true, a list containing all the paths is also returned, each filled with intermediate points spaced by about 1 A
+        :param get_path: if true, a list containing all the paths is also returned, each filled with intermediate points spaced by at most 1 A. With smooth, the reported distance is the length of the smoothed filled path
         :param smooth: if True, path will be refined to make turns less angular.
         :param verbose: if True, the algorithm will dump text in console
         :param sphere_pts_surf: surface occupied per sphere point, in A2. The smaller, the higher the points density (flexible_sidechain only, see :func:`get_half_sphere <biobox.measures.path.Xlink.get_half_sphere>`)
@@ -847,7 +845,7 @@ class Xlink(Path):
         :param test_los: if true, a line of sight postprocessing will be performed to make paths straighter
         :param flexible_sidechain: if True, the selected atoms will be rotated around their associated CA, in order to scan for alternative sidechain arrangements. A sphere of clash-free alternative conformations is generated, and the shortest distance accounting for all these different possibilities is returned. Note that this method is computationally expensive.
         :returns: distance matrix in A (numpy 2d array, len(indices) x len(indices)). matrix will contain -1 if atoms are too far or cannot be linked, and -2 if one of the two atoms is buried (rigid side chains only). With flexible_sidechain, distances shorter than the grid step are set to the grid step.
-        :returns: only if get_path is True, list of paths, each formatted as [[i, j], path], where i and j are positions in indices and path is an (n, 3) numpy array. With rigid side chains, failed pairs have no entry.
+        :returns: only if get_path is True, list of paths, each formatted as [[i, j], path], where i and j are positions in indices and path is an (n, 3) numpy array. Pairs that cannot be linked have no entry. With flexible_sidechain, two spheres closer than the grid step are joined by the straight segment between their two closest points.
         '''
 
         # if flexible sidechain is needed
@@ -904,15 +902,21 @@ class Xlink(Path):
 
                     bestdist = 1000000
                     bestpath = []
+                    pts_crd = []
                     update_grid = True
 
                     # get euclidean distance matrix
                     dist_sph = SD.cdist(spheres[i], spheres[j])
 
                     # halting condition identifying spheres contact (useless to
-                    # continue with point by point comparison)
+                    # continue with point by point comparison). The path is the
+                    # straight segment between the two closest points, from end to start
                     if np.min(dist_sph) < self.graph.step:
                         bestdist = self.graph.step
+                        a, b = np.unravel_index(np.argmin(dist_sph), dist_sph.shape)
+                        bestpath = np.array([spheres[j][b], spheres[i][a]])
+                        if get_path:
+                            bestpath = self._get_trails(bestpath)
 
                     else:
                         # sort measures order from shortest to longest,
@@ -1000,7 +1004,8 @@ class Xlink(Path):
                 if verbose and dist > 0:
                     print("> %s%s_%s vs %s%s_%s: %5.2fA" % (l1[0], l1[2], l1[1], l2[0], l2[2], l2[1], dist))
 
-                if get_path:
+                # pairs that cannot be linked have no path entry
+                if get_path and dist > 0:
                     #path_data = [[i, j]]
                     #path_data.extend(pts_crd)
                     path_data = [[i, j], np.array(pts_crd)]
@@ -1010,53 +1015,6 @@ class Xlink(Path):
             return distance, paths
         else:
             return distance
-
-    # build sphere around a sidechain atom
-    def _get_sphere(self, i, thresh=2.0):
-        '''
-        positions a side chain atom can reach by rotating around the CA of its residue, on a single sphere of radius equal to the atom-CA distance (one point per 4 A2).
-
-        :param i: index of a side chain atom
-        :param thresh: minimal distance in A between a sphere point and any atom of the molecule
-        :returns: numpy array of clash free points, the atom's current position first, or an empty list if the CA of the residue is not uniquely found
-        '''
-
-        D = self.molecule.data
-        l = D[i]
-        if l[2] == "CA":
-            raise Exception(
-                "For flexible mode, a side chain atom must be provided!")
-
-        # extract position of alpha carbon associated to provided side chain
-        # atom
-        test1 = np.logical_and(D[:, 4] == l[4], D[:, 5] == l[5])
-        test2 = D[:, 2] == "CA"
-        test = np.logical_and(test1, test2)
-
-        pos = np.where(test)[0]
-        if len(pos) == 1:
-            alpha = self.molecule.points[test][0]
-        else:
-            return []
-
-        # build sphere
-        side = self.molecule.points[i]
-        radius = np.sqrt(np.dot(side - alpha, side - alpha))
-        # allow a surface of 4 A^2 to every point
-        n_sphere_point = int(4.0 * np.pi * (radius**2) / 4.0)
-        Sph = Sphere(radius, n_sphere_point=n_sphere_point, radius=0.0)
-        Sph.translate(alpha[0], alpha[1], alpha[2])
-
-        # return only clash free points in sphere
-        dist = SD.cdist(Sph.points, self.molecule.points)
-
-        res = [side]
-        for k in range(0, dist.shape[0], 1):
-            # keep sphere points at more than 1A from all neighbors
-            if not np.any(dist[k] < thresh):
-                res.append(Sph.points[k])
-
-        return np.array(res)
 
     def get_half_sphere(self, i, pts_surf=4.0, thresh=2.0, radii=[6.3, 5.9, 5.4, 4.8]):
         '''

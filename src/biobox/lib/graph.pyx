@@ -18,7 +18,7 @@ from cpython cimport bool
 from libc.math cimport sqrt
 import scipy.spatial.distance as S
 import scipy.signal
-from scipy.spatial import Delaunay
+from scipy.spatial import Delaunay, cKDTree
 
 
 cdef class Graph(object):
@@ -39,6 +39,7 @@ cdef class Graph(object):
         cdef np.ndarray points
         cdef public np.ndarray access_grid
         cdef public np.ndarray access_grid_shape
+        cdef object tree
 
         ## Load protein and make an accessibility grid out of it.
         #@param prot_points atoms to consider for clash detection
@@ -61,27 +62,35 @@ cdef class Graph(object):
             :param boundaries: build a grid within the desired box boundaries, given as a 3x2 array [[xmin, xmax], [ymin, ymax], [zmin, zmax]] (if defined, maxdist parameter is ignored)
             :param degree: half size of the Gaussian kernel, in grid points
             :param sigma: standard deviation of the Gaussian kernel, in grid points
-            :param params: per obstacle point parameters ([type, sigma, amplitude] rows), stored for the computation of the accessibility map. If empty, the single Gaussian kernel is used for all points
+            :param params: exclusion radius in A per obstacle point (1D array), stored for the computation of the accessibility map. If empty, the default density model (single Gaussian kernel) is used
             '''
+
+            if len(params)>0 and (params.ndim!=1 or len(params)!=len(self.prot_points)):
+                raise Exception("params must hold one exclusion radius per obstacle point!")
 
             self.g=self._make_3d_gaussian(degree, sigma)
 
             self.step=step
             self.params=params
 
+            #search tree over obstacle points, used by the exclusion model
+            if len(params)>0:
+                self.tree=cKDTree(self.prot_points)
+            else:
+                self.tree=None
+
             #define box according to desired boundaries
             if len(boundaries)==3:
                 if np.any(boundaries[:,0]>=boundaries[:,1]):
                     raise Exception("upper grid boundary is greater than a lower boundary!")
 
-                self.xax=np.arange(boundaries[0][0],boundaries[0][1]+step,step)
-                self.yax=np.arange(boundaries[1][0],boundaries[1][1]+step,step)
-                self.zax=np.arange(boundaries[2][0],boundaries[2][1]+step,step)
-                #grid=np.array(np.meshgrid(s1,s2,s3))
-                #self.center=np.mean(self.prot_points, axis=0)
                 self.center=np.array([(boundaries[0][0]+boundaries[0][1])/2.0,\
                                       (boundaries[1][0]+boundaries[1][1])/2.0,\
                                       (boundaries[2][0]+boundaries[2][1])/2.0])
+                #axes are relative to the center, the first grid point being on the lower boundary
+                self.xax=np.arange(boundaries[0][0],boundaries[0][1]+step,step)-self.center[0]
+                self.yax=np.arange(boundaries[1][0],boundaries[1][1]+step,step)-self.center[1]
+                self.zax=np.arange(boundaries[2][0],boundaries[2][1]+step,step)-self.center[2]
 
             #define box vertices to make a generic cube
             elif maxdist != -1:
@@ -109,13 +118,13 @@ cdef class Graph(object):
         #@param cloud build a grid using a points cloud as extrema for the construction of the box. If defined, maxdist and boundaries parameters are ignored.
         cpdef make_global_grid(self, float step=1.0, bool use_hull=False, np.ndarray boundaries=np.array([]), np.ndarray cloud=np.array([]), params=np.array([])):
             '''
-            build a grid and compute its accessibility map. Obstacle points are binned in the grid and convolved with a Gaussian kernel. Without params, grid points where the density is below its maximum minus 3 standard deviations are accessible. With params, each point type has its own kernel (sigma scaled by 1.5) and amplitude, and grid points where the summed density is below 1 are accessible.
+            build a grid and compute its accessibility map. Without params, obstacle points are binned in the grid and convolved with a Gaussian kernel, and grid points where the density is below its maximum minus 3 standard deviations are accessible. With params, a grid point is inaccessible if its distance to any obstacle point is smaller than that point's exclusion radius (see :func:`_exclusion_map <biobox.lib.graph.Graph._exclusion_map>`), independently of the grid step.
 
             :param step: grid step size, in A
             :param use_hull: if True, grid points not laying within the convex hull of the obstacle points (or of cloud, if provided), scaled about their centroid by a swelling factor, are made inaccessible
             :param boundaries: build a grid within the desired box boundaries, given as a 3x2 array [[xmin, xmax], [ymin, ymax], [zmin, zmax]]. If neither boundaries nor cloud is defined, the grid wraps all obstacle points
             :param cloud: build a grid using a points cloud as extrema for the construction of the box (extended by one step on every side). If defined, the boundaries parameter is ignored.
-            :param params: per obstacle point parameters ([type, sigma, amplitude] rows). If empty, a single Gaussian kernel is used for all points
+            :param params: exclusion radius in A per obstacle point (1D array). If empty, the default density model (single Gaussian kernel) is used
             '''
 
             #if cloud is provided, use that as reference for grid building
@@ -148,41 +157,10 @@ cdef class Graph(object):
                     self.access_grid=np.ones(b.shape, dtype=bool)
 
             else:
-                b=[]
-                for a in np.unique(self.params[:,0]):      
-                    
-                    grid=np.zeros((len(self.xax),len(self.yax),len(self.zax)))
+                #grid points closer to an obstacle point than its exclusion radius are inaccessible
+                self.access_grid=self._exclusion_map()
+                b=self.access_grid
 
-                    test=np.where(self.params[:,0]==a)[0]
-                    points=self.prot_points[test]
-
-                    sigma=self.params[test,1][0]
-                    ampl=self.params[test,2][0]
-                    self.g=self._make_3d_gaussian(5, sigma*1.5)
-
-
-                    #prepare mesh grid, and place, Kronecker deltas
-                    grid=np.zeros((len(self.xax),len(self.yax),len(self.zax)))
-                    for p in points:#self.prot_points:
-                        xpos=np.argmin(np.abs(self.xax+self.center[0]-p[0]))
-                        ypos=np.argmin(np.abs(self.yax+self.center[1]-p[1]))
-                        zpos=np.argmin(np.abs(self.zax+self.center[2]-p[2]))
-                        grid[xpos,ypos,zpos]=1
-            
-                    if len(b)==0:                        
-                        b=scipy.signal.fftconvolve(grid, self.g, mode='same')
-                        b/=np.max(b)
-                        b/=ampl
-                    else:
-                        b_tmp=scipy.signal.fftconvolve(grid, self.g, mode='same')
-                        b_tmp/=np.max(b_tmp)
-                        b_tmp/=ampl
-                        b+=b_tmp
-    
-                #accept points where density is under threshold (i.e., region is accessible)
-                self.access_grid=b<1.0
-                
-                    
             self.access_grid_shape=np.array(b.shape)
 
             # if true, accept only access grid points inside of the point cloud convex hull
@@ -217,7 +195,7 @@ cdef class Graph(object):
         #@param stds number of standard deviations for electron density boundaries definition
         cpdef place_local_grid(self, np.ndarray start, np.ndarray end, float stds=3.0):
                 '''
-                center the grid on the midpoint between two points, and compute its accessibility map from the obstacle points inside the grid. Nothing is done if the grid is already centred there. With params, each point type has its own kernel (sigma scaled by 2) and amplitude, and grid points where the summed density is below 1 are accessible.
+                center the grid on the midpoint between two points, and compute its accessibility map. Nothing is done if the grid is already centred there. Without params, the obstacle points inside the grid are binned and convolved with a Gaussian kernel. With params, a grid point is inaccessible if its distance to any obstacle point is smaller than that point's exclusion radius (see :func:`_exclusion_map <biobox.lib.graph.Graph._exclusion_map>`), as in :func:`make_global_grid <biobox.lib.graph.Graph.make_global_grid>`.
 
                 :param start: coordinates of the first point to link
                 :param end: coordinates of the second point to link
@@ -261,44 +239,53 @@ cdef class Graph(object):
                         self.access_grid=np.ones(b.shape, dtype=bool)
                     
                 else:
-                    b=[]
-                    for a in np.unique(self.params[:,0]):      
-                        
-                        grid=np.zeros((len(self.xax),len(self.yax),len(self.zax)))
+                    #grid points closer to an obstacle point than its exclusion radius are inaccessible
+                    self.access_grid=self._exclusion_map()
+                    b=self.access_grid
 
-                        test=np.where(self.params[:,0]==a)[0]
-                        points=self.prot_points[test]
-
-                        sigma=self.params[test,1][0]
-                        ampl=self.params[test,2][0]
-                        self.g=self._make_3d_gaussian(5, sigma*2.0)
-        
-                        #if protein point in region of interest, place a Kroneker delta
-                        for p in points: #self.prot_points:
-                            if p[0]>self.xax[0]+self.center[0] and p[0]<-self.xax[0]+self.center[0]:
-                                if p[1]>self.yax[0]+self.center[1] and p[1]<-self.yax[0]+self.center[1]:
-                                    if p[2]>self.zax[0]+self.center[2] and p[2]<-self.zax[0]+self.center[2]:
-                                        xpos=np.argmin(np.abs(self.xax+self.center[0]-p[0]))
-                                        ypos=np.argmin(np.abs(self.yax+self.center[1]-p[1]))
-                                        zpos=np.argmin(np.abs(self.zax+self.center[2]-p[2]))              
-                                        grid[xpos,ypos,zpos]=1
-                        
-                        if len(b)==0:                        
-                            b=scipy.signal.fftconvolve(grid, self.g, mode='same')
-                            b/=np.max(b)
-                            b/=ampl
-                        else:
-                            b_tmp=scipy.signal.fftconvolve(grid, self.g, mode='same')
-                            b_tmp/=np.max(b_tmp)
-                            b_tmp/=ampl
-                            b+=b_tmp
-        
-                    #accept points where density is under threshold (i.e., region is accessible)
-                    self.access_grid=b<1.0
-                    
                 self.access_grid_shape=np.array(b.shape)
                 #self.w=np.array(np.where(self.access_grid)).T                
                 #self.points=self.get_points_from_idx(self.w)
+
+
+        ## accessibility map of the current grid from the exclusion radii of the obstacle points (self.params)
+        cpdef np.ndarray _exclusion_map(self):
+                '''
+                accessibility map of the current grid from the obstacle points and their exclusion radii (self.params). A grid point is inaccessible if its distance to any obstacle point is smaller than that point's radius, accessible otherwise.
+
+                :returns: boolean numpy array with the grid shape, True for accessible grid points
+                '''
+
+                cdef np.ndarray gx, gy, gz, gridpts, access, d, j, cand, dk, jk, hit, rpad, nb
+                cdef double rmax=np.max(self.params)
+                cdef int k
+                gx,gy,gz=np.meshgrid(self.xax+self.center[0], self.yax+self.center[1], self.zax+self.center[2], indexing='ij')
+                gridpts=np.column_stack((gx.ravel(), gy.ravel(), gz.ravel()))
+                access=np.ones(len(gridpts), dtype=bool)
+
+                #closest obstacle point of every grid point, within the largest radius
+                d,j=self.tree.query(gridpts, k=1, distance_upper_bound=rmax)
+                cand=np.where(d<rmax)[0]
+                hit=d[cand]<self.params[j[cand]]
+                access[cand[hit]]=False
+
+                #a grid point not blocked by its closest obstacle point can be blocked by a further
+                #one having a larger radius: test the obstacle points within the largest radius
+                cand=cand[~hit]
+                if len(cand)>0:
+                    k=min(16, len(self.prot_points))
+                    dk,jk=self.tree.query(gridpts[cand], k=k, distance_upper_bound=rmax)
+                    dk=dk.reshape(len(cand), k)
+                    jk=jk.reshape(len(cand), k)
+                    rpad=np.append(self.params, 0.0)
+                    hit=np.any(dk<rpad[jk], axis=1)
+                    #with k obstacle points within the largest radius, further ones may exist
+                    for c in np.where(~hit & (dk[:,k-1]<rmax))[0]:
+                        nb=np.array(self.tree.query_ball_point(gridpts[cand[c]], rmax), dtype=int)
+                        hit[c]=np.any(np.linalg.norm(self.prot_points[nb]-gridpts[cand[c]], axis=1)<self.params[nb])
+                    access[cand[hit]]=False
+
+                return access.reshape((len(self.xax), len(self.yax), len(self.zax)))
 
 
         ## convert accessibility map coordinates into a position
@@ -371,8 +358,8 @@ cdef class Graph(object):
                 for each target, find the closest accessible grid point among the 5x5x5 grid points around the grid point nearest to it.
 
                 :param target: positions, as an (n, 3) numpy array of floats (typically atom coordinates selected with atomselect)
-                :returns: list of the squared distances (in A2) between each target and its closest accessible grid point (10000 if none is found)
-                :returns: 3D indices of the closest accessible grid points, as an (n, 3) numpy array (an empty index for a target without accessible grid point)
+                :returns: list of the SQUARED distances (in A2, not A) between each target and its closest accessible grid point (10000 if none is found)
+                :returns: 3D indices of the closest accessible grid points, as an (n, 3) numpy array of integers. A target without accessible grid point gets the placeholder index [-1, -1, -1], which is not a valid grid point
                 '''
    
                 cdef int pos
@@ -386,7 +373,7 @@ cdef class Graph(object):
                     j=np.argmin(np.abs(self.yax+self.center[1]-t[1]))
                     k=np.argmin(np.abs(self.zax+self.center[2]-t[2]))
     
-                    bestpos=[]
+                    bestpos=[-1,-1,-1]
                     bestdist=10000
                     for x in xrange(i-2,i+3,1):
                         for y in xrange(j-2,j+3,1):
@@ -428,7 +415,7 @@ cdef class Graph(object):
                 print idx, dists
                 '''
                     
-                return dists, np.array(idx)
+                return dists, np.array(idx, dtype=int).reshape(-1, 3)
 
 
                 
