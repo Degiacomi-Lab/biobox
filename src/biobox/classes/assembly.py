@@ -128,21 +128,24 @@ class Assembly(object):
         '''
         append a new :func:`Assembly <biobox.classes.assembly.Assembly>` instance into an existing assembly, as alternate conformation.
 
-        The current coordinates of every unit of new_assembly are added as a new conformation of the corresponding unit. The assembly's current conformation index is then increased by one, and every unit is set to that index.
+        The current coordinates of every unit of new_assembly are added as a new conformation of the corresponding unit, and every unit, as well as the assembly, is set to that new conformation.
 
         :param new_assembly: :func:`Assembly <biobox.classes.assembly.Assembly>` object to be appended as alternative conformation, with as many units as this assembly, each with the same number of points
         '''
         if len(self.unit) != len(new_assembly.unit):
             raise Exception("ERROR: expecting %s subunits, found %s!" %(len(self.unit), len(new_assembly.unit)))
 
-        self.current += 1
-
+        # check every unit before modifying any
         for i in range(0, len(self.unit), 1):
             if self.unit[i].coordinates.shape[1] != new_assembly.unit[i].coordinates.shape[1]:
-                raise Exception("ERROR: subunit %s conformation should have %s atoms, but %s found!" %(i, self.unit[i].coordinates.shape[0], new_assembly.unit[i].coordinates.shape[0]))
+                raise Exception("ERROR: subunit %s conformation should have %s atoms, but %s found!" %(i, self.unit[i].coordinates.shape[1], new_assembly.unit[i].coordinates.shape[1]))
 
+        # the new conformation is appended after the existing ones of every unit
+        for i in range(0, len(self.unit), 1):
             self.unit[i].add_xyz(new_assembly.unit[i].get_xyz())
-            self.unit[i].set_current(self.current)
+            self.unit[i].set_current(len(self.unit[i].coordinates) - 1)
+
+        self.current = len(self.unit[0].coordinates) - 1
 
     def load_list(self, struct_list, labels=[]):
         '''
@@ -296,11 +299,11 @@ class Assembly(object):
         for i in range(0, int(len(self.unit) / 2.0), 1):
 
             # rotate the second half of subunits upside down
-            self.rotate(180.0, 0.0, 0.0, i + int(len(self.unit) / 2.0))
+            self.unit[i + int(len(self.unit) / 2.0)].rotate(180.0, 0.0, 0.0)
 
             # move the subunits
-            self.translate(radius, t, 0, i)
-            self.translate(radius, t, z, i + int(len(self.unit) / 2.0))
+            self.unit[i].translate(radius, t, 0)
+            self.unit[i + int(len(self.unit) / 2.0)].translate(radius, t, z)
 
             # number of degree to rotate
             angle = np.radians(i * (360.0 / (float(len(self.unit) / 2.0))))
@@ -330,15 +333,15 @@ class Assembly(object):
         for i in range(0, int(len(self.unit) / 2.0), 1):
 
             # rotate the second half of subunits upside down
-            self.rotate(180.0, 0.0, 0.0, i + int(len(self.unit) / 2.0))
+            self.unit[i + int(len(self.unit) / 2.0)].rotate(180.0, 0.0, 0.0)
 
             # rotate everything by desired angles
-            self.rotate(a, b, c, i)
-            self.rotate(-a, -b, c, i + int(len(self.unit) / 2.0))
+            self.unit[i].rotate(a, b, c)
+            self.unit[i + int(len(self.unit) / 2.0)].rotate(-a, -b, c)
 
             # move the subunits
-            self.translate(radius, t, 0, i)
-            self.translate(radius, t, z, i + int(len(self.unit) / 2.0))
+            self.unit[i].translate(radius, t, 0)
+            self.unit[i + int(len(self.unit) / 2.0)].translate(radius, t, z)
 
             # number of degree to rotate
             angle = np.radians(i * (360.0 / (float(len(self.unit) / 2.0))))
@@ -458,16 +461,20 @@ class Assembly(object):
 
     def contact_ratio(self, unit1, unit2):
         '''
-        count the number of points of a unit falling within another unit, as tested by the check_inclusion method of the first unit (e.g. :func:`Ellipsoid.check_inclusion <biobox.classes.convex.Ellipsoid.check_inclusion>`).
+        compute the fraction of the points of a unit falling within another unit, as tested by the check_inclusion method of the first unit (e.g. :func:`Ellipsoid.check_inclusion <biobox.classes.convex.Ellipsoid.check_inclusion>`).
 
-        :param unit1: label of the unit whose volume is tested
+        :param unit1: label of the unit whose volume is tested. Its class must provide a check_inclusion method (:func:`Sphere <biobox.classes.convex.Sphere>` and :func:`Ellipsoid <biobox.classes.convex.Ellipsoid>` do)
         :param unit2: label of the unit whose points are tested
-        :returns: number of points of unit2 inside unit1 (float)
+        :returns: fraction of the points of unit2 inside unit1, between 0 and 1 (float), 0 if unit2 has no points
         '''
         u1 = self.unit_labels[str(unit1)]
         u2 = self.unit_labels[str(unit2)]
-        contacts = self.unit[u1].check_inclusion(self.unit[u2].points)
-        return float(contacts)
+        if not hasattr(self.unit[u1], "check_inclusion"):
+            raise Exception("ERROR: unit %s is a %s, which has no check_inclusion method" % (unit1, type(self.unit[u1]).__name__))
+        inside = np.asarray(self.unit[u1].check_inclusion(self.unit[u2].points), dtype=bool)
+        if len(inside) == 0:
+            return 0.0
+        return float(np.mean(inside))
 
     def get_buried(self):
         '''
@@ -595,6 +602,8 @@ class Assembly(object):
     def make_fiber(self, vx, Lpx, Lpy, vy=None, gamma=np.pi/2, v=0, min_height=2, fibertype='p1oblique'):
         '''
         create a fiber, seen as the rolling of a plane with (vx, vy) tiling such that the repeating unit in position (Lpx, Lpy) will be overlapped to the origin.
+
+        .. warning:: experimental method, not validated against reference geometries. Known issues: the row of the n-th unit is computed as n / Lpx without rounding, so units sit at fractional rows; the composite fiber types ('pmm', 'cmm') do not combine their component transformations correctly; min_height has no effect.
 
         The n-th unit is placed in the tiling at column n % Lpx and row n / Lpx, and the current coordinates of every unit (taken as coordinates relative to its tile) are replaced by their position in the rolled fiber.
         Lpx must be a multiple of the number of units per tile of the fiber type, and Lpy must be even for fiber types involving 'p1hexagonal', 'p2', 'p3', 'p4', 'p6', 'pg' or 'pm'.
