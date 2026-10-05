@@ -1073,6 +1073,226 @@ class test_structures(unittest.TestCase):
             np.testing.assert_allclose(com, [c, c, c], atol=1e-6)
             self.assertEqual(np.count_nonzero(d[:, c, c]), width)
 
+    def test_predict_without_scan(self):
+
+        print("\n> testing that CCS and mass prediction ask for a scan when none is stored")
+        D = bb.Density()
+        D.import_numpy(np.arange(27.).reshape(3, 3, 3))
+        with self.assertRaisesRegex(IOError, "threshold_vol_ccs"):
+            D.predict_ccs_from_mass(10.0, 100.0)
+        with self.assertRaisesRegex(IOError, "threshold_vol_ccs"):
+            D.predict_mass_from_ccs(10.0, 1000.0)
+
+    def test_best_threshold_places_best(self):
+
+        print("\n> testing that best_threshold places points at the threshold with the smallest mass error")
+        from unittest import mock
+        from biobox.classes.density import Density
+
+        D = bb.Density()
+        D.import_numpy(np.arange(27.).reshape(3, 3, 3))
+
+        # volume as a step function of the threshold, so that bisection ends on a repeated error
+        placed = []
+        def fake_place(self, sigma=0, noise_filter=0.01):
+            placed.append(sigma)
+        def fake_volume(self):
+            return float(np.floor(10 * (2.0 - placed[-1])))
+
+        with mock.patch.object(Density, "place_points", fake_place), mock.patch.object(Density, "get_volume", fake_volume):
+            r = D.best_threshold(7.3, density=1.0)
+
+        best = r[np.argmin(np.abs(r[:, 1]))]
+        self.assertNotAlmostEqual(abs(r[-1, 1]), abs(best[1]))
+        self.assertEqual(placed[-1], best[0])
+        self.assertAlmostEqual(best[1], -0.3)
+
+    def test_dipole_density_eqn(self):
+
+        print("\n> testing that the dipole density rejects unknown functions")
+        from unittest import mock
+        import biobox.lib.e_density as E
+        from biobox.classes.density import Density
+
+        dm = np.zeros((2, 5, 5, 5, 3), np.float32)
+        dm[0, 2, 2, 2] = [1, 0, 0]
+        dm[1, 2, 2, 2] = [-1, 0, 0]
+        orig = np.array([np.arange(5) * 1.0] * 3)
+
+        written = []
+        with mock.patch.object(Density, "write_dx", lambda self, fname: written.append(fname)):
+            with self.assertRaisesRegex(ValueError, "gauss.*slater"):
+                E.c_get_dipole_density(dm, orig, [0., 0., 0.], 5e-27, "x.dx", eqn="lorentz")
+            for eqn in ["gauss", "slater"]:
+                E.c_get_dipole_density(dm, orig, [0., 0., 0.], 5e-27, "x.dx", eqn=eqn)
+        self.assertEqual(len(written), 2)
+
+    def test_dipole_map_cones(self):
+
+        print("\n> testing that dipole map cones are selected by the dipole magnitude")
+        import tempfile, shutil
+        import biobox.lib.e_density as E
+
+        # a dipole of 0.9 e*A along z, seen by the 27 voxels whose window contains both charges
+        crd = np.array([[[2., 2., 2.45], [2., 2., 1.55]]] * 2)
+        charges = np.array([1., -1.])
+        orig = np.array([np.arange(5) * 1.0] * 3)
+
+        tmp = tempfile.mkdtemp()
+        try:
+            fname = os.path.join(tmp, "dipole_map.tcl")
+            dm = E.c_get_dipole_map(crd, orig, charges, 0, 2, 1.0, 3, True, fname)
+            with open(fname) as f:
+                cones = [l for l in f if l.startswith("draw cone")]
+        finally:
+            shutil.rmtree(tmp)
+
+        magnitude = np.linalg.norm(np.mean(dm, axis=0), axis=3)
+        self.assertEqual(np.count_nonzero(magnitude > 0.7), 27)
+        self.assertEqual(len(cones), 27)
+        # cones point along z
+        for l in cones:
+            w = l.split()
+            self.assertEqual(w[3:5], w[8:10])
+            self.assertAlmostEqual(float(w[10]) - float(w[5]), 0.9, places=5)
+
+    def test_dipole_density_no_fluctuation(self):
+
+        print("\n> testing that a dipole map without fluctuations gives an error and no file")
+        from unittest import mock
+        import biobox.lib.e_density as E
+        from biobox.classes.density import Density
+
+        dm = np.zeros((2, 5, 5, 5, 3), np.float32)
+        dm[:, 2, 2, 2] = [1, 0, 0]
+        orig = np.array([np.arange(5) * 1.0] * 3)
+
+        written = []
+        with mock.patch.object(Density, "write_dx", lambda self, fname: written.append(fname)):
+            with self.assertRaisesRegex(ValueError, "fluctuat"):
+                E.c_get_dipole_density(dm, orig, [0., 0., 0.], 5e-27, "x.dx")
+        self.assertEqual(written, [])
+
+    def test_dipole_density_grid_edges(self):
+
+        print("\n> testing that the dipole density clips functions at the grid edges")
+        from unittest import mock
+        import biobox.lib.e_density as E
+        from biobox.classes.density import Density
+
+        class LowMemory(np.ndarray):
+            # the first ufunc call raises MemoryError, sending the calculation to its chunked path
+            calls = 0
+            def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+                LowMemory.calls += 1
+                if LowMemory.calls == 1:
+                    raise MemoryError
+                inputs = [np.asarray(i) for i in inputs]
+                return getattr(ufunc, method)(*inputs, **kwargs)
+
+        nx, c = 9, 4
+        def fluctuating(ix, iy, iz):
+            dm = np.zeros((2, nx, nx, nx, 3), np.float32)
+            dm[0, ix, iy, iz] = [1, 0, 0]
+            dm[1, ix, iy, iz] = [-1, 0, 0]
+            return dm
+        orig = np.array([np.arange(nx) * 1.0] * 3)
+
+        captured = []
+        def capture(self, fname):
+            captured.append(self.properties['density'].copy())
+
+        with mock.patch.object(Density, "write_dx", capture):
+            for vox in [3.0, 5.0]:
+                for low_memory in [False, True]:
+                    captured.clear()
+                    for idx in [(c, c, c), (0, 0, 0), (nx-1, 0, nx-1)]:
+                        dm = fluctuating(*idx)
+                        if low_memory:
+                            LowMemory.calls = 0
+                            dm = dm.view(LowMemory)
+                        E.c_get_dipole_density(dm, orig, [0., 0., 0.], 5e-27, "x.dx", vox_in_window=vox)
+                        if low_memory:
+                            self.assertGreater(LowMemory.calls, 1)
+
+                    centre, corner, edge = captured
+                    half = int(vox) // 2
+                    # each clipped function is the part of the centred function that lies inside the grid
+                    np.testing.assert_allclose(corner[:half+1, :half+1, :half+1], centre[c:c+half+1, c:c+half+1, c:c+half+1])
+                    np.testing.assert_allclose(edge[nx-1-half:, :half+1, nx-1-half:], centre[c-half:c+1, c:c+half+1, c-half:c+1])
+                    self.assertEqual(np.count_nonzero(corner), (half+1)**3)
+                    self.assertEqual(np.count_nonzero(edge), (half+1)**3)
+
+    def test_ccs_executable_files(self):
+
+        print("\n> testing that the IMPACT executable mode removes its params file and rejects mixed radii")
+        import tempfile, shutil
+        from unittest import mock
+        import biobox.measures.calculators as C
+
+        params = []
+        def fake_impact(cmd, **kwargs):
+            # impact writes its report to the file the command redirects to
+            p = cmd.split("-param ")[1].split('"')[1]
+            with open(p) as f:
+                params.append((p, f.read()))
+            with open(cmd.split(">")[-1].strip(), "w") as f:
+                f.write("CCS PA (A^2): 1234.5 0 0 1300.0 0\n")
+
+        points = np.array([[0., 0., 0.], [5., 0., 0.], [0., 5., 0.]])
+        here = os.getcwd()
+        tmp = tempfile.mkdtemp()
+        try:
+            os.chdir(tmp)
+            with mock.patch.object(C.subprocess, "check_call", side_effect=fake_impact) as call:
+                v = C.ccs(bb.Structure(points, 2.0), use_lib=False, impact_path="impact")
+                self.assertEqual(os.listdir(tmp), [])
+
+                with self.assertRaisesRegex(ValueError, "use_lib=True"):
+                    C.ccs(bb.Structure(points, [2.0, 2.0, 3.0]), use_lib=False, impact_path="impact")
+                self.assertEqual(os.listdir(tmp), [])
+                self.assertEqual(call.call_count, 1)
+
+            failed = []
+            def failing_impact(cmd, **kwargs):
+                failed.append(cmd.split("-param ")[1].split('"')[1])
+                raise OSError("impact failed")
+            with mock.patch.object(C.subprocess, "check_call", side_effect=failing_impact):
+                with self.assertRaises(Exception):
+                    C.ccs(bb.Structure(points, 2.0), use_lib=False, impact_path="impact")
+            self.assertFalse(os.path.exists(os.path.dirname(failed[0])))
+        finally:
+            os.chdir(here)
+            shutil.rmtree(tmp)
+
+        self.assertEqual(v, 1234.5)
+        p, text = params[0]
+        self.assertNotEqual(os.path.dirname(os.path.abspath(p)), os.path.abspath(tmp))
+        self.assertFalse(os.path.exists(os.path.dirname(p)))
+        self.assertTrue(text.endswith(" Z 3.0"))
+
+    def test_mrc_cached_submatrix(self):
+
+        print("\n> testing that MRC submatrices are read from a cached larger matrix")
+        from biobox.classes.density_MRC import MRC_Grid, Data_Cache
+
+        grid = MRC_Grid("EMD-1080.mrc", "mrc")
+        grid.data_cache = Data_Cache(size=0)
+        full = grid.matrix()
+
+        for origin, size, step in [((1, 2, 3), (4, 5, 6), (1, 1, 1)), ((2, 4, 6), (9, 7, 5), (2, 2, 2))]:
+            cached = grid.matrix(origin, size, step, from_cache_only=True)
+            self.assertIsNotNone(cached)
+            np.testing.assert_array_equal(cached, grid.read_matrix(origin, size, step, None))
+
+        # clearing the cache removes every matrix of the grid
+        sub = grid.matrix((0, 0, 0), (3, 3, 3), (2, 2, 2))
+        grid.cache_data(sub, (0, 0, 0), (3, 3, 3), (2, 2, 2))
+        self.assertEqual(len(grid.data_cache.group_keys_and_data(grid)), 2)
+        grid.clear_cache()
+        self.assertEqual(grid.data_cache.group_keys_and_data(grid), [])
+        self.assertIsNotNone(full)
+
     def test_rmsd_one_vs_all_no_reflection(self):
 
         print("\n> testing that alignment never mirrors a structure")

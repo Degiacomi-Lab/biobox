@@ -106,14 +106,14 @@ class Data_Cache:
     def group_keys_and_data(self, group):
         '''
         :param group: group identifier
-        :returns: iterable of (key, value) pairs of the values belonging to the group (empty list if the group is unknown)
+        :returns: list of (key, value) pairs of the values belonging to the group (empty list if the group is unknown)
         '''
 
         groups = self.groups
         if not group in groups: #.has_key(group):
             return []
 
-        kd = map(lambda d: (d.key, d.value), groups[group])
+        kd = [(d.key, d.value) for d in groups[group]]
         return kd
 
     # ---------------------------------------------------------------------------
@@ -395,12 +395,12 @@ class MRC_Grid:
                     origin[1] + size[1] > orig[1] + sz[1] or
                     origin[2] + size[2] > orig[2] + sz[2]):
                 continue                # Doesn't cover.
-            dstep = map(lambda a,b: a/b, step, st)
-            offset = map(lambda a,b: a-b, origin, orig)
+            dstep = [a // b for a, b in zip(step, st)]
+            offset = [a - b for a, b in zip(origin, orig)]
             if offset[0] % st[0] or offset[1] % st[1] or offset[2] % st[2]:
                 continue                # Offset stagger.
-            moffset = map(lambda o,s: o / s, offset, st)
-            msize = map(lambda s,t: (s+t-1) / t, size, st)
+            moffset = [o // s for o, s in zip(offset, st)]
+            msize = [(s + t - 1) // t for s, t in zip(size, st)]
             m = matrix[moffset[2]:moffset[2]+msize[2]:dstep[2],
                                  moffset[1]:moffset[1]+msize[1]:dstep[1],
                                  moffset[0]:moffset[0]+msize[0]:dstep[0]]
@@ -1124,119 +1124,6 @@ def read_full_array(path, byte_offset, size, type1, byte_swap,
                 a.byteswap(True)
 
         return a
-
-# -----------------------------------------------------------------------------
-# Read ascii float values on as many lines as needed to get count values.
-#
-def read_text_floats(path, byte_offset, size, array = None,
-                                         transpose = False, line_format = None, progress = None):
-        '''
-        read ascii float values on as many lines as needed to fill an array.
-
-        :param path: file name
-        :param byte_offset: position of the data start in the file, in bytes
-        :param size: size of the data along each axis
-        :param array: array to fill (default: a new float32 array with indices in reverse order with respect to size)
-        :param transpose: if True, a new array has shape size, and the returned array is transposed
-        :param line_format: (field_size, max_fields) for fixed-width fields, or None for whitespace-separated values
-        :param progress: progress reporter, or None
-        :returns: filled numpy array
-        '''
-
-        if array is None:
-                shape = list(size)
-                if not transpose:
-                        shape.reverse()
-                from numpy import zeros, float32
-                array = zeros(shape, float32)
-
-        f = open(path, 'rb')
-
-        if progress:
-                f.seek(0,2)         # End of file
-                file_size = f.tell()
-                progress.text_file_size(file_size)
-                progress.close_on_cancel(f)
-
-        f.seek(byte_offset)
-
-        try:
-                read_float_lines(f, array, line_format, progress)
-        except SyntaxError as msg:
-                f.close()
-                raise
-
-        f.close()
-
-        if transpose:
-                array = array.transpose()
-
-        if progress:
-                progress.done()
-
-        return array
-
-# -----------------------------------------------------------------------------
-#
-def read_float_lines(f, array, line_format, progress = None):
-        '''
-        fill an array with float values read from file lines, skipping lines starting with #. Raises SyntaxError if values are too few or badly formatted.
-
-        :param f: file object
-        :param array: numpy array to fill (in flattened order)
-        :param line_format: (field_size, max_fields) for fixed-width fields, or None for whitespace-separated values
-        :param progress: progress reporter, or None
-        '''
-
-        a_1d = array.ravel()
-        count = len(a_1d)
-
-        c = 0
-        while c < count:
-                line = f.readline()
-                if line == '':
-                        msg = ('Too few data values in %s, found %d, expecting %d'
-                                     % (f.name, c, count))
-                        raise SyntaxError(msg)
-                if line[0] == '#':
-                        continue                                    # Comment line
-                if line_format is None:
-                        fields = line.split()
-                else:
-                        fields = split_fields(line, *line_format)
-                if c + len(fields) > count:
-                        fields = fields[:count-c]
-                try:
-                        values = map(float, fields)
-                except:
-                        msg = 'Bad number format in %s, line\n%s' % (f.name, line)
-                        raise SyntaxError(msg)
-                for v in values:
-                        a_1d[c] = v
-                        c += 1
-                if progress:
-                        progress.fraction(float(c)/(count-1))
-
-# -----------------------------------------------------------------------------
-#
-def split_fields(line, field_size, max_fields):
-    '''
-    split a line into fixed-width fields, stopping at the first empty field.
-
-    :param line: text line
-    :param field_size: width of each field, in characters
-    :param max_fields: maximum number of fields returned
-    :returns: list of stripped fields
-    '''
-
-    fields = []
-    for k in range(0, len(line), field_size):
-        f = line[k:k+field_size].strip()
-        if f:
-            fields.append(f)
-        else:
-            break
-    return fields[:max_fields]
 
 # -----------------------------------------------------------------------------
 #
