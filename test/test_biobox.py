@@ -1609,6 +1609,165 @@ class test_structures(unittest.TestCase):
             with self.assertRaises(Exception):
                 X.distance_matrix([i], flexible_sidechain=True, sphere_pts_surf=3.0, sphere_thresh=2.5, sphere_radii=[6.0, 5.0])
         self.assertEqual(seen[0], {"pts_surf": 3.0, "thresh": 2.5, "radii": [6.0, 5.0]})
+
+    def test_closest_nodes_placeholder(self):
+
+        print("\n> testing closest grid nodes of a target without accessible neighbours")
+        P = self._wall_path()
+        g = P.graph
+        t = np.array([-8., 0, 0])
+        ti = g.get_idx_from_points(np.array([t]))[0]
+        g.access_grid[ti[0] - 2:ti[0] + 3, ti[1] - 2:ti[1] + 3, ti[2] - 2:ti[2] + 3] = False
+
+        # the blocked target gets the placeholder index and distance 10000, the other one its
+        # own grid point at squared distance 0.25
+        dists, idx = g.get_closest_nodes(np.array([t, [8., 0, 0.5]]))
+        self.assertEqual(idx.shape, (2, 3))
+        np.testing.assert_array_equal(idx[0], [-1, -1, -1])
+        self.assertEqual(dists[0], 10000)
+        np.testing.assert_array_equal(g.get_points_from_idx(idx[1].astype(float)), [8, 0, 0])
+        self.assertAlmostEqual(dists[1], 0.25)
+
+        # the blocked target is buried, whatever maxdist, and is not exempted from clash tests
+        for maxdist in [60, 1e6]:
+            P.maxdist = maxdist
+            d, wp = P.search_path(t, np.array([-8., 6, 0]))
+            self.assertEqual(d, -2)
+            self.assertEqual(len(wp), 0)
+        self.assertEqual(P._target_exemptions(t)[0][1], 0.0)
+
+    def test_path_trails(self):
+
+        print("\n> testing the filling of paths between waypoints")
+        P = self._wall_path()
+        wp = np.array([[0, 0, 0], [2.5, 0, 0], [2.5, 0.4, 0], [2.5, 0.4, 0], [2.5, 3.4, 0], [2.5, 3.4, 0.5]])
+        tr = P._get_trails(wp)
+        expected = [[0, 0, 0], [2.5 / 3, 0, 0], [5.0 / 3, 0, 0], [2.5, 0, 0], [2.5, 0.4, 0],
+                    [2.5, 1.4, 0], [2.5, 2.4, 0], [2.5, 3.4, 0], [2.5, 3.4, 0.5]]
+        np.testing.assert_allclose(tr, expected, atol=1e-12)
+        np.testing.assert_array_equal(wp[0], [0, 0, 0])
+        self.assertAlmostEqual(P._measure_path(tr), P._measure_path(wp))
+
+        # a path search returns the same length and end points, filled or not
+        for e in [[-8., 5.3, 0.2], [5., 0, 0]]:
+            s = np.array([-8., 0, 0])
+            e = np.array(e)
+            d0, wp0 = P.search_path(s, e, get_path=False)
+            d1, wp1 = P.search_path(s, e, get_path=True)
+            self.assertAlmostEqual(d0, d1)
+            np.testing.assert_array_equal(wp1[[0, -1]], wp0[[0, -1]])
+            steps = np.linalg.norm(np.diff(wp1, axis=0), axis=1)
+            self.assertTrue(np.all(steps <= 1 + 1e-9) and np.all(steps > 0))
+            self.assertAlmostEqual(P._measure_path(wp1), d0)
+
+    def test_flexible_paths(self):
+
+        print("\n> testing paths of side chains in contact or impossible to link")
+        from unittest import mock
+        from biobox.measures.path import Xlink
+        ys = np.arange(-6, 6.01, 1.0)
+        wall = np.array([[0, y, z] for y in ys for z in ys], float)
+        X = Xlink(self.M)
+        X.set_clashing_atoms(points=wall)
+        X.setup_global_search(step=1.0, maxdist=10, boundaries=[[-14, 14]] * 3)
+
+        # sphere 1 is linkable to sphere 0, sphere 2 touches sphere 0, sphere 3 is too far from all
+        spheres = [np.array([[-8., 0, 0], [-8, 1, 0]]), np.array([[-8., 6, 0]]),
+                   np.array([[-8.3, -0.4, 0]]), np.array([[8., 0, 0]])]
+        indices = [10, 20, 30, 40]
+        lookup = dict(zip(indices, spheres))
+        with mock.patch.object(X, "get_half_sphere", side_effect=lambda i, **kwargs: lookup[i]):
+            distance, paths = X.distance_matrix(indices, get_path=True, flexible_sidechain=True)
+
+        paths = {tuple(p[0]): p[1] for p in paths}
+        self.assertEqual(sorted(paths), [(0, 1), (0, 2), (1, 2)])
+        np.testing.assert_array_equal(distance[3, :3], [-1, -1, -1])
+
+        self.assertAlmostEqual(distance[0, 1], 5.0)
+        self.assertEqual(sorted(map(tuple, paths[(0, 1)][[0, -1]])), [(-8, 1, 0), (-8, 6, 0)])
+
+        self.assertEqual(distance[0, 2], 1.0)
+        np.testing.assert_array_equal(paths[(0, 2)], [[-8.3, -0.4, 0], [-8, 0, 0]])
+
+    def _check_exclusion(self, g, obstacles, radii):
+        # grid points closer to an obstacle than its radius are inaccessible, the others accessible
+        w = np.array(np.indices(g.access_grid.shape)).reshape(3, -1).T
+        pts = g.get_points_from_idx(w.astype(float))
+        excess = np.full(len(pts), np.inf)
+        for o, r in zip(obstacles, radii):
+            near = np.all(np.abs(pts - o) < r + 1, axis=1)
+            excess[near] = np.minimum(excess[near], np.linalg.norm(pts[near] - o, axis=1) - r)
+        acc = g.access_grid[tuple(w.T)]
+        clear = np.abs(excess) > 1e-6
+        self.assertTrue(np.any(~acc[clear]) and np.any(acc[clear]))
+        np.testing.assert_array_equal(acc[clear], excess[clear] > 0)
+
+    def test_vdw_exclusion(self):
+
+        print("\n> testing the hard sphere exclusion of the atoms_vdw grids")
+        from biobox.measures.path import Path, Xlink
+
+        # an isolated atom, in global and local grids of different steps
+        atom = np.array([[0.3, 0.2, 0.1]])
+        for step in [1.0, 0.5]:
+            P = Path(atom)
+            P.setup_global_search(step=step, use_hull=False, boundaries=[[-6, 6]] * 3, params=np.array([3.25]))
+            self._check_exclusion(P.graph, atom, [3.25])
+            P.setup_local_search(step=step, maxdist=12, params=np.array([3.25]))
+            P.graph.place_local_grid(np.array([-1., 0.5, 0]), np.array([1., 1.5, 0]))
+            self._check_exclusion(P.graph, atom, [3.25])
+
+        # backbone atoms of HSP: van der Waals radius plus probe, in global and local grids
+        vdw = self.M.knowledge["atom_vdw"]
+        X = Xlink(self.M)
+        sel = X.set_clashing_atoms(densify=False, atoms_vdw=True, probe=1.4)
+        obstacles = self.M.points[sel]
+        radii = np.array([vdw[a] for a in self.M.data["atomtype"].values[sel]]) + 1.4
+        np.testing.assert_array_equal(X.params, radii)
+        self.assertEqual(sorted(set(np.round(radii, 2))), [2.92, 2.95, 3.1])
+        X.setup_global_search(step=1.0)
+        self._check_exclusion(X.graph, obstacles, radii)
+        X.setup_local_search(step=0.5, maxdist=12)
+        X.graph.place_local_grid(obstacles[0], obstacles[30])
+        self._check_exclusion(X.graph, obstacles, radii)
+
+        # the default model is unchanged
+        import hashlib
+        X = Xlink(self.M)
+        X.set_clashing_atoms(densify=False)
+        idx = self.M.atomselect("*", "LYS", "NZ", use_resname=True, get_index=True)[1]
+        grids = []
+        X.setup_global_search(step=1.0, use_hull=False)
+        grids.append(X.graph.access_grid)
+        X.setup_global_search(step=0.5, use_hull=False)
+        grids.append(X.graph.access_grid)
+        X.setup_local_search(step=1.0, maxdist=20)
+        X.graph.place_local_grid(self.M.points[idx[0]], self.M.points[idx[1]])
+        grids.append(X.graph.access_grid)
+        expected = [((57, 38, 52), 93229, "5011001f5b4694145dda3268c86a045879b2d12c"),
+                    ((111, 72, 101), 783750, "ad51a46baff4b4969be7a2fdc330bc5816883b2e"),
+                    ((21, 21, 21), 3898, "32b1a831b5405e6991aba3a7eae3b065ea67ee4e")]
+        for g, e in zip(grids, expected):
+            self.assertEqual((g.shape, int(g.sum()), hashlib.sha1(np.packbits(g).tobytes()).hexdigest()), e)
+
+    def test_grid_boundaries(self):
+
+        print("\n> testing global grids built within boundaries or around a cloud")
+        from biobox.measures.path import Path
+        atom = np.array([[12.2, 36.7, 73.6]])
+        lo = atom[0] - 5
+        hi = atom[0] + 5
+        cloud = np.array([lo + 1, hi - 1])
+        for params in [np.array([]), np.array([3.2])]:
+            for kwargs in [{"boundaries": np.array([lo, hi]).T}, {"cloud": cloud}]:
+                P = Path(atom)
+                P.setup_global_search(step=1.0, use_hull=False, params=params, **kwargs)
+                g = P.graph
+                np.testing.assert_array_equal(g.access_grid.shape, [11, 11, 11])
+                np.testing.assert_allclose(g.get_points_from_idx(np.array([0., 0, 0])), lo, atol=1e-9)
+                np.testing.assert_allclose(g.get_points_from_idx(np.array([10., 10, 10])), hi, atol=1e-9)
+                self.assertFalse(g.is_accessible(atom)[0])
+                self.assertTrue(g.is_accessible(np.array([lo]))[0])
     def test_pdb2pqr_histidine(self):
 
         print("\n> testing pdb2pqr histidines and default forcefield")
