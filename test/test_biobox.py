@@ -1732,6 +1732,346 @@ class test_structures(unittest.TestCase):
         M.data.loc[first, "resname"] = "UNK"
         self.assertEqual(M.get_fasta(), "X" + reference[1:])
 
+    def _small_ensemble(self, frames):
+        # first 5 atoms of HSP, with every frame shifted by its index along x
+        S = self.M.get_subset(np.arange(5))
+        S.coordinates = np.array([S.coordinates[0] + [k, 0.0, 0.0] for k in range(frames)])
+        S.set_current(0)
+        return S
+
+    def test_addall_conformation_array(self):
+
+        print("\n> testing addall with conformations given as list or numpy array")
+        from copy import deepcopy
+        S = self._small_ensemble(4)
+        S2 = deepcopy(S)
+        for conformations in [[0, 3], np.array([0, 3])]:
+            N = S.addall(S2, conformations=conformations)
+            self.assertEqual(N.coordinates.shape, (2, 10, 3))
+            np.testing.assert_allclose(N.coordinates[1, :5], S.coordinates[3])
+        self.assertEqual(S.addall(S2, conformations=np.array([], dtype=int)).coordinates.shape, (4, 10, 3))
+
+    def test_atoms_ccs_array(self):
+
+        print("\n> testing that atomic CCS radii are always returned as a numpy array")
+        M = self.M.get_subset(np.arange(20))
+        first = M.get_atoms_ccs()
+        second = M.get_atoms_ccs()
+        self.assertIsInstance(first, np.ndarray)
+        self.assertIsInstance(second, np.ndarray)
+        np.testing.assert_allclose(first, second)
+
+        # a user-defined column is returned as is, as a copy
+        custom = np.linspace(1.0, 2.0, len(M.data))
+        M.data["atom_ccs"] = custom
+        radii = M.get_atoms_ccs()
+        self.assertIsInstance(radii, np.ndarray)
+        np.testing.assert_allclose(radii, custom)
+        radii[:] = 0.0
+        np.testing.assert_allclose(M.data["atom_ccs"].values, custom)
+
+    def test_import_md(self):
+
+        print("\n> testing import of CASTEP md files")
+        import tempfile
+        elements = ["C", "H", "Fe"]
+        steps = [np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 2.0, 0.0]]),
+                 np.array([[0.5, 0.0, 0.0], [1.5, 0.0, 0.0], [0.0, 2.5, 1.0]])]
+
+        def vectors(xyz, tag):
+            return [" %-2s%15d   %24.16E   %24.16E   %24.16E  <-- %s\n" % (e, 1, v[0], v[1], v[2], tag)
+                    for e, v in zip(elements, xyz)]
+
+        lines = [" BEGIN header\n", "  \n", " END header\n", "  \n"]
+        for k, xyz in enumerate(steps):
+            if k > 0:
+                lines.append("  \n")
+            lines.append("                      %24.16E\n" % (k * 1.0))
+            lines.append("                      %24.16E  %24.16E  %24.16E  <-- E\n" % (-1.0, -1.0, 0.0))
+            lines.append("                      %24.16E  <-- T\n" % 0.0)
+            for row in np.identity(3) * 10.0:
+                lines.append("                      %24.16E  %24.16E  %24.16E  <-- h\n" % tuple(row))
+            lines += vectors(xyz, "R") + vectors(np.zeros((3, 3)), "V") + vectors(np.zeros((3, 3)), "F")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            fname = os.path.join(tmp, "test.md")
+            with open(fname, "w") as f:
+                f.writelines(lines)
+            M = bb.Molecule()
+            M.import_md(fname)
+
+        np.testing.assert_allclose(M.coordinates, np.array(steps))
+        self.assertEqual(list(M.data["name"]), elements)
+        self.assertEqual(list(M.data["atomtype"]), elements)
+        np.testing.assert_array_equal(M.data["index"].values, [0, 1, 2])
+        np.testing.assert_array_equal(M.data["resid"].values, [0, 0, 0])
+        self.assertTrue(np.issubdtype(M.data["index"].dtype, np.integer))
+        self.assertTrue(np.issubdtype(M.data["resid"].dtype, np.integer))
+        self.assertTrue(np.issubdtype(M.data["occupancy"].dtype, np.floating))
+        self.assertTrue(np.issubdtype(M.data["beta"].dtype, np.floating))
+        np.testing.assert_allclose(M.data["occupancy"].values, 1.0)
+        np.testing.assert_allclose(M.data["beta"].values, 0.0)
+        vdw = M.know("atom_vdw")
+        np.testing.assert_allclose(M.data["radius"].values, [vdw["C"], vdw["H"], vdw.get("FE", vdw["."])])
+        np.testing.assert_allclose(M.data["charge"].values, 0.0)
+        self.assertEqual(list(M.data["altloc"]), [""] * 3)
+        self.assertEqual(list(M.data["icode"]), [""] * 3)
+
+    def test_pdb_model_records(self):
+
+        print("\n> testing MODEL and END records of multi-model pdb files")
+        import tempfile
+        S = self._small_ensemble(12)
+        A = bb.Multimer()
+        A.load_list([S, S], ["1", "2"])
+
+        with tempfile.TemporaryDirectory() as tmp:
+            for writer, natoms in [(S, 5), (A, 10)]:
+                fname = os.path.join(tmp, "models.pdb")
+                writer.write_pdb(fname)
+                with open(fname) as f:
+                    lines = [l.rstrip("\n") for l in f]
+
+                # model serial right-justified in columns 11-14, and END after the last ENDMDL
+                models = [l for l in lines if l.startswith("MODEL")]
+                self.assertEqual(models, ["MODEL     %4d" % (k + 1) for k in range(12)])
+                self.assertEqual([l[10:14] for l in models[8:10]], ["   9", "  10"])
+                self.assertEqual(lines[-2:], ["ENDMDL", "END"])
+
+                M = bb.Molecule()
+                M.import_pdb(fname)
+                self.assertEqual(M.coordinates.shape, (12, natoms, 3))
+                np.testing.assert_allclose(M.coordinates[:, :5], S.coordinates, atol=1e-3)
+
+                try:
+                    from Bio.PDB import PDBParser
+                except ImportError:
+                    continue
+                structure = PDBParser(QUIET=True).get_structure("test", fname)
+                self.assertEqual(len(structure), 12)
+                self.assertEqual([m.serial_num for m in structure], list(range(1, 13)))
+
+    def test_clean(self):
+
+        print("\n> testing removal of alternate locations and non amino acid residues")
+        import tempfile
+        atoms = [("N", "", "ALA", 1, 1.00), ("CA", "A", "ALA", 1, 0.40), ("CB", "A", "ALA", 1, 0.40),
+                 ("CA", "B", "ALA", 1, 0.60), ("CB", "B", "ALA", 1, 0.60), ("C", "", "ALA", 1, 1.00),
+                 ("N", "", "SER", 2, 1.00), ("OG", "B", "SER", 2, 0.50), ("OG", "A", "SER", 2, 0.50),
+                 ("O", "", "HOH", 3, 1.00)]
+        lines = []
+        for frame in range(2):
+            lines.append("MODEL     %4d\n" % (frame + 1))
+            for i, (name, alt, resname, resid, occ) in enumerate(atoms):
+                lines.append("ATOM  %5d  %-3s%1s%3s A%4d    %8.3f%8.3f%8.3f%6.2f%6.2f           %s\n"
+                             % (i + 1, name, alt, resname, resid, i + 10.0 * frame, 0.0, 0.0, occ, 10.0, name[0]))
+            lines.append("ENDMDL\n")
+        lines.append("END\n")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            fname = os.path.join(tmp, "altloc.pdb")
+            with open(fname, "w") as f:
+                f.writelines(lines)
+            M = bb.Molecule()
+            M.import_pdb(fname)
+            before = M.data.copy()
+            files = sorted(os.listdir(tmp)), sorted(os.listdir("."))
+
+            # B is kept in ALA 1 (higher occupancy), and B also in SER 2 (tie, first in the file)
+            C = M.clean()
+            self.assertEqual(sorted(os.listdir(tmp)), files[0])
+            self.assertEqual(sorted(os.listdir(".")), files[1])
+
+        kept = [0, 3, 4, 5, 6, 7]
+        self.assertEqual(list(C.data["name"]), [atoms[i][0] for i in kept])
+        self.assertEqual(list(C.data["altloc"]), [""] * len(kept))
+        np.testing.assert_allclose(C.coordinates, M.coordinates[:, kept])
+        np.testing.assert_array_equal(C.data["index"].values, np.arange(len(kept)))
+
+        # the water is kept on request
+        C2 = M.clean(remove_non_amino=False)
+        self.assertEqual(list(C2.data["resname"]), ["ALA"] * 4 + ["SER"] * 2 + ["HOH"])
+        np.testing.assert_allclose(C2.coordinates, M.coordinates[:, kept + [9]])
+        self.assertEqual(list(C2.data["altloc"]), [""] * 7)
+
+        # the molecule itself is unchanged
+        pd.testing.assert_frame_equal(M.data, before)
+        self.assertEqual(M.coordinates.shape, (2, 10, 3))
+
+    def test_vdw_density_keeps_atomtypes(self):
+
+        print("\n> testing that van der Waals densities fill in only empty atomtypes of the selected atoms")
+        M = self.M.get_subset(np.arange(11))
+        types = list(M.data["atomtype"].values)
+        # atom 0 is an iron, atom 4 (CB) keeps an atomtype that its name does not give
+        M.data.iloc[0, M.data.columns.get_loc("name")] = "FE"
+        types[0] = "FE"
+        types[4] = "S"
+        # CA of THR 33 and of GLY 34 have no atomtype
+        types[1] = ""
+        types[8] = ""
+        M.data["atomtype"] = types
+
+        # only the selected atoms are filled in
+        sel = np.arange(8)
+        axes = M._grid_axes(M.points[sel], 1.0, 3)
+        M._vdw_density_on_grid(sel, axes, 1.0, 5)
+        expected = list(types)
+        expected[1] = "C"
+        self.assertEqual(list(M.data["atomtype"]), expected)
+
+        # a density of all atoms fills in the rest
+        M.get_vdw_density(step=1.0, kernel_half_width=5)
+        expected[8] = "C"
+        self.assertEqual(list(M.data["atomtype"]), expected)
+
+        # an atom whose element cannot be guessed is still an error
+        M.data.iloc[2, M.data.columns.get_loc("name")] = "XX"
+        M.data.iloc[2, M.data.columns.get_loc("atomtype")] = ""
+        with self.assertRaises(Exception):
+            M.get_vdw_density(step=1.0, kernel_half_width=5)
+
+    def test_pdb2pqr_n_terminus(self):
+
+        print("\n> testing N-terminal residue names in pdb2pqr")
+        import tempfile
+        ala = ["N", "H1", "H2", "H3", "CA", "HA", "CB", "HB1", "HB2", "HB3", "C", "O"]
+
+        def molecule(atoms, tmp):
+            lines = ["ATOM  %5d %-4s %-3s A%4d    %8.3f%8.3f%8.3f  1.00  0.00          %2s\n"
+                     % (i + 1, name if len(name) > 1 and resname == name else " " + name, resname, resid, 1.3 * i, 0.0, 0.0,
+                        name if resname == name else name[0])
+                     for i, (name, resname, resid) in enumerate(atoms)]
+            fname = os.path.join(tmp, "nterm.pdb")
+            with open(fname, "w") as f:
+                f.writelines(lines + ["END\n"])
+            M = bb.Molecule()
+            M.import_pdb(fname)
+            return M
+
+        with tempfile.TemporaryDirectory() as tmp:
+            # an ordinary N-terminal residue is renamed
+            M = molecule([(name, "ALA", 1) for name in ala], tmp)
+            M.pdb2pqr()
+            self.assertEqual(list(M.data["resname"]), ["NALA"] * len(ala))
+
+            # an ion before it is never renamed (it is not in the forcefield file)
+            M = molecule([("ZN", "ZN", 1)] + [(name, "ALA", 2) for name in ala], tmp)
+            with self.assertRaises(Exception):
+                M.pdb2pqr()
+            self.assertEqual(M.data["resname"].values[0], "ZN")
+            self.assertNotIn("NZN", list(M.data["resname"]))
+
+    def test_pdb_ter_records(self):
+
+        print("\n> testing TER records and serial numbers in written pdb files")
+        import tempfile
+        M = self._molecule_from_atoms([("N", "N", "A", 1, [0, 0, 0]), ("CA", "C", "A", 1, [1, 0, 0]),
+                                       ("CA", "C", "B", 5, [2, 0, 0]),
+                                       ("CA", "C", "C", 7, [3, 0, 0]), ("CB", "C", "C", 8, [4, 0, 0])])
+        M.data["icode"] = ["", "", "", "", "A"]
+        M.add_xyz(M.coordinates[0] + 1.0)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            fname = os.path.join(tmp, "ter.pdb")
+            M.write_pdb(fname)
+            models = open(fname).read().split("ENDMDL")[:-1]
+            for model in models:
+                lines = [l for l in model.splitlines() if l.startswith(("ATOM", "TER"))]
+                self.assertEqual([l[:6].strip() for l in lines], ["ATOM", "ATOM", "TER", "ATOM", "TER", "ATOM", "ATOM", "TER"])
+                # TER takes the next serial number, and the atoms after it continue from the following one
+                self.assertEqual([int(l[6:11]) for l in lines], list(range(1, 9)))
+                ter = [l for l in lines if l.startswith("TER")]
+                self.assertEqual(ter, ["TER       3      ALA A   1 ", "TER       5      ALA B   5 ", "TER       8      ALA C   8A"])
+
+            # TER records are ignored when reading
+            R = bb.Molecule()
+            R.import_pdb(fname)
+            self.assertEqual(list(R.data["chain"]), ["A", "A", "B", "C", "C"])
+            self.assertEqual(list(R.data["name"]), ["N", "CA", "CA", "CA", "CB"])
+            np.testing.assert_allclose(R.coordinates, M.coordinates, atol=1e-3)
+
+            try:
+                from Bio.PDB import PDBParser
+                structure = PDBParser(QUIET=True).get_structure("ter", fname)
+                for model in structure:
+                    self.assertEqual([(c.id, len(list(c.get_atoms()))) for c in model], [("A", 2), ("B", 1), ("C", 2)])
+            except ImportError:
+                pass
+
+            # split_struc closes each guessed chain once (here, a single chain)
+            M.write_pdb(fname, split_struc=True)
+            lines = [l for l in open(fname) if l.startswith(("ATOM", "TER"))]
+            self.assertEqual([l[:6].strip() for l in lines], ["ATOM"] * 5 + ["TER"] + ["ATOM"] * 5 + ["TER"])
+            self.assertEqual(lines[5][6:11], "    6")
+
+            # a multimer closes every unit with a TER record taking the next serial number
+            A = bb.Multimer()
+            A.load_list([M.get_subset([0, 1]), M.get_subset([2])], ["1", "2"])
+            A.write_pdb(fname)
+            lines = [l for l in open(fname).read().split("ENDMDL")[0].splitlines() if l.startswith(("ATOM", "TER"))]
+            self.assertEqual([l[:6].strip() for l in lines], ["ATOM", "ATOM", "TER", "ATOM", "TER"])
+            self.assertEqual([int(l[6:11]) for l in lines], list(range(1, 6)))
+            self.assertEqual([l for l in lines if l.startswith("TER")], ["TER       3      ALA A   1 ", "TER       5      ALA B   5 "])
+            R = bb.Molecule()
+            R.import_pdb(fname)
+            self.assertEqual(list(R.data["chain"]), ["A", "A", "B"])
+            self.assertEqual(R.coordinates.shape, (2, 3, 3))
+
+    def test_pdb_formal_charge(self):
+
+        print("\n> testing formal charges in pdb files")
+        import tempfile
+        lines = ["HETATM    1 ZN    ZN A   1       0.000   0.000   0.000  1.00  0.00          ZN2+\n",
+                 "HETATM    2 CL    CL A   2       1.000   0.000   0.000  1.00  0.00          CL1-\n",
+                 "HETATM    3  O   HOH A   3       2.000   0.000   0.000  1.00  0.00           O  \n",
+                 "END\n"]
+        with tempfile.TemporaryDirectory() as tmp:
+            fname = os.path.join(tmp, "charges.pdb")
+            with open(fname, "w") as f:
+                f.writelines(lines)
+            M = bb.Molecule()
+            M.import_pdb(fname, include_hetatm=True)
+            self.assertEqual(list(M.data["formal_charge"]), [2, -1, 0])
+            self.assertTrue(np.issubdtype(M.data["formal_charge"].dtype, np.integer))
+
+            out = os.path.join(tmp, "out.pdb")
+            M.write_pdb(out)
+            written = [l.rstrip("\n") for l in open(out) if l.startswith("HETATM")]
+            self.assertEqual([l[76:80] for l in written], ["ZN2+", "CL1-", " O  "])
+            R = bb.Molecule()
+            R.import_pdb(out, include_hetatm=True)
+            self.assertEqual(list(R.data["formal_charge"]), [2, -1, 0])
+
+            # derived molecules carry the column, and a missing column is written blank
+            self.assertEqual(list(M.get_subset([1, 2]).data["formal_charge"]), [-1, 0])
+            self.assertEqual(list((M + M).data["formal_charge"]), [2, -1, 0] * 2)
+            N = M.get_subset([0, 1])
+            N.data = N.data.drop(columns="formal_charge")
+            both = M + N
+            self.assertEqual(list(both.data["formal_charge"]), [2, -1, 0, 0, 0])
+            self.assertTrue(np.issubdtype(both.data["formal_charge"].dtype, np.integer))
+            N.write_pdb(out)
+            self.assertEqual([l[78:80] for l in open(out) if l.startswith("HETATM")], ["  ", "  "])
+
+            M.data["formal_charge"] = [10, 0, 0]
+            with self.assertRaises(Exception):
+                M.write_pdb(os.path.join(tmp, "large.pdb"))
+
+            # importers of other formats set formal charges to 0
+            pqr = os.path.join(tmp, "test.pqr")
+            with open(pqr, "w") as f:
+                f.write("ATOM      1  N   ALA A   1       0.000   0.000   0.000  0.1414 1.8240\nEND\n")
+            P = bb.Molecule()
+            P.import_pqr(pqr)
+            self.assertEqual(list(P.data["formal_charge"]), [0])
+            gro = os.path.join(tmp, "test.gro")
+            with open(gro, "w") as f:
+                f.writelines(["one atom\n", "    1\n", "    1ALA      N    1   0.000   0.000   0.000\n", "   1.00000   1.00000   1.00000\n"])
+            G = bb.Molecule()
+            G.import_gro(gro)
+            self.assertEqual(list(G.data["formal_charge"]), [0])
+
     def test_guess_chain_split_capped(self):
 
         print("\n> testing chain splitting of capped peptides")

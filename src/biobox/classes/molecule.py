@@ -42,8 +42,9 @@ class Molecule(Structure):
     def __init__(self, fname=""):
         '''
         Properties associated to every individual atom are stored in a pandas Dataframe self.data.
-        After loading a pdb, pqr or gro file, the columns of self.data have the following names:
-        atom, index, name, resname, chain, resid, occupancy, beta, atomtype, radius, charge, altloc, icode.
+        After loading a pdb, pqr, gro or md file, the columns of self.data have the following names:
+        atom, index, name, resname, chain, resid, occupancy, beta, atomtype, radius, charge, altloc, icode, formal_charge.
+        formal_charge holds integer formal charges, read from columns 79-80 of pdb files and 0 for the other formats.
 
         self.knowledge contains a knowledge base about atoms and residues properties. Default entries are:
 
@@ -152,7 +153,7 @@ class Molecule(Structure):
         if f != other.coordinates.shape[0]:
             raise Exception("Number of frames need to be identical between two Molecule objects!")
 
-        if conformations == []:
+        if len(conformations) == 0:
             start = 0
         else:
             start = conformations[0]
@@ -160,7 +161,7 @@ class Molecule(Structure):
         self.set_current(start); other.set_current(start)
         N = self.__add__(other)
 
-        if conformations == []:
+        if len(conformations) == 0:
             for i in range(1, f):
                 self.set_current(i); other.set_current(i)
                 N2 = self.__add__(other)
@@ -252,6 +253,7 @@ class Molecule(Structure):
         All alternative coordinates are expected to have the same atoms.
         After loading, the first model (M.current=0) will be set as active.
         The chain name is column 22, unless the segment identifier (columns 73-76) has two characters, the first of which is that chain: the segment identifier is then the chain name, as written by :func:`write_pdb <biobox.classes.molecule.Molecule.write_pdb>`.
+        Formal charges in columns 79-80 (e.g. "2+" or "1-") are loaded in the integer column formal_charge, which is 0 where they are blank. TER records are ignored.
 
         :param pdb: PDB filename
         :param include_hetatm: if True, HETATM will be included (they get skipped if False)
@@ -268,6 +270,7 @@ class Molecule(Structure):
         data_in = []
         alt = []  # alternate location indicators
         ins = []  # insertion codes
+        fc = []  # formal charges
         p = []
         r = []
         e = []
@@ -373,6 +376,7 @@ class Molecule(Structure):
                     w.append(self._parse_resid(line[22:26]))  # extract residue ID
                     alt.append(line[16].strip())  # extract alternate location indicator
                     ins.append(line[26].strip())  # extract insertion code
+                    fc.append(self._parse_formal_charge(line[78:80]))  # extract formal charge
 
                     # extract occupancy
                     try:
@@ -493,13 +497,14 @@ class Molecule(Structure):
         self.data["beta"] = self.data["beta"].astype(float)
         self.data["altloc"] = alt
         self.data["icode"] = ins
+        self.data["formal_charge"] = np.array(fc, dtype=int)
 
     def import_md(self, fname):
         '''
         Import a .md structure file, as output by CASTEP, loading one conformation per MD step.
 
-        All atoms are assigned to residue TMP, number 0, of chain X, and their atomtype is their element name.
-        The radius, charge, altloc and icode columns are not created.
+        All atoms are assigned to residue TMP, number 0, of chain X, with occupancy 1.0 and beta factor 0.0, and their atomtype is their element name.
+        Their radius is taken from knowledge['atom_vdw'] by element (elements not listed there take the '.' value), their charge and formal charge are 0, and their altloc and icode are empty.
 
         :param fname: The filename of the md file
         '''
@@ -533,6 +538,17 @@ class Molecule(Structure):
         f_in.close()
 
         self.data = pd.DataFrame(np.array((np.asarray(atom), index, np.asarray(name), np.asarray(resname), np.asarray(chain), np.asarray(resid), np.asarray(occupancy), np.asarray(beta), np.asarray(name))).T, columns=cols)
+        self.data["index"] = self.data["index"].astype(int)
+        self.data["resid"] = self.data["resid"].astype(int)
+        self.data["occupancy"] = self.data["occupancy"].astype(float)
+        self.data["beta"] = self.data["beta"].astype(float)
+
+        vdw = self.know('atom_vdw')
+        self.data["radius"] = np.array([vdw.get(n.upper(), vdw['.']) for n in name], dtype=float)
+        self.data["charge"] = 0.0
+        self.data["altloc"] = ""
+        self.data["icode"] = ""
+        self.data["formal_charge"] = 0
 
         p = []  # collects coordinates for every model
         coords = []
@@ -735,6 +751,7 @@ class Molecule(Structure):
         self.data["beta"] = self.data["beta"].astype(float)
         self.data["altloc"] = alt
         self.data["icode"] = ins
+        self.data["formal_charge"] = 0
 
     def import_gro(self, filename):
         '''
@@ -803,6 +820,7 @@ class Molecule(Structure):
         self.data["beta"] = self.data["beta"].astype(float)
         self.data["altloc"] = ""
         self.data["icode"] = ""
+        self.data["formal_charge"] = 0
 
         fin.close()
 
@@ -850,8 +868,8 @@ class Molecule(Structure):
         sum of the density maps of each atom type, each built from the atoms of that type on a common grid.
 
         Only atomtypes C, H, O, S and N contribute, each with its own gaussian sigma (in voxels), and each map is scaled to a maximum of 1 before summing.
-        If any selected atom has an empty atomtype, :func:`assign_atomtype <biobox.classes.molecule.Molecule.assign_atomtype>` is called first,
-        and an Exception is raised if some atomtype is still unknown.
+        Selected atoms with an empty atomtype get the one given by knowledge['atomtype'] for their name or, for names not listed there, the element guessed from their name.
+        Their atomtype is stored in self.data, while non-empty atomtypes and atoms outside the selection are left unchanged. An Exception is raised if some atomtype is still unknown.
 
         :param idx: indices of atoms to include
         :param axes: grid axes, as returned by _grid_axes
@@ -863,9 +881,14 @@ class Molecule(Structure):
                     ["O", 1.52, 1.15, 0.42], ["S", 1.8, 1.62, 0.54],
                     ["N", 1.55, 1.2, 0.44]]
 
-        # attempt assigning atomtypes, if any is unknown, and test if successful
-        if np.any(self.data["atomtype"].values[idx] == ''):
-            self.assign_atomtype()
+        # fill in empty atomtypes of selected atoms from their name, and test if successful
+        idx = np.asarray(idx)
+        blank = idx[self.data["atomtype"].values[idx] == '']
+        if len(blank) > 0:
+            known = self.know('atomtype')
+            names = self.data["name"].values[blank]
+            guessed = [known[n] if n in known else self._guess_element(n) for n in names]
+            self.data.iloc[blank, self.data.columns.get_loc("atomtype")] = guessed
 
         atomtypes = self.data["atomtype"].values[idx]
         if np.any(atomtypes == ''):
@@ -1082,15 +1105,15 @@ class Molecule(Structure):
 
         The radii are stored in the atom_ccs column of self.data, and returned from there by later calls.
 
-        :returns: radius of every atom, in Angstrom (numpy array when computed, pandas Series when read from self.data)
+        :returns: numpy array with the radius of every atom, in Angstrom
         '''
 
         if "atom_ccs" in self.data.columns:
-            return self.data["atom_ccs"]
+            return np.array(self.data["atom_ccs"].values)
 
         ccs = np.ones(len(self.points)) * self.know("atom_ccs")["."]
         for e in self.know("atom_ccs").keys():
-            if "e" != ".":
+            if e != ".":
                 ccs[self.data["atomtype"].values == e] = self.knowledge["atom_ccs"][e]
 
         self.data["atom_ccs"] = ccs
@@ -1280,6 +1303,16 @@ class Molecule(Structure):
         if column not in self.data.columns:
             return np.array([""] * len(self.data), dtype=object)
         return self.data[column].fillna("").astype(str).values
+
+    def _formal_charges(self):
+        '''
+        formal charge of every atom, with missing values (or a missing formal_charge column) as 0.
+
+        :returns: numpy array of integers
+        '''
+        if "formal_charge" not in self.data.columns:
+            return np.zeros(len(self.data), dtype=int)
+        return self.data["formal_charge"].fillna(0).values.astype(int)
 
     def _one_per_residue(self, idx):
         '''
@@ -1653,6 +1686,48 @@ class Molecule(Structure):
 
         return "%-6s%5s %4s%1s%-4s%1s%4s%1s   " % (record, serial, name, altloc, resname, chain, Molecule._pdb_resid(resid), icode)
 
+    @staticmethod
+    def _pdb_ter(serial, resname, chain, resid, icode=""):
+        '''
+        TER record closing a chain, following the PDB format.
+
+        :param serial: serial number of the TER record, as it should be written (the one following the last atom of the chain)
+        :param resname: residue name of the last atom of the chain
+        :param chain: chain name, of one character
+        :param resid: residue number of the last atom of the chain, written with its last 4 digits if it does not fit
+        :param icode: insertion code of the last atom of the chain (default empty)
+        :returns: TER line, with its newline
+        '''
+        return "TER   %5s      %-4s%1s%4s%1s\n" % (serial, resname, chain, Molecule._pdb_resid(resid), icode)
+
+    @staticmethod
+    def _pdb_formal_charge(charge):
+        '''
+        formal charge as written in columns 79-80 of a PDB line.
+
+        :param charge: integer formal charge, between -9 and 9
+        :returns: digit followed by its sign (e.g. "2+" or "1-"), or an empty string for a zero charge
+        '''
+        charge = int(charge)
+        if charge == 0:
+            return ""
+        return "%d%s" % (abs(charge), "+" if charge > 0 else "-")
+
+    @staticmethod
+    def _parse_formal_charge(text):
+        '''
+        formal charge from columns 79-80 of a PDB line.
+
+        :param text: columns 79-80, e.g. "2+" or "1-" (a sign before the digit, e.g. "-1", is also accepted)
+        :returns: integer formal charge, 0 if the field is blank or not a charge
+        '''
+        text = text.strip()
+        if len(text) == 2 and text[0].isdigit() and text[1] in "+-":
+            return int(text[0]) * (1 if text[1] == "+" else -1)
+        if len(text) == 2 and text[0] in "+-" and text[1].isdigit():
+            return int(text[1]) * (1 if text[0] == "+" else -1)
+        return 0
+
     def _check_pdb_limits(self, frames, index):
         '''
         test whether the atoms to write fit the columns of the PDB format.
@@ -1672,12 +1747,15 @@ class Molecule(Structure):
 
     def write_pdb(self, outname, conformations=[], index=[], split_struc=False, dssp=False):
         '''
-        overload superclass method for writing (multi)pdb. Every conformation is written as a MODEL/ENDMDL block.
+        overload superclass method for writing (multi)pdb. Every conformation is written as a MODEL/ENDMDL block, and the file ends with an END record.
+
+        A TER record follows the last atom of every chain (i.e. where the chain name changes, and at the end of every model), and takes the next serial number, so that the atoms after it continue from the following one.
+        Formal charges (column formal_charge of self.data, 0 if missing) are written in columns 79-80 as e.g. "2+" or "1-", and left blank when zero.
 
         :param outname: name of pdb file to be generated.
         :param index: indices of atoms to write to file. If empty, all atoms are written. Index values obtaineable with a call like: index=molecule.atomselect("A", [1, 2, 3], "CA", True)[1]
         :param conformations: list of conformation indices to write to file. By default, a multipdb with all conformations will be produced.
-        :param split_struc: Guess chain split on the atoms being written, rename their chains accordingly and close each chain with TER. The molecule itself is not changed. Default: False. Set to False if protein is broken, but should retain chain lettering and doesn't have chain breaks.
+        :param split_struc: Guess chain split on the atoms being written, and rename their chains accordingly (each guessed chain is then closed by TER). The molecule itself is not changed. Default: False. Set to False if protein is broken, but should retain chain lettering and doesn't have chain breaks.
         :param dssp: If using DSSP secondary structure check, requires that CRYST be the first line by default (hence write that line)
 
         Chain names of two characters are written as their first character in column 22, and in full as segment identifier (columns 73-76), which :func:`import_pdb <biobox.classes.molecule.Molecule.import_pdb>` reads back.
@@ -1702,17 +1780,29 @@ class Molecule(Structure):
             index = np.arange(len(self.points))
 
         # guess chains once, on a copy of the atoms being written, so that all models share them
-        ter = []
         if split_struc:
             S = self.get_subset(index, conformations=[frames[0]])
-            no, split, _ = S.guess_chain_split()
-            chains = S.data["chain"].values
-            if no != 1:
-                # last atom of every chain
-                ter = set(np.asarray(split[1:]) - 1)
+            S.guess_chain_split()
+            chains = np.asarray(S.data["chain"].values, dtype=object)
+        else:
+            chains = np.asarray(self.data["chain"].values, dtype=object)[index]
 
         self._check_pdb_limits(frames, index)
-        serials = [self._hybrid36(i + 1) for i in range(len(index))]
+        formal_charge = self._formal_charges()[index]
+        if np.any(np.abs(formal_charge) > 9):
+            raise Exception("ERROR: PDB files must have formal charges between -9 and 9")
+
+        # a TER record follows the last atom of every chain, and takes the next serial number
+        ter = np.r_[chains[1:] != chains[:-1], True] if len(index) > 0 else np.array([], dtype=bool)
+        serials = []
+        ter_serials = {}
+        serial = 1
+        for i in range(len(index)):
+            serials.append(self._hybrid36(serial))
+            serial += 1
+            if ter[i]:
+                ter_serials[i] = self._hybrid36(serial)
+                serial += 1
 
         f_out = open(outname, "w")
         if dssp:
@@ -1720,25 +1810,25 @@ class Molecule(Structure):
 
         for cnt, f in enumerate(frames):
             # get all informations from PDB (for current conformation) in a list
-            f_out.write("MODEL        %i\n"%(cnt+1))
+            f_out.write("MODEL     %4d\n" % (cnt + 1))
             self.set_current(f)
             d = self.get_pdb_data(index)
 
             for i in range(0, len(d), 1):
-                chain, segid = self._pdb_chain_segid(chains[i] if split_struc else d[i][4])
+                chain, segid = self._pdb_chain_segid(chains[i])
 
                 # create and write PDB line
                 L = self._pdb_atom_prefix(d[i][0], serials[i], d[i][2], d[i][3], chain, d[i][5], d[i][12], d[i][13])
-                L += '%8.3f%8.3f%8.3f%6.2f%6.2f      %-4s%2s\n' % (float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), segid, d[i][11])
+                L += '%8.3f%8.3f%8.3f%6.2f%6.2f      %-4s%2s%2s\n' % (float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), segid, d[i][11], self._pdb_formal_charge(formal_charge[i]))
                 f_out.write(L)
 
-                # Terminate chain if applicable
-                if i in ter:
-                    L = 'TER   %5s      %-4s%1s%4s%1s\n' % (serials[i], d[i][3], chain, self._pdb_resid(d[i][5]), d[i][13])
-                    f_out.write(L)
+                # terminate chain
+                if ter[i]:
+                    f_out.write(self._pdb_ter(ter_serials[i], d[i][3], chain, d[i][5], d[i][13]))
 
             f_out.write("ENDMDL\n")
 
+        f_out.write("END\n")
         f_out.close()
 
         self.set_current(currentbkp)
@@ -2284,18 +2374,6 @@ class Molecule(Structure):
                     newresnames = np.array(["N"+resname]*len(idxs))
                     self.data.loc[idxs, ["resname"]] = newresnames
 
-            start_chain = self.data["resid"].iloc[0]   # This is in case we get 1 or 2 as the first chain ID start
-            #end_chain = self.data["resid"].iloc[-1]    #  We don't know the end chain number so we find it here
-            start_res = self.data["resname"].iloc[0]
-            #end_res = self.data["resname"].iloc[-1]
-
-            # Need to check if first residue is actually an N-termini residue, and if so, reassign resnames if necessary
-            if (self.data["name"].iloc[0:27] == 'H1').any() and (self.data["name"].iloc[0:27] == 'H2').any() and (self.data["name"].iloc[0:27] == 'H3').any() and self.data["resname"][0][0] != 'N':
-                print('Found N-Termini, reassigning first resname to match the forcefield')
-                start_index = self.data.index[self.data["resid"] == start_chain]
-                for N in start_index:
-                    self.data["resname"].iloc[N] = 'N' + start_res   # First chain needs to be prefixed with N-termini resname
-
             # Need to check whether it matches HIE, HID or HIP depending on what protons are present
             resnames = self.data["resname"].values
             if np.any(np.isin(resnames, ["HIS", "NHIS", "CHIS"])):
@@ -2415,20 +2493,17 @@ class Molecule(Structure):
 
         return
 
-    def clean(self, path='~/biobox/classes/remove_alt_conf.sh', remove_non_amino=True):
+    def clean(self, remove_non_amino=True):
         '''
-        clean up a PDB files from alt conformations and ligands. Requires subprocess to be installed.
-        (For now) requires input to be a protein, so will remove all ligands etc.
-        This removes residues with the least certainty (based on beta factor).
-        If no beta factor is present, it removes all residue conformations after the first
+        return a copy of the molecule without alternate locations and, optionally, without non amino acid residues (e.g. water, ions and ligands). The molecule itself is not changed.
 
-        The script is called on a temporary file tmp2.pdb and must write clean_tmp2.pdb, both in the current working directory and removed afterwards.
+        Residues are identified by chain, residue number and insertion code. Within a residue having alternate locations, only the alternate location
+        with the highest mean occupancy over its atoms is kept (on a tie, the one appearing first). Atoms without an alternate location indicator are always kept,
+        and the altloc of all atoms of the returned molecule is empty. All conformations of the kept atoms are returned.
 
-        :param path: Path to the removing alt conf. bash script (default ~/biobox/classes/remove_alt_conf.sh)
-        :param remove_non_amino: Remove all non-standard amino acids (including water, metals etc. which are defined as ATOMS)
-        :returns: Returns a new Molecule object that has been cleaned
+        :param remove_non_amino: if True, keep only residues whose name is a standard amino acid, or one of its Amber N-terminal, C-terminal or protonation variants
+        :returns: new :class:`biobox.classes.molecule.Molecule`
         '''
-        import subprocess
 
         # all amino acids (in case we want to remove non-standard residues). Also includes N and C prefixs
         amino = ['ILE','GLN', 'GLY', 'MSE', 'GLU', 'CYS', 'ASP', 'SER', 'HSD', 'HSE', 'PRO', 'CYX', 'HSP', 'HID', 'HIE', 'ASN',
@@ -2438,78 +2513,32 @@ class Molecule(Structure):
                 'CMSE', 'CGLU', 'CCYS', 'CASP', 'CSER', 'CHSD', 'CHSE', 'CPRO', 'CCYX', 'CHSP', 'CHID', 'CHIE', 'CASN', 'CHIP',
                 'CVAL', 'CTHR', 'CHIS', 'CTRP', 'CLYS', 'CPHE', 'CALA', 'CMET', 'CLEU', 'CARG', 'CTYR']
 
-        self.write_pdb("tmp2.pdb")
-        subprocess.call(path + " tmp2.pdb", shell=True)
+        chain = self.data["chain"].values
+        resid = self.data["resid"].values
+        icode = self._column_or_blank("icode")
+        altloc = self._column_or_blank("altloc")
+        occupancy = self.data["occupancy"].values.astype(float)
+
+        # atoms of every alternate location, per residue, in order of appearance
+        residues = {}
+        for i in np.flatnonzero(altloc != ""):
+            residues.setdefault((chain[i], resid[i], icode[i]), {}).setdefault(altloc[i], []).append(i)
+
+        keep = np.ones(len(self.data), dtype=bool)
+        for locations in residues.values():
+            # max returns the first location having the highest mean occupancy
+            best = max(locations, key=lambda loc: np.mean(occupancy[locations[loc]]))
+            for loc, idx in locations.items():
+                if loc != best:
+                    keep[idx] = False
 
         if remove_non_amino:
-            B = Molecule()
-            B.import_pdb("clean_tmp2.pdb")
-            B_idxs = B.atomselect("*", amino, "*", get_index=True, use_resname=True)[1]
-            A = B.get_subset(B_idxs)
-        else:
-            A = Molecule()
-            A.import_pdb("clean_tmp2.pdb")
+            keep &= np.isin(self.data["resname"].values, amino)
 
-        # Get residues with strings in
-        # Find our what first numbers are (i.e. remove strings) so we have all conformations and the non string version
-        # Then check what avg beta factor is, if it's zero, chop off all string conformations
-        A_idxs = A.atomselect("*", "*", "CA", get_index=True)[1]
-        resid = np.asarray(A.data['resid'][A_idxs])
-        repeat = []
+        M = self.get_subset(np.flatnonzero(keep))
+        M.data["altloc"] = ""
 
-        # get indices of repeat residues
-        for i in range(1, len(resid)):
-            if resid[i-1] == resid[i]:
-                repeat.append(i)
-            else:
-                continue
-
-        #get relevent chains
-        chains = np.unique(A.data["chain"][A_idxs[repeat]])
-        # keep a record of indices to keep and all of the ones we explore
-        keep_res_idx = []
-        all_repeat_idx = []
-        for c in chains:
-            chain_idx = A_idxs[repeat][A.data["chain"][A_idxs[repeat]] == c]
-
-            # loop through repeat residues and calculate beta factors for removal
-            for r in np.unique(A.data['resid'][chain_idx]):
-                A_repeat_idx = A.atomselect(c, r, "*", get_index=True)[1]
-                all_repeat_idx.extend(A_repeat_idx)
-                A_subset = A.get_subset(A_repeat_idx)
-
-                beta = []
-                A_CAs = np.where(A_subset.data['name'] == "CA")[0]
-
-                # First do a quick check in case we have any zero betas (to skip loop below)
-                if np.any(np.asarray(A_subset.data['beta']) == 0.0):
-                    keep_res_idx.extend(A_repeat_idx[A_CAs[0]-1 : A_CAs[1] -1])
-                else:
-                    # loop through each residue in the same residue set
-                    for i in range(len(A_CAs)):
-                        # Always an N preceding a CA
-                        if i < len(A_CAs) -1:
-                            beta.append(np.mean(A_subset.data['beta'][A_CAs[i] - 1 : A_CAs[i+1] - 1]))
-                        else:
-                            beta.append(np.mean(A_subset.data['beta'][A_CAs[i] - 1 : 1 + np.asarray(A_subset.data['index'])[-1]]))
-
-                    # only select residue with lowest beta
-                    min_res = A_CAs[np.argmin(beta)]
-                    if np.argmin(beta) + 1 == len(A_CAs):
-                        keep_res_idx.extend(A_repeat_idx[min_res-1 : 1 + np.asarray(A_subset.data['index'])[-1]])
-                    else:
-                        keep_res_idx.extend(A_repeat_idx[min_res-1 : A_CAs[np.argmin(beta) + 1] - 1])
-
-        # Now just pull the indices we want to remove
-        all_res_set = set(all_repeat_idx)
-        keep_res_set = set(keep_res_idx)
-        idx_remove = np.asarray(list(all_res_set - keep_res_set) + list(keep_res_set - all_res_set))
-
-        # clean files
-        os.remove("clean_tmp2.pdb")
-        os.remove("tmp2.pdb")
-
-        return A.get_subset(idx_remove, flip=True)
+        return M
 
 
     def get_dipole_map(self, orig, pqr, time_start = 0, time_end = 2,resolution = 1., vox_in_window = 3., write_dipole_map = True, fname = "dipole_map.tcl"):
