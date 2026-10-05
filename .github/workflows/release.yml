@@ -1,0 +1,87 @@
+name: release
+
+# On a version tag (v*), build the sdist and wheels, test every wheel, and publish them to PyPI.
+# Run manually (Actions > release > Run workflow) to build and test without publishing,
+# or with "publish" ticked to publish the version of the selected branch or tag.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish to PyPI"
+        type: boolean
+        default: false
+
+jobs:
+  sdist:
+    name: sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Build and check the sdist
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip build twine
+          python -m build --sdist
+          python -m twine check dist/*
+
+      - name: Check that the tag matches the package version
+        if: github.ref_type == 'tag'
+        shell: bash
+        run: |
+          version=$(python -c "import ast; print([n.value.value for n in ast.parse(open('src/biobox/__init__.py').read()).body if isinstance(n, ast.Assign) and n.targets[0].id == '__version__'][0])")
+          if [ "v$version" != "${{ github.ref_name }}" ]; then
+            echo "tag ${{ github.ref_name }} does not match package version $version"
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+
+  wheels:
+    # settings in [tool.cibuildwheel] of pyproject.toml
+    name: wheels / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Linux x86_64 and aarch64, Windows 64-bit, macOS Apple Silicon and Intel
+        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-14, macos-15-intel]
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pypa/cibuildwheel@v4.3.0
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: wheels-${{ matrix.os }}
+          path: wheelhouse/*.whl
+
+  publish:
+    name: publish to PyPI
+    needs: [sdist, wheels]
+    if: github.event_name == 'push' || inputs.publish
+    runs-on: ubuntu-latest
+    # PyPI trusted publishing: the project on PyPI trusts this repository, workflow and environment
+    environment:
+      name: pypi
+      url: https://pypi.org/project/biobox/
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+
+      - uses: pypa/gh-action-pypi-publish@v1.14.2

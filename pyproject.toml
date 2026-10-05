@@ -54,3 +54,13 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 biobox = ["data/*.dat"]
+
+[tool.cibuildwheel]
+# CPython versions allowed by requires-python (free-threaded and pre-release builds are opt-in, and not enabled)
+build = "cp310-* cp311-* cp312-* cp313-* cp314-*"
+# 32-bit and musl (Alpine) platforms install from the sdist instead
+skip = ["*-win32", "*-manylinux_i686", "*-musllinux_*"]
+# each wheel is installed and tested from a copy of the test folder, outside the source tree
+test-requires = ["pytest"]
+test-sources = ["test"]
+test-command = "cd test && python -m pytest -q test_biobox.py"
