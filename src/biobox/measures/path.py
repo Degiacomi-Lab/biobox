@@ -12,6 +12,7 @@
 # Author : Matteo Degiacomi, matteo.degiacomi@gmail.com
 
 import heapq
+import warnings
 import scipy.spatial.distance as SD
 import numpy as np
 from sklearn.cluster import DBSCAN
@@ -130,8 +131,9 @@ class Path(object):
         :param get_path: if True, the returned path is filled with intermediate points spaced by at most 1 A (not only waypoints), see ``_get_trails``. The returned length is measured on the waypoints either way
         :param update_grid: if True, grid will be recalculated (for local search only)
         :param test_los: if true, a line of sight postprocessing will be performed to make paths straighter
-        :returns: path length in A. It is -1 if the points are further apart than maxdist, are disconnected or method is unknown, and -2 (likely buried target) if no accessible grid point is found next to start or end, or if the SQUARED distance (in A2) to the closest one, as returned by ``Graph.get_closest_nodes``, exceeds maxdist + step (a value in A, compared as is)
+        :returns: path length in A. It is -1 if the points are further apart than maxdist, are disconnected or method is unknown (a UserWarning is issued for an unknown method), and -2 (likely buried target) if no accessible grid point is found next to start or end, or if the SQUARED distance (in A2) to the closest one, as returned by ``Graph.get_closest_nodes``, exceeds maxdist + step (a value in A, compared as is)
         :returns: path coordinates as an (n, 3) numpy array ordered from end to start, or an empty array on failure
+        :raises RuntimeError: if neither setup_local_search nor setup_global_search was called (except for the "euclidean" method)
         '''
 
         ###INITIALIZE PATH SEARCH###
@@ -148,17 +150,17 @@ class Path(object):
 
             return euclidean, waypoints
 
+        if self.kind != "global" and self.kind != "local":
+            raise RuntimeError(
+                "setup_local_search or setup_global_search must first be called")
+
         # if points are too far, skip it
         if euclidean > self.maxdist:
             return -1, np.array([])
 
-        # specify grid search type (local or global)
+        # place the local grid between the two points
         if self.kind == "local" and update_grid:
             self.graph.place_local_grid(start, end)
-
-        elif self.kind != "global" and self.kind != "local":
-            raise Exception(
-                "setup_local_search or setup_global_search must first be called")
 
         connect_thresh = self.maxdist + self.graph.step
 
@@ -198,7 +200,7 @@ class Path(object):
                 came_from, cost_so_far = self.lazy_theta_star(
                     idx_start, idx_end)
             else:
-                print("ERROR: search method %s unknown." % method)
+                warnings.warn("search method %s unknown." % method, stacklevel=2)
                 return -1, np.array([])
 
             # get waypoints using path dictionary, end node index and target
@@ -852,11 +854,7 @@ class Xlink(Path):
         if flexible_sidechain:
             spheres = []
             for i in indices:
-                try:
-                    s = self.get_half_sphere(i, pts_surf=sphere_pts_surf, thresh=sphere_thresh, radii=sphere_radii)
-
-                except Exception as ex:
-                    raise Exception(str(ex))
+                s = self.get_half_sphere(i, pts_surf=sphere_pts_surf, thresh=sphere_thresh, radii=sphere_radii)
 
                 if len(s) > 0:
                     spheres.append(s)
@@ -867,15 +865,15 @@ class Xlink(Path):
                         Sph.write_pdb("sphere%s.pdb" % i)
 
             if len(spheres) < 2:
-                raise Exception("less than 2 atoms available for linkage, cannot compute distance matrix!")
+                raise ValueError("less than 2 atoms available for linkage, cannot compute distance matrix!")
 
         # find indices corresponding coordinates
         pts = []
         for i in indices:
             try:
                 pts.append(self.molecule.points[i])
-            except Exception:
-                raise Exception("could not find index %s in molecule!" % i)
+            except Exception as e:
+                raise IndexError("could not find index %s in molecule!" % i) from e
 
         # allocate distance matrix
         distance = np.zeros((len(indices), len(indices)))
@@ -1035,7 +1033,7 @@ class Xlink(Path):
         D = self.molecule.data.values
         l = D[i]
         if l[2] == "CA":
-            raise Exception("For flexible mode, a side chain atom must be provided!")
+            raise ValueError("For flexible mode, a side chain atom must be provided!")
 
         pts, idxs = self.molecule.same_residue_unique(i, get_index=True)
 

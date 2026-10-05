@@ -1,13 +1,14 @@
 # Author: Lucas Rudden, l.s.rudden@durham.ac.uk
 
 import os
+import warnings
 from copy import deepcopy
 import numpy as np
 cimport numpy as np
 cimport cython
 from cpython cimport bool
 
-cpdef np.ndarray c_get_dipole_map(np.ndarray crd, np.ndarray orig, np.ndarray charges, int time_start = 0, int time_end = 2, float resolution = 1.0, float vox_in_window = 3, bool write_dipole_map = False, str fname = "dipole_map.tcl"):
+cpdef np.ndarray c_get_dipole_map(np.ndarray crd, np.ndarray orig, np.ndarray charges, int time_start = 0, int time_end = 2, float resolution = 1.0, float vox_in_window = 3, bool write_dipole_map = False, str filename = "dipole_map.tcl"):
     '''
     Generate a vector (x, y, z) of instantaneous dipole moments, for every frame from time_start to time_end-1,
     within voxels centred on the grid defined by orig.
@@ -29,7 +30,7 @@ cpdef np.ndarray c_get_dipole_map(np.ndarray crd, np.ndarray orig, np.ndarray ch
         Should account for electrostatics falling to zero (or close) at the boundaries.
     :param write_dipole_map: Boolean. If true, write a tcl file of VMD "draw cone" commands, to be read in with VMD command: source dipole_map.tcl.
         Each cone goes from a voxel centre to the centre plus its dipole averaged over frames, and is written only for voxels where the magnitude of this averaged dipole exceeds 0.7 e*A.
-    :param fname: Name of dipole_map tcl file.
+    :param filename: Name of dipole_map tcl file.
     :returns: float32 numpy array of shape (frames, nx, ny, nz, 3), with nx, ny, nz the number of orig points in x, y and z: dipole vector of every voxel in every frame, in e*A
     '''
 
@@ -37,7 +38,7 @@ cpdef np.ndarray c_get_dipole_map(np.ndarray crd, np.ndarray orig, np.ndarray ch
     time_val = np.arange(time_start, time_end) # Create range of frames for us to explore depending on user input. (Default is just the first 2)
     
     if write_dipole_map:
-        data_file = open(fname, "w") # open a file for writing to
+        data_file = open(filename, "w") # open a file for writing to
         #data_file.write("draw material Diffuse\n")
     
     x_range = orig[0] - window_size / 2.   # Create shifted coordinates to account for start of windows
@@ -148,7 +149,7 @@ def _add_clipped_kernel(pts, kernel, ix, iy, iz, half):
         kernel_slices.append(slice(lo - (i - half), hi - (i - half)))
     pts[tuple(grid_slices)] += kernel[tuple(kernel_slices)]
 
-cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_val, float V, str outname, float vox_in_window = 3., str eqn = 'gauss', float T = 310.15, float P = 101 * 1E+3, float epsilonE = 54., float resolution = 1.0):
+cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_val, float V, str filename, float vox_in_window = 3., str eqn = 'gauss', float T = 310.15, float P = 101 * 1E+3, float epsilonE = 54., float resolution = 1.0):
     '''
     This generates an electron density based on a dipole map obtained with get_dipole_map. It requires the same coordinate system, orig, as
     said dipole map. It is based on a paper by Pitera et al. written in 2001: 
@@ -168,7 +169,7 @@ cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_
     :param orig: Coordinate system (x, y, z) we measure our dipole from. MUST be the same as that used in get_dipole_map
     :param min_val: Minimum coordinates (x, y, z) from which to define our origin, used as the origin of the dx file. Wrong choice could cause a shift in real space of the density.
     :param V: The partial specific volume for the protein (worth investigating further). Units of m^3.
-    :param outname: Filename for output dx file.
+    :param filename: Filename for output dx file.
     :param vox_in_window: Width of the sliding window in voxels. Each voxel's function is sampled at whole-voxel offsets within half this width of the voxel centre, i.e. 2*floor(vox_in_window/2)+1 points per axis
     :param eqn: Type of equation used for convolution. Options are 'gauss' (Gaussian) and 'slater' (Slater)
     :param T: Temperature of simulation. Default is body temp (K).
@@ -176,7 +177,7 @@ cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_
     :param epsilonE: External relative permittivity outside the protein. Another variable worth investigating. Default is from 2001 paper regarding a salt water solvent.
     :param resolution: voxel size in A, setting the spacing of the sampled functions and of the dx grid. Should be the same as in get_dipole_map
     :returns: 0, once the dx file is written
-    :raises ValueError: if eqn is not 'gauss' or 'slater', or if no voxel has a dipole fluctuation, so that the density is zero everywhere
+    :raises ValueError: if eqn is not 'gauss' or 'slater', if dipole_map has fewer than 2 frames, or if no voxel has a dipole fluctuation, so that the density is zero everywhere
     '''
     if eqn not in ('gauss', 'slater'):
         raise ValueError("eqn must be 'gauss' or 'slater', got %r"%(eqn,))
@@ -195,7 +196,7 @@ cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_
     Na = 6.022 * 1E+23 # Avagadros Number
     
     if test[0] < 2:
-        raise Exception("ERROR: The number of frames in your dipole map is %i. 2 or more are required for electron density calculations."%(test[0]))
+        raise ValueError("The number of frames in your dipole map is %i. 2 or more are required for electron density calculations."%(test[0]))
     
     #print("What function would you like to use? Please enter a number.\n1. Gaussian: exp(-(x**2 + y**2 + z**2) / 2 * sigma)\n2. Slater: exp(-(x**2 + y**2 + z**2)**(1./2.) / 2 * sigma)")
     #eqn = input()
@@ -253,7 +254,7 @@ cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_
             _add_clipped_kernel(pts, gauss, ix, iy, iz, half)
     
     except MemoryError:
-        print("Size of protein is too large for electron density map production. Breaking calculations down into smaller chunks (may take longer, or not work if data structure too big).\n")
+        warnings.warn("Size of protein is too large for electron density map production. Breaking calculations down into smaller chunks (may take longer, or not work if data structure too big).", RuntimeWarning, stacklevel=2)
         
         # Too much to handle! We'll have to create a loop to slim down the large arrays. Let's make the loop in x (second set of indices).
         p_M = []
@@ -325,6 +326,6 @@ cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_
     D.properties['filename'] = ''
     D.properties['sigma'] = np.std(pts) #np.std(epsilon) #np.std(pts) 
     
-    D.write_dx(outname)
+    D.write_dx(filename)
 
     return 0

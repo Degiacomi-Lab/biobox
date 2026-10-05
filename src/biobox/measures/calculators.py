@@ -30,22 +30,22 @@ from ctypes import cdll, c_int, c_float, byref
 import biobox.lib.fastmath as FM  # cython routines
 
 
-def sasa_c(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
+def sasa_c(M, indices=[], probe=1.4, n_sphere_point=960, threshold=0.05):
     '''
     compute the accessible surface area using the Shrake-Rupley algorithm ("rolling ball method").
 
     Alias of :func:`sasa <biobox.measures.calculators.sasa>`, kept for backwards compatibility.
 
     :param M: any biobox object
-    :param targets: indices of the atoms whose surface is estimated. By default (empty list), all atoms are used.
+    :param indices: indices of the atoms whose surface is estimated. By default (empty list), all atoms are used.
     :param probe: radius of the "rolling ball", in A
     :param n_sphere_point: number of mesh points per atom
     :param threshold: fraction of mesh points that must be exposed for an atom to be listed among the surface atoms. It does not affect the area or the mesh.
-    :returns: accessible surface area in A^2, summed over all target atoms
+    :returns: accessible surface area in A^2, summed over the atoms in indices
     :returns: mx3 numpy array of the exposed mesh points forming the accessible surface mesh
-    :returns: numpy array of int, indices of the surface atoms, i.e. target atoms whose exposed fraction exceeds threshold
+    :returns: numpy array of int, indices of the surface atoms, i.e. atoms in indices whose exposed fraction exceeds threshold
     '''
-    return sasa(M, targets=targets, probe=probe, n_sphere_point=n_sphere_point, threshold=threshold)
+    return sasa(M, indices=indices, probe=probe, n_sphere_point=n_sphere_point, threshold=threshold)
 
 
 def _golden_spiral(n_sphere_point):
@@ -64,26 +64,26 @@ def _golden_spiral(n_sphere_point):
     return np.column_stack((np.cos(phi) * r, y, np.sin(phi) * r))
 
 
-def sasa(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
+def sasa(M, indices=[], probe=1.4, n_sphere_point=960, threshold=0.05):
     '''
     compute the accessible surface area using the Shrake-Rupley algorithm ("rolling ball method").
 
-    every target atom is surrounded by a mesh of points at distance radius+probe from its centre,
+    every atom in indices is surrounded by a mesh of points at distance radius+probe from its centre,
     i.e. the positions the centre of a probe touching the atom can take. A mesh point is exposed
     when it lies farther than radius+probe from every other atom, and the area of the atom is the
     exposed fraction of its sphere. All atoms of M act as occluders, whether or not they are
-    targets. Atomic radii are read from the "radius" column of M.data, and only the current
-    conformation is measured. A ValueError is raised if any radius is not finite, and an empty
-    structure returns an area of 0.0.
+    in indices. Atomic radii are read from the "radius" column of M.data, and only the current
+    conformation is measured. An empty structure returns an area of 0.0.
 
     :param M: any biobox object
-    :param targets: indices of the atoms whose surface is estimated. By default (empty list), all atoms are used.
+    :param indices: indices of the atoms whose surface is estimated. By default (empty list), all atoms are used.
     :param probe: radius of the "rolling ball", in A
     :param n_sphere_point: number of mesh points per atom
     :param threshold: fraction of mesh points (between 0 and 1) that must be exposed for an atom to be listed among the surface atoms. It does not affect the area or the mesh.
-    :returns: accessible surface area in A^2, summed over all target atoms
+    :returns: accessible surface area in A^2, summed over the atoms in indices
     :returns: mx3 numpy array of the exposed mesh points forming the accessible surface mesh
-    :returns: numpy array of int, indices of the surface atoms, i.e. target atoms whose exposed fraction exceeds threshold
+    :returns: numpy array of int, indices of the surface atoms, i.e. atoms in indices whose exposed fraction exceeds threshold
+    :raises ValueError: if threshold is not between 0 and 1, or if any radius is not finite
     '''
 
     from scipy.spatial import cKDTree
@@ -97,15 +97,15 @@ def sasa(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
     elif this_inst in ["Assembly", "Polyhedron"]:
         M = M.make_structure()
 
-    if len(targets) == 0:
-        targets = range(0, len(M.points), 1)
+    if len(indices) == 0:
+        indices = range(0, len(M.points), 1)
 
     # getting radii associated to every atom
     points = np.asarray(M.points, dtype=float)
     radii = np.asarray(M.data['radius'].values, dtype=float)
 
     if threshold < 0.0 or threshold > 1.0:
-        raise Exception("ERROR: threshold should be a floating point between 0 and 1!")
+        raise ValueError("threshold should be a floating point between 0 and 1!")
 
     if len(points) == 0:
         return 0.0, np.empty((0, 3)), np.array([], dtype=int)
@@ -126,7 +126,7 @@ def sasa(M, targets=[], probe=1.4, n_sphere_point=960, threshold=0.05):
     surface_atoms = []
     mesh_pts = []
     # compute accessible surface for every atom
-    for i in targets:
+    for i in indices:
 
         # place mesh points around atom of choice
         mesh = sphere_points * (radii[i] + probe) + points[i]
@@ -177,45 +177,47 @@ def rgyr(M):
     return np.sqrt(np.sum(d_square) / d_square.shape[0])
 
 
-def saxs(M, crysol_path='', crysol_options="-lm 20 -ns 500", pdbname=""):
+def saxs(M, crysol_path='', crysol_options="-lm 20 -ns 500", filename=""):
     '''
     compute SAXS curve using crysol (from ATSAS suite)
 
-    Unless pdbname is given, the current conformation of M is written to a temporary PDB file in the
+    Unless filename is given, the current conformation of M is written to a temporary PDB file in the
     working directory, deleted afterwards together with the crysol output files.
 
     :param M: any biobox object
     :param crysol_path: folder containing the crysol executable. If not provided, the environment variable ATSASPATH is sought instead. This allows redirecting to a specific ATSAS bin folder.
     :param crysol_options: flags to be passed to crysol executable
-    :param pdbname: if a file has been already written, crysol analyzes it instead of M
+    :param filename: if a file has been already written, crysol analyzes it instead of M
     :returns: SAXS curve (nx2 numpy array), i.e. the first two columns of the crysol .int file: scattering vector and intensity in solution
+    :raises RuntimeError: if crysol_path is not given and the ATSASPATH environment variable is undefined
+    :raises FileNotFoundError: if filename is given but does not exist
     '''
 
     if crysol_path == '':
         try:
             crysol_path = os.environ['ATSASPATH']
         except KeyError:
-            raise Exception("ATSASPATH environment variable undefined")
+            raise RuntimeError("ATSASPATH environment variable undefined")
 
-    temporary_pdb = pdbname == ""
+    temporary_pdb = filename == ""
     if temporary_pdb:
         # write temporary pdb file of current structure on which to launch
         # SAXS calculation
-        pdbname = "%s.pdb" % random_string(32)
-        while os.path.exists(pdbname):
-            pdbname = "%s.pdb" % random_string(32)
+        filename = "%s.pdb" % random_string(32)
+        while os.path.exists(filename):
+            filename = "%s.pdb" % random_string(32)
 
-        M.write_pdb(pdbname, [M.current])
+        M.write_pdb(filename, [M.current])
 
     else:
         # if file was already provided, verify its existence first!
-        if os.path.isfile(pdbname) != 1:
-            raise Exception("ERROR: %s not found!" % pdbname)
+        if os.path.isfile(filename) != 1:
+            raise FileNotFoundError("%s not found!" % filename)
 
     # crysol names its output after the input file, in the working directory
-    outfile = os.path.splitext(os.path.basename(pdbname))[0]
+    outfile = os.path.splitext(os.path.basename(filename))[0]
 
-    call_line = [os.path.join(crysol_path, "crysol")] + shlex.split(crysol_options) + [pdbname]
+    call_line = [os.path.join(crysol_path, "crysol")] + shlex.split(crysol_options) + [filename]
     try:
         subprocess.check_call(call_line, stdout=subprocess.DEVNULL)
         data = np.loadtxt("%s00.int" % outfile, skiprows=1)
@@ -224,17 +226,17 @@ def saxs(M, crysol_path='', crysol_options="-lm 20 -ns 500", pdbname=""):
             if os.path.exists(outfile + ext):
                 os.remove(outfile + ext)
         if temporary_pdb:
-            os.remove(pdbname)
+            os.remove(filename)
 
     return data[:, 0:2]
 
 
-def ccs(M, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMode sem -convergence 0.01", pdbname="", tjm_scale=False, proberad=1.0):
+def ccs(M, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMode sem -convergence 0.01", filename="", tjm_scale=False, proberad=1.0):
     '''
     compute CCS with IMPACT, either via its library or via a system call to its executable.
 
-    The library is used when use_lib is True and pdbname is not given. Otherwise, the executable is called on
-    pdbname or on a temporary PDB file of the current conformation, with a "params" file written in a temporary directory
+    The library is used when use_lib is True and filename is not given. Otherwise, the executable is called on
+    filename or on a temporary PDB file of the current conformation, with a "params" file written in a temporary directory
     and deleted afterwards. In executable mode, all pseudo-atoms (points of any object other than a Molecule, named "Z")
     share the single radius declared in the "params" file.
     If M is a Molecule without an "atom_ccs" column, atom types and CCS radii are assigned to it first.
@@ -243,11 +245,13 @@ def ccs(M, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMod
     :param use_lib: if true, impact library will be used, if false a system call to impact executable will be performed instead
     :param impact_path: folder containing libimpact (library mode) or the impact executable (executable mode). By default, the "lib" or "bin" subfolder of the environment variable IMPACTPATH is used.
     :param impact_options: flags to be passed to impact executable (executable mode only)
-    :param pdbname: if a file has been already written, impact executable analyzes it instead of M
+    :param filename: if a file has been already written, impact executable analyzes it instead of M
     :param tjm_scale: if True, CCS value calculated with PA method is scaled to better match trajectory method.
     :param proberad: radius of probe in A, added to the atomic radii. Do find out if your impact library already adds this value by default or not (old ones do)!
     :returns: CCS value in A^2, or -4 if parsing the output of impact executable fails
     :raises ValueError: in executable mode, if the pseudo-atoms of M have more than one distinct radius
+    :raises RuntimeError: if impact_path is not given and the IMPACTPATH environment variable is undefined, or if the IMPACT library cannot be loaded
+    :raises FileNotFoundError: if filename is given but does not exist
     '''
 
     #make sure that everything is collected as a Structure object, and radii are available
@@ -264,27 +268,23 @@ def ccs(M, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMod
         M.assign_atomtype()
         M.get_atoms_ccs()
 
-    if use_lib and pdbname == "":
+    if use_lib and filename == "":
 
         #if True:
         from biobox.measures.calculators import CCS
-        try:
-            if impact_path == '':
+        if impact_path == '':
 
-                try:
-                    impact_path = os.path.join(os.environ['IMPACTPATH'], "lib")
-                except KeyError:
-                    raise Exception("IMPACTPATH environment variable undefined")
+            try:
+                impact_path = os.path.join(os.environ['IMPACTPATH'], "lib")
+            except KeyError:
+                raise RuntimeError("IMPACTPATH environment variable undefined")
 
-            if sys.platform.startswith("win"):
-                libfile = os.path.join(impact_path, "libimpact.dll")
-            else:
-                libfile = os.path.join(impact_path, "libimpact.so")
+        if sys.platform.startswith("win"):
+            libfile = os.path.join(impact_path, "libimpact.dll")
+        else:
+            libfile = os.path.join(impact_path, "libimpact.so")
 
-            C = CCS(libfile=libfile)
-
-        except Exception as e:
-            raise Exception(str(e))
+        C = CCS(libfile=libfile)
 
         if "atom_ccs" in M.data.columns:
             radii = M.data['atom_ccs'].values + proberad
@@ -306,20 +306,20 @@ def ccs(M, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMod
     while os.path.exists(tmp_outfile):
         tmp_outfile = "%s.pdb" % random_string(32)
 
-    if pdbname == "":
+    if filename == "":
         # write temporary pdb file of current structure on which to launch
         # CCS calculation
-        filename = "%s.pdb" % random_string(32)
-        while os.path.exists(filename):
-            filename = "%s.pdb" % random_string(32)
+        pdb_file = "%s.pdb" % random_string(32)
+        while os.path.exists(pdb_file):
+            pdb_file = "%s.pdb" % random_string(32)
 
-        M.write_pdb(filename, [M.current])
+        M.write_pdb(pdb_file, [M.current])
 
     else:
-        filename = pdbname
+        pdb_file = filename
         # if file was already provided, verify its existence first!
-        if os.path.isfile(pdbname) != 1:
-            raise Exception("ERROR: %s not found!" % pdbname)
+        if os.path.isfile(filename) != 1:
+            raise FileNotFoundError("%s not found!" % filename)
 
     params_dir = tempfile.mkdtemp()
     try:
@@ -328,7 +328,7 @@ def ccs(M, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMod
                 try:
                     impact_path = os.path.join(os.environ['IMPACTPATH'], "bin")
                 except KeyError:
-                    raise Exception("IMPACTPATH environment variable undefined")
+                    raise RuntimeError("IMPACTPATH environment variable undefined")
 
         # if using impact, create parameterization file containing a
         # description for Z atoms (pseudoatom name used in this code)
@@ -346,10 +346,7 @@ def ccs(M, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMod
         else:
             impact_name = os.path.join(impact_path, "impact")
 
-        subprocess.check_call('%s  %s -rProbe 0 %s > %s' % (impact_name, impact_options, filename, tmp_outfile), shell=True)
-
-    except Exception as e:
-        raise Exception(str(e))
+        subprocess.check_call('%s  %s -rProbe 0 %s > %s' % (impact_name, impact_options, pdb_file, tmp_outfile), shell=True)
 
     finally:
         shutil.rmtree(params_dir, ignore_errors=True)
@@ -371,18 +368,18 @@ def ccs(M, use_lib=True, impact_path='', impact_options="-Octree -nRuns 32 -cMod
         f.close()
 
         # clean temp files if needed
-        #(if a filename is provided, don't delete it!)
+        #(if a pdb_file is provided, don't delete it!)
         os.remove(tmp_outfile)
-        if pdbname == "":
-            os.remove(filename)
+        if filename == "":
+            os.remove(pdb_file)
 
         return v
 
     except:
         # clean temp files
         os.remove(tmp_outfile)
-        if pdbname == "":
-            os.remove(filename)
+        if filename == "":
+            os.remove(pdb_file)
 
         return -4
 
@@ -398,14 +395,15 @@ class CCS(object):
         initialize by loading IMPACT library
 
         :param libfile: library path
+        :raises RuntimeError: if the library cannot be loaded
         '''
 
         try:
             self.libs = cdll.LoadLibrary(libfile)
             self.libs.pa2tjm.restype = c_float
 
-        except:
-            raise Exception("loading library %s failed!" % libfile)
+        except Exception as e:
+            raise RuntimeError("loading library %s failed!" % libfile) from e
 
         # declare output variables
         self.ccs = c_float()

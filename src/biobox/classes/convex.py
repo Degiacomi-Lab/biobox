@@ -116,10 +116,10 @@ def _check_ellipsoid(a, b, c, pr):
     :param pr: points radius
     '''
     if min(a, b, c) <= 0:
-        raise Exception("ERROR: ellipsoid semi-axes must be positive, found %s, %s, %s" % (a, b, c))
+        raise ValueError("ellipsoid semi-axes must be positive, found %s, %s, %s" % (a, b, c))
     rmin = min(a, b, c)**2 / max(a, b, c)
     if pr >= rmin:
-        raise Exception("ERROR: points radius %s A must be smaller than the minimal radius of curvature of the ellipsoid with semi-axes %s, %s, %s A (%s A)" % (pr, a, b, c, rmin))
+        raise ValueError("points radius %s A must be smaller than the minimal radius of curvature of the ellipsoid with semi-axes %s, %s, %s A (%s A)" % (pr, a, b, c, rmin))
 
 
 def _ellipsoid_inner_points(unit, a, b, c, pr):
@@ -236,7 +236,7 @@ class Prism(Structure):
         :returns: vertices of the bottom face (n x 2 numpy array, at height pr), outward normals (n x 2) and offsets (n) of its sides, as lines normal . x = offset, and the vector from the bottom face to the top one
         '''
         if h <= 2 * pr:
-            raise Exception("ERROR: points radius %s A must be smaller than half the prism height (%s A)" % (pr, h / 2.0))
+            raise ValueError("points radius %s A must be smaller than half the prism height (%s A)" % (pr, h / 2.0))
 
         ang = 2 * np.pi * np.arange(n) / n
         v = r * np.stack([np.cos(ang), np.sin(ang)], axis=1)
@@ -255,7 +255,7 @@ class Prism(Structure):
 
         lengths = np.sum((np.roll(w, -1, axis=0) - w) * e, axis=1) / np.linalg.norm(e, axis=1)
         if np.any(lengths <= 1e-9 * r):
-            raise Exception("ERROR: points radius %s A is too large for a prism of circumradius %s A and %s sides" % (pr, r, n))
+            raise ValueError("points radius %s A is too large for a prism of circumradius %s A and %s sides" % (pr, r, n))
 
         return w, nk[:, :2], off, d * (h - 2 * pr) / h
 
@@ -378,13 +378,13 @@ class Cylinder(Structure):
         :param pr: points radius
         '''
         if min(r1, r2) <= 0:
-            raise Exception("ERROR: cylinder semi-axes must be positive, found %s and %s" % (r1, r2))
+            raise ValueError("cylinder semi-axes must be positive, found %s and %s" % (r1, r2))
         if h <= 2 * pr:
-            raise Exception("ERROR: points radius %s A must be smaller than half the cylinder height (%s A)" % (pr, h / 2.0))
+            raise ValueError("points radius %s A must be smaller than half the cylinder height (%s A)" % (pr, h / 2.0))
         a, b, _ = Cylinder._section_axes(r1, r2, h, skew)
         rmin = min(a, b)**2 / max(a, b)
         if pr >= rmin:
-            raise Exception("ERROR: points radius %s A must be smaller than the minimal radius of curvature of the cylinder cross-section (%s A)" % (pr, rmin))
+            raise ValueError("points radius %s A must be smaller than the minimal radius of curvature of the cylinder cross-section (%s A)" % (pr, rmin))
 
     @staticmethod
     def _rim(theta, r1, r2, h, skew, pr):
@@ -539,7 +539,7 @@ class Cone(Structure):
         :returns: starting points, generator vectors, and parameters of the first and last generator points (points are start + t * vector)
         '''
         if r <= 0 or h <= 0:
-            raise Exception("ERROR: cone radius and height must be positive, found %s and %s" % (r, h))
+            raise ValueError("cone radius and height must be positive, found %s and %s" % (r, h))
         b, g, nrm = Cone._side(theta, r, h, skew)
         bc, _, nc = Cone._side(np.arange(n_check) * 2 * np.pi / n_check, r, h, skew)
 
@@ -554,7 +554,7 @@ class Cone(Structure):
         tmax = bound.min(axis=1)
 
         if np.min(rhs - t0[:, None] * D) < -1e-9 * (r + h) or np.any(tmax <= t0):
-            raise Exception("ERROR: points radius %s A is too large for a cone of base radius %s A and height %s A" % (pr, r, h))
+            raise ValueError("points radius %s A is too large for a cone of base radius %s A and height %s A" % (pr, r, h))
 
         return q0, g, t0, tmax
 
@@ -576,7 +576,7 @@ class Cone(Structure):
             ls = np.sqrt(r**2 + h**2)
             H = h - pr * ls / r - pr
             if H <= 0:
-                raise Exception("ERROR: points radius %s A is too large for a cone of base radius %s A and height %s A" % (pr, r, h))
+                raise ValueError("points radius %s A is too large for a cone of base radius %s A and height %s A" % (pr, r, h))
             R = H * r / h
             alpha = np.arctan(r / h)
             res = (np.pi * R**2 + np.pi * R * np.sqrt(R**2 + H**2), np.pi * H + np.pi * R * (np.pi / 2 + alpha), np.pi * R**2 * H / 3.0)
@@ -718,7 +718,7 @@ class Sphere(Structure):
         '''
         d = np.atleast_1d(np.asarray(deformation, dtype=float))
         if d.ndim != 1 or len(d) not in [1, 2, 3]:
-            raise Exception("ERROR: expected a number, or a list of 2 or 3 numbers, but %s was found" % deformation)
+            raise ValueError("expected a number, or a list of 2 or 3 numbers, but %s was found" % deformation)
 
         p = [self.properties['p1'], self.properties['p2'], self.properties['p3']]
         if len(d) == 1:

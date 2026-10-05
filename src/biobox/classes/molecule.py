@@ -13,6 +13,7 @@
 
 import os
 import re
+import warnings
 from copy import deepcopy
 import numpy as np
 import scipy.signal
@@ -39,7 +40,7 @@ class Molecule(Structure):
                    'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
                    'y', 'z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0')
 
-    def __init__(self, fname=""):
+    def __init__(self, filename=""):
         '''
         Properties associated to every individual atom are stored in a pandas Dataframe self.data.
         After loading a pdb, pqr, gro or md file, the columns of self.data have the following names:
@@ -57,7 +58,7 @@ class Molecule(Structure):
 
         The knowledge base can be edited. For instance, to add information about residue "TST" mass in molecule M type: M.knowledge['residue_mass']["TST"]=142.42
 
-        :param fname: name of a file to load. The file is parsed according to its extension (pdb, pqr, md or gro). If empty (default), an empty Molecule is created.
+        :param filename: name of a file to load. The file is parsed according to its extension (pdb, pqr, md or gro). If empty (default), an empty Molecule is created.
         '''
 
         super(Molecule, self).__init__(r=np.array([]))
@@ -101,23 +102,23 @@ class Molecule(Structure):
                                         "CYX": "C", "CYM": "C", "ASH": "D", "GLH": "E", "LYN": "K"}
 
         # if a filename is provided, attempt loading the file according to its file extension
-        if fname != "":
+        if filename != "":
             msg = "If you are positive Biobox can read this file, please instantiate Molecule and call the appropriate file parsing method."
-            fsplit = os.path.basename(fname).split(".")
+            fsplit = os.path.basename(filename).split(".")
             if len(fsplit)<2:
-                raise Exception("Cannot determine file extension. %s"%msg)
+                raise ValueError("Cannot determine file extension. %s"%msg)
 
             ext = fsplit[-1]
             if ext == "pdb":
-                self.import_pdb(fname)
+                self.import_pdb(filename)
             elif ext == "pqr":
-                self.import_pqr(fname)
+                self.import_pqr(filename)
             elif ext == "md":
-                self.import_md(fname)
+                self.import_md(filename)
             elif ext == "gro":
-                self.import_gro(fname)
+                self.import_gro(filename)
             else:
-                raise Exception("File extension %s unknown. %s"%(ext, msg))
+                raise ValueError("File extension %s unknown. %s"%(ext, msg))
 
 
     def __add__(self, other):
@@ -151,7 +152,7 @@ class Molecule(Structure):
 
         f = self.coordinates.shape[0]
         if f != other.coordinates.shape[0]:
-            raise Exception("Number of frames need to be identical between two Molecule objects!")
+            raise ValueError("Number of frames need to be identical between two Molecule objects!")
 
         if len(conformations) == 0:
             start = 0
@@ -181,12 +182,13 @@ class Molecule(Structure):
         return information from knowledge base
 
         :param prop: desired property to extract from knowledge base
-        :returns: value associated to requested property. An Exception is raised if the property is not in the knowledge base.
+        :returns: value associated to requested property
+        :raises KeyError: if the property is not in the knowledge base
         '''
         if str(prop) in self.knowledge:
             return self.knowledge[str(prop)]
         else:
-            raise Exception("entry %s not found in knowledge base!" % prop)
+            raise KeyError("entry %s not found in knowledge base!" % prop)
 
     def _guess_element(self, name):
         '''
@@ -245,27 +247,29 @@ class Molecule(Structure):
 
         return ""
 
-    def import_pdb(self, pdb, include_hetatm=False):
+    def import_pdb(self, filename, include_hetatm=False):
         '''
         read a pdb (possibly containing containing multiple models).
 
         Models are split according to ENDMDL and END statement.
-        All alternative coordinates are expected to have the same atoms.
+        All alternative coordinates are expected to have the same atoms: if models have different atom counts, only the first is loaded, and a UserWarning is issued.
         After loading, the first model (M.current=0) will be set as active.
         The chain name is column 22, unless the segment identifier (columns 73-76) has two characters, the first of which is that chain: the segment identifier is then the chain name, as written by :func:`write_pdb <biobox.classes.molecule.Molecule.write_pdb>`.
         Formal charges in columns 79-80 (e.g. "2+" or "1-") are loaded in the integer column formal_charge, which is 0 where they are blank. TER records are ignored.
 
-        :param pdb: PDB filename
+        :param filename: PDB filename
         :param include_hetatm: if True, HETATM will be included (they get skipped if False)
+        :raises FileNotFoundError: if the file cannot be opened
+        :raises ValueError: if the file content cannot be parsed
         '''
 
         try:
-            f_in = open(pdb, "r")
+            f_in = open(filename, "r")
         except Exception:
-            raise Exception('ERROR: file %s not found!' % pdb)
+            raise FileNotFoundError('file %s not found!' % filename)
 
         # store filename
-        self.properties["filename"] = pdb
+        self.properties["filename"] = filename
 
         data_in = []
         alt = []  # alternate location indicators
@@ -311,14 +315,14 @@ class Molecule(Structure):
                     try:
                         groups[-1][1].append(line.split()[4:8])
                     except Exception:
-                        raise Exception("ERROR: biomatrix format seems corrupted")
+                        raise ValueError("biomatrix format seems corrupted")
 
             # load symmetry matrix, if any is present
             if "REMARK 290   SMTRY" in line:
                 try:
                     symm.append(line.split()[4:8])
                 except Exception:
-                    raise Exception("ERROR: symmetry matrix format seems corrupted")
+                    raise ValueError("symmetry matrix format seems corrupted")
 
             # if a complete model was parsed store all the saved data into
             # self.data entries (if needed) and temporary alternative
@@ -339,13 +343,13 @@ class Molecule(Structure):
                         self.data["index"] = idx
 
                     except Exception:
-                        raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' %pdb)
+                        raise ValueError('something went wrong when loading the structure %s!\nare all the columns separated?' %filename)
 
                     # saving vdw radii
                     try:
                         self.data['radius'] = np.array(r)
                     except Exception:
-                        raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' %pdb)
+                        raise ValueError('something went wrong when loading the structure %s!\nare all the columns separated?' %filename)
 
                     # save default charge state
                     self.data['charge'] = np.array(e)
@@ -356,7 +360,7 @@ class Molecule(Structure):
                         alternative.append(np.array(p))
                     p = []
                 except Exception:
-                    raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' % pdb)
+                    raise ValueError('something went wrong when loading the structure %s!\nare all the columns separated?' % filename)
 
             if record == 'ATOM' or (include_hetatm and record == 'HETATM'):
 
@@ -431,12 +435,12 @@ class Molecule(Structure):
                     self.data["index"] = idx
 
                 except Exception:
-                    raise Exception('ERROR: something went wrong when saving data in %s!\nERROR: are all the columns separated?' %pdb)
+                    raise ValueError('something went wrong when saving data in %s!\nare all the columns separated?' %filename)
 
                 try:
                     self.data['radius'] = np.array(r)
                 except Exception:
-                    raise Exception('ERROR: something went wrong when saving van der Waals radii in %s!\nERROR: are all the columns separated?' % pdb)
+                    raise ValueError('something went wrong when saving van der Waals radii in %s!\nare all the columns separated?' % filename)
 
                 # save default charge state
                 self.data['charge'] = np.array(e)
@@ -447,7 +451,7 @@ class Molecule(Structure):
                     alternative.append(np.array(p))
                 p = []
             except Exception:
-                raise Exception('ERROR: something went wrong when saving coordinates in %s!\nERROR: are all the columns separated?' %pdb)
+                raise ValueError('something went wrong when saving coordinates in %s!\nare all the columns separated?' %filename)
 
         # transform the alternative temporary list into a nice multiple
         # coordinates array
@@ -456,13 +460,11 @@ class Molecule(Structure):
                 alternative_xyz = np.array(alternative).astype(float)
             except Exception:
                 alternative_xyz = np.array([alternative[0]]).astype(float)
-                print('WARNING: found %s models, but their atom count differs' % len(alternative))
-                print('WARNING: treating only the first model in file %s' % pdb)
-                #raise Exception('ERROR: models appear not to have the same amount of atoms')
+                warnings.warn('found %s models, but their atom count differs, treating only the first model in file %s' % (len(alternative), filename), stacklevel=2)
 
             self.add_xyz(alternative_xyz)
         else:
-            raise Exception('ERROR: something went wrong when saving alternative coordinates in %s!\nERROR: no model was loaded... are ENDMDL statements there?' % pdb)
+            raise ValueError('something went wrong when saving alternative coordinates in %s!\nno model was loaded... are ENDMDL statements there?' % filename)
 
         # if biomatrix information is provided, store it as {biomolecule id: [(chains, matrices), ...]}
         if len(biomt) > 0:
@@ -472,7 +474,7 @@ class Molecule(Structure):
                 for chains, rows in groups:
                     # test whether there are enough lines to create biomatrix statements
                     if len(rows) == 0 or np.mod(len(rows), 3):
-                        raise Exception('ERROR: found %s BIOMT entries in biomolecule %s. A multiple of 3 is expected'%(len(rows), bm))
+                        raise ValueError('found %s BIOMT entries in biomolecule %s. A multiple of 3 is expected'%(len(rows), bm))
 
                     mats = np.array(rows).astype(float).reshape((int(len(rows) / 3), 3, 4))
                     b[bm].append((chains, mats))
@@ -485,7 +487,7 @@ class Molecule(Structure):
             # test whether there are enough lines to create biomatrix
             # statements
             if np.mod(len(symm), 3):
-                raise Exception('ERROR: found %s SMTRY entries. A multiple of 3 is expected'%len(symm))
+                raise ValueError('found %s SMTRY entries. A multiple of 3 is expected'%len(symm))
 
             b = np.array(symm).astype(float).reshape((int(len(symm) / 3), 3, 4))
             self.properties["symmetry"] = b
@@ -499,19 +501,19 @@ class Molecule(Structure):
         self.data["icode"] = ins
         self.data["formal_charge"] = np.array(fc, dtype=int)
 
-    def import_md(self, fname):
+    def import_md(self, filename):
         '''
         Import a .md structure file, as output by CASTEP, loading one conformation per MD step.
 
         All atoms are assigned to residue TMP, number 0, of chain X, with occupancy 1.0 and beta factor 0.0, and their atomtype is their element name.
         Their radius is taken from knowledge['atom_vdw'] by element (elements not listed there take the '.' value), their charge and formal charge are 0, and their altloc and icode are empty.
 
-        :param fname: The filename of the md file
+        :param filename: name of the md file
         '''
 
         import itertools
         energy_skip = 7 # number of lines to skip between blocks of info.
-        f_in = open(fname, "r")
+        f_in = open(filename, "r")
 
 
         name = []
@@ -552,7 +554,7 @@ class Molecule(Structure):
 
         p = []  # collects coordinates for every model
         coords = []
-        with open(fname) as f_in:
+        with open(filename) as f_in:
             for line in itertools.islice(f_in, header, header+no_atoms):
                 p.append([float(line[21:45]), float(line[48:72]), float(line[75:99])])
             coords.append(p)
@@ -570,27 +572,29 @@ class Molecule(Structure):
         coords_xyz = np.array(coords).astype(float)
         self.add_xyz(coords_xyz)
 
-    def import_pqr(self, pqr, include_hetatm=False):
+    def import_pqr(self, filename, include_hetatm=False):
         '''
         Read a pqr (possibly containing containing multiple models).
 
         models are split according to ENDMDL and END statement.
-        All alternative coordinates are expected to have the same atoms.
+        All alternative coordinates are expected to have the same atoms: if models have different atom counts, only the first is loaded, and a UserWarning is issued.
         After loading, the first model (M.current=0) will be set as active.
         Charges are read from columns 55-62 and radii from columns 63-69, the chain name is column 22,
         occupancy is set to 1, beta factor to 0, and atomtype to the first letter of the atom name.
 
-        :param pqr: PQR filename
+        :param filename: PQR filename
         :param include_hetatm: if True, HETATM will be included (they get skipped if False)
+        :raises FileNotFoundError: if the file cannot be opened
+        :raises ValueError: if the file content cannot be parsed
         '''
 
         try:
-            f_in = open(pqr, "r")
+            f_in = open(filename, "r")
         except Exception:
-            raise Exception('ERROR: file %s not found!' % pqr)
+            raise FileNotFoundError('file %s not found!' % filename)
 
         # store filename
-        self.properties["filename"] = pqr
+        self.properties["filename"] = filename
 
         data_in = []
         alt = []  # alternate location indicators
@@ -617,19 +621,19 @@ class Molecule(Structure):
                         self.data["index"] = idx # convert to internal numbering system
 
                     except Exception:
-                        raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' %pqr)
+                        raise ValueError('something went wrong when loading the structure %s!\nare all the columns separated?' %filename)
 
                     # saving vdw radii
                     try:
                         self.data['radius'] = np.array(r)
                     except Exception:
-                        raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' %pqr)
+                        raise ValueError('something went wrong when loading the structure %s!\nare all the columns separated?' %filename)
 
                     # saving electrostatics
                     try:
                         self.data['charge'] = np.array(e)
                     except Exception:
-                        raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' % pqr)
+                        raise ValueError('something went wrong when loading the structure %s!\nare all the columns separated?' % filename)
 
                 # save 3D coordinates of every atom and restart the accumulator
                 try:
@@ -637,7 +641,7 @@ class Molecule(Structure):
                         alternative.append(np.array(p))
                     p = []
                 except Exception:
-                    raise Exception('ERROR: something went wrong when loading the structure %s!\nERROR: are all the columns separated?' %pqr)
+                    raise ValueError('something went wrong when loading the structure %s!\nare all the columns separated?' %filename)
 
             if record == 'ATOM' or (include_hetatm and record == 'HETATM'):
 
@@ -709,17 +713,17 @@ class Molecule(Structure):
                     self.data["index"] = idx # convert to internal numbering system
 
                 except Exception:
-                    raise Exception('ERROR: something went wrong when saving data in %s!\nERROR: are all the columns separated?' % pqr)
+                    raise ValueError('something went wrong when saving data in %s!\nare all the columns separated?' % filename)
 
                 try:
                     self.data['radius'] = np.array(r)
                 except Exception:
-                    raise Exception('ERROR: something went wrong when saving van der Waals radii in %s!\nERROR: are all the columns separated?' %pqr)
+                    raise ValueError('something went wrong when saving van der Waals radii in %s!\nare all the columns separated?' %filename)
 
                 try:
                     self.data['charge'] = np.array(e)
                 except Exception:
-                    raise Exception('ERROR: something went wrong when saving charges in %s!\nERROR: are all the columns separated?' %pqr)
+                    raise ValueError('something went wrong when saving charges in %s!\nare all the columns separated?' %filename)
 
             # save 3D coordinates of every atom and restart the accumulator
             try:
@@ -727,7 +731,7 @@ class Molecule(Structure):
                     alternative.append(np.array(p))
                 p = []
             except Exception:
-                raise Exception('ERROR: something went wrong when saving coordinates in %s!\nERROR: are all the columns separated?' %pqr)
+                raise ValueError('something went wrong when saving coordinates in %s!\nare all the columns separated?' %filename)
 
         # transform the alternative temporary list into a nice multiple
         # coordinates array
@@ -736,13 +740,11 @@ class Molecule(Structure):
                 alternative_xyz = np.array(alternative).astype(float)
             except Exception:
                 alternative_xyz = np.array([alternative[0]]).astype(float)
-                print('WARNING: found %s models, but their atom count differs' % len(alternative))
-                print('WARNING: treating only the first model in file %s' % pqr)
-                #raise Exception('ERROR: models appear not to have the same amount of atoms')
+                warnings.warn('found %s models, but their atom count differs, treating only the first model in file %s' % (len(alternative), filename), stacklevel=2)
 
             self.add_xyz(alternative_xyz)
         else:
-            raise Exception('ERROR: something went wrong when saving alternative coordinates in %s!\nERROR: no model was loaded... are ENDMDL statements there?' % pqr)
+            raise ValueError('something went wrong when saving alternative coordinates in %s!\nno model was loaded... are ENDMDL statements there?' % filename)
 
         #correctly set types of columns requiring other than string
         self.data["resid"] = self.data["resid"].astype(int)
@@ -761,10 +763,11 @@ class Molecule(Structure):
         and the box of every frame is stored in properties['box']. All atoms are assigned to chain A, and their atomtype is guessed from atom and residue names.
 
         :param filename: name of .gro file to import
+        :raises FileNotFoundError: if the file does not exist
         '''
 
         if not os.path.isfile(filename):
-            raise Exception("ERROR: %s not found!" % filename)
+            raise FileNotFoundError("%s not found!" % filename)
 
         self.clear()
 
@@ -863,15 +866,15 @@ class Molecule(Structure):
 
         return D
 
-    def _vdw_density_on_grid(self, idx, axes, step, kernel_half_width):
+    def _vdw_density_on_grid(self, indices, axes, step, kernel_half_width):
         '''
         sum of the density maps of each atom type, each built from the atoms of that type on a common grid.
 
         Only atomtypes C, H, O, S and N contribute, each with its own gaussian sigma (in voxels), and each map is scaled to a maximum of 1 before summing.
         Selected atoms with an empty atomtype get the one given by knowledge['atomtype'] for their name or, for names not listed there, the element guessed from their name.
-        Their atomtype is stored in self.data, while non-empty atomtypes and atoms outside the selection are left unchanged. An Exception is raised if some atomtype is still unknown.
+        Their atomtype is stored in self.data, while non-empty atomtypes and atoms outside the selection are left unchanged. A KeyError is raised if some atomtype is still unknown.
 
-        :param idx: indices of atoms to include
+        :param indices: indices of atoms to include
         :param axes: grid axes, as returned by _grid_axes
         :param step: size of cubic voxels, in Angstrom
         :param kernel_half_width: kernel half width, in voxels
@@ -882,19 +885,19 @@ class Molecule(Structure):
                     ["N", 1.55, 1.2, 0.44]]
 
         # fill in empty atomtypes of selected atoms from their name, and test if successful
-        idx = np.asarray(idx)
-        blank = idx[self.data["atomtype"].values[idx] == '']
+        indices = np.asarray(indices)
+        blank = indices[self.data["atomtype"].values[indices] == '']
         if len(blank) > 0:
             known = self.know('atomtype')
             names = self.data["name"].values[blank]
             guessed = [known[n] if n in known else self._guess_element(n) for n in names]
             self.data.iloc[blank, self.data.columns.get_loc("atomtype")] = guessed
 
-        atomtypes = self.data["atomtype"].values[idx]
+        atomtypes = self.data["atomtype"].values[indices]
         if np.any(atomtypes == ''):
-            raise Exception("Unknown atomtype for:\n%s"%self.data.iloc[idx[atomtypes == '']])
+            raise KeyError("Unknown atomtype for:\n%s"%self.data.iloc[indices[atomtypes == '']])
 
-        pts = self.points[idx]
+        pts = self.points[indices]
         dens = np.zeros([len(ax) for ax in axes])
         for d in atomdata:
             # use the standard density calculation with an atom-type specific sigma value
@@ -928,7 +931,7 @@ class Molecule(Structure):
             # numpy array of charges [c1, c2, c3, ...]
             charges = self.data['charge'].values[idx].astype(float)
         except Exception:
-            raise Exception('ERROR: No charges associated with %s' % self)
+            raise KeyError('No charges associated with %s' % self)
 
         k = 8.9875517873681764  # Coulomb's constant in nN
 
@@ -974,7 +977,6 @@ class Molecule(Structure):
         if clear_mass:
             occupied = dens > threshold
             e[occupied] = 0
-            print('removed %s points due to van der Waals clashing' % np.count_nonzero(occupied))
 
         # split the density into two maps
         e_pos = deepcopy(e)
@@ -1024,7 +1026,7 @@ class Molecule(Structure):
             copies.extend(list(present) * len(mats))
         needed = len(copies) - len(set(copies))
         if needed > len(available):
-            raise Exception("ERROR: the transformed molecule needs %s new chain names, but only %s are available" % (needed, len(available)))
+            raise ValueError("the transformed molecule needs %s new chain names, but only %s are available" % (needed, len(available)))
 
         named = set()
         data = []
@@ -1054,7 +1056,7 @@ class Molecule(Structure):
                 data.append(d)
 
         if len(data) == 0:
-            raise Exception("ERROR: none of the chains the matrices apply to is in the molecule")
+            raise ValueError("none of the chains the matrices apply to is in the molecule")
 
         M = Molecule()
         M.knowledge = deepcopy(self.knowledge)
@@ -1077,10 +1079,10 @@ class Molecule(Structure):
 
         # if no biomatrix statement is found, return with error
         if "biomatrix" not in self.properties:
-            raise Exception("ERROR: no biomatrix found in pdb %s" %self.properties["filename"])
+            raise KeyError("no biomatrix found in pdb %s" %self.properties["filename"])
 
         if biomolecule not in self.properties["biomatrix"]:
-            raise Exception("ERROR: biomolecule %s not found, available: %s" %(biomolecule, sorted(self.properties["biomatrix"])))
+            raise KeyError("biomolecule %s not found, available: %s" %(biomolecule, sorted(self.properties["biomatrix"])))
 
         return self._apply_matrices(self.properties["biomatrix"][biomolecule])
 
@@ -1095,7 +1097,7 @@ class Molecule(Structure):
 
         # if no symmetry statement is found, return with error
         if "symmetry" not in self.properties:
-            raise Exception("ERROR: no symmetry matrix found in pdb %s" %self.properties["filename"])
+            raise KeyError("no symmetry matrix found in pdb %s" %self.properties["filename"])
 
         return self._apply_matrices([(None, self.properties["symmetry"])])
 
@@ -1152,7 +1154,7 @@ class Molecule(Structure):
         '''
 
         if len(indices) == 0 and len(columns) == 0:
-            raise Exception("indices, columns or both should be provided")
+            raise ValueError("indices, columns or both should be provided")
 
         elif len(indices) == 0 and len(columns) != 0:
             self.data[columns] = value
@@ -1205,7 +1207,7 @@ class Molecule(Structure):
             for c in range(1, len(chain), 1):
                 chain_query = np.logical_or(chain_query, self.data["chain"].values == chain[c])
         else:
-            raise Exception("ERROR: wrong type for chain selection. Should be str, list, or numpy")
+            raise TypeError("wrong type for chain selection. Should be str, list, or numpy")
 
         # residue boolean selector
         if isinstance(res, np.generic):
@@ -1218,7 +1220,7 @@ class Molecule(Structure):
             if isinstance(res, (str, int)):
                 res = [res]
             elif not isinstance(res, (list, tuple, range, np.ndarray)):
-                raise Exception("ERROR: wrong type for resid selection. Should be int, list, or numpy")
+                raise TypeError("wrong type for resid selection. Should be int, list, or numpy")
 
             if use_resname:
                 res_query = np.isin(self.data["resname"].values, [str(r) for r in res])
@@ -1242,7 +1244,7 @@ class Molecule(Structure):
             for a in range(1, len(atom), 1):
                 atom_query = np.logical_or(atom_query, self.data["name"].values == atom[a])
         else:
-            raise Exception("ERROR: wrong type for atom selection. Should be str, list, or numpy")
+            raise TypeError("wrong type for atom selection. Should be str, list, or numpy")
 
         # slice data array and return result (colums 5 to 7 contain xyz coords)
         query = np.logical_and(np.logical_and(chain_query, res_query), atom_query)
@@ -1266,7 +1268,7 @@ class Molecule(Structure):
         if isinstance(res, str):
             match = re.match(r"^\s*(-?\d+)([A-Za-z]?)\s*$", res)
             if match is None:
-                raise Exception("ERROR: resid %s is not an integer. To select by residue name, set use_resname=True" % res)
+                raise ValueError("resid %s is not an integer. To select by residue name, set use_resname=True" % res)
             return int(match.group(1)), (match.group(2) if match.group(2) != "" else None)
 
         return res, None
@@ -1291,7 +1293,7 @@ class Molecule(Structure):
                 value += 26 * 36**3
             return value
         except ValueError:
-            raise Exception("ERROR: cannot read residue number %s" % text)
+            raise ValueError("cannot read residue number %s" % text)
 
     def _column_or_blank(self, column):
         '''
@@ -1314,11 +1316,11 @@ class Molecule(Structure):
             return np.zeros(len(self.data), dtype=int)
         return self.data["formal_charge"].fillna(0).values.astype(int)
 
-    def _one_per_residue(self, idx):
+    def _one_per_residue(self, indices):
         '''
         keep the first of the given atoms in every residue, identified by chain, residue number and insertion code.
 
-        :param idx: atom indices
+        :param indices: atom indices
         :returns: list of atom indices
         '''
         chain = self.data["chain"].values
@@ -1326,7 +1328,7 @@ class Molecule(Structure):
         icode = self._column_or_blank("icode")
         seen = set()
         keep = []
-        for i in idx:
+        for i in indices:
             key = (chain[i], resid[i], icode[i])
             if key not in seen:
                 seen.add(key)
@@ -1379,11 +1381,11 @@ class Molecule(Structure):
         else:
             return self.points[idxs2]
 
-    def same_residue(self, index, get_index=False):
+    def same_residue(self, indices, get_index=False):
         '''
         Select all atoms belonging to the same residue (same chain, residue number and insertion code) as a given atom (or list of atoms)
 
-        :param index: indices of atoms of choice (integer or list of integers)
+        :param indices: indices of atoms of choice (integer or list of integers)
         :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)
         :returns: coordinates of the selected points in the current conformation (an empty list if none is found) and, if get_index is set to true, also their indices in self.points array.
         '''
@@ -1391,10 +1393,10 @@ class Molecule(Structure):
         chain = self.data["chain"].values
         resid = self.data["resid"].values
         icode = self._column_or_blank("icode")
-        index = np.atleast_1d(index)
+        indices = np.atleast_1d(indices)
 
         test = np.zeros(len(self.data), dtype=bool)
-        for c, r, ic in set(zip(chain[index], resid[index], icode[index])):
+        for c, r, ic in set(zip(chain[indices], resid[indices], icode[indices])):
             test = np.logical_or(test, (chain == c) & (resid == r) & (icode == ic))
 
         idxs = np.where(test)[0]
@@ -1408,21 +1410,21 @@ class Molecule(Structure):
         else:
             return pts
 
-    def same_residue_unique(self, index, get_index=False):
+    def same_residue_unique(self, indices, get_index=False):
         '''
         Select atoms having the same residue (chain, residue number and insertion code) as a given atom (or list of atoms),
         considering only the contiguous run of atoms around the given atom in file order. Each atom is returned once.
 
-        :param index: indices of atoms of choice (integer or list of integers)
+        :param indices: indices of atoms of choice (integer or list of integers)
         :param get_index: if set to True, returns the indices of selected atoms in self.points array (and self.data)
         :returns: numpy array of coordinates of the selected points in the current conformation and, if get_index is set to true, also a numpy array of their indices in self.points array.
         '''
 
         try:
-            test = len(index)  # this should fail if index is a number
-            idlist = index
+            test = len(indices)  # this should fail if indices is a number
+            idlist = indices
         except Exception:
-            idlist = [index]
+            idlist = [indices]
 
         # residues are identified by chain, residue number and insertion code
         key = list(zip(self.data["chain"].values, self.data["resid"].values, self._column_or_blank("icode")))
@@ -1476,26 +1478,26 @@ class Molecule(Structure):
         else:
             return np.array(pts)
 
-    def get_subset(self, idxs, conformations=[], flip = False):
+    def get_subset(self, indices, conformations=[], flip = False):
         '''
         Return a :func:`Molecule <biobox.classes.molecule.Molecule>` object containing only the selected atoms and frames
 
-        :param idxs: indices of atoms to extract, or boolean mask with one element per atom
+        :param indices: indices of atoms to extract, or boolean mask with one element per atom
         :param conformations: frames to extract (by default, all)
-        :param flip: If true, extract atoms that DON'T match idxs (default is False)
+        :param flip: If true, extract atoms that DON'T match indices (default is False)
         :returns: :func:`Molecule <biobox.classes.molecule.Molecule>` object, with its current conformation set to the first extracted frame
         '''
 
-        idxs = np.asarray(idxs)
-        if idxs.dtype == bool:
-            idxs = np.where(idxs)[0]
-        elif len(idxs) == 0:
-            idxs = idxs.astype(int)
+        indices = np.asarray(indices)
+        if indices.dtype == bool:
+            indices = np.where(indices)[0]
+        elif len(indices) == 0:
+            indices = indices.astype(int)
 
         if flip:
             self_index = set(self.data["index"])
-            idxs_flip = set(idxs)
-            idxs = np.asarray(list(self_index - idxs_flip) + list(idxs_flip - self_index)) # replace idxs with new keep list
+            idxs_flip = set(indices)
+            indices = np.asarray(list(self_index - idxs_flip) + list(idxs_flip - self_index)) # replace indices with new keep list
 
         # if a subset of all available frames is requested to be written,
         # select them first
@@ -1505,15 +1507,15 @@ class Molecule(Structure):
             if np.max(conformations) < len(self.coordinates):
                 frames = conformations
             else:
-                raise Exception("ERROR: requested coordinate index %s, but only %s are available" %(np.max(conformations), len(self.coordinates)))
+                raise IndexError("requested coordinate index %s, but only %s are available" %(np.max(conformations), len(self.coordinates)))
 
-        idx = np.arange(len(idxs))
+        idx = np.arange(len(indices))
 
         # create molecule, and push created data information
         M = Molecule()
-        postmp = self.coordinates[:, idxs]
+        postmp = self.coordinates[:, indices]
         M.coordinates = postmp[frames]
-        M.data = self.data.loc[idxs]
+        M.data = self.data.loc[indices]
         M.data = M.data.reset_index(drop=True)
         M.data["index"] = idx
         M.current = 0
@@ -1573,7 +1575,7 @@ class Molecule(Structure):
 
         return len(intervals) - 1, intervals, np.round(np.array(gaps), decimals=3)
 
-    def get_pdb_data(self, index=[]):
+    def get_pdb_data(self, indices=[]):
         '''
         aggregate data and point coordinates of the current conformation, and return in a unique data structure
 
@@ -1581,12 +1583,12 @@ class Molecule(Structure):
         in the same order as a pdb file, i.e.
         ATOM/HETATM, index, name, resname, chain name, residue ID, x, y, z, occupancy, beta factor, atomtype, alternate location, insertion code.
 
-        :param index: indices of atoms of interest. If empty (default), all atoms are returned.
+        :param indices: indices of atoms of interest. If empty (default), all atoms are returned.
         :returns: list containing, for every atom, a list of its 14 fields (values keep the type of the corresponding data column, coordinates are floats).
         '''
 
-        if len(index) == 0:
-            index = range(0, len(self.points), 1)
+        if len(indices) == 0:
+            indices = range(0, len(self.points), 1)
 
         altloc = self._column_or_blank("altloc")
         icode = self._column_or_blank("icode")
@@ -1594,7 +1596,7 @@ class Molecule(Structure):
         # create a list containing all infos contained in pdb (point
         # coordinates and properties)
         d = []
-        for i in index:
+        for i in indices:
             d.append([self.data["atom"].values[i],
                       self.data["index"].values[i],
                       self.data["name"].values[i],
@@ -1656,7 +1658,7 @@ class Molecule(Structure):
             return chain, ""
         if len(chain) == 2:
             return chain[0], chain
-        raise Exception("ERROR: chain name %s is longer than two characters, which the PDB format cannot hold" % chain)
+        raise ValueError("chain name %s is longer than two characters, which the PDB format cannot hold" % chain)
 
     @staticmethod
     def _pdb_atom_prefix(record, serial, name, resname, chain, resid, altloc="", icode=""):
@@ -1664,7 +1666,7 @@ class Molecule(Structure):
         first 30 columns of an ATOM or HETATM line, up to the x coordinate, following the PDB format.
 
         Atom names of 4 characters, or starting with a digit, begin in column 13, shorter ones in column 14.
-        An Exception is raised if the chain name is longer than one character.
+        A ValueError is raised if the chain name is longer than one character.
 
         :param record: record name (ATOM or HETATM)
         :param serial: atom serial number, as it should be written
@@ -1677,7 +1679,7 @@ class Molecule(Structure):
         :returns: string of 30 characters
         '''
         if len(chain) > 1:
-            raise Exception("ERROR: chain name %s is longer than one character, which the PDB format cannot hold" % chain)
+            raise ValueError("chain name %s is longer than one character, which the PDB format cannot hold" % chain)
 
         if len(name) >= 4 or name[:1].isdigit():
             name = "%-4s" % name
@@ -1728,37 +1730,40 @@ class Molecule(Structure):
             return int(text[1]) * (1 if text[0] == "+" else -1)
         return 0
 
-    def _check_pdb_limits(self, frames, index):
+    def _check_pdb_limits(self, conformations, indices):
         '''
         test whether the atoms to write fit the columns of the PDB format.
 
         Coordinates outside -999.999 to 9999.999 Angstrom cannot be written, and residue numbers outside -999 to 9999 are written with their last 4 digits.
 
-        :param frames: frames to write
-        :param index: indices of atoms to write
+        :param conformations: conformations to write
+        :param indices: indices of atoms to write
         '''
-        xyz = self.coordinates[np.asarray(frames)][:, index]
+        xyz = self.coordinates[np.asarray(conformations)][:, indices]
         if np.any(xyz < -999.9995) or np.any(xyz > 9999.9995):
-            raise Exception("ERROR: PDB files must have coordinates between -999.999 and 9999.999 Angstrom")
+            raise ValueError("PDB files must have coordinates between -999.999 and 9999.999 Angstrom")
 
-        resid = self.data["resid"].values[index].astype(int)
+        resid = self.data["resid"].values[indices].astype(int)
         if np.any(resid < -999) or np.any(resid > 9999):
-            print("WARNING: residue numbers outside -999 to 9999 are written with their last 4 digits")
+            warnings.warn("residue numbers outside -999 to 9999 are written with their last 4 digits", stacklevel=3)
 
-    def write_pdb(self, outname, conformations=[], index=[], split_struc=False, dssp=False):
+    def write_pdb(self, filename, conformations=[], indices=[], split_struc=False, dssp=False):
         '''
         overload superclass method for writing (multi)pdb. Every conformation is written as a MODEL/ENDMDL block, and the file ends with an END record.
 
         A TER record follows the last ATOM record of every chain (a chain being a run of atoms with the same chain name), as in the PDB format: HETATM records written after it (e.g. ligands or water) and chains made of HETATM records only (e.g. ions) get no TER. The TER record takes the next serial number, so that the atoms after it continue from the following one.
         Formal charges (column formal_charge of self.data, 0 if missing) are written in columns 79-80 as e.g. "2+" or "1-", and left blank when zero.
 
-        :param outname: name of pdb file to be generated.
-        :param index: indices of atoms to write to file. If empty, all atoms are written. Index values obtaineable with a call like: index=molecule.atomselect("A", [1, 2, 3], "CA", True)[1]
+        :param filename: name of pdb file to be generated.
+        :param indices: indices of atoms to write to file. If empty, all atoms are written. Indices obtainable with a call like: indices=molecule.atomselect("A", [1, 2, 3], "CA", True)[1]
         :param conformations: list of conformation indices to write to file. By default, a multipdb with all conformations will be produced.
         :param split_struc: Guess chain split on the atoms being written, and rename their chains accordingly (each guessed chain is then closed by TER after its last ATOM record). The molecule itself is not changed. Default: False. Set to False if protein is broken, but should retain chain lettering and doesn't have chain breaks.
         :param dssp: If using DSSP secondary structure check, requires that CRYST be the first line by default (hence write that line)
+        :raises IndexError: if a requested conformation does not exist
+        :raises ValueError: if coordinates, formal charges or chain names do not fit the PDB format
 
         Chain names of two characters are written as their first character in column 22, and in full as segment identifier (columns 73-76), which :func:`import_pdb <biobox.classes.molecule.Molecule.import_pdb>` reads back.
+        Residue numbers outside -999 to 9999 are written with their last 4 digits, and a UserWarning is issued.
         '''
 
         # store current frame, so it will be reestablished after file output is
@@ -1774,28 +1779,28 @@ class Molecule(Structure):
             if np.max(conformations) < len(self.coordinates):
                 frames = conformations
             else:
-                raise Exception("ERROR: requested coordinate index %s, but only %s are available" %(np.max(conformations), len(self.coordinates)))
+                raise IndexError("requested coordinate index %s, but only %s are available" %(np.max(conformations), len(self.coordinates)))
 
-        if len(index) == 0:
-            index = np.arange(len(self.points))
+        if len(indices) == 0:
+            indices = np.arange(len(self.points))
 
         # guess chains once, on a copy of the atoms being written, so that all models share them
         if split_struc:
-            S = self.get_subset(index, conformations=[frames[0]])
+            S = self.get_subset(indices, conformations=[frames[0]])
             S.guess_chain_split()
             chains = np.asarray(S.data["chain"].values, dtype=object)
         else:
-            chains = np.asarray(self.data["chain"].values, dtype=object)[index]
+            chains = np.asarray(self.data["chain"].values, dtype=object)[indices]
 
-        self._check_pdb_limits(frames, index)
-        formal_charge = self._formal_charges()[index]
+        self._check_pdb_limits(frames, indices)
+        formal_charge = self._formal_charges()[indices]
         if np.any(np.abs(formal_charge) > 9):
-            raise Exception("ERROR: PDB files must have formal charges between -9 and 9")
+            raise ValueError("PDB files must have formal charges between -9 and 9")
 
         # a TER record follows the last ATOM record of every chain, and takes the next serial number
-        records = np.asarray(self.data["atom"].values, dtype=object)[index]
-        ter = np.zeros(len(index), dtype=bool)
-        bounds = np.r_[0, np.flatnonzero(chains[1:] != chains[:-1]) + 1, len(index)] if len(index) > 0 else np.array([0])
+        records = np.asarray(self.data["atom"].values, dtype=object)[indices]
+        ter = np.zeros(len(indices), dtype=bool)
+        bounds = np.r_[0, np.flatnonzero(chains[1:] != chains[:-1]) + 1, len(indices)] if len(indices) > 0 else np.array([0])
         for a, b in zip(bounds[:-1], bounds[1:]):
             polymer = np.flatnonzero(records[a:b] == "ATOM")
             if len(polymer) > 0:
@@ -1803,53 +1808,55 @@ class Molecule(Structure):
         serials = []
         ter_serials = {}
         serial = 1
-        for i in range(len(index)):
+        for i in range(len(indices)):
             serials.append(self._hybrid36(serial))
             serial += 1
             if ter[i]:
                 ter_serials[i] = self._hybrid36(serial)
                 serial += 1
 
-        f_out = open(outname, "w")
-        if dssp:
-            f_out.write("CRYST1    1.000    1.000    1.000  90.00  90.00  90.00 P 1           1\n") # only if doing secondary structure check
+        f_out = open(filename, "w")
+        # the file is closed, and the current conformation restored, also when writing fails
+        try:
+            if dssp:
+                f_out.write("CRYST1    1.000    1.000    1.000  90.00  90.00  90.00 P 1           1\n") # only if doing secondary structure check
 
-        for cnt, f in enumerate(frames):
-            # get all informations from PDB (for current conformation) in a list
-            f_out.write("MODEL     %4d\n" % (cnt + 1))
-            self.set_current(f)
-            d = self.get_pdb_data(index)
+            for cnt, f in enumerate(frames):
+                # get all informations from PDB (for current conformation) in a list
+                f_out.write("MODEL     %4d\n" % (cnt + 1))
+                self.set_current(f)
+                d = self.get_pdb_data(indices)
 
-            for i in range(0, len(d), 1):
-                chain, segid = self._pdb_chain_segid(chains[i])
+                for i in range(0, len(d), 1):
+                    chain, segid = self._pdb_chain_segid(chains[i])
 
-                # create and write PDB line
-                L = self._pdb_atom_prefix(d[i][0], serials[i], d[i][2], d[i][3], chain, d[i][5], d[i][12], d[i][13])
-                L += '%8.3f%8.3f%8.3f%6.2f%6.2f      %-4s%2s%2s\n' % (float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), segid, d[i][11], self._pdb_formal_charge(formal_charge[i]))
-                f_out.write(L)
+                    # create and write PDB line
+                    L = self._pdb_atom_prefix(d[i][0], serials[i], d[i][2], d[i][3], chain, d[i][5], d[i][12], d[i][13])
+                    L += '%8.3f%8.3f%8.3f%6.2f%6.2f      %-4s%2s%2s\n' % (float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), segid, d[i][11], self._pdb_formal_charge(formal_charge[i]))
+                    f_out.write(L)
 
-                # terminate chain
-                if ter[i]:
-                    f_out.write(self._pdb_ter(ter_serials[i], d[i][3], chain, d[i][5], d[i][13]))
+                    # terminate chain
+                    if ter[i]:
+                        f_out.write(self._pdb_ter(ter_serials[i], d[i][3], chain, d[i][5], d[i][13]))
 
-            f_out.write("ENDMDL\n")
+                f_out.write("ENDMDL\n")
 
-        f_out.write("END\n")
-        f_out.close()
-
-        self.set_current(currentbkp)
+            f_out.write("END\n")
+        finally:
+            f_out.close()
+            self.set_current(currentbkp)
 
         return
     
 
-    def write_gro(self, outname, conformations=[], index="", gmx_correction=False):
+    def write_gro(self, filename, conformations=[], indices=[], gmx_correction=False):
         '''
         write structure(s) in .gro format, converting coordinates from Angstrom to nm.
 
         The box of every frame is read from properties['box'] if available, otherwise it is the extent of the written atoms.
 
-        :param outname: name of .gro file to be generated.
-        :param index: indices of atoms to write to file. If empty, all atoms are written. Index values obtaineable with a call like: index=molecule.atomselect("A", [1, 2, 3], "CA", True)[1]
+        :param filename: name of .gro file to be generated.
+        :param indices: indices of atoms to write to file. If empty, all atoms are written. Indices obtainable with a call like: indices=molecule.atomselect("A", [1, 2, 3], "CA", True)[1]
         :param conformations: list of conformation indices to write to file. By default, all conformations will be written.
         :param gmx_correction: unused, kept for compatibility. Atom numbers always run from 1 and restart after 99999, as in GROMACS, and residue IDs above 99999 restart likewise.
         '''
@@ -1866,9 +1873,9 @@ class Molecule(Structure):
             if np.max(conformations) < len(self.coordinates):
                 frames = conformations
             else:
-                raise Exception("ERROR: requested coordinate index %s, but only %s are available" %(np.max(conformations), len(self.coordinates)))
+                raise IndexError("requested coordinate index %s, but only %s are available" %(np.max(conformations), len(self.coordinates)))
 
-        f_out = open(outname, "w")
+        f_out = open(filename, "w")
         for f in frames:
             # get all informations from PDB (for current conformation) in a
             # list
@@ -1876,8 +1883,8 @@ class Molecule(Structure):
 
             # ATOM/HETATM, index, atom name, resname, chain name, residue ID, x,
             # y, z, beta factor, occupancy, atomtype
-            d = self.get_pdb_data(index)
-            f_out.write("%s\n" % outname.split(".")[0])
+            d = self.get_pdb_data(indices)
+            f_out.write("%s\n" % filename.split(".")[0])
             f_out.write("%s\n" % len(d))
             for i in range(0, len(d), 1):
                 # create and write .gro line
@@ -1933,7 +1940,7 @@ class Molecule(Structure):
             return np.sqrt(b * 3 / (8 * np.pi * np.pi))
 
         except Exception:
-            raise Exception('ERROR: beta factors missing?')
+            raise KeyError('beta factors missing?')
 
     def get_mass_by_residue(self, skip_resname=[]):
         '''
@@ -1941,7 +1948,7 @@ class Molecule(Structure):
 
         Sum the average mass of every residue (using the knowledge base of residue masses in Dalton, knowledge['residue_mass']).
         Residues are identified by chain, residue number and insertion code. Masses are residue masses within a chain, so the water of the chain termini is not added.
-        An Exception is raised if a residue name is not in the knowledge base.
+        A KeyError is raised if a residue name is not in the knowledge base.
         The knowledge base can be expanded or edited by adding entries to the molecule's residue mass dictionary, e.g. to add the residue "TST" mass in molecule M type: M.knowledge['residue_mass']["TST"]=142.42
 
         :param skip_resname: list of resnames to skip. Useful to exclude ions water or other ligands from the calculation.
@@ -1966,7 +1973,7 @@ class Molecule(Structure):
                         mass += self.know('residue_mass')[resname]
                     except Exception:
                         #@todo: if residue is not known, why not summing constituent atoms masses, warning the user that it's an estimation?
-                        raise Exception("ERROR: mass for resname %s is unknown!\nInsert a key in protein\'s masses dictionary knowledge['residue_mass'] and retry!\nex.: protein.knowledge['residue_mass'][\"TST\"]=142.42" %resname)
+                        raise KeyError("mass for resname %s is unknown!\nInsert a key in protein\'s masses dictionary knowledge['residue_mass'] and retry!\nex.: protein.knowledge['residue_mass'][\"TST\"]=142.42" %resname)
 
         return mass
 
@@ -1975,7 +1982,7 @@ class Molecule(Structure):
         compute protein mass using atoms in pdb
 
         sum the mass of all atoms, according to their atomtype (using the knowledge base of atom masses in Dalton, knowledge['atom_mass']).
-        An Exception is raised if an atomtype is empty or not in the knowledge base.
+        A KeyError is raised if an atomtype is empty or not in the knowledge base.
         The knowledge base can be expanded or edited by adding or editing entries to the molecule's mass dictionary, e.g. to add the atom "PI" mass in molecule M type: M.knowledge['atom_mass']["PI"]=3.141592
 
         :param skip_resname: list of resnames to skip. Useful to exclude ions water or other ligands from the calculation.
@@ -1992,10 +1999,9 @@ class Molecule(Structure):
                     mass += self.know('atom_mass')[atomtype]
                 except Exception:
                     if atomtype == "":
-                        print(self.data.values[i:i+40])
-                        raise Exception("ERROR: no atomtype found!")
+                        raise KeyError("no atomtype found for atom %s (name %s, resname %s, resid %s)!" % (i, self.data["name"].values[i], resname, self.data["resid"].values[i]))
                     else:
-                        raise Exception("ERROR: mass for atom %s is unknown!\nInsert a key in protein\'s masses dictionary knowledge['atom_mass'] and retry!\nex.: protein.knowledge['atom_mass'][\"PI\"]=3.141592" %atomtype)
+                        raise KeyError("mass for atom %s is unknown!\nInsert a key in protein\'s masses dictionary knowledge['atom_mass'] and retry!\nex.: protein.knowledge['atom_mass'][\"PI\"]=3.141592" %atomtype)
 
         return mass
 
@@ -2015,10 +2021,10 @@ class Molecule(Structure):
         Hidx = self.atomselect("*", "*", atomname2, get_index=True)[1]
 
         if len(Nidx) == 0:
-            raise Exception("ERROR: no atom name %s found!"%atomname1)
+            raise ValueError("no atom name %s found!"%atomname1)
 
         if len(Hidx) == 0:
-            raise Exception("ERROR: no atom name %s found!"%atomname2)
+            raise ValueError("no atom name %s found!"%atomname2)
 
         icode = self._column_or_blank("icode")
         Ndata = np.column_stack([self.data["chain"].values[Nidx], self.data["resid"].values[Nidx], icode[Nidx]])
@@ -2088,7 +2094,7 @@ class Molecule(Structure):
             try:
                 dssp_path = os.environ['DSSPPATH']
             except KeyError:
-                raise Exception("DSSPPATH environment variable undefined")
+                raise RuntimeError("DSSPPATH environment variable undefined")
 
         # generate temporary PDB and calculate secondary structure using DSSP
         self.write_pdb("tmp.pdb", conformations=[self.current], split_struc=False, dssp=True)
@@ -2100,7 +2106,7 @@ class Molecule(Structure):
             subprocess.check_call("%s tmp.pdb -o result.dssp"%dssp_path, shell=True)
             fin=open("result.dssp","r")
         except Exception as e:
-            raise Exception("Could not calculate secondary structure! %s"%e)
+            raise RuntimeError("Could not calculate secondary structure! %s"%e) from e
 
         readit=False
         secstruct=[]
@@ -2162,13 +2168,13 @@ class Molecule(Structure):
         if "icode" in self.data.columns:
             self.data["icode"] = ""
 
-    def reorder_resid(self, idx, chain="A", renumber=True):
+    def reorder_resid(self, resids, chain="A", renumber=True):
         """
-        Reorder the internal resid of a PDB structure (retaining the topology) based on the idx list of resid.
-        Number of elements in idx list must == number of resid in the chain. The chain keeps its place in the structure,
+        Reorder the internal resid of a PDB structure (retaining the topology) based on the resids list.
+        Number of elements in resids list must == number of resid in the chain. The chain keeps its place in the structure,
         and the reordering applies to every conformation.
 
-        :param idx: List of indices to reorder the internal ordering of a chain based on resid. Doesn't have to be same values as native resid (the values are shifted so that the smallest one matches the smallest native resid), but must contain every residue once. There can be no numeric breaks (i.e., [1, 2, 3, 6, 7, 8, 4, 5] acceptable, [1, 2, 3, 8, 4, 5] is not
+        :param resids: List of residue numbers giving the new order of the residues of the chain. Doesn't have to be same values as native resid (the values are shifted so that the smallest one matches the smallest native resid), but must contain every residue once. There can be no numeric breaks (i.e., [1, 2, 3, 6, 7, 8, 4, 5] acceptable, [1, 2, 3, 8, 4, 5] is not
         :param chain: Chain to apply reordering to (default A)
         :param renumber: After restructuring metadata, renumber residues of the whole molecule with :func:`renumber_resid_keep_chains <biobox.classes.molecule.Molecule.renumber_resid_keep_chains>` (default True)
         """
@@ -2180,14 +2186,14 @@ class Molecule(Structure):
             raise ValueError("chain %s not found" % chain)
         resid = self.data["resid"].values[pos]
 
-        # shift idx values so they match the values of the native resid
-        idx = np.asarray(idx) + (np.min(resid) - np.min(idx))
-        if len(idx) != len(np.unique(resid)) or set(idx.tolist()) != set(resid.tolist()):
-            raise ValueError("idx must list every residue of chain %s once" % chain)
+        # shift resids values so they match the values of the native resid
+        resids = np.asarray(resids) + (np.min(resid) - np.min(resids))
+        if len(resids) != len(np.unique(resid)) or set(resids.tolist()) != set(resid.tolist()):
+            raise ValueError("resids must list every residue of chain %s once" % chain)
 
-        # the chain's atoms are sorted by the position of their resid in idx, keeping their order within a residue,
+        # the chain's atoms are sorted by the position of their resid in resids, keeping their order within a residue,
         # and put back into the slots the chain occupied
-        rank = {r: i for i, r in enumerate(idx.tolist())}
+        rank = {r: i for i, r in enumerate(resids.tolist())}
         order = np.arange(len(self.data))
         order[pos] = pos[np.argsort([rank[r] for r in resid.tolist()], kind="stable")]
 
@@ -2199,20 +2205,20 @@ class Molecule(Structure):
         if renumber:
             self.renumber_resid_keep_chains()
 
-    def get_couples(self, idx, cutoff):
+    def get_couples(self, indices, cutoff):
         '''
         given a list of indices, compute the all-vs-all distance in the current conformation and return only couples below a given cutoff distance
 
         useful for the detection of disulfide bridges or linkable sites via cross-linking (approximation, supposing euclidean distances)'
 
-        :param idx: indices of atoms to check.
+        :param indices: indices of atoms to check.
         :param cutoff: maximal distance, in Angstrom, to consider a couple as linkable. Only couples strictly closer than cutoff are returned.
-        :returns: nx3 numpy array of floats containing, for every valid connection (each reported once), id of first atom, id of second atom and distance between the two. The first atom is the one appearing later in idx. If no couple is found, an empty array of shape (0,) is returned.
+        :returns: nx3 numpy array of floats containing, for every valid connection (each reported once), id of first atom, id of second atom and distance between the two. The first atom is the one appearing later in indices. If no couple is found, an empty array of shape (0,) is returned.
         '''
 
         import biobox.measures.interaction as I
 
-        points1 = self.get_xyz()[idx]
+        points1 = self.get_xyz()[indices]
 
         dist = I.distance_matrix(points1, points1)
         couples = I.get_neighbors(dist, cutoff)
@@ -2220,7 +2226,7 @@ class Molecule(Structure):
         res = []
         for c in couples.transpose():
             if c[0] > c[1]:
-                res.append([idx[c[0]], idx[c[1]], dist[c[0], c[1]]])
+                res.append([indices[c[0]], indices[c[1]], dist[c[0], c[1]]])
 
         return np.array(res)
 
@@ -2352,7 +2358,7 @@ class Molecule(Structure):
 
         The molecule itself is modified: chain IDs are reassigned by guess_chain_split, and with amber_convert residues are
         renamed in place to their forcefield names (e.g. NALA, CHID, HIE). The atomtype, radius and charge columns of self.data are not modified.
-        An Exception is raised if an atom (residue name and atom name) is not found in the forcefield file.
+        A KeyError is raised if an atom (residue name and atom name) is not found in the forcefield file, and a UserWarning is issued if HIS residues are renamed.
 
         :param ff: name of forcefield text file input that needs to be read to read charges / vdw radii. If empty (default), amber14sb.dat is used.
         :param amber_convert: If True, will assume forcefield is amber and convert resnames as necessary
@@ -2383,7 +2389,7 @@ class Molecule(Structure):
             # Need to check whether it matches HIE, HID or HIP depending on what protons are present
             resnames = self.data["resname"].values
             if np.any(np.isin(resnames, ["HIS", "NHIS", "CHIS"])):
-                print("WARNING: found residue with name HIS, checking to see what protonation state it is in and reassigning to HIP, HIE or HID.\nYou should check HIS in your pdb file is right to be sure!")
+                warnings.warn("found residue with name HIS, checking to see what protonation state it is in and reassigning to HIP, HIE or HID. You should check HIS in your pdb file is right to be sure!", stacklevel=2)
                 names = self.data["name"].values
                 bounds = np.r_[np.flatnonzero(self._residue_starts()), len(resnames)]
                 for a, b in zip(bounds[:-1], bounds[1:]):
@@ -2406,7 +2412,7 @@ class Molecule(Structure):
             ff = os.path.join(folder, "data", "amber14sb.dat")
 
         if os.path.isfile(ff) != 1:
-            raise Exception("ERROR: %s not found!" % ff)
+            raise FileNotFoundError("%s not found!" % ff)
 
         ff = np.loadtxt(ff, usecols=(0,1,2,3,4), dtype=str)
 
@@ -2426,8 +2432,7 @@ class Molecule(Structure):
             value_loc = pqr_data[values]
 
             if len(value_loc) == 0:
-                print(value_loc, resnames, self.data["name"][i], self.data["resname"][i], self.data["resid"].iloc[i], self.data["index"].iloc[i])
-                raise Exception("ERROR: The atom names in your PDB file do not match the PQR file")
+                raise KeyError("The atom names in your PDB file do not match the PQR file: atom %s (name %s, resname %s, resid %s) not found" % (self.data["index"].iloc[i], self.data["name"][i], resnames, self.data["resid"].iloc[i]))
             else:
                 charges.append(float(value_loc.iloc[0]["charge"]))
                 radius.append(float(value_loc.iloc[0]["radius"]))
@@ -2439,18 +2444,16 @@ class Molecule(Structure):
         pqr['radius'] = radius
         pqr['charge'] = charges
 
-        print("Conversion Complete")
-
         return pqr
 
-    def write_pqr(self, outname, conformations=[], index=[]):
+    def write_pqr(self, filename, conformations=[], indices=[]):
         '''
         write (multi)pqr, with charges and radii from :func:`pdb2pqr <biobox.classes.molecule.Molecule.pdb2pqr>` called with its default arguments (which modifies the molecule in place).
 
         Every conformation is followed by an END statement. Charges are written in columns 55-62 and radii in columns 63-69.
 
-        :param outname: name of pqr file to be generated.
-        :param index: indices of atoms to write to file. If empty, all atoms are written. Index values obtaineable with a call like: index=molecule.atomselect("A", [1, 2, 3], "CA", True)[1]
+        :param filename: name of pqr file to be generated.
+        :param indices: indices of atoms to write to file. If empty, all atoms are written. Indices obtainable with a call like: indices=molecule.atomselect("A", [1, 2, 3], "CA", True)[1]
         :param conformations: list of conformation indices to write to file. By default, a multi-model pqr with all conformations will be produced.
         '''
 
@@ -2466,22 +2469,22 @@ class Molecule(Structure):
             if np.max(conformations) < len(self.coordinates):
                 frames = conformations
             else:
-                raise Exception("ERROR: requested coordinate index %s, but only %s are available" %(np.max(conformations), len(self.coordinates)))
+                raise IndexError("requested coordinate index %s, but only %s are available" %(np.max(conformations), len(self.coordinates)))
 
         # Get our PQR database style
         pqr = self.pdb2pqr()
 
         # rows of the atoms being written, in the molecule and in pqr
-        rows = np.arange(len(self.points)) if len(index) == 0 else np.asarray(index)
+        rows = np.arange(len(self.points)) if len(indices) == 0 else np.asarray(indices)
         self._check_pdb_limits(frames, rows)
         serials = [self._hybrid36(i + 1) for i in range(len(rows))]
 
-        f_out = open(outname, "w")
+        f_out = open(filename, "w")
 
         for f in frames:
             # get all informations from PDB (for current conformation) in a list
             self.set_current(f)
-            d = self.get_pdb_data(index)
+            d = self.get_pdb_data(indices)
 
             for i in range(0, len(d), 1):
                 # create and write PQR line, with charge and radius in columns 55-62 and 63-69 so
@@ -2547,7 +2550,7 @@ class Molecule(Structure):
         return M
 
 
-    def get_dipole_map(self, orig, pqr, time_start = 0, time_end = 2,resolution = 1., vox_in_window = 3., write_dipole_map = True, fname = "dipole_map.tcl"):
+    def get_dipole_map(self, orig, pqr, time_start = 0, time_end = 2,resolution = 1., vox_in_window = 3., write_dipole_map = True, filename = "dipole_map.tcl"):
         '''
         Method for generating dipole maps to be used for electron density map generation. Also prints a dipole map as a result (and if desired). It calls a cython code in lib.
 
@@ -2558,7 +2561,7 @@ class Molecule(Structure):
         :param resolution: Desired resolution of voxel, in Angstrom
         :param vox_in_window: Amount of surrounding space to contribute to local dipole. vox_in_window * resolution gives window size (in Ang.)
         :param write_dipole_map: Write a dipole map in TCL format to be read in via VMD (default True).
-        :param fname: Name of desired dipole map to be written
+        :param filename: Name of desired dipole map to be written
         :returns: float32 numpy array of shape (time_end-time_start, nx, ny, nz, 3), the dipole vector of every voxel in every frame, where nx, ny and nz are the lengths of the three arrays of orig
         '''
 
@@ -2569,11 +2572,11 @@ class Molecule(Structure):
         time_end -= time_start # shift to compensate for cutting the coordinates earlier
         time_start = 0
 
-        dipole_map = e_density.c_get_dipole_map(crd = crd, orig = orig, charges = charges, time_start = time_start, time_end = time_end,resolution = resolution, vox_in_window = vox_in_window, write_dipole_map = write_dipole_map, fname = fname)
+        dipole_map = e_density.c_get_dipole_map(crd = crd, orig = orig, charges = charges, time_start = time_start, time_end = time_end,resolution = resolution, vox_in_window = vox_in_window, write_dipole_map = write_dipole_map, filename = filename)
 
         return dipole_map
 
-    def get_dipole_density(self, dipole_map, orig, min_val, V, outname, vox_in_window = 3., eqn = 'gauss', T = 310.15, P = 101. * 10**3, epsilonE = 54., resolution = 1.):
+    def get_dipole_density(self, dipole_map, orig, min_val, V, filename, vox_in_window = 3., eqn = 'gauss', T = 310.15, P = 101. * 10**3, epsilonE = 54., resolution = 1.):
         '''
         Method to generate an electron density map based on a voxel grid of dipole vectors, and write it to a dx file. It calls a cython code in lib.
 
@@ -2581,17 +2584,17 @@ class Molecule(Structure):
         :param orig: Origin points for voxel grid
         :param min_val: Minimum coordinates of edge points for the voxel grid (i.e. a single x, y, z point defining the start point of the grid to match with the multipdb)
         :param V: Volume of a voxel (can be found by resolution**3, but left blank in case later version institute a sphere)
-        :param outname: Name of electron density map file produced
+        :param filename: Name of electron density map file produced
         :param vox_in_window: Amount of surrounding space to contribute to local dipole. vox_in_window * resolution gives window size (in Ang.). The density function of each voxel is sampled within this window, centred on the voxel
         :param eqn: Equation mode to model the electron density, 'gauss' (default) or 'slater'
         :param T: Temperature of MD, in K
         :param P: Pressure of MD, in Pa
         :param epsilonE: Continuum dielectric surrounding the protein
         :param resolution: Desired resolution of voxel, in Angstrom
-        :returns: 0 once the map is written to outname
+        :returns: 0 once the map is written to filename
         '''
 
-        dummy = e_density.c_get_dipole_density(dipole_map = dipole_map, orig = orig, min_val = min_val, V = V, outname = outname, vox_in_window = vox_in_window, eqn = eqn, T = T, P = P, epsilonE = epsilonE, resolution = resolution)
+        dummy = e_density.c_get_dipole_density(dipole_map = dipole_map, orig = orig, min_val = min_val, V = V, filename = filename, vox_in_window = vox_in_window, eqn = eqn, T = T, P = P, epsilonE = epsilonE, resolution = resolution)
         return dummy
 
     def _one_letter(self, resname):

@@ -1,4 +1,5 @@
 import unittest
+import warnings
 import sys, os
 import numpy as np
 import pandas as pd
@@ -8,9 +9,26 @@ else:
     sys.path.insert(0, os.sep.join(os.getcwd().split(os.sep)[:-1])+os.sep+'src')
 import biobox as bb
 
+
+def _read_text(fname):
+    # whole content of a text file
+    with open(fname) as f:
+        return f.read()
+
+
+def _read_lines(fname):
+    # lines of a text file, newlines included
+    with open(fname) as f:
+        return f.readlines()
+
 class test_density(unittest.TestCase):
 
     def setUp(self):
+        # CCS needs IMPACT, which the test environment does not provide
+        catcher = warnings.catch_warnings()
+        catcher.__enter__()
+        self.addCleanup(catcher.__exit__, None, None, None)
+        warnings.filterwarnings("ignore", message="CCS not computed")
         self.D = bb.Density()
         self.D.import_map("EMD-1080.mrc", "mrc")
 
@@ -111,7 +129,7 @@ class test_density(unittest.TestCase):
             # load failures are reported
             with open(fname, "wb") as f:
                 f.write(b"not a map")
-            with self.assertRaises(Exception):
+            with self.assertRaises(ValueError):
                 bb.Density().import_map(fname, "mrc")
 
     def test_density_points_placement(self):
@@ -191,7 +209,7 @@ class test_density(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             fname = os.path.join(tmp, "map.dx")
             D.write_dx(fname)
-            text = open(fname).read().replace("data follows\n", "data follows\n\n")
+            text = _read_text(fname).replace("data follows\n", "data follows\n\n")
             with open(fname, "w") as f:
                 f.write(text)
             E = bb.Density()
@@ -328,7 +346,7 @@ class test_structures(unittest.TestCase):
         self.assertEqual(len(lys), len(self.M.atomselect("*", "LYS", "NZ", use_resname=True, get_index=True)[1]))
         self.assertGreater(len(lys), 0)
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValueError):
             self.M.atomselect("*", "LYS", "NZ")
 
     def test_same_residue_list(self):
@@ -419,7 +437,7 @@ class test_structures(unittest.TestCase):
         self.assertEqual(list(B2.data["chain"]), ["A", "A", "B"])
         np.testing.assert_allclose(B2.points, xyz + [[0, 0, 0], [0, 0, 0], [0, 0, 5]])
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(KeyError):
             M.apply_biomatrix(3)
 
     def test_apply_matrices_chain_names(self):
@@ -546,7 +564,7 @@ class test_structures(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             fname = os.path.join(tmp, "names.pdb")
             M.write_pdb(fname)
-            lines = [l for l in open(fname) if l.startswith("ATOM")]
+            lines = [l for l in _read_lines(fname) if l.startswith("ATOM")]
         # columns 13-16 hold the name, column 17 the (empty) altloc
         self.assertEqual([l[12:17] for l in lines], [" CA  ", "HD11 ", "1HD1 "])
         self.assertEqual([l[6:11] for l in lines], ["    1", "    2", "    3"])
@@ -563,7 +581,7 @@ class test_structures(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             fname = os.path.join(tmp, "chains.pdb")
             M.write_pdb(fname)
-            lines = [l for l in open(fname) if l.startswith("ATOM")]
+            lines = [l for l in _read_lines(fname) if l.startswith("ATOM")]
             # column 22 holds the first character, columns 73-76 the full name, and the residue number keeps columns 23-26
             self.assertEqual([l[21] for l in lines], ["A", "A", "A"])
             self.assertEqual([l[72:76] for l in lines], ["    ", "AB  ", "AC  "])
@@ -583,7 +601,7 @@ class test_structures(unittest.TestCase):
             self.assertEqual(list(R.data["chain"]), ["A", "A", "B"])
 
             M.data["chain"] = ["A", "ABC", "AC"]
-            with self.assertRaises(Exception):
+            with self.assertRaises(ValueError):
                 M.write_pdb(os.path.join(tmp, "long.pdb"))
 
     def test_write_pdb_split(self):
@@ -597,8 +615,8 @@ class test_structures(unittest.TestCase):
         index = np.arange(1000, len(M))
         with tempfile.TemporaryDirectory() as tmp:
             fname = os.path.join(tmp, "split.pdb")
-            M.write_pdb(fname, index=index, split_struc=True)
-            models = open(fname).read().split("ENDMDL")[:-1]
+            M.write_pdb(fname, indices=index, split_struc=True)
+            models = _read_text(fname).split("ENDMDL")[:-1]
 
         np.testing.assert_array_equal(M.data["chain"].values, chains)
         self.assertEqual(len(models), 2)
@@ -619,9 +637,9 @@ class test_structures(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             fname = os.path.join(tmp, "out.gro")
             self.M.write_gro(fname)
-            lines = open(fname).readlines()
-            self.M.write_gro(fname, index=[5, 9])
-            sub = open(fname).readlines()
+            lines = _read_lines(fname)
+            self.M.write_gro(fname, indices=[5, 9])
+            sub = _read_lines(fname)
 
         self.assertEqual([int(l[15:20]) for l in lines[2:5]], [1, 2, 3])
         span = (self.M.points.max(axis=0) - self.M.points.min(axis=0)) / 10.0
@@ -641,8 +659,8 @@ class test_structures(unittest.TestCase):
         M.pdb2pqr = lambda: pd.DataFrame({"charge": charges, "radius": radii})
         with tempfile.TemporaryDirectory() as tmp:
             fname = os.path.join(tmp, "out.pqr")
-            M.write_pqr(fname, index=[1, 2])
-            lines = [l for l in open(fname) if l.startswith("ATOM")]
+            M.write_pqr(fname, indices=[1, 2])
+            lines = [l for l in _read_lines(fname) if l.startswith("ATOM")]
             M2 = bb.Molecule()
             M2.import_pqr(fname)
 
@@ -688,8 +706,10 @@ class test_structures(unittest.TestCase):
 
             # writing restores every column, and reading it back gives the same data
             out = os.path.join(tmp, "out.pdb")
-            M.write_pdb(out)
-            written = [l for l in open(out) if l.startswith("ATOM")]
+            # residue 10000 does not fit the PDB format
+            with self.assertWarns(UserWarning):
+                M.write_pdb(out)
+            written = [l for l in _read_lines(out) if l.startswith("ATOM")]
             self.assertEqual([l[12:27] for l in written[1:3]], [" CA AALA A  10 ", " CA BALA A  10 "])
             self.assertEqual(written[4][12:27], " CA  SER A  52A")
             M2 = bb.Molecule()
@@ -713,20 +733,21 @@ class test_structures(unittest.TestCase):
             out = os.path.join(tmp, "out.pdb")
             for xyz in [[-1000.0, 0, 0], [0, 0, 10000.0]]:
                 M.coordinates[0, 0] = xyz
-                with self.assertRaises(Exception):
+                with self.assertRaises(ValueError):
                     M.write_pdb(out)
                 self.assertFalse(os.path.exists(out))
 
             M.coordinates[0, 0] = [0, 0, 0]
             M.data["chain"] = "ABC"
-            with self.assertRaises(Exception):
+            with self.assertRaises(ValueError):
                 M.write_pdb(out)
 
             # residue numbers that do not fit keep their last 4 digits
             M.data["chain"] = "A"
             M.data["resid"] = 12345
-            M.write_pdb(out)
-            line = [l for l in open(out) if l.startswith("ATOM")][0]
+            with self.assertWarns(UserWarning):
+                M.write_pdb(out)
+            line = [l for l in _read_lines(out) if l.startswith("ATOM")][0]
             self.assertEqual(line[22:26], "2345")
 
     def test_element_from_atom_name(self):
@@ -932,7 +953,7 @@ class test_structures(unittest.TestCase):
 
         print("\n> testing SASA of an isolated atom")
         # an atom must not occlude its own mesh, so alone it exposes its whole sphere
-        S = self.M.get_subset(idxs=[1])
+        S = self.M.get_subset(indices=[1])
         r = S.data['radius'].values[0]
         asa = bb.sasa(S, probe=1.4, n_sphere_point=960, threshold=0)[0]
         self.assertAlmostEqual(asa, 4*np.pi*(r+1.4)**2, places=6)
@@ -943,7 +964,7 @@ class test_structures(unittest.TestCase):
         # 6.0 A lies beyond radii.max()+2*probe but within r_i+r_j+2*probe, a neighbour the
         # former neighbour search missed; 7.0 A is out of reach
         from biobox.measures.calculators import _golden_spiral
-        S = self.M.get_subset(idxs=[1, 2])
+        S = self.M.get_subset(indices=[1, 2])
         R = S.data['radius'].values
         for d in [3.0, 5.0, 6.0, 7.0]:
             S.coordinates[0] = np.array([[0, 0, 0], [d, 0, 0]], dtype=float)
@@ -951,7 +972,7 @@ class test_structures(unittest.TestCase):
             mesh = _golden_spiral(960)*(R[0]+1.4)
             exposed = np.count_nonzero(np.linalg.norm(mesh-[d, 0, 0], axis=1)-R[1] >= 1.4)
             expected = 4*np.pi/960*exposed*(R[0]+1.4)**2
-            asa = bb.sasa(S, targets=[0], probe=1.4, n_sphere_point=960, threshold=0)[0]
+            asa = bb.sasa(S, indices=[0], probe=1.4, n_sphere_point=960, threshold=0)[0]
             self.assertAlmostEqual(asa, expected, places=6)
 
     def test_SASA_targets(self):
@@ -960,9 +981,9 @@ class test_structures(unittest.TestCase):
         # atoms outside the targets still occlude, and the area of a set of targets is the
         # sum of their individual areas
         idx = [10, 20, 30]
-        together = bb.sasa(self.M, targets=idx, threshold=0)[0]
-        apart = sum(bb.sasa(self.M, targets=[i], threshold=0)[0] for i in idx)
-        alone = bb.sasa(self.M.get_subset(idxs=idx), threshold=0)[0]
+        together = bb.sasa(self.M, indices=idx, threshold=0)[0]
+        apart = sum(bb.sasa(self.M, indices=[i], threshold=0)[0] for i in idx)
+        alone = bb.sasa(self.M.get_subset(indices=idx), threshold=0)[0]
         self.assertAlmostEqual(together, apart, places=6)
         self.assertLess(together, alone)
 
@@ -971,8 +992,8 @@ class test_structures(unittest.TestCase):
         print("\n> testing that the SASA threshold only selects surface atoms")
         # atoms exposed below the threshold still contribute to the area and the mesh
         idx = range(200)
-        asa0, mesh0, surf0 = bb.sasa(self.M, targets=idx, n_sphere_point=200, threshold=0)
-        asa1, mesh1, surf1 = bb.sasa(self.M, targets=idx, n_sphere_point=200, threshold=0.05)
+        asa0, mesh0, surf0 = bb.sasa(self.M, indices=idx, n_sphere_point=200, threshold=0)
+        asa1, mesh1, surf1 = bb.sasa(self.M, indices=idx, n_sphere_point=200, threshold=0.05)
         self.assertEqual(asa0, asa1)
         self.assertEqual(mesh0.shape, mesh1.shape)
         self.assertLess(len(surf1), len(surf0))
@@ -1015,7 +1036,7 @@ class test_structures(unittest.TestCase):
             os.chdir(tmp)
             self.M.write_pdb("myprotein.pdb")
             with mock.patch.object(C.subprocess, "check_call", side_effect=fake_crysol):
-                curve = C.saxs(self.M, crysol_path="atsas", pdbname="myprotein.pdb")
+                curve = C.saxs(self.M, crysol_path="atsas", filename="myprotein.pdb")
                 self.assertEqual(sorted(os.listdir(tmp)), ["myprotein.pdb"])
                 C.saxs(self.M, crysol_path="atsas")
                 self.assertEqual(sorted(os.listdir(tmp)), ["myprotein.pdb"])
@@ -1041,7 +1062,7 @@ class test_structures(unittest.TestCase):
         with mock.patch.object(C, "CCS", side_effect=fake_ccs):
             for platform in ["darwin", "linux", "win32"]:
                 with mock.patch.object(C.sys, "platform", platform):
-                    with self.assertRaises(Exception):
+                    with self.assertRaisesRegex(RuntimeError, "stop"):
                         C.ccs(self.M, impact_path="impact")
         self.assertEqual([os.path.basename(f) for f in seen], ["libimpact.so", "libimpact.so", "libimpact.dll"])
 
@@ -1059,7 +1080,7 @@ class test_structures(unittest.TestCase):
         orig = np.array([np.arange(nx) * 1.0] * 3)
 
         captured = []
-        def capture(self, fname):
+        def capture(self, filename):
             captured.append(self.properties['density'].copy())
 
         with mock.patch.object(Density, "write_dx", capture):
@@ -1078,9 +1099,9 @@ class test_structures(unittest.TestCase):
         print("\n> testing that CCS and mass prediction ask for a scan when none is stored")
         D = bb.Density()
         D.import_numpy(np.arange(27.).reshape(3, 3, 3))
-        with self.assertRaisesRegex(IOError, "threshold_vol_ccs"):
+        with self.assertRaisesRegex(RuntimeError, "threshold_vol_ccs"):
             D.predict_ccs_from_mass(10.0, 100.0)
-        with self.assertRaisesRegex(IOError, "threshold_vol_ccs"):
+        with self.assertRaisesRegex(RuntimeError, "threshold_vol_ccs"):
             D.predict_mass_from_ccs(10.0, 1000.0)
 
     def test_best_threshold_places_best(self):
@@ -1120,7 +1141,7 @@ class test_structures(unittest.TestCase):
         orig = np.array([np.arange(5) * 1.0] * 3)
 
         written = []
-        with mock.patch.object(Density, "write_dx", lambda self, fname: written.append(fname)):
+        with mock.patch.object(Density, "write_dx", lambda self, filename: written.append(filename)):
             with self.assertRaisesRegex(ValueError, "gauss.*slater"):
                 E.c_get_dipole_density(dm, orig, [0., 0., 0.], 5e-27, "x.dx", eqn="lorentz")
             for eqn in ["gauss", "slater"]:
@@ -1168,7 +1189,7 @@ class test_structures(unittest.TestCase):
         orig = np.array([np.arange(5) * 1.0] * 3)
 
         written = []
-        with mock.patch.object(Density, "write_dx", lambda self, fname: written.append(fname)):
+        with mock.patch.object(Density, "write_dx", lambda self, filename: written.append(filename)):
             with self.assertRaisesRegex(ValueError, "fluctuat"):
                 E.c_get_dipole_density(dm, orig, [0., 0., 0.], 5e-27, "x.dx")
         self.assertEqual(written, [])
@@ -1199,7 +1220,7 @@ class test_structures(unittest.TestCase):
         orig = np.array([np.arange(nx) * 1.0] * 3)
 
         captured = []
-        def capture(self, fname):
+        def capture(self, filename):
             captured.append(self.properties['density'].copy())
 
         with mock.patch.object(Density, "write_dx", capture):
@@ -1211,9 +1232,11 @@ class test_structures(unittest.TestCase):
                         if low_memory:
                             LowMemory.calls = 0
                             dm = dm.view(LowMemory)
-                        E.c_get_dipole_density(dm, orig, [0., 0., 0.], 5e-27, "x.dx", vox_in_window=vox)
-                        if low_memory:
+                            with self.assertWarnsRegex(RuntimeWarning, "smaller chunks"):
+                                E.c_get_dipole_density(dm, orig, [0., 0., 0.], 5e-27, "x.dx", vox_in_window=vox)
                             self.assertGreater(LowMemory.calls, 1)
+                        else:
+                            E.c_get_dipole_density(dm, orig, [0., 0., 0.], 5e-27, "x.dx", vox_in_window=vox)
 
                     centre, corner, edge = captured
                     half = int(vox) // 2
@@ -1258,7 +1281,7 @@ class test_structures(unittest.TestCase):
                 failed.append(cmd.split("-param ")[1].split('"')[1])
                 raise OSError("impact failed")
             with mock.patch.object(C.subprocess, "check_call", side_effect=failing_impact):
-                with self.assertRaises(Exception):
+                with self.assertRaisesRegex(OSError, "impact failed"):
                     C.ccs(bb.Structure(points, 2.0), use_lib=False, impact_path="impact")
             self.assertFalse(os.path.exists(os.path.dirname(failed[0])))
         finally:
@@ -1418,7 +1441,7 @@ class test_structures(unittest.TestCase):
         pts = np.arange(9.0).reshape(3, 3)
         np.testing.assert_allclose(bb.Structure(pts, r=np.float64(1.5)).data["radius"], [1.5] * 3)
         np.testing.assert_allclose(bb.Structure(pts, r=[1, 2, 3]).data["radius"], [1, 2, 3])
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValueError):
             bb.Structure(pts, r=[1, 2])
 
         # the first added frame becomes current, wherever the pointer was
@@ -1478,7 +1501,7 @@ class test_structures(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             fname = os.path.join(tmp, "spheres.pdb")
             S.write_pdb(fname)
-            lines = [l for l in open(fname) if l.startswith("ATOM")]
+            lines = [l for l in _read_lines(fname) if l.startswith("ATOM")]
         # radius in the beta factor column, occupancy 1
         np.testing.assert_allclose([float(l[60:66]) for l in lines], [1.5, 2.0, 2.5])
         np.testing.assert_allclose([float(l[54:60]) for l in lines], [1.0, 1.0, 1.0])
@@ -1579,7 +1602,7 @@ class test_structures(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             fname = os.path.join(tmp, "multimer.pdb")
             P.write_pdb(fname)
-            text = open(fname).read()
+            text = _read_text(fname)
         models = text.split("ENDMDL")[:-1]
         self.assertEqual(len(models), 2)
         for f, model in enumerate(models):
@@ -1740,8 +1763,8 @@ class test_structures(unittest.TestCase):
         # colors follow the connection type, also beyond the 25 default colors
         P.conn_type = np.arange(len(P.conn)) * 3
         with tempfile.TemporaryDirectory() as tmp:
-            P.write_poly_architecture(output=os.path.join(tmp, "arch"))
-            lines = [l.split()[2] for l in open(os.path.join(tmp, "arch.tcl")) if l.startswith("draw color")]
+            P.write_poly_architecture(filename=os.path.join(tmp, "arch"))
+            lines = [l.split()[2] for l in _read_lines(os.path.join(tmp, "arch.tcl")) if l.startswith("draw color")]
         colors = ['blue', 'red', 'gray', 'orange', 'yellow', 'tan', 'silver', 'green', 'white', 'pink', 'cyan', 'purple', 'lime',
                   'mauve', 'ochre', 'iceblue', 'black', 'yellow2', 'green2', 'cyan2', 'blue2', 'violet', 'magenta', 'red2', 'orange2']
         self.assertEqual(lines, [colors[(3 * k) % 25] for k in range(len(P.conn))])
@@ -1829,7 +1852,7 @@ class test_structures(unittest.TestCase):
             seen.append(kwargs)
             raise RuntimeError("stop")
         with mock.patch.object(X, "get_half_sphere", side_effect=capture):
-            with self.assertRaises(Exception):
+            with self.assertRaisesRegex(RuntimeError, "stop"):
                 X.distance_matrix([i], flexible_sidechain=True, sphere_pts_surf=3.0, sphere_thresh=2.5, sphere_radii=[6.0, 5.0])
         self.assertEqual(seen[0], {"pts_surf": 3.0, "thresh": 2.5, "radii": [6.0, 5.0]})
 
@@ -2022,7 +2045,9 @@ class test_structures(unittest.TestCase):
 
         # a C-terminal HID followed by another chain, with the default forcefield path
         M = build([("X", [("ALA", NALA), ("HIS", CHID)]), ("Y", [("ALA", NALA), ("ALA", CALA)])])
-        pqr = M.pdb2pqr()
+        with self.assertWarnsRegex(UserWarning, "residue with name HIS") as cm:
+            pqr = M.pdb2pqr()
+        self.assertEqual(os.path.basename(cm.filename), os.path.basename(__file__))
         first_Y = len(NALA) + len(CHID)
         self.assertEqual(list(M.data["resname"][len(NALA):first_Y].unique()), ["CHID"])
         self.assertEqual(M.data["resname"][first_Y], "NALA")
@@ -2032,7 +2057,8 @@ class test_structures(unittest.TestCase):
 
         # a C-terminal HID as the last residue of the structure
         M = build([("X", [("ALA", NALA), ("HIS", CHID)])])
-        pqr = M.pdb2pqr()
+        with self.assertWarns(UserWarning):
+            pqr = M.pdb2pqr()
         self.assertEqual(list(M.data["resname"][len(NALA):].unique()), ["CHID"])
 
     def test_renumber_resid_keep_chains(self):
@@ -2310,7 +2336,7 @@ class test_structures(unittest.TestCase):
         # an atom whose element cannot be guessed is still an error
         M.data.iloc[2, M.data.columns.get_loc("name")] = "XX"
         M.data.iloc[2, M.data.columns.get_loc("atomtype")] = ""
-        with self.assertRaises(Exception):
+        with self.assertRaises(KeyError):
             M.get_vdw_density(step=1.0, kernel_half_width=5)
 
     def test_pdb2pqr_n_terminus(self):
@@ -2339,7 +2365,7 @@ class test_structures(unittest.TestCase):
 
             # an ion before it is never renamed (it is not in the forcefield file)
             M = molecule([("ZN", "ZN", 1)] + [(name, "ALA", 2) for name in ala], tmp)
-            with self.assertRaises(Exception):
+            with self.assertRaises(KeyError):
                 M.pdb2pqr()
             self.assertEqual(M.data["resname"].values[0], "ZN")
             self.assertNotIn("NZN", list(M.data["resname"]))
@@ -2357,7 +2383,7 @@ class test_structures(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             fname = os.path.join(tmp, "ter.pdb")
             M.write_pdb(fname)
-            models = open(fname).read().split("ENDMDL")[:-1]
+            models = _read_text(fname).split("ENDMDL")[:-1]
             for model in models:
                 lines = [l for l in model.splitlines() if l.startswith(("ATOM", "TER"))]
                 self.assertEqual([l[:6].strip() for l in lines], ["ATOM", "ATOM", "TER", "ATOM", "TER", "ATOM", "ATOM", "TER"])
@@ -2383,7 +2409,7 @@ class test_structures(unittest.TestCase):
 
             # split_struc closes each guessed chain once (here, a single chain)
             M.write_pdb(fname, split_struc=True)
-            lines = [l for l in open(fname) if l.startswith(("ATOM", "TER"))]
+            lines = [l for l in _read_lines(fname) if l.startswith(("ATOM", "TER"))]
             self.assertEqual([l[:6].strip() for l in lines], ["ATOM"] * 5 + ["TER"] + ["ATOM"] * 5 + ["TER"])
             self.assertEqual(lines[5][6:11], "    6")
 
@@ -2391,7 +2417,7 @@ class test_structures(unittest.TestCase):
             A = bb.Multimer()
             A.load_list([M.get_subset([0, 1]), M.get_subset([2])], ["1", "2"])
             A.write_pdb(fname)
-            lines = [l for l in open(fname).read().split("ENDMDL")[0].splitlines() if l.startswith(("ATOM", "TER"))]
+            lines = [l for l in _read_text(fname).split("ENDMDL")[0].splitlines() if l.startswith(("ATOM", "TER"))]
             self.assertEqual([l[:6].strip() for l in lines], ["ATOM", "ATOM", "TER", "ATOM", "TER"])
             self.assertEqual([int(l[6:11]) for l in lines], list(range(1, 6)))
             self.assertEqual([l for l in lines if l.startswith("TER")], ["TER       3      ALA A   1 ", "TER       5      ALA B   5 "])
@@ -2416,7 +2442,7 @@ class test_structures(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             fname = os.path.join(tmp, "ter.pdb")
             M.write_pdb(fname)
-            lines = [l for l in open(fname) if l.startswith(("ATOM", "HETATM", "TER"))]
+            lines = [l for l in _read_lines(fname) if l.startswith(("ATOM", "HETATM", "TER"))]
             self.assertEqual([l[:6].strip() for l in lines],
                              ["ATOM", "HETATM", "ATOM", "TER", "HETATM", "ATOM", "TER", "HETATM", "HETATM"])
             self.assertEqual([int(l[6:11]) for l in lines], list(range(1, 10)))
@@ -2430,7 +2456,7 @@ class test_structures(unittest.TestCase):
             A = bb.Multimer()
             A.load_list([M.get_subset([0, 1, 2, 3]), M.get_subset([5, 6])], ["1", "2"])
             A.write_pdb(fname)
-            lines = [l for l in open(fname) if l.startswith(("ATOM", "HETATM", "TER"))]
+            lines = [l for l in _read_lines(fname) if l.startswith(("ATOM", "HETATM", "TER"))]
             self.assertEqual([l[:6].strip() for l in lines], ["ATOM", "HETATM", "ATOM", "TER", "HETATM", "HETATM", "HETATM"])
             self.assertEqual([int(l[6:11]) for l in lines], list(range(1, 8)))
 
@@ -2453,7 +2479,7 @@ class test_structures(unittest.TestCase):
 
             out = os.path.join(tmp, "out.pdb")
             M.write_pdb(out)
-            written = [l.rstrip("\n") for l in open(out) if l.startswith("HETATM")]
+            written = [l.rstrip("\n") for l in _read_lines(out) if l.startswith("HETATM")]
             self.assertEqual([l[76:80] for l in written], ["ZN2+", "CL1-", " O  "])
             R = bb.Molecule()
             R.import_pdb(out, include_hetatm=True)
@@ -2468,10 +2494,10 @@ class test_structures(unittest.TestCase):
             self.assertEqual(list(both.data["formal_charge"]), [2, -1, 0, 0, 0])
             self.assertTrue(np.issubdtype(both.data["formal_charge"].dtype, np.integer))
             N.write_pdb(out)
-            self.assertEqual([l[78:80] for l in open(out) if l.startswith("HETATM")], ["  ", "  "])
+            self.assertEqual([l[78:80] for l in _read_lines(out) if l.startswith("HETATM")], ["  ", "  "])
 
             M.data["formal_charge"] = [10, 0, 0]
-            with self.assertRaises(Exception):
+            with self.assertRaises(ValueError):
                 M.write_pdb(os.path.join(tmp, "large.pdb"))
 
             # importers of other formats set formal charges to 0
@@ -2538,7 +2564,7 @@ class test_structures(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             fname = os.path.join(tmp, "assembly.pdb")
             A.write_pdb(fname)
-            lines = open(fname).readlines()
+            lines = _read_lines(fname)
         n = sum(len(u.points) for u in A.unit)
         self.assertEqual([int(l[6:11]) for l in lines], list(range(1, n + 1)))
         self.assertTrue(all(float(l[54:60]) == 1.0 and float(l[60:66]) == 2.5 for l in lines))
@@ -2562,10 +2588,10 @@ class test_structures(unittest.TestCase):
         P.add_deformation(2)
         P.generate_polyhedron(40, 180, 0, 0, deformation=[1, 2])
         with tempfile.TemporaryDirectory() as tmp:
-            P.write_poly_architecture(output=os.path.join(tmp, "arch"), deformation=[1, 2])
-            with self.assertRaises(Exception):
-                P.write_poly_architecture(output=os.path.join(tmp, "arch"), deformation=[1, 2, 3])
-        with self.assertRaises(Exception):
+            P.write_poly_architecture(filename=os.path.join(tmp, "arch"), deformation=[1, 2])
+            with self.assertRaises(ValueError):
+                P.write_poly_architecture(filename=os.path.join(tmp, "arch"), deformation=[1, 2, 3])
+        with self.assertRaises(ValueError):
             P.generate_polyhedron(40, 180, 0, 0, deformation=[1, 2, 3])
 
     def test_assembly_conformations_and_labels(self):
@@ -2587,7 +2613,7 @@ class test_structures(unittest.TestCase):
         # a unit with a different number of points leaves the assembly untouched
         C = bb.Assembly()
         C.load_list([bb.Structure(rng.normal(size=(5, 3))), bb.Structure(rng.normal(size=(3, 3)))], ["x", "y"])
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValueError):
             A.add_conformation(C)
         self.assertEqual([len(u.coordinates) for u in A.unit], [3, 3])
 
@@ -2840,7 +2866,7 @@ class test_structures(unittest.TestCase):
         for build in [lambda: bb.Sphere(2, radius=2), lambda: S1.squeeze([0.3, 1.0, 1.0]), lambda: bb.Ellipsoid(3, 10, 10, radius=1.9),
                       lambda: bb.Cylinder(5, 2), lambda: bb.Cylinder(5, 20, squeeze=0.3), lambda: bb.Prism(2, 20, 3),
                       lambda: bb.Prism(10, 2, 6), lambda: bb.Cone(2, 3), lambda: bb.Cone(10, 20, skew=30, radius=4)]:
-            with self.assertRaises(Exception):
+            with self.assertRaises(ValueError):
                 build()
         np.testing.assert_array_equal(S1.points, before)
         self.assertEqual(S1.properties["p1"], 1.0)
@@ -2861,7 +2887,7 @@ class test_structures(unittest.TestCase):
         self.assertEqual(A.contact_ratio("E", "P"), 0.5)
         self.assertIsInstance(A.contact_ratio("E", "P"), float)
         self.assertEqual(A.contact_ratio("E", "E"), 1.0)
-        with self.assertRaisesRegex(Exception, "unit P is a Structure"):
+        with self.assertRaisesRegex(TypeError, "unit P is a Structure"):
             A.contact_ratio("P", "E")
 
     def test_global_grid_hull(self):
@@ -2875,6 +2901,140 @@ class test_structures(unittest.TestCase):
             P.setup_global_search(step=1.0, use_hull=True)
             counts.append(int(P.graph.access_grid.sum()))
         self.assertLess(abs(counts[0] - counts[1]), 0.01 * counts[0])
+
+    def test_warnings(self):
+
+        print("\n> testing that problems are reported as warnings pointing at the caller")
+        import tempfile
+        from unittest import mock
+
+        def from_here(cm):
+            return os.path.basename(cm.filename) == os.path.basename(__file__)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            # models with different atom counts: only the first is loaded
+            for ext in ["pdb", "pqr"]:
+                fname = os.path.join(tmp, "models.%s" % ext)
+                with open(fname, "w") as f:
+                    for model, n in enumerate([2, 1]):
+                        f.write("MODEL     %4d\n" % (model + 1))
+                        for i in range(n):
+                            f.write("ATOM  %5d  CA  ALA A%4d    %8.3f%8.3f%8.3f  1.00  0.00           C\n" % (i + 1, i + 1, i, 0, 0))
+                        f.write("ENDMDL\n")
+                M = bb.Molecule()
+                with self.assertWarnsRegex(UserWarning, "atom count differs") as cm:
+                    getattr(M, "import_%s" % ext)(fname)
+                self.assertTrue(from_here(cm))
+                self.assertEqual(M.coordinates.shape, (1, 2, 3))
+
+            # residue numbers that do not fit a PDB file
+            M = self._molecule_from_atoms([("CA", "C", "A", 1, [0, 0, 0])])
+            M.data["resid"] = 12345
+            with self.assertWarnsRegex(UserWarning, "last 4 digits") as cm:
+                M.write_pdb(os.path.join(tmp, "large.pdb"))
+            self.assertTrue(from_here(cm))
+
+            # a polyhedron database line without connection types
+            db = os.path.join(tmp, "db.dat")
+            with open(db, "w") as f:
+                f.write("Triangle 3 3 0 0 0 1 0 0 0 1 0 0 1 1 2 2 0\n")
+            P = bb.Polyhedron()
+            with self.assertWarnsRegex(UserWarning, "no connection type") as cm:
+                P.setup_polyhedron("Triangle", bb.Structure(np.random.default_rng(1).normal(size=(5, 3))), dbfilename=db)
+            self.assertTrue(from_here(cm))
+            np.testing.assert_array_equal(P.conn_type, [0, 0, 0])
+
+        # angle arrays of inconsistent length generate nothing
+        P = bb.Polyhedron()
+        P.setup_polyhedron("Octahedron", bb.Structure(np.random.default_rng(5).normal(size=(6, 3))))
+        with self.assertWarnsRegex(UserWarning, "inconsistent length") as cm:
+            self.assertEqual(P.generate_polyhedron(40, np.array([0.0, 0.0]), np.array([0.0]), np.array([0.0])), -1)
+        self.assertTrue(from_here(cm))
+
+        # a CCS that cannot be computed leaves the volume
+        D = bb.Density()
+        data = np.zeros((10, 10, 10))
+        data[3:7, 3:7, 3:7] = 1.0
+        D.import_numpy(data)
+        with mock.patch.object(bb, "ccs", side_effect=RuntimeError("no IMPACT")):
+            with self.assertWarnsRegex(UserWarning, "CCS not computed.*no IMPACT") as cm:
+                row = D.find_data_from_sigma(0.5, noise_filter=0)
+        self.assertTrue(from_here(cm))
+        self.assertAlmostEqual(row[1], 64.0)
+        self.assertTrue(np.isnan(row[2]))
+
+        # an unknown search method between points that do not see each other
+        P = self._wall_path()
+        with self.assertWarnsRegex(UserWarning, "search method bogus unknown") as cm:
+            d, wp = P.search_path(np.array([-5., 0, 0]), np.array([5., 0, 0]), method="bogus")
+        self.assertTrue(from_here(cm))
+        self.assertEqual(d, -1)
+        self.assertEqual(len(wp), 0)
+
+    def test_exception_types(self):
+
+        print("\n> testing that errors raise specific built-in exceptions")
+        with self.assertRaises(FileNotFoundError):
+            bb.Molecule().import_pdb("missing.pdb")
+        with self.assertRaises(FileNotFoundError):
+            bb.Molecule("missing.gro")
+        with self.assertRaises(FileNotFoundError):
+            bb.Density().import_map("missing.dx")
+        with self.assertRaises(ValueError):
+            bb.Molecule("protein.xyz")
+        with self.assertRaises(KeyError):
+            self.M.know("missing")
+        # a path search before any grid setup
+        from biobox.measures.path import Path
+        with self.assertRaises(RuntimeError):
+            Path(np.array([[0., 0, 0], [1, 0, 0]])).search_path(np.array([5., 0, 0]), np.array([10., 0, 0]))
+        with self.assertRaises(TypeError):
+            self.M.atomselect(1.5, "*", "*")
+        with self.assertRaises(IndexError):
+            self.M.set_current(len(self.M.coordinates))
+        with self.assertRaises(IndexError):
+            self.M.get_subset([0], conformations=[len(self.M.coordinates)])
+        A = bb.Assembly()
+        A.load_list([bb.Structure(np.zeros((1, 3)))])
+        with self.assertRaises(NotImplementedError):
+            A.make_fiber(1.0, 1, 2, fibertype="pmg")
+        with self.assertRaises(ValueError):
+            A.make_fiber(1.0, 1, 2, fibertype="unknown")
+        with self.assertRaises(TypeError):
+            A.rotate(0, 0, 0, unit=1.5)
+
+    def test_no_console_output(self):
+
+        print("\n> testing that library functions print only when verbose")
+        import io
+        import tempfile
+        from contextlib import redirect_stdout
+
+        D = bb.Density()
+        data = np.zeros((10, 10, 10))
+        data[3:7, 3:7, 3:7] = 1.0
+        D.import_numpy(data)
+
+        out = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp, redirect_stdout(out):
+            D.export_as_pdb(os.path.join(tmp, "dens.pdb"), 1.0, threshold=0.5)
+            r = D.scan_threshold(64.0, density=1.0, sampling_points=5)
+        self.assertEqual(out.getvalue(), "")
+        self.assertEqual(r.shape, (5, 2))
+
+        out = io.StringIO()
+        with redirect_stdout(out):
+            r2 = D.scan_threshold(64.0, density=1.0, sampling_points=5, verbose=True)
+        self.assertEqual(len(out.getvalue().splitlines()), 5)
+        np.testing.assert_array_equal(r, r2)
+
+        # electrostatics
+        M = self._molecule_from_atoms([("N", "N", "A", 1, [0, 0, 0]), ("CA", "C", "A", 1, [1.5, 0, 0])])
+        M.data["charge"] = [0.5, -0.5]
+        out = io.StringIO()
+        with redirect_stdout(out):
+            M.get_electrostatics(step=1.0)
+        self.assertEqual(out.getvalue(), "")
 
 
 if __name__ == '__main__':

@@ -71,7 +71,7 @@ class Multimer(Polyhedron):
                 try:
                     unit_id = [self.unit_labels[str(u)]]
                 except Exception as ex:
-                    raise Exception("ERROR: unit %s not found!" % u)
+                    raise KeyError("unit %s not found!" % u) from ex
 
             elif isinstance(u, list) or type(u).__module__ == 'numpy':
                 unit_id = []
@@ -79,9 +79,9 @@ class Multimer(Polyhedron):
                     try:
                         unit_id.append(self.unit_labels[str(u[c])])
                     except Exception as ex:
-                        raise Exception("ERROR: unit %s not found!" % u[c])
+                        raise KeyError("unit %s not found!" % u[c]) from ex
             else:
-                raise Exception("ERROR: wrong type for unit selection. Should be str, int, list, or numpy")
+                raise TypeError("wrong type for unit selection. Should be str, int, list, or numpy")
 
         # initialize storage for indices and coordinates
         indices = []
@@ -164,7 +164,7 @@ class Multimer(Polyhedron):
 
     #    # select indices of atoms of interest and call overloaded method
     #    indices = self.atomselect(u, chain, resid, atom, get_index=True)[1]
-    #    return super(Multimer, self).rmsd(ref_index, points_indices=indices, align=align)
+    #    return super(Multimer, self).rmsd(ref_index, indices=indices, align=align)
 
     def get_data(self, indices, columns):
         '''
@@ -177,25 +177,25 @@ class Multimer(Polyhedron):
 
         return self.data.loc[indices, columns].values
 
-    def write_pdb(self, outname, rename_chains=False):
+    def write_pdb(self, filename, rename_chains=False):
         '''
         Write a pdb of the multimeric assembly, one MODEL per frame. Every unit is written as a chain of its own (the i-th unit is chain i of chain_names, A, B, C...), replacing the original chain names. A TER record follows the last ATOM record of every unit (a unit made of HETATM records only gets none), as in the PDB format. Atoms are renumbered sequentially across units, and every TER record takes the next serial number. Formal charges (column formal_charge, 0 if missing) are written in columns 79-80.
 
         All units must have the same number of frames. Their current frames are restored after writing.
 
-        :param outname: name of PDB file to generate
+        :param filename: name of PDB file to generate
         :param rename_chains: unused. Every unit is always given its own chain name
         '''
         nframes = len(self.unit[0].coordinates)
         if any(len(u.coordinates) != nframes for u in self.unit):
-            raise Exception("ERROR: all units must have the same number of frames")
+            raise ValueError("all units must have the same number of frames")
 
         names = list(dict.fromkeys(self.chain_names))
         if len(self.unit) > len(names):
-            raise Exception("ERROR: %s units, but only %s single-character chain names" % (len(self.unit), len(names)))
+            raise ValueError("%s units, but only %s single-character chain names" % (len(self.unit), len(names)))
 
         currents = [u.current for u in self.unit]
-        f_out = open(outname, "w")
+        f_out = open(filename, "w")
         try:
             for f in range(nframes):
                 f_out.write("MODEL     %4d\n" % (f + 1))

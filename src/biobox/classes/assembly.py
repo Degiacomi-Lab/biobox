@@ -110,7 +110,7 @@ class Assembly(object):
             label = str(index)
 
         if str(label) in self.unit_labels:
-            raise Exception("ERROR: label %s already existing in multimer!" %label)
+            raise ValueError("label %s already existing in multimer!" %label)
 
         self.unit_labels[str(label)] = index
         self.unit.append(structure)
@@ -133,12 +133,12 @@ class Assembly(object):
         :param new_assembly: :func:`Assembly <biobox.classes.assembly.Assembly>` object to be appended as alternative conformation, with as many units as this assembly, each with the same number of points
         '''
         if len(self.unit) != len(new_assembly.unit):
-            raise Exception("ERROR: expecting %s subunits, found %s!" %(len(self.unit), len(new_assembly.unit)))
+            raise ValueError("expecting %s subunits, found %s!" %(len(self.unit), len(new_assembly.unit)))
 
         # check every unit before modifying any
         for i in range(0, len(self.unit), 1):
             if self.unit[i].coordinates.shape[1] != new_assembly.unit[i].coordinates.shape[1]:
-                raise Exception("ERROR: subunit %s conformation should have %s atoms, but %s found!" %(i, self.unit[i].coordinates.shape[1], new_assembly.unit[i].coordinates.shape[1]))
+                raise ValueError("subunit %s conformation should have %s atoms, but %s found!" %(i, self.unit[i].coordinates.shape[1], new_assembly.unit[i].coordinates.shape[1]))
 
         # the new conformation is appended after the existing ones of every unit
         for i in range(0, len(self.unit), 1):
@@ -158,18 +158,18 @@ class Assembly(object):
         # check labels consistency
         if len(labels) != 0:
             if len(struct_list) != len(labels):
-                raise Exception(
-                    "ERROR: structures and labels lists have different length!")
+                raise ValueError(
+                    "structures and labels lists have different length!")
 
             if len(np.unique(np.array(labels))) != len(labels):
-                raise Exception(
-                    "ERROR: duplicate label found in provided list!")
+                raise ValueError(
+                    "duplicate label found in provided list!")
 
             # check that labels are all different, and that they don't already
             # exist in the list
             for l in labels:
                 if l in self.unit_labels:
-                    raise Exception("ERROR: label %s already exists!" % l)
+                    raise ValueError("label %s already exists!" % l)
 
         # append new structures to old ones
         dfs = [self.data]
@@ -294,7 +294,7 @@ class Assembly(object):
         '''
 
         if np.mod(len(self.unit), 2) != 0:
-            raise Exception("cannot build polyhedron, need an even number of units!")
+            raise ValueError("cannot build polyhedron, need an even number of units!")
 
         for i in range(0, int(len(self.unit) / 2.0), 1):
 
@@ -328,7 +328,7 @@ class Assembly(object):
         '''
 
         if np.mod(len(self.unit), 2) != 0:
-            raise Exception("ERROR: cannot build polyhedron, need an even number of units!")
+            raise ValueError("cannot build polyhedron, need an even number of units!")
 
         for i in range(0, int(len(self.unit) / 2.0), 1):
 
@@ -376,7 +376,7 @@ class Assembly(object):
             self.unit[label].rotate(x, y, z)
 
         else:
-            raise Exception("ERROR: unit keyword should be integer, float, list or numpy array!")
+            raise TypeError("unit keyword should be integer, float, list or numpy array!")
 
     def translate(self, x, y, z, unit=[]):
         '''
@@ -404,7 +404,7 @@ class Assembly(object):
             self.unit[label].translate(x, y, z)
 
         else:
-            raise Exception("ERROR: unit keyword should be integer, float, list or numpy array!")
+            raise TypeError("unit keyword should be integer, float, list or numpy array!")
 
     def center_subunit(self, unit=-1):
         '''
@@ -470,7 +470,7 @@ class Assembly(object):
         u1 = self.unit_labels[str(unit1)]
         u2 = self.unit_labels[str(unit2)]
         if not hasattr(self.unit[u1], "check_inclusion"):
-            raise Exception("ERROR: unit %s is a %s, which has no check_inclusion method" % (unit1, type(self.unit[u1]).__name__))
+            raise TypeError("unit %s is a %s, which has no check_inclusion method" % (unit1, type(self.unit[u1]).__name__))
         inside = np.asarray(self.unit[u1].check_inclusion(self.unit[u2].points), dtype=bool)
         if len(inside) == 0:
             return 0.0
@@ -616,6 +616,8 @@ class Assembly(object):
         :param v: optional, additional parameter needed for 'pm', 'pg', 'cm', 'p2', ... fiber types (default is 0). List with one value per component for composite fibertypes ('pmm', 'cmm').
         :param min_height: optional, passed to :func:`num_units_fiber <biobox.classes.assembly.Assembly.num_units_fiber>`, of which only the number of units along x is used, so it does not affect the result. Default is 2.
         :param fibertype: optional, one of 'p1rectangular', 'p1oblique', 'p1hexagonal', 'pm', 'pg', 'cm', 'p2', 'p3', 'p4', 'p6', 'pmm', 'cmm' (default is 'p1oblique').
+        :raises NotImplementedError: if fibertype is one of the types not implemented ('pmg', 'pgg', 'p31m', 'p3m1', 'p4g', 'p4m', 'p6m')
+        :raises ValueError: if fibertype is unknown, if v does not hold one value per component of fibertype, or if Lpx or Lpy do not suit the tiling
         '''
 
         if type(v) == int or type(v) == float:
@@ -623,8 +625,11 @@ class Assembly(object):
         else:
             vlist = list(v)
 
+        if fibertype in ['pmg', 'pgg', 'p31m', 'p3m1', 'p4g', 'p4m', 'p6m']:
+            raise NotImplementedError("fibertype %s not implemented." %(fibertype))
+
         if fibertype not in ['p1rectangular', 'p1oblique', 'p1hexagonal', 'pm', 'pg', 'cm', 'p2', 'p3', 'p4', 'p6', 'pmm', 'cmm']:
-            raise Exception("fibertype %s not valid." %(fibertype))
+            raise ValueError("fibertype %s not valid." %(fibertype))
 
         def lvalue(Lx, Ly, vx, vy):
             return np.sqrt((Lx * vx) ** 2 + (Ly * vy) ** 2)
@@ -656,7 +661,7 @@ class Assembly(object):
         transformations = self._components(fibertype)
 
         if len(vlist) != len(transformations):
-            raise Exception("%s parameters needed for %s fiber but only %s passed." %(len(transformations), fibertype, len(vlist)))
+            raise ValueError("%s parameters needed for %s fiber but only %s passed." %(len(transformations), fibertype, len(vlist)))
 
         psi = None
 
@@ -678,14 +683,14 @@ class Assembly(object):
 
 
         if Lpx % nunits_tot != 0:
-            raise Exception(
-                    "ERROR: Lpx must be a multiple of %s when doing a %s tiling!" %(nunits_tot, fibertype))
+            raise ValueError(
+                    "Lpx must be a multiple of %s when doing a %s tiling!" %(nunits_tot, fibertype))
 
 
         if 'p1hexagonal' in transformations or 'p2' in transformations or 'p3' in transformations or 'p4' in transformations or 'p6' in transformations or 'pg' in transformations or 'pm' in transformations:
             if Lpy % 2 == 1:
-                raise Exception(
-                    "ERROR: Lpy must be even when doing a %s tiling!" %(fibertype))
+                raise ValueError(
+                    "Lpy must be even when doing a %s tiling!" %(fibertype))
             vy = np.sqrt(3) * vx / 2
             if 'p6' in transformations:
                 vy = 3 * vy
