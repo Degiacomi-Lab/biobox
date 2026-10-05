@@ -44,6 +44,7 @@ https://process.innovation.ox.ac.uk/software/) (requires definition of IMPACTPAT
 
 Documentation:
 * Biobox's documentation, including its API, is available at https://biobox.readthedocs.io
+* Changes between versions, including how to migrate from biobox 1.x to 2.0, are listed in [CHANGELOG.md](CHANGELOG.md)
 
 Tutorial:
 * A Jupyter notebook presenting Biobox's main functionalities is available at

@@ -18,11 +18,14 @@ Every shape is defined by a nominal convex body K, whose dimensions are the ones
 The points centres lie on the boundary of C, the body K shrunk by the points radius pr (the points at distance >= pr from the boundary of K), so that every point sphere touches the surface of K from inside.
 The point spheres trace the body T = C + B(pr) (K with its edges rounded by pr, T = K for a smooth K).
 
-Measures follow from the Steiner formula for the convex body C, having surface S, volume V and integral of mean curvature M (the integral of its support function over the unit sphere):
+Surface and volume follow from the Steiner formula for the parallel bodies of the convex body C, having surface S, volume V and integral of mean curvature M (the integral of its support function over the unit sphere):
 
 - surface of T: S + 2 M pr + 4 pi pr^2
 - volume of T: V + S pr + M pr^2 + 4/3 pi pr^3
-- CCS (projection approximation, i.e. mean projected area, equal to a quarter of the surface for a convex body): (S + 2 M rho + 4 pi rho^2) / 4, with rho = pr + gas
+
+The CCS in the projection approximation is the mean projected area of C inflated by rho = pr + gas. For a convex body, the mean projected area over all orientations is a quarter of its surface (V. Vouk, Projected Area of Convex Bodies, Nature 162, 330-331, 1948, doi:10.1038/162330a0), so that, with the Steiner formula for the inflated surface:
+
+- CCS: (S + 2 M rho + 4 pi rho^2) / 4
 '''
 
 from biobox.classes.structure import Structure

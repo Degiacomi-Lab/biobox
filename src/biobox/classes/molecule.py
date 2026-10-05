@@ -1749,13 +1749,13 @@ class Molecule(Structure):
         '''
         overload superclass method for writing (multi)pdb. Every conformation is written as a MODEL/ENDMDL block, and the file ends with an END record.
 
-        A TER record follows the last atom of every chain (i.e. where the chain name changes, and at the end of every model), and takes the next serial number, so that the atoms after it continue from the following one.
+        A TER record follows the last ATOM record of every chain (a chain being a run of atoms with the same chain name), as in the PDB format: HETATM records written after it (e.g. ligands or water) and chains made of HETATM records only (e.g. ions) get no TER. The TER record takes the next serial number, so that the atoms after it continue from the following one.
         Formal charges (column formal_charge of self.data, 0 if missing) are written in columns 79-80 as e.g. "2+" or "1-", and left blank when zero.
 
         :param outname: name of pdb file to be generated.
         :param index: indices of atoms to write to file. If empty, all atoms are written. Index values obtaineable with a call like: index=molecule.atomselect("A", [1, 2, 3], "CA", True)[1]
         :param conformations: list of conformation indices to write to file. By default, a multipdb with all conformations will be produced.
-        :param split_struc: Guess chain split on the atoms being written, and rename their chains accordingly (each guessed chain is then closed by TER). The molecule itself is not changed. Default: False. Set to False if protein is broken, but should retain chain lettering and doesn't have chain breaks.
+        :param split_struc: Guess chain split on the atoms being written, and rename their chains accordingly (each guessed chain is then closed by TER after its last ATOM record). The molecule itself is not changed. Default: False. Set to False if protein is broken, but should retain chain lettering and doesn't have chain breaks.
         :param dssp: If using DSSP secondary structure check, requires that CRYST be the first line by default (hence write that line)
 
         Chain names of two characters are written as their first character in column 22, and in full as segment identifier (columns 73-76), which :func:`import_pdb <biobox.classes.molecule.Molecule.import_pdb>` reads back.
@@ -1792,8 +1792,14 @@ class Molecule(Structure):
         if np.any(np.abs(formal_charge) > 9):
             raise Exception("ERROR: PDB files must have formal charges between -9 and 9")
 
-        # a TER record follows the last atom of every chain, and takes the next serial number
-        ter = np.r_[chains[1:] != chains[:-1], True] if len(index) > 0 else np.array([], dtype=bool)
+        # a TER record follows the last ATOM record of every chain, and takes the next serial number
+        records = np.asarray(self.data["atom"].values, dtype=object)[index]
+        ter = np.zeros(len(index), dtype=bool)
+        bounds = np.r_[0, np.flatnonzero(chains[1:] != chains[:-1]) + 1, len(index)] if len(index) > 0 else np.array([0])
+        for a, b in zip(bounds[:-1], bounds[1:]):
+            polymer = np.flatnonzero(records[a:b] == "ATOM")
+            if len(polymer) > 0:
+                ter[a + polymer[-1]] = True
         serials = []
         ter_serials = {}
         serial = 1

@@ -2400,6 +2400,40 @@ class test_structures(unittest.TestCase):
             self.assertEqual(list(R.data["chain"]), ["A", "A", "B"])
             self.assertEqual(R.coordinates.shape, (2, 3, 3))
 
+    def test_pdb_ter_polymer_only(self):
+
+        print("\n> testing that TER records close polymer chains only")
+        import tempfile
+        # chain A: ALA, MSE (HETATM) inside the chain, GLY, then a water of chain A
+        # chain B: ALA; chain C: two zinc ions only
+        M = self._molecule_from_atoms([("CA", "C", "A", 1, [0, 0, 0]), ("CA", "C", "A", 2, [1, 0, 0]),
+                                       ("CA", "C", "A", 3, [2, 0, 0]), ("O", "O", "A", 4, [3, 0, 0]),
+                                       ("CA", "C", "B", 5, [4, 0, 0]),
+                                       ("ZN", "ZN", "C", 6, [5, 0, 0]), ("ZN", "ZN", "C", 7, [6, 0, 0])])
+        M.data["atom"] = ["ATOM", "HETATM", "ATOM", "HETATM", "ATOM", "HETATM", "HETATM"]
+        M.data["resname"] = ["ALA", "MSE", "GLY", "HOH", "ALA", "ZN", "ZN"]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            fname = os.path.join(tmp, "ter.pdb")
+            M.write_pdb(fname)
+            lines = [l for l in open(fname) if l.startswith(("ATOM", "HETATM", "TER"))]
+            self.assertEqual([l[:6].strip() for l in lines],
+                             ["ATOM", "HETATM", "ATOM", "TER", "HETATM", "ATOM", "TER", "HETATM", "HETATM"])
+            self.assertEqual([int(l[6:11]) for l in lines], list(range(1, 10)))
+            self.assertEqual([l.rstrip("\n") for l in lines if l.startswith("TER")],
+                             ["TER       4      GLY A   3 ", "TER       7      ALA B   5 "])
+            R = bb.Molecule()
+            R.import_pdb(fname, include_hetatm=True)
+            self.assertEqual(list(R.data["chain"]), ["A", "A", "A", "A", "B", "C", "C"])
+
+            # in a multimer, a unit made of HETATM records only gets no TER
+            A = bb.Multimer()
+            A.load_list([M.get_subset([0, 1, 2, 3]), M.get_subset([5, 6])], ["1", "2"])
+            A.write_pdb(fname)
+            lines = [l for l in open(fname) if l.startswith(("ATOM", "HETATM", "TER"))]
+            self.assertEqual([l[:6].strip() for l in lines], ["ATOM", "HETATM", "ATOM", "TER", "HETATM", "HETATM", "HETATM"])
+            self.assertEqual([int(l[6:11]) for l in lines], list(range(1, 8)))
+
     def test_pdb_formal_charge(self):
 
         print("\n> testing formal charges in pdb files")
