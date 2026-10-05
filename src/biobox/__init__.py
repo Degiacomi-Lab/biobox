@@ -12,8 +12,8 @@
 # Author : Matteo Degiacomi, matteo.degiacomi@gmail.com
 
 __author__ = "Matteo T. Degiacomi ($Author: matteo.degiacomi $)"
-__version__ = '1.1.5'
-__date__ = '$Date: 2026-10-01 $'
+__version__ = '2.0.0'
+__date__ = '$Date: 2026-10-05 $'
 
 name = 'biobox'
 

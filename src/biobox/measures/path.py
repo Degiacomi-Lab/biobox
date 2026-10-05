@@ -127,10 +127,10 @@ class Path(object):
         :param start: coordinates of starting point (numpy array of 3 floats)
         :param end: coordinates of target point (numpy array of 3 floats)
         :param method: "theta" or "lazytheta" (Lazy Theta*), "old_theta" (Theta*), "astar" (A*) or "euclidean" (straight line, ignoring obstacles)
-        :param get_path: if True, the returned path is filled with intermediate points spaced by at most 1 A (not only waypoints), see :func:`_get_trails <biobox.measures.path.Path._get_trails>`. The returned length is measured on the waypoints either way
+        :param get_path: if True, the returned path is filled with intermediate points spaced by at most 1 A (not only waypoints), see ``_get_trails``. The returned length is measured on the waypoints either way
         :param update_grid: if True, grid will be recalculated (for local search only)
         :param test_los: if true, a line of sight postprocessing will be performed to make paths straighter
-        :returns: path length in A. It is -1 if the points are further apart than maxdist, are disconnected or method is unknown, and -2 (likely buried target) if no accessible grid point is found next to start or end, or if the SQUARED distance (in A2) to the closest one, as returned by :func:`Graph.get_closest_nodes <biobox.lib.graph.Graph.get_closest_nodes>`, exceeds maxdist + step (a value in A, compared as is)
+        :returns: path length in A. It is -1 if the points are further apart than maxdist, are disconnected or method is unknown, and -2 (likely buried target) if no accessible grid point is found next to start or end, or if the SQUARED distance (in A2) to the closest one, as returned by ``Graph.get_closest_nodes``, exceeds maxdist + step (a value in A, compared as is)
         :returns: path coordinates as an (n, 3) numpy array ordered from end to start, or an empty array on failure
         '''
 

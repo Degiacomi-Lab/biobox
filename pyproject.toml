@@ -40,6 +40,7 @@ docs = ["sphinx>=7,<9"]
 Homepage = "https://github.com/Degiacomi-Lab/biobox"
 Documentation = "https://biobox.readthedocs.io"
 Issues = "https://github.com/Degiacomi-Lab/biobox/issues"
+Changelog = "https://github.com/Degiacomi-Lab/biobox/blob/main/CHANGELOG.md"
 
 [tool.setuptools]
 # install only the modules, compiled extensions and the files listed in package-data
