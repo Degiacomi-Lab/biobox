@@ -12,6 +12,7 @@
 # Author : Matteo Degiacomi, matteo.degiacomi@gmail.com
 
 import os
+import warnings
 from copy import deepcopy
 import numpy as np
 from biobox.classes.structure import Structure
@@ -51,7 +52,7 @@ class Polyhedron(Assembly):
             dbfilename = "%s%sdata%spolyhedron_database.dat" %(folder, os.sep, os.sep)
 
         if os.path.isfile(dbfilename) != 1:
-            raise Exception("ERROR: %s not found!" % dbfilename)
+            raise FileNotFoundError("%s not found!" % dbfilename)
 
         # name of file containing polyhedra database
         self.dbfilename = dbfilename
@@ -59,10 +60,7 @@ class Polyhedron(Assembly):
         self.polyname = polyname
 
         # search information in new format database about desired polimer
-        try:
-            self.edges, self.v, self.conn, self.conn_type = self._search_database(polyname, dbfilename=self.dbfilename)
-        except Exception as e:
-            raise Exception("%s" % e)
+        self.edges, self.v, self.conn, self.conn_type = self._search_database(polyname, dbfilename=self.dbfilename)
 
         # monomeric subunit for polyhedron construction (instance of class
         # Molecule)
@@ -136,13 +134,13 @@ class Polyhedron(Assembly):
                deformation list length should be equal to the amount of deformation classes. Coefficient c displaces the vertices of class c along their axis, in A.
         :param add_conformation: if True, the coordinates of the new poyhedron will be added to the conformational database as a new alternative conformation.\n
                 If False, old polyhedron coordianates will be substituted.
-        :returns: -1 if alpha, beta and gamma are arrays of inconsistent length (no coordinates are generated), None otherwise
+        :returns: -1 if alpha, beta and gamma are arrays of inconsistent length (no coordinates are generated, and a UserWarning is issued), None otherwise
         '''
 
         # if deformation coefficients are given, check first that they match
         # the number of classes in deformation database
         if len(deformation) > 0 and len(deformation) != len(np.unique(self.deform[:, 1])):
-            raise Exception("ERROR: %s deformation coefficients expected, but %s found" % (len(np.unique(self.deform[:, 1])), len(deformation)))
+            raise ValueError("%s deformation coefficients expected, but %s found" % (len(np.unique(self.deform[:, 1])), len(deformation)))
 
         self.psi, self.phi, self.nu, self.circumradius, self.midradius = self.get_polyhedron_properties(S)
 
@@ -164,11 +162,10 @@ class Polyhedron(Assembly):
         if 'ndarray' in str(type(alpha)):
             try:
                 if len(alpha) != len(beta) or len(alpha) != len(gamma) or len(alpha) != len(np.unique(self.conn_type)):
-                    print("ERROR: inconsistent length in provided angle arrays")
-                    print("> received the following angles: %s, %s, %s" % (alpha, beta, gamma))
+                    warnings.warn("inconsistent length in provided angle arrays, received the following angles: %s, %s, %s" % (alpha, beta, gamma), stacklevel=2)
                     return -1
             except Exception as e:
-                raise Exception("ERROR: all angle arrays should have length %s" %(len(np.unique(self.conn_type))))
+                raise ValueError("all angle arrays should have length %s" %(len(np.unique(self.conn_type)))) from e
 
         # generate desired polyhedral coordinates (note: internally we work in
         # radians, not degrees)
@@ -209,12 +206,12 @@ class Polyhedron(Assembly):
         else:
             self.current = 0
 
-    def rmsd_distance_matrix(self, points_indices=[]):
+    def rmsd_distance_matrix(self, indices=[]):
         '''
         Calculate the RMSD between all pairs of polyhedral conformations.
         uses Kabsch alignement algorithm.
 
-        :param points_indices: indices of points of interest. This must be a list of indices of atoms in unites, i.e. [[unit1_indices],[unit2_indices],...]. If empty, all points are used
+        :param indices: indices of points of interest, as a list holding one list of point indices per unit, i.e. [[unit1_indices], [unit2_indices], ...]. If empty, all points are used
         :returns: RMSD between every pair of polyhedral conformations, as a square numpy array
         '''
 
@@ -227,8 +224,8 @@ class Polyhedron(Assembly):
             self.set_current(f)
 
             # if specific coordinates are requested, load only those
-            if len(points_indices) > 0:
-                pts = np.concatenate([self.unit[u].get_xyz()[points_indices[u], :] for u in range(len(self.unit))])
+            if len(indices) > 0:
+                pts = np.concatenate([self.unit[u].get_xyz()[indices[u], :] for u in range(len(self.unit))])
 
             # otherwise, load everything
             else:
@@ -240,7 +237,7 @@ class Polyhedron(Assembly):
 
         return S.rmsd_distance_matrix()
 
-    def write_poly_architecture(self, output="", scale=10, deformation=[], colors=[]):
+    def write_poly_architecture(self, filename="", scale=10, deformation=[], colors=[]):
         '''
         dump PDB file and tcl script loadable in VMD showing the loaded polyhedral scaffold.
 
@@ -249,11 +246,11 @@ class Polyhedron(Assembly):
         :param scale: vertices scaling factor (i.e. how much you want to blow up your architecture)
         :param colors: list of colors to be used when coloring the cylinders in VMD session. By default, the following 25 VMD colors are available (in this order): blue, red, gray, orange, yellow, tan ,silver, green, white, pink, cyan, purple, lime, mauve, ochre, iceblue, black, yellow2, green2, cyan2, blue2, violet, magenta, red2, orange2. Colors are reused cyclically if there are more connection types than colors.
         :param deformation: if provided, deformations will be applied as described in deformation database (see :func:`add_deformation <biobox.classes.polyhedron.Polyhedron.add_deformation>`). Its length must equal the number of deformation classes, and coefficient c displaces the vertices of class c along their axis (added to the scaled vertices).
-        :param output: name of output files (without extension. .pdb and .tcl will be automatically added). By default, the name will be the polyhedron name.
+        :param filename: base name of the output files, without extension (.pdb and .tcl are added). By default, the name will be the polyhedron name.
         '''
 
-        if output == "":
-            output = self.polyname
+        if filename == "":
+            filename = self.polyname
 
         if len(colors) == 0:
             colors = ['blue', 'red', 'gray', 'orange', 'yellow', 'tan', 'silver', 'green', 'white', 'pink', 'cyan', 'purple', 'lime',
@@ -263,23 +260,23 @@ class Polyhedron(Assembly):
 
         if len(deformation) > 0:
             if len(self.deform) == 0:
-                raise Exception("ERROR: %s deformation coefficients provided, but no deformation axis found!" % len(deformation))
+                raise ValueError("%s deformation coefficients provided, but no deformation axis found!" % len(deformation))
 
             elif len(deformation) == len(np.unique(self.deform[:, 1])):
                 for d in self.deform:
                     pos[int(d[0])] += deformation[int(d[1])] * d[2:5]
 
             else:
-                raise Exception("ERROR: %s deformation coefficients expected, but %s found" % (len(np.unique(self.deform[:, 1])), len(deformation)))
+                raise ValueError("%s deformation coefficients expected, but %s found" % (len(np.unique(self.deform[:, 1])), len(deformation)))
 
         # output vertices coordinates
         S = Structure(pos)
-        S.write_pdb("%s.pdb" % output)
+        S.write_pdb("%s.pdb" % filename)
 
         # output VMD script loading the structure and drawing colored cylinders
         # between them if a connection exists
-        fout = open("%s.tcl" % output, "w")
-        fout.write("mol new %s.pdb\n" % output)
+        fout = open("%s.tcl" % filename, "w")
+        fout.write("mol new %s.pdb\n" % filename)
         fout.write("mol modstyle 0 top VDW 1.000000 12.000000\n")
 
         for k in range(0, len(self.conn), 1):
@@ -335,7 +332,7 @@ class Polyhedron(Assembly):
 
         # check polyhedra database existence
         if os.path.exists(dbfilename) == 0:
-            raise Exception('ERROR: file %s not found!' % dbfilename)
+            raise FileNotFoundError('file %s not found!' % dbfilename)
 
         # look for desired polyhedron in database
         fin = open(dbfilename, 'r')
@@ -360,7 +357,7 @@ class Polyhedron(Assembly):
 
                 # prepare connection type information
                 if len(linetosave) == 3 + 3 * vert + 2 * edges:
-                    print("WARNING: database contains no connection type for %s. Supposing all edges have same connection type." % polyname)
+                    warnings.warn("database contains no connection type for %s. Supposing all edges have same connection type." % polyname, stacklevel=3)
                     conn_type = np.zeros(edges)
 
                 elif len(linetosave) == 3 + 3 * vert + 3 * edges:
@@ -368,14 +365,14 @@ class Polyhedron(Assembly):
                         conn_type.append(int(linetosave[3 + 3 * vert + 2 * edges + i]))
 
                 else:
-                    raise Exception("ERROR: database inconsistency for connectivity type information in polyhedron %s" % polyname)
+                    raise ValueError("database inconsistency for connectivity type information in polyhedron %s" % polyname)
 
                 break
 
         fin.close()
 
         if len(v) == 0:
-            raise Exception("ERROR: polyhedron %s not found in database %s!" %(polyname, dbfilename))
+            raise KeyError("polyhedron %s not found in database %s!" %(polyname, dbfilename))
 
         return edges, np.array(v), np.array(conn), np.array(conn_type)
 

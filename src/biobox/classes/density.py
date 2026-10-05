@@ -12,6 +12,7 @@
 # Author : Matteo Degiacomi, matteo.degiacomi@gmail.com
 
 import os
+import warnings
 
 import scipy.ndimage
 from sklearn.cluster import DBSCAN
@@ -75,20 +76,22 @@ class Density(Structure):
         Import density map and fill up the points and properties data structures.
 
         Points are placed with :func:`place_points <biobox.classes.density.Density.place_points>` default parameters, and no points are placed if that fails.
-        On failure to load, properties are reset and an Exception is raised.
+        On failure to load, properties are reset and a ValueError is raised.
 
         :param filename: name of density file to load
         :param fileformat: dx (default), ccp4, mrc or imod
+        :raises FileNotFoundError: if filename does not exist
+        :raises ValueError: if fileformat is not supported, or if the file cannot be loaded
         '''
 
         if not os.path.exists(filename):
-            raise Exception("%s not found!" % filename)
+            raise FileNotFoundError("%s not found!" % filename)
 
         # call format-specific loading functions.
         # function should fill up all required properties in _reset_info(), and
         # load the map as a 3D array, containing intensity values.
         if fileformat not in ('dx', 'ccp4', 'mrc', 'imod'):
-            raise Exception("sorry, format %s is not supported" % fileformat)
+            raise ValueError("sorry, format %s is not supported" % fileformat)
 
         try:
             if fileformat == 'dx':
@@ -103,11 +106,11 @@ class Density(Structure):
                                  ('origin', "map origin information missing"),
                                  ('delta', "voxel size information missing")]:
                 if len(self.properties[key]) == 0:
-                    raise Exception(message)
+                    raise ValueError(message)
 
         except Exception as e:
             self._reset_info()
-            raise Exception("ERROR: could not load %s: %s" % (filename, e))
+            raise ValueError("could not load %s: %s" % (filename, e)) from e
 
         self.properties['format'] = fileformat
         self.properties['filename'] = filename
@@ -116,7 +119,7 @@ class Density(Structure):
         # place points instead of voxels (a map with nothing above threshold has no points)
         try:
             self.place_points()
-        except IOError:
+        except ValueError:
             pass
 
     def import_numpy(self, data, origin=[0, 0, 0], delta=np.identity(3)):
@@ -131,7 +134,7 @@ class Density(Structure):
         '''
 
         if len(data.shape) != 3:
-            raise Exception("ERROR: a 3D numpy array is expected")
+            raise ValueError("a 3D numpy array is expected")
 
         self.properties['density'] = data
         self.properties['origin'] = np.array(origin)
@@ -237,19 +240,18 @@ class Density(Structure):
         given density information, place points on every voxel above a given threshold. Existing points are removed, and every point gets the map points radius.
 
         The arrangement is shrunk by the sphere radius via ``_shrink_scale``.
-        Raises IOError if no voxel is above threshold, if noise_filter is out of range, or if the noise filter removes every point.
-
         :param sigma: intensity threshold, in multiples of the map standard deviation (default 0)
         :param noise_filter: launch DBSCAN clustering algorithm (eps equal to the voxel diagonal, 10 minimum samples) to detect connected regions in density map. Regions representing less than noise_filter of the total, and points labelled as noise, are removed. This is a ratio, value should be between 0 and 1 (default 0.01). If 0, no filtering is done.
+        :raises ValueError: if no voxel is above threshold, if noise_filter is out of range, or if the noise filter removes every point
         '''
 
         thresh = self.get_thresh_from_sigma(sigma)
 
         if not np.any(self.properties['density'] > thresh):
-            raise IOError("selected threshold leads to empty point ensemble")
+            raise ValueError("selected threshold leads to empty point ensemble")
 
         if noise_filter >= 1 or noise_filter < 0:
-            raise IOError("noise_filter should be between 0 and 1")
+            raise ValueError("noise_filter should be between 0 and 1")
 
         # define scaling to shrink everything by a size equal to spheres radius
         idx = np.transpose(np.where(self.properties['density'] > thresh))
@@ -274,7 +276,7 @@ class Density(Structure):
                     keep = np.logical_or(keep, db.labels_ == i)
 
             if not np.any(keep):
-                raise IOError("noise filter removed every point")
+                raise ValueError("noise filter removed every point")
 
             self.add_xyz(points[keep])
 
@@ -303,11 +305,11 @@ class Density(Structure):
         :param k: sigmoid parameter
         :returns: CCS estimated from mass and density map resolution, in A^2
         :returns: threshold the CCS corresponds to, in multiples of the map standard deviation
-        :raises IOError: if the stored scan is empty
+        :raises RuntimeError: if the stored scan is empty
         '''
 
         if np.size(self.properties.get('scan', [])) == 0:
-            raise IOError("no threshold to volume to CCS relationship loaded yet. Please execute threshold_vol_ccs method.")
+            raise RuntimeError("no threshold to volume to CCS relationship loaded yet. Please execute threshold_vol_ccs method.")
 
         data=self.properties['scan'].copy()
         data[:,1]*=density
@@ -342,11 +344,11 @@ class Density(Structure):
         :param k: sigmoid parameter
         :returns: mass estimated from CCS and density map resolution, in kDa
         :returns: threshold the mass corresponds to, in multiples of the map standard deviation
-        :raises IOError: if the stored scan is empty
+        :raises RuntimeError: if the stored scan is empty
         '''
 
         if np.size(self.properties.get('scan', [])) == 0:
-            raise IOError("no threshold to volume to CCS relationship loaded yet. Please execute threshold_vol_ccs method.")
+            raise RuntimeError("no threshold to volume to CCS relationship loaded yet. Please execute threshold_vol_ccs method.")
 
         data=self.properties['scan'].copy()
         data[:,1]*=density
@@ -365,10 +367,10 @@ class Density(Structure):
         return data[dtest1,1], data[dtest1,0]
 
 
-    def scan_threshold(self, mass, density=0.782878356, sampling_points=1000):
+    def scan_threshold(self, mass, density=0.782878356, sampling_points=1000, verbose=False):
         '''
         if mass and density of object are known, filter the map on a linear scale of threshold values, and compare the obtained mass to the experimental one.
-        Each tested value is printed. Points are finally placed at the threshold giving the smallest absolute mass error.
+        Points are finally placed at the threshold giving the smallest absolute mass error.
 
         .. note:: in proteins, an average value of 1.3 g/cm^3 (0.782878356 Da/A^3) can be assumed. Alternatively, the relation density=1.410+0.145*exp(-mass(kDa)/13) (in g/cm^3) can be used.
 
@@ -377,6 +379,7 @@ class Density(Structure):
         :param mass: target mass in Da
         :param density: target density in Da/A^3
         :param sampling_points: number of measures to perform between min and max intensity in density map
+        :param verbose: if True, print each tested value and its mass error
         :returns: array of shape (sampling_points, 2) reporting tested values and error on mass ([sigma, model_mass-target_mass]), with mass in Da
         '''
 
@@ -392,7 +395,8 @@ class Density(Structure):
             except Exception as e:
                 vol = 0.0
 
-            print("threshold=%s, error=%s" % (thresh, vol * density - mass))
+            if verbose:
+                print("threshold=%s, error=%s" % (thresh, vol * density - mass))
             result.append([thresh, vol * density - mass])
 
         r = np.array(result)
@@ -409,7 +413,7 @@ class Density(Structure):
         '''
         place points at a threshold and measure the volume and CCS of the result.
 
-        A threshold leaving no points gives volume and CCS 0. A CCS that cannot be computed (e.g. IMPACT unavailable) is NaN, and the volume is kept.
+        A threshold leaving no points gives volume and CCS 0. A CCS that cannot be computed (e.g. IMPACT unavailable) is NaN, with a UserWarning, and the volume is kept.
 
         :param sigma: density threshold, in multiples of the map standard deviation
         :param noise_filter: see :func:`place_points <biobox.classes.density.Density.place_points>`
@@ -420,14 +424,14 @@ class Density(Structure):
 
         try:
             self.place_points(sigma, noise_filter=noise_filter)
-        except IOError:
+        except ValueError:
             return 0.0, 0.0
 
         vol = self.get_volume()
         try:
             ccs = bb.ccs(self)
         except Exception as ex:
-            print("WARNING: CCS not computed at sigma %s: %s" % (sigma, ex))
+            warnings.warn("CCS not computed at sigma %s: %s" % (sigma, ex), stacklevel=3)
             ccs = np.nan
 
         return vol, ccs
@@ -616,18 +620,18 @@ class Density(Structure):
         self.properties['density'] = dens
         self.properties["sigma"] = np.std(self.properties['density'])
 
-    def write_dx(self, fname='dens.dx'):
+    def write_dx(self, filename='dens.dx'):
         '''
         Write a density map in DX format
 
-        :param fname: output file name
+        :param filename: output file name
         '''
 
         dens = self.properties['density']
         origin = self.properties['origin']
         delta = self.properties['delta']
 
-        fout = open(fname, "w")
+        fout = open(filename, "w")
         fout.write("# density generated with SBT\n#\n#\n#\n")
         fout.write("object 1 class gridpositions counts %s %s %s\n" % (dens.shape[0], dens.shape[1], dens.shape[2]))
         fout.write("origin %s %s %s\n"%(origin[0], origin[1], origin[2]))
@@ -648,11 +652,11 @@ class Density(Structure):
 
         fout.close()
 
-    def export_as_pdb(self, outname, step, threshold=0.1):
+    def export_as_pdb(self, filename, step, threshold=0.1):
         '''
         Write a pdb file with points where the density exceeds a threshold. A voxel of index i is written at coordinate i/step + origin.
 
-        :param outname: output file name
+        :param filename: output file name
         :param step: number of voxels per Angstrom
         :param threshold: density (in map intensity units) to be exceeded to generate a point in pdb
         '''
@@ -662,13 +666,11 @@ class Density(Structure):
         dens = self.properties['density']
         origin = self.properties['origin']
 
-        fout = open(outname, 'w')
+        fout = open(filename, 'w')
 
         cnt = 1
         identifier = 'ATOM'  # atom to be used to mimick density
         symbol = 'H'  # element for atom
-
-        print('exporting density greater than %s to pdb' % threshold)
 
         for xpos in range(0, dens.shape[0], 1):
             for ypos in range(0, dens.shape[1], 1):
@@ -693,7 +695,7 @@ class Density(Structure):
         try:
             fin = open(filename, "r")
         except Exception as e:
-            raise Exception('opening of file %s failed!' % filename)
+            raise FileNotFoundError('opening of file %s failed!' % filename) from e
 
         d = []
         dlt = []
@@ -717,7 +719,7 @@ class Density(Structure):
             # get position of origin
             elif len(w) > 2 and w[0] == "origin":
                 self.properties['origin'] = np.array(w[1:4]).astype(float)
-
+        fin.close()
 
         # scaling factor with respect of unit cell voxels
         self.properties['delta'] = np.array(dlt).astype(float)
@@ -729,7 +731,7 @@ class Density(Structure):
                  self.properties['size'][1],
                  self.properties['size'][2]))
         except Exception as ex:
-            raise Exception("reshaping of dx data failed! Dimensions and dataset size are inconsistent!")
+            raise ValueError("reshaping of dx data failed! Dimensions and dataset size are inconsistent!") from ex
 
     def _import_mrc(self, filename, fileformat):
         '''
@@ -744,19 +746,15 @@ class Density(Structure):
         '''
 
         import biobox.classes.density_MRC as MRC
-        try:
-            [density, data] = MRC.read_density(filename, fileformat)
-            self.properties['density'] = density
-            self.properties['origin'] = np.array(data.origin)
-            self.properties['size'] = np.array(density.shape)
-            self.properties['delta'] = np.identity(3) * data.mrc_data.data_step
+        [density, data] = MRC.read_density(filename, fileformat)
+        self.properties['density'] = density
+        self.properties['origin'] = np.array(data.origin)
+        self.properties['size'] = np.array(density.shape)
+        self.properties['delta'] = np.identity(3) * data.mrc_data.data_step
 
-            # sphere size corresponding to the volume of one voxel
-            voxel_volume = self.properties['delta'][0, 0] * self.properties['delta'][1, 1] * self.properties['delta'][2, 2]
-            self.properties['radius'] = (voxel_volume * 3 / (4 * np.pi))**(1 / 3.0)
-
-        except Exception as e:
-            raise Exception("%s" % e)
+        # sphere size corresponding to the volume of one voxel
+        voxel_volume = self.properties['delta'][0, 0] * self.properties['delta'][1, 1] * self.properties['delta'][2, 2]
+        self.properties['radius'] = (voxel_volume * 3 / (4 * np.pi))**(1 / 3.0)
 
 
     def get_volume(self):

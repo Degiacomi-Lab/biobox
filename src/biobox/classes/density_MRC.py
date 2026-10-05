@@ -541,31 +541,33 @@ class MRC_Data:
         self.name = os.path.basename(path)
 
         file1 = open(path, 'rb')
+        try:
 
-        file1.seek(0,2)                                                            # go to end of file
-        file_size = file1.tell()
-        file1.seek(0,0)                                                          # go to beginning of file
+            file1.seek(0,2)                                                            # go to end of file
+            file_size = file1.tell()
+            file1.seek(0,0)                                                          # go to beginning of file
 
-        # Infer file byte order from column axis size nc.    Requires nc < 2**16
-        # Was using mode value but 0 is allowed and does not determine byte order.
-        self.swap_bytes = 0
-        nc = self.read_values(file1, np.int32, 1)
-        self.swap_bytes = not (nc > 0 and nc < 65536)
-        file1.seek(0,0)
+            # Infer file byte order from column axis size nc.    Requires nc < 2**16
+            # Was using mode value but 0 is allowed and does not determine byte order.
+            self.swap_bytes = 0
+            nc = self.read_values(file1, np.int32, 1)
+            self.swap_bytes = not (nc > 0 and nc < 65536)
+            file1.seek(0,0)
 
-        v = self.read_header_values(file1, file_size, file_type)
+            v = self.read_header_values(file1, file_size, file_type)
 
-        if v.get('imodStamp') == 1146047817:
-            unsigned_8_bit = (v['imodFlags'] & 0x1 == 0)
-        else:
-            unsigned_8_bit = (file_type == 'imod' or v['type'] == 'mrc')
-        self.element_type = self.value_type(v['mode'], unsigned_8_bit)
+            if v.get('imodStamp') == 1146047817:
+                unsigned_8_bit = (v['imodFlags'] & 0x1 == 0)
+            else:
+                unsigned_8_bit = (file_type == 'imod' or v['type'] == 'mrc')
+            self.element_type = self.value_type(v['mode'], unsigned_8_bit)
 
-        self.check_header_values(v, file_size, file1)
-        self.header = v                         # For dumpmrc.py standalone program.
+            self.check_header_values(v, file_size, file1)
+            self.header = v                         # For dumpmrc.py standalone program.
 
-        self.data_offset = file1.tell()
-        file1.close()
+            self.data_offset = file1.tell()
+        finally:
+            file1.close()
 
         # Axes permutation.
         # Names c,r,s refer to fast, medium, slow file matrix axes.
@@ -907,7 +909,7 @@ def valid_cell_angles(alpha, beta, gamma, path):
         err = 'largest angle must be less than sum of other two'
 
     if err:
-        raise Exception('%s: invalid cell angles %.5g,%.5g,%.5g %s.\n'
+        raise ValueError('%s: invalid cell angles %.5g,%.5g,%.5g %s.\n'
                                  % (path, alpha, beta, gamma, err))
         return False
 
@@ -1197,13 +1199,10 @@ def read_density(filename,extension):
     try:
         grid_data= MRC_Grid(filename, extension)
     except Exception as e:
-        raise Exception('cannot load density map %s: %s'%(filename, e))
+        raise ValueError('cannot load density map %s: %s'%(filename, e)) from e
 
     mtype = grid_data.value_type.type
-    try:
-        type1 = closest_mrc2000_type(mtype)
-    except Exception as e:
-        raise Exception("%s"%e)
+    type1 = closest_mrc2000_type(mtype)
 
     isz, jsz, ksz = grid_data.size
     m=[]

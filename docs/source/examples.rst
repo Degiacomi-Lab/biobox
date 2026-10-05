@@ -19,7 +19,7 @@ Another way to select atoms is to use the :func:`query <biobox.classes.molecule.
 The query method follows the pandas query syntax, and allows to be more expressive. Any column stored in M.data (call M.data.columns) can be addressed.
 Now that we have identified indices of interest, we can save a subset of the initial pdb in a new one, or to create a new :func:`Molecule <biobox.classes.molecule.Molecule>` object containing only them.
 
->>> M.write_pdb("chainA.pdb", index=idx)
+>>> M.write_pdb("chainA.pdb", indices=idx)
 >>> M2 = M.get_subset(idx)
 
 **multiple conformations** may be available in the PDB. By default, the first one is set as current.
@@ -96,7 +96,7 @@ With add_conformation=False (default) the previous subunits arrangements gets ov
 Now, we want to calculate the RMSD between the created multimers' alpha carbons. With these lines, dist_mat will contain the RMSD distance matrix between the multimers:
 
 >>> idxs = P.atomselect("*", "*" ,"*", "CA", get_index=True)[1]
->>> dist_mat = P.rmsd_distance_matrix(points_indices=idxs)
+>>> dist_mat = P.rmsd_distance_matrix(indices=idxs)
 
 Note that, as for the case of :class:`Molecule <biobox.classes.molecule.Molecule>` objects, a :func:`query <biobox.classes.multimer.Multimer.query>` method is also available. The same selection as the command above can be obtained with:
 

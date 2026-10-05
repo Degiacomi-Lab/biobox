@@ -39,7 +39,7 @@ class Structure(object):
         elif p.ndim == 2:
             self.coordinates = np.array([p])
         else:
-            raise Exception("ERROR: expected numpy array with 2 or three dimensions, but %s dimensions were found" %p.ndim)
+            raise ValueError("expected numpy array with 2 or three dimensions, but %s dimensions were found" %p.ndim)
 
         self.current = 0
         '''index of currently selected conformation'''
@@ -57,7 +57,7 @@ class Structure(object):
         else:
             rad = np.asarray(r, dtype=float)
             if len(rad) != len(self.points):
-                raise Exception("ERROR: %s radii provided for %s points" % (len(rad), len(self.points)))
+                raise ValueError("%s radii provided for %s points" % (len(rad), len(self.points)))
 
         self.data = pd.DataFrame(rad, index=np.arange(len(self.points)), columns=["radius"])
         ''' metadata about each atom (pandas Dataframe)'''
@@ -90,18 +90,19 @@ class Structure(object):
         '''
         return self.coordinates[key]
 
-    def set_current(self, pos):
+    def set_current(self, index):
         '''
         select current frame (place frame pointer at desired position)
 
-        :param pos: number of alternative conformation (starting from 0)
+        :param index: number of alternative conformation (starting from 0)
+        :raises IndexError: if the conformation does not exist
         '''
-        if pos < self.coordinates.shape[0]:
-            self.current = pos
+        if index < self.coordinates.shape[0]:
+            self.current = index
             self._point_to_current()
             self.properties['center'] = self.get_center()
         else:
-            raise Exception("ERROR: position %s requested, but only %s conformations available" %(pos, self.coordinates.shape[0]))
+            raise IndexError("position %s requested, but only %s conformations available" %(index, self.coordinates.shape[0]))
 
     def get_xyz(self, indices=[]):
         '''
@@ -154,7 +155,7 @@ class Structure(object):
             self.set_current(first)
 
         else:
-            raise Exception("ERROR: expected numpy array with 2 or three dimensions, but %s dimensions were found" %coords.ndim)
+            raise ValueError("expected numpy array with 2 or three dimensions, but %s dimensions were found" %coords.ndim)
 
 
     def delete_xyz(self, index):
@@ -382,25 +383,26 @@ class Structure(object):
         # do the opposite of these transformations
         return c, rotmatrix0, rotmatrix1
 
-    def write_pdb(self, filename, index=[]):
+    def write_pdb(self, filename, conformations=[]):
         '''
         write a multi PDB file where every point is a sphere. VdW radius is written into beta factor, and occupancy is 1.
 
         Every point is named SPH, in chain A, with residue number equal to its index (modulo 9999). Every frame is terminated by an END record.
 
         :param filename: name of file to output
-        :param index: list of frame indices to write to file. By default, a multipdb with all frames will be produced.
+        :param conformations: list of frame indices to write to file. By default, a multipdb with all frames will be produced.
+        :raises IndexError: if a requested conformation does not exist
         '''
 
         # if a subset of all available frames is requested to be written,
         # select them first
-        if len(index) == 0:
+        if len(conformations) == 0:
             frames = range(0, len(self.coordinates), 1)
         else:
-            if np.max(index) < len(self.coordinates):
-                frames = index
+            if np.max(conformations) < len(self.coordinates):
+                frames = conformations
             else:
-                raise Exception("ERROR: requested coordinate index %s, but only %s are available" %(np.max(index), len(self.coordinates)))
+                raise IndexError("requested coordinate index %s, but only %s are available" %(np.max(conformations), len(self.coordinates)))
 
         fout = open(filename, "w")
 
@@ -450,7 +452,7 @@ class Structure(object):
                 return code
             value -= block
 
-        raise Exception("ERROR: %s is too large for a hybrid-36 field of width %s" % (value, width))
+        raise ValueError("%s is too large for a hybrid-36 field of width %s" % (value, width))
 
     def convex_hull(self):
         '''
@@ -559,10 +561,11 @@ class Structure(object):
 
         :param indices: indices of points for which RMSF will be calculated. If no indices list is provided (default -1), RMSF of all points will be calculated.
         :returns: numpy array with RMSF of all provided indices, in the same order (same units as the coordinates)
+        :raises ValueError: if fewer than two conformations are available
         '''
 
         if self.coordinates.shape[0] < 2:
-            raise Exception("ERROR: to compute RMSF several conformations must be available!")
+            raise ValueError("to compute RMSF several conformations must be available!")
 
         # if no index is provided, compute RMSF of all points
         if np.ndim(indices) == 0 and indices == -1:
@@ -606,15 +609,17 @@ class Structure(object):
 
         return Xproj, pca
 
-    def rmsd_one_vs_all(self, ref_index, points_index=[], align=False):
+    def rmsd_one_vs_all(self, ref_index, indices=[], align=False):
         '''
         Calculate the RMSD between all structures with respect of a reference structure.
         uses Kabsch alignement algorithm.
 
         :param ref_index: index of reference structure in conformations database
-        :param points_index: if set, only specific points will be considered for comparison (and for the alignment)
+        :param indices: if set, only specific points will be considered for comparison (and for the alignment)
         :param align: if set to true, all conformations (all their points) are rotated and translated onto the reference (note: cannot be undone!)
         :returns: RMSD of all structures with respect of reference structure (numpy array with one value per conformation, 0 for the reference)
+        :raises IndexError: if the reference conformation does not exist
+        :raises TypeError: if indices is not a list or a numpy array
         '''
 
         # see: http://www.pymolwiki.org/index.php/Kabsch#The_Code
@@ -622,15 +627,15 @@ class Structure(object):
         bkpcurrent = self.current
 
         if ref_index >= len(self.coordinates):
-            raise Exception("ERROR: index %s requested, but only %s exist in database" %(ref_index, len(self.coordinates)))
+            raise IndexError("index %s requested, but only %s exist in database" %(ref_index, len(self.coordinates)))
 
         # define reference frame, and center it
-        if len(points_index) == 0:
+        if len(indices) == 0:
             m1 = deepcopy(self.coordinates[ref_index])
-        elif isinstance(points_index, list) or type(points_index).__module__ == 'numpy':
-            m1 = deepcopy(self.coordinates[ref_index, points_index])
+        elif isinstance(indices, list) or type(indices).__module__ == 'numpy':
+            m1 = deepcopy(self.coordinates[ref_index, indices])
         else:
-            raise Exception("ERROR: please, provide me with a list of indices to compute RMSD (or no index at all)")
+            raise TypeError("please, provide me with a list of indices to compute RMSD (or no index at all)")
 
         L = len(m1)
         COM1 = np.sum(m1, axis=0) / float(L)
@@ -645,10 +650,10 @@ class Structure(object):
             else:
 
                 # define current frame, and center it
-                if len(points_index) == 0:
+                if len(indices) == 0:
                     m2 = deepcopy(self.coordinates[i])
-                elif isinstance(points_index, list) or type(points_index).__module__ == 'numpy':
-                    m2 = deepcopy(self.coordinates[i, points_index])
+                elif isinstance(indices, list) or type(indices).__module__ == 'numpy':
+                    m2 = deepcopy(self.coordinates[i, indices])
 
                 COM2 = np.sum(m2, axis=0) / float(L)
                 m2 -= COM2
@@ -682,42 +687,44 @@ class Structure(object):
         self.set_current(bkpcurrent)
         return np.array(RMSD)
 
-    def rmsd(self, i, j, points_index=[], full=False):
+    def rmsd(self, i, j, indices=[], full=False):
         '''
         Calculate the RMSD between two structures in alternative coordinates ensemble.
         uses Kabsch alignement algorithm.
 
         :param i: index of the first structure
         :param j: index of the second structure
-        :param points_index: if set, only specific points will be considered for comparison
+        :param indices: if set, only specific points will be considered for comparison
         :param full: if True, RMSD and rotation matrix are returned, RMSD only otherwise
         :returns: RMSD of the two structures (float)
         :returns: only if full is True, 3x3 rotation matrix M superimposing structure j onto structure i once both are centered at their centers of geometry (as p' = p M)
+        :raises IndexError: if conformation i or j does not exist
+        :raises TypeError: if indices is not a list or a numpy array
         '''
 
         # see: http://www.pymolwiki.org/index.php/Kabsch#The_Code
 
         if i >= len(self.coordinates):
-            raise Exception("ERROR: index %s requested, but only %s exist in database" %(i, len(self.coordinates)))
+            raise IndexError("index %s requested, but only %s exist in database" %(i, len(self.coordinates)))
 
         if j >= len(self.coordinates):
-            raise Exception("ERROR: index %s requested, but only %s exist in database" %(j, len(self.coordinates)))
+            raise IndexError("index %s requested, but only %s exist in database" %(j, len(self.coordinates)))
 
         # get first structure and center it
-        if len(points_index) == 0:
+        if len(indices) == 0:
             m1 = deepcopy(self.coordinates[i])
-        elif isinstance(points_index, list) or type(points_index).__module__ == 'numpy':
-            m1 = deepcopy(self.coordinates[i, points_index])
+        elif isinstance(indices, list) or type(indices).__module__ == 'numpy':
+            m1 = deepcopy(self.coordinates[i, indices])
         else:
-            raise Exception("ERROR: give me a list of indices to compute RMSD, or nothing at all, please!")
+            raise TypeError("give me a list of indices to compute RMSD, or nothing at all, please!")
 
         # get second structure
-        if len(points_index) == 0:
+        if len(indices) == 0:
             m2 = deepcopy(self.coordinates[j])
-        elif isinstance(points_index, list) or type(points_index).__module__ == 'numpy':
-            m2 = deepcopy(self.coordinates[j, points_index])
+        elif isinstance(indices, list) or type(indices).__module__ == 'numpy':
+            m2 = deepcopy(self.coordinates[j, indices])
         else:
-            raise Exception("ERROR: give me a list of indices to compute RMSD, or nothing at all, please!")
+            raise TypeError("give me a list of indices to compute RMSD, or nothing at all, please!")
 
         L = len(m1)
         COM1 = np.sum(m1, axis=0) / float(L)
@@ -746,11 +753,11 @@ class Structure(object):
         else:
             return np.sqrt(abs(rmsdval / L))
 
-    def rmsd_distance_matrix(self, points_index=[], flat=False):
+    def rmsd_distance_matrix(self, indices=[], flat=False):
         '''
         compute distance matrix between structures (using RMSD as metric).
 
-        :param points_index: if set, only specific points will be considered for comparison
+        :param indices: if set, only specific points will be considered for comparison
         :param flat: if True, returns flattened distance matrix
         :returns: RMSD distance matrix, as a symmetric mxm numpy array (m conformations), or, if flat is True, a 1D numpy array of the m(m-1)/2 values above the diagonal, in row order
         '''
@@ -762,7 +769,7 @@ class Structure(object):
 
         for i in range(0, len(self.coordinates) - 1, 1):
             for j in range(i + 1, len(self.coordinates), 1):
-                r = self.rmsd(i, j, points_index)
+                r = self.rmsd(i, j, indices)
 
                 if flat:
                     rmsd.append(r)

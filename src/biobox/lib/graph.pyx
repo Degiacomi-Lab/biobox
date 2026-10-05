@@ -66,7 +66,7 @@ cdef class Graph(object):
             '''
 
             if len(params)>0 and (params.ndim!=1 or len(params)!=len(self.prot_points)):
-                raise Exception("params must hold one exclusion radius per obstacle point!")
+                raise ValueError("params must hold one exclusion radius per obstacle point!")
 
             self.g=self._make_3d_gaussian(degree, sigma)
 
@@ -82,7 +82,7 @@ cdef class Graph(object):
             #define box according to desired boundaries
             if len(boundaries)==3:
                 if np.any(boundaries[:,0]>=boundaries[:,1]):
-                    raise Exception("upper grid boundary is greater than a lower boundary!")
+                    raise ValueError("upper grid boundary is greater than a lower boundary!")
 
                 self.center=np.array([(boundaries[0][0]+boundaries[0][1])/2.0,\
                                       (boundaries[1][0]+boundaries[1][1])/2.0,\

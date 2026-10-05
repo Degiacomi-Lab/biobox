@@ -20,7 +20,7 @@ biobox 2.0 follows a correctness audit of version 1.1.5. More than 130 defects w
 - `properties['biomatrix']` is a dictionary `{biomolecule: [(chains, matrices), ...]}`, and `apply_biomatrix(biomolecule=1)` builds only the requested biological assembly, applying each operator to the chains it lists.
 - `Structure.rmsf` and `Molecule.beta_factor_from_rmsf` no longer take a `step` argument.
 - `Molecule.renumber_resid_keep_chains` no longer takes `atom_thresh`. It renumbers every residue (ligands and water included), honours `start_from` and clears insertion codes.
-- `Molecule.reorder_resid` keeps the reordered chain in place, and raises if `idx` does not list every residue of the chain once.
+- `Molecule.reorder_resid` keeps the reordered chain in place, and raises if `resids` does not list every residue of the chain once.
 - `Molecule.clean(remove_non_amino=True)` is pure Python and no longer takes a `path` to a shell script. Per residue it keeps the alternate location with the highest mean occupancy, and it returns a new molecule.
 - `Molecule.get_fasta` writes `X` for unknown residues instead of raising, and maps common variants (MSE, HID/HIE/HIP, HSD/HSE/HSP, CYX/CYM, ASH, GLH, LYN, Amber terminal names).
 - `Molecule.get_atoms_ccs` always returns a numpy array.
@@ -43,6 +43,31 @@ biobox 2.0 follows a correctness audit of version 1.1.5. More than 130 defects w
 - `Density.import_map` raises when a map cannot be loaded, instead of printing a message and leaving an empty map.
 - `Molecule.get_dipole_density` (and `c_get_dipole_density`) raises `ValueError` for an `eqn` other than `'gauss'` or `'slater'`, and when no voxel fluctuates.
 - `ccs` in executable mode (`use_lib=False`) raises for pseudo-atom structures with more than one radius.
+
+**Parameter names, exceptions and warnings**
+
+- **Parameter names are consistent.** `indices` holds atom or point indices, `conformations` holds conformation (frame) indices, `index` is a single conformation number (`set_current`, `delete_xyz`), and `filename` is the path of a file read or written. The old names are not accepted.
+
+| Function | Old name | New name |
+|---|---|---|
+| `Molecule.__init__`, `Molecule.import_md`, `Molecule.get_dipole_map`, `Density.write_dx`, `c_get_dipole_map` | `fname` | `filename` |
+| `Molecule.import_pdb` | `pdb` | `filename` |
+| `Molecule.import_pqr` | `pqr` | `filename` |
+| `Molecule.write_pdb`, `write_gro`, `write_pqr`, `get_dipole_density`, `Multimer.write_pdb`, `Density.export_as_pdb`, `c_get_dipole_density` | `outname` | `filename` |
+| `Polyhedron.write_poly_architecture` | `output` | `filename` |
+| `saxs`, `ccs` | `pdbname` | `filename` |
+| `Molecule.write_pdb`, `write_gro`, `write_pqr`, `get_pdb_data`, `same_residue`, `same_residue_unique` | `index` | `indices` |
+| `Molecule.get_subset` | `idxs` | `indices` |
+| `Molecule.get_couples` | `idx` | `indices` |
+| `Structure.rmsd`, `rmsd_one_vs_all`, `rmsd_distance_matrix` | `points_index` | `indices` |
+| `Polyhedron.rmsd_distance_matrix` | `points_indices` | `indices` (one list of point indices per unit) |
+| `sasa`, `sasa_c` | `targets` | `indices` |
+| `Structure.write_pdb` | `index` | `conformations` |
+| `Structure.set_current` | `pos` | `index` |
+| `Molecule.reorder_resid` | `idx` | `resids` |
+
+- **Errors raise specific built-in exceptions** instead of `Exception`: `ValueError` for invalid values or file content, `TypeError` for arguments of the wrong type, `FileNotFoundError` for missing files, `IndexError` for conformations or atoms out of range, `KeyError` for entries missing from a lookup (e.g. the knowledge base or the force field), `RuntimeError` for failing external programs, missing environment variables or a missing setup step, and `NotImplementedError` for fiber types that are not implemented. They all derive from `Exception`, so `except Exception` still catches them. `Density.place_points` raises `ValueError`, and `Density.predict_ccs_from_mass` and `predict_mass_from_ccs` raise `RuntimeError`, instead of `IOError`. Error messages no longer start with "ERROR:".
+- **Warnings use Python's `warnings` module** (`UserWarning`, or `RuntimeWarning` when `get_dipole_density` falls back to its low-memory path), so they can be filtered or turned into errors. Library functions no longer print, except with `verbose=True`. `Density.scan_threshold` has a new `verbose` argument (default False) for its per-threshold output.
 
 #### Changed results (what to re-run)
 
@@ -73,7 +98,8 @@ Beyond the changes above, fixes include:
   - `saxs` no longer deletes the input PDB, and works on Windows.
   - CCS library names on macOS, and IMPACT parameter files kept out of the working directory.
   - Density predictions without a scan raise a clear error.
-  - Path search no longer crashes on targets without accessible grid points.
+  - Path search no longer crashes on targets without accessible grid points, and raises a clear error when no grid was set up.
+- **Files**: `write_pdb` closes its file and restores the current conformation also when writing fails, and DX and MRC readers close their file in every case.
 
 ### Removed
 
