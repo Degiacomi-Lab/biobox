@@ -126,6 +126,10 @@ class Multimer(Polyhedron):
         data = pd.concat(frames, ignore_index=True)
         data["index"] = np.arange(len(data))
 
+        # formal charges of units without them are 0
+        if "formal_charge" in data.columns:
+            data["formal_charge"] = data["formal_charge"].fillna(0).astype(int)
+
         # charges are kept only if every unit has them
         if not all("charge" in d.columns for d in frames):
             data = data.drop(columns="charge", errors="ignore")
@@ -175,7 +179,7 @@ class Multimer(Polyhedron):
 
     def write_pdb(self, outname, rename_chains=False):
         '''
-        Write a pdb of the multimeric assembly, one MODEL per frame. Every unit is written as a chain of its own (the i-th unit is chain i of chain_names, A, B, C...), replacing the original chain names, and is followed by a TER record. Atoms are renumbered sequentially across units.
+        Write a pdb of the multimeric assembly, one MODEL per frame. Every unit is written as a chain of its own (the i-th unit is chain i of chain_names, A, B, C...), replacing the original chain names, and is followed by a TER record. Atoms are renumbered sequentially across units, and every TER record takes the serial number following the last atom of its unit. Formal charges (column formal_charge, 0 if missing) are written in columns 79-80.
 
         All units must have the same number of frames. Their current frames are restored after writing.
 
@@ -194,18 +198,22 @@ class Multimer(Polyhedron):
         f_out = open(outname, "w")
         try:
             for f in range(nframes):
-                f_out.write("MODEL        %i\n" % (f + 1))
+                f_out.write("MODEL     %4d\n" % (f + 1))
                 cnt = 1
                 for j, u in enumerate(self.unit):
                     u.set_current(f)
                     # get data about points and their properties from the desired protein structure
                     d = u.get_pdb_data()
+                    formal_charge = u._formal_charges()
                     for i in range(0, len(d), 1):
                         L = Molecule._pdb_atom_prefix(d[i][0], Molecule._hybrid36(cnt), d[i][2], d[i][3], names[j], d[i][5], d[i][12], d[i][13])
-                        L += '%8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' % (float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11])
+                        L += '%8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2s\n' % (float(d[i][6]), float(d[i][7]), float(d[i][8]), float(d[i][9]), float(d[i][10]), d[i][11], Molecule._pdb_formal_charge(formal_charge[i]))
                         f_out.write(L)
                         cnt += 1
-                    f_out.write("TER\n")
+                    # the TER record closing the unit takes the next serial number
+                    if len(d) > 0:
+                        f_out.write(Molecule._pdb_ter(Molecule._hybrid36(cnt), d[-1][3], names[j], d[-1][5], d[-1][13]))
+                        cnt += 1
                 f_out.write("ENDMDL\n")
             f_out.write("END\n")
         finally:
