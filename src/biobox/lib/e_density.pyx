@@ -28,7 +28,7 @@ cpdef np.ndarray c_get_dipole_map(np.ndarray crd, np.ndarray orig, np.ndarray ch
     :param vox_in_window: width of the window around each voxel centre in which atoms contribute to its dipole, in voxels.
         Should account for electrostatics falling to zero (or close) at the boundaries.
     :param write_dipole_map: Boolean. If true, write a tcl file of VMD "draw cone" commands, to be read in with VMD command: source dipole_map.tcl.
-        Each cone goes from a voxel centre to the centre plus its dipole averaged over frames, and is written only for voxels selected by a 0.7 threshold on the averaged dipole.
+        Each cone goes from a voxel centre to the centre plus its dipole averaged over frames, and is written only for voxels where the magnitude of this averaged dipole exceeds 0.7 e*A.
     :param fname: Name of dipole_map tcl file.
     :returns: float32 numpy array of shape (frames, nx, ny, nz, 3), with nx, ny, nz the number of orig points in x, y and z: dipole vector of every voxel in every frame, in e*A
     '''
@@ -117,7 +117,7 @@ cpdef np.ndarray c_get_dipole_map(np.ndarray crd, np.ndarray orig, np.ndarray ch
         for ix in range(np.shape(dip_avg)[0]):
                 for iy in range(np.shape(dip_avg)[1]):
                     for iz in range(np.shape(dip_avg)[2]):
-                        if np.sqrt(dip_avg[ix][iy][iz][0]**2 + dip_avg[ix][iy][iz][0]**2 + dip_avg[ix][iy][iz][0]**2) > 0.7:
+                        if np.sqrt(dip_avg[ix][iy][iz][0]**2 + dip_avg[ix][iy][iz][1]**2 + dip_avg[ix][iy][iz][2]**2) > 0.7:
                             dip_x = orig[0][ix] + dip_avg[ix][iy][iz][0]
                             dip_y = orig[1][iy] + dip_avg[ix][iy][iz][1]
                             dip_z = orig[2][iz] + dip_avg[ix][iy][iz][2]
@@ -127,6 +127,26 @@ cpdef np.ndarray c_get_dipole_map(np.ndarray crd, np.ndarray orig, np.ndarray ch
         data_file.close() 
 
     return np.array(dipole_map).astype(np.float32)
+
+def _add_clipped_kernel(pts, kernel, ix, iy, iz, half):
+    '''
+    Add a kernel centred on voxel (ix, iy, iz) to pts, keeping only the part of the kernel that lies inside the grid.
+
+    :param pts: 3D numpy array the kernel is added to, in place
+    :param kernel: 3D numpy array of shape (2*half+1, 2*half+1, 2*half+1)
+    :param ix: x index of the voxel the kernel is centred on
+    :param iy: y index of the voxel the kernel is centred on
+    :param iz: z index of the voxel the kernel is centred on
+    :param half: half width of the kernel, in voxels
+    '''
+    grid_slices = []
+    kernel_slices = []
+    for i, n in zip((ix, iy, iz), pts.shape):
+        lo = max(i - half, 0)
+        hi = min(i + half + 1, n)
+        grid_slices.append(slice(lo, hi))
+        kernel_slices.append(slice(lo - (i - half), hi - (i - half)))
+    pts[tuple(grid_slices)] += kernel[tuple(kernel_slices)]
 
 cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_val, float V, str outname, float vox_in_window = 3., str eqn = 'gauss', float T = 310.15, float P = 101 * 1E+3, float epsilonE = 54., float resolution = 1.0):
     '''
@@ -142,7 +162,7 @@ cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_
     The dipole fluctuations of every voxel give its dielectric permittivity (clamped to a minimum of 1), hence a polarisability
     and a van der Waals radius, which sets the width sigma (r_vdw/(2*sqrt(2*ln 2)), i.e. r_vdw is the FWHM of the Gaussian)
     of a function centred on the voxel. The sum of these functions, normalised
-    to a maximum of 1, is written as a dx file. The grid needs a buffer of at least floor(vox_in_window/2) voxels at its edges.
+    to a maximum of 1, is written as a dx file. Near the edges of the grid, only the part of each function lying inside the grid is added.
 
     :param dipole_map: Dimensions of (t, x, y, z, [v_x, v_y, v_z]) where [v_x, v_y, v_z] is the vector dipole values (in e*A) for points x, y, z at time t. At least 2 frames are required.
     :param orig: Coordinate system (x, y, z) we measure our dipole from. MUST be the same as that used in get_dipole_map
@@ -156,7 +176,11 @@ cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_
     :param epsilonE: External relative permittivity outside the protein. Another variable worth investigating. Default is from 2001 paper regarding a salt water solvent.
     :param resolution: voxel size in A, setting the spacing of the sampled functions and of the dx grid. Should be the same as in get_dipole_map
     :returns: 0, once the dx file is written
+    :raises ValueError: if eqn is not 'gauss' or 'slater', or if no voxel has a dipole fluctuation, so that the density is zero everywhere
     '''
+    if eqn not in ('gauss', 'slater'):
+        raise ValueError("eqn must be 'gauss' or 'slater', got %r"%(eqn,))
+
     window_size = resolution * vox_in_window
     test = dipole_map.shape
 
@@ -219,7 +243,6 @@ cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_
         x, y, z = np.meshgrid(mesh, mesh, mesh, indexing='ij')
         r2 = x * x + y * y + z * z
 
-        # We should have a buffer (default is 2 * window_size) at the edges of our box, so should be able to sum contributing gaussians across entire system.
         sigmanonzero = np.nonzero(sigma) #  Get only contributing sigmas for faster calculations.
         for i in range(np.shape(sigmanonzero)[1]):
             ix, iy, iz = sigmanonzero[0][i], sigmanonzero[1][i], sigmanonzero[2][i]
@@ -227,8 +250,7 @@ cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_
                 gauss = np.exp(-r2 / (2. * sigma[ix][iy][iz]**2))   # Create gaussian with specific sigma from e density
             elif eqn == 'slater':
                 gauss = np.exp(-np.sqrt(r2) / (2. * sigma[ix][iy][iz]**2))   # Create Slater functional with specific sigma from e density
-            # an error of 'operands could not be broadcast together' indicates a lack of buffer zone in the coordinates
-            pts[ix - half : ix + half + 1, iy - half : iy + half + 1, iz - half : iz + half + 1] += gauss
+            _add_clipped_kernel(pts, gauss, ix, iy, iz, half)
     
     except MemoryError:
         print("Size of protein is too large for electron density map production. Breaking calculations down into smaller chunks (may take longer, or not work if data structure too big).\n")
@@ -276,7 +298,6 @@ cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_
         x, y, z = np.meshgrid(mesh, mesh, mesh, indexing='ij')
         r2 = x * x + y * y + z * z
 
-        # We should have a buffer (default is 2 * window_size) at the edges of our box, so should be able to sum contributing gaussians across entire system.
         sigmanonzero = np.nonzero(sigma) #  Get only contributing sigmas for faster calculations.
         for i in range(np.shape(sigmanonzero)[1]):
             ix, iy, iz = sigmanonzero[0][i], sigmanonzero[1][i], sigmanonzero[2][i]
@@ -284,11 +305,12 @@ cpdef int c_get_dipole_density(np.ndarray dipole_map, np.ndarray orig, list min_
                 gauss = np.exp(-r2 / (2. * sigma[ix][iy][iz]**2))   # Create gaussian with specific sigma from e density
             elif eqn == 'slater':
                 gauss = np.exp(-np.sqrt(r2) / (2. * sigma[ix][iy][iz]**2))   # Create Slater functional with specific sigma from e density
-            # an error of 'operands could not be broadcast together' indicates a lack of buffer zone in the coordinates
-            pts[ix - half : ix + half + 1, iy - half : iy + half + 1, iz - half : iz + half + 1] += gauss
+            _add_clipped_kernel(pts, gauss, ix, iy, iz, half)
     
     # prepare density structure export
   
+    if pts.max() <= 0:
+        raise ValueError("no voxel of the dipole map fluctuates over the frames, so the density is zero everywhere and no dx file is written")
     pts /= pts.max()
 
     from biobox.classes.density import Density

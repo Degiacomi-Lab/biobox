@@ -303,10 +303,11 @@ class Density(Structure):
         :param k: sigmoid parameter
         :returns: CCS estimated from mass and density map resolution, in A^2
         :returns: threshold the CCS corresponds to, in multiples of the map standard deviation
+        :raises IOError: if the stored scan is empty
         '''
 
-        if 'scan' not in list(self.properties):
-            raise IOError("no threshold to volume to CCS relationship loaded yet. Please execute thresh_vol_ccs method.")
+        if np.size(self.properties.get('scan', [])) == 0:
+            raise IOError("no threshold to volume to CCS relationship loaded yet. Please execute threshold_vol_ccs method.")
 
         data=self.properties['scan'].copy()
         data[:,1]*=density
@@ -341,10 +342,11 @@ class Density(Structure):
         :param k: sigmoid parameter
         :returns: mass estimated from CCS and density map resolution, in kDa
         :returns: threshold the mass corresponds to, in multiples of the map standard deviation
+        :raises IOError: if the stored scan is empty
         '''
 
-        if 'scan' not in list(self.properties):
-            raise IOError("no threshold to volume to CCS relationship loaded yet. Please execute thresh_vol_ccs method.")
+        if np.size(self.properties.get('scan', [])) == 0:
+            raise IOError("no threshold to volume to CCS relationship loaded yet. Please execute threshold_vol_ccs method.")
 
         data=self.properties['scan'].copy()
         data[:,1]*=density
@@ -530,7 +532,7 @@ class Density(Structure):
         '''
         If mass and density of object are known, try to filter the map so that the mass is best matched.
 
-        search for best threshold using bisection method, until the mass error repeats or is zero. Points are finally placed at the last tested threshold.
+        search for best threshold using bisection method, until the mass error repeats or is zero. Points are finally placed at the tested threshold giving the smallest absolute mass error.
 
         .. note:: in proteins, an average value of 1.3 g/cm^3 (0.782878356 Da/A^3) can be assumed. Alternatively, the relation density=1.410+0.145*exp(-mass(kDa)/13) (in g/cm^3) can be used.
 
@@ -564,10 +566,6 @@ class Density(Structure):
             result.append([thresh, error])
 
             if error == high_val or error == low_val:
-                if np.abs(high_val) < np.abs(low_val):
-                    thresh = high
-                else:
-                    thresh = low
                 break
 
             if error < 0:
@@ -580,7 +578,7 @@ class Density(Structure):
                 break
 
         r = np.array(result)
-        bestthresh = r[-1, 0]
+        bestthresh = r[np.argmin(np.abs(r[:, 1])), 0]
 
         try:
             self.place_points(bestthresh)
