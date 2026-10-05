@@ -89,7 +89,7 @@ class Polyhedron(Assembly):
         All the indices provided in one call form a new deformation class, scaled by the same coefficient in :func:`generate_polyhedron <biobox.classes.polyhedron.Polyhedron.generate_polyhedron>` and :func:`write_poly_architecture <biobox.classes.polyhedron.Polyhedron.write_poly_architecture>`.
 
         :param edges: integer or list of integers, defining the indices of the vertices that should be subjected to deformation (each is displaced along the deformation axis).
-        :param vector: axis along which deformation should take place, list or numpy array of 3 floats, normalised (a numpy array is normalised in place). If not given, radial deformation will be assumed.
+        :param vector: axis along which deformation should take place, list or numpy array of 3 numbers, normalised before use (the array given is not modified). If not given, radial deformation will be assumed.
         '''
 
         # determine index for new entry in database
@@ -109,8 +109,9 @@ class Polyhedron(Assembly):
 
             # add deformation axis, if given
             if len(vector) == 3:
-                vector /= np.linalg.norm(vector)
-                tmp.append([i, idx, vector[0], vector[1], vector[2]])
+                axis = np.asarray(vector, dtype=float)
+                axis = axis / np.linalg.norm(axis)
+                tmp.append([i, idx, axis[0], axis[1], axis[2]])
 
             # axis not given, assume radial deformation
             else:
@@ -190,6 +191,7 @@ class Polyhedron(Assembly):
         '''
         for x in range(0, len(self.unit), 1):
             self.unit[x].set_current(index)
+        self.current = index
 
     def delete_xyz(self, index):
         '''

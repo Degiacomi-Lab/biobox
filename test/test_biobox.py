@@ -1761,21 +1761,24 @@ class test_structures(unittest.TestCase):
         self.assertAlmostEqual(S.get_volume(), 4 * np.pi * 10**3 / 3, places=6)
         self.assertLess(S.get_sphericity(), 1.0)
 
-        # prism: two bases plus the sides, and points on the same radius as the volume
+        # prism: points centres lie on the prism with every face moved inward by the points radius (apothem and half height shrink by it),
+        # and the points trace that prism enlarged by their radius (Steiner formula, with M = pi H + pi perimeter / 2)
         P = bb.Prism(10, 20, 6, radius=1.1)
-        r, h, n = P.properties["r"], P.properties["h"], P.properties["n"]
-        side = 2 * r * np.sin(np.pi / n)
-        base = n * side * (r * np.cos(np.pi / n)) / 2
-        self.assertAlmostEqual(P.get_surface(), 2 * base + n * side * h, places=6)
-        self.assertAlmostEqual(P.get_volume(), base * h, places=6)
-        self.assertAlmostEqual(np.max(np.linalg.norm(P.points[:, :2], axis=1)), r, places=6)
+        pr = P.properties["pt_radius"]
+        apothem = 10 * np.cos(np.pi / 6) - pr
+        side = 2 * apothem * np.tan(np.pi / 6)
+        base, H = 6 * side * apothem / 2, 20 - 2 * pr
+        S, M, V = 2 * base + 6 * side * H, np.pi * H + np.pi * 6 * side / 2, base * H
+        self.assertAlmostEqual(P.get_surface(), S + 2 * M * pr + 4 * np.pi * pr**2, places=6)
+        self.assertAlmostEqual(P.get_volume(), V + S * pr + M * pr**2 + 4 * np.pi * pr**3 / 3, places=6)
+        self.assertAlmostEqual(np.max(np.linalg.norm(P.points[:, :2], axis=1)), apothem / np.cos(np.pi / 6), places=6)
         hull = ConvexHull(P.points)
-        self.assertAlmostEqual(hull.volume / P.get_volume(), 1.0, delta=0.02)
+        self.assertAlmostEqual(hull.volume / V, 1.0, places=6)
 
-        # cylinder: CCS inflates every face by the gas radius
+        # cylinder: CCS of the cylinder of points centres (radius and half height shrunk by the points radius), enlarged by points radius plus gas radius
         C = bb.Cylinder(10, 20, radius=1.1)
-        r1, h = C.properties["r1"], C.properties["h"]
-        self.assertAlmostEqual(C.ccs(gas=1), (2 * np.pi * (r1 + 1)**2 + 2 * np.pi * (r1 + 1) * (h + 2)) / 4, places=6)
+        R, H, rho = 10 - 1.1, 20 - 2.2, 1.1 + 1
+        self.assertAlmostEqual(C.ccs(gas=1), (2 * np.pi * R**2 + 2 * np.pi * R * H + 2 * (np.pi * H + np.pi**2 * R) * rho + 4 * np.pi * rho**2) / 4, places=6)
 
     #create all convex shapes
     def test_shapes(self):
@@ -2371,6 +2374,302 @@ class test_structures(unittest.TestCase):
                 P.write_poly_architecture(output=os.path.join(tmp, "arch"), deformation=[1, 2, 3])
         with self.assertRaises(Exception):
             P.generate_polyhedron(40, 180, 0, 0, deformation=[1, 2, 3])
+
+    def test_assembly_conformations_and_labels(self):
+
+        print("\n> testing Assembly conformations and positional placement")
+        rng = np.random.default_rng(7)
+
+        # units already holding two frames: the added conformation becomes the current one everywhere
+        A = bb.Assembly()
+        A.load_list([bb.Structure(rng.normal(size=(2, 5, 3))), bb.Structure(rng.normal(size=(2, 4, 3)))], ["x", "y"])
+        B = bb.Assembly()
+        B.load_list([bb.Structure(rng.normal(size=(5, 3))), bb.Structure(rng.normal(size=(4, 3)))], ["x", "y"])
+        A.add_conformation(B)
+        self.assertEqual(A.current, 2)
+        for u, v in zip(A.unit, B.unit):
+            self.assertEqual(u.current, 2)
+            np.testing.assert_array_equal(u.points, v.points)
+
+        # a unit with a different number of points leaves the assembly untouched
+        C = bb.Assembly()
+        C.load_list([bb.Structure(rng.normal(size=(5, 3))), bb.Structure(rng.normal(size=(3, 3)))], ["x", "y"])
+        with self.assertRaises(Exception):
+            A.add_conformation(C)
+        self.assertEqual([len(u.coordinates) for u in A.unit], [3, 3])
+
+        # stacked rings and prisms place units by position, whatever their labels
+        block = rng.normal(size=(6, 3))
+        for method, args in [("make_stacked_rings", (20, 10)), ("make_prism", (20, 10, 10, 20, 30))]:
+            placed = []
+            for labels in [[], ["a", "b", "c", "d"]]:
+                A = bb.Assembly()
+                A.load_list([bb.Structure(block.copy()) for _ in range(4)], labels)
+                getattr(A, method)(*args)
+                placed.append(A.get_all_xyz())
+            np.testing.assert_allclose(placed[0], placed[1])
+
+    def test_polyhedron_current_and_deformation_axis(self):
+
+        print("\n> testing Polyhedron current conformation and deformation axes")
+        block = bb.Structure(np.random.default_rng(5).normal(size=(6, 3)))
+        P = bb.Polyhedron()
+        P.setup_polyhedron("Octahedron", block)
+        P.generate_polyhedron(40, 180, 0, 0)
+        P.generate_polyhedron(42, 180, 5, 0, add_conformation=True)
+
+        # the selected conformation is kept by the polyhedron and restored after measuring
+        P.set_current(0)
+        self.assertEqual(P.current, 0)
+        P.rmsd_distance_matrix()
+        self.assertEqual([u.current for u in P.unit], [0] * len(P.unit))
+
+        # the axis given is normalised as a copy, also when made of integers
+        axis = np.array([0.0, 0.0, 2.0])
+        P.add_deformation(0, vector=axis)
+        np.testing.assert_array_equal(axis, [0.0, 0.0, 2.0])
+        P.add_deformation(1, vector=np.array([0, 3, 4]))
+        np.testing.assert_allclose(P.deform[-1, 2:5], [0, 0.6, 0.8])
+
+    @staticmethod
+    def _golden_spiral(n):
+        # n unit vectors evenly spread on the sphere
+        k = np.arange(n) + 0.5
+        z = 1 - 2 * k / n
+        phi = k * np.pi * (3 - np.sqrt(5))
+        s = np.sqrt(1 - z**2)
+        return np.stack([s * np.cos(phi), s * np.sin(phi), z], axis=1)
+
+    @staticmethod
+    def _convex_shapes():
+        # shapes of every class, with a function measuring the distance of points from the surface of their nominal body K (in the frame K is built in).
+        # K is the intersection of half-spaces n . y <= c, so the distance of a point x inside it from its surface is the minimum of c - n . x over them
+        def planes(normals, offsets):
+            normals = np.asarray(normals, dtype=float)
+            return lambda X: np.min(np.asarray(offsets)[None] - np.dot(X, normals.T), axis=1)
+
+        def tangent_planes(family):
+            # one-parameter family of half-spaces: dense sampling, then refinement around the best sample
+            def dist(X):
+                th = np.arange(3600) * 2 * np.pi / 3600
+                n, c = family(th)
+                t = th[np.argmin(c[None] - np.dot(X, n.T), axis=1)]
+                step = 2 * np.pi / 3600
+                for _ in range(40):
+                    cand = t[:, None] + step * np.linspace(-1, 1, 5)[None]
+                    n, c = family(cand.ravel())
+                    f = (c - np.sum(n * np.repeat(X, 5, axis=0), axis=1)).reshape(-1, 5)
+                    t = cand[np.arange(len(t)), np.argmin(f, axis=1)]
+                    step /= 2
+                n, c = family(t)
+                return c - np.sum(n * X, axis=1)
+            return dist
+
+        def through(b, n, inside):
+            # unit normals of planes through points b, oriented away from the point inside
+            n = n / np.linalg.norm(n, axis=1)[:, None]
+            n *= np.sign(np.sum(n * (b - inside), axis=1))[:, None]
+            return n, np.sum(n * b, axis=1)
+
+        def ellipsoid(a, b, c):
+            # tangent planes of an ellipsoid: offset sqrt(a^2 u_x^2 + b^2 u_y^2 + c^2 u_z^2) for unit normal u; minimum over u refined on local grids
+            def support(U):
+                return np.sqrt((a * U[..., 0])**2 + (b * U[..., 1])**2 + (c * U[..., 2])**2)
+
+            def dist(X):
+                U0 = test_structures._golden_spiral(4000)
+                U = U0[np.argmin(support(U0)[None] - np.dot(X, U0.T), axis=1)]
+                step = 0.06
+                grid = np.stack(np.meshgrid(np.linspace(-1, 1, 5), np.linspace(-1, 1, 5)), axis=-1).reshape(-1, 2)
+                for _ in range(40):
+                    t1 = np.cross(U, [0.6, 0.0, 0.8])
+                    t1 /= np.linalg.norm(t1, axis=1)[:, None]
+                    t2 = np.cross(U, t1)
+                    cand = U[:, None, :] + step * (grid[:, 0, None] * t1[:, None, :] + grid[:, 1, None] * t2[:, None, :])
+                    cand /= np.linalg.norm(cand, axis=-1)[..., None]
+                    U = cand[np.arange(len(U)), np.argmin(support(cand) - np.einsum("nkj,nj->nk", cand, X), axis=1)]
+                    step /= 2
+                return support(U) - np.sum(U * X, axis=1)
+            return dist
+
+        def prism(r, h, n, skew):
+            ang = 2 * np.pi * np.arange(n + 1) / n
+            v = np.stack([r * np.cos(ang), r * np.sin(ang), np.zeros(n + 1)], axis=1)
+            nrm, off = through(v[:-1], np.cross(v[1:] - v[:-1], [0, skew, h]), [0, skew / 2, h / 2])
+            return planes(np.vstack([nrm, [[0, 0, -1], [0, 0, 1]]]), np.append(off, [0, h]))
+
+        def cylinder(r1, r2, h, skew):
+            def family(th):
+                b = np.stack([r1 * np.cos(th), r2 * np.sin(th), np.zeros(len(th))], axis=1)
+                tangent = np.stack([-r1 * np.sin(th), r2 * np.cos(th), np.zeros(len(th))], axis=1)
+                return through(b, np.cross(tangent, [0, skew, h]), [0, skew / 2, h / 2])
+            lateral, caps = tangent_planes(family), planes([[0, 0, -1], [0, 0, 1]], [0, h])
+            return lambda X: np.minimum(lateral(X), caps(X))
+
+        def cone(r, h, skew):
+            def family(th):
+                b = np.stack([r * np.cos(th), r * np.sin(th), np.zeros(len(th))], axis=1)
+                tangent = np.stack([-np.sin(th), np.cos(th), np.zeros(len(th))], axis=1)
+                return through(b, np.cross(tangent, [0, skew, h] - b), [0, skew / 4, h / 4])
+            lateral, base = tangent_planes(family), planes([[0, 0, -1]], [0])
+            return lambda X: np.minimum(lateral(X), base(X))
+
+        S = bb.Sphere(8, radius=1.5, n_sphere_point=1500)
+        S.squeeze([1.3, 0.8])
+        return [("squeezed sphere", S, ellipsoid(8 * 1.3, 8 * 0.8, 8 / 1.04)),
+                ("ellipsoid", bb.Ellipsoid(6, 8, 10, pts_density_u=np.pi / 26, pts_density_v=np.pi / 26), ellipsoid(6, 8, 10)),
+                ("cylinder", bb.Cylinder(6, 12, pts_density_u=np.pi / 24, pts_density_h=0.35), cylinder(6, 6, 12, 0)),
+                ("skewed elliptic cylinder", bb.Cylinder(6, 12, squeeze=0.6, skew=3, pts_density_u=np.pi / 24, pts_density_h=0.35), cylinder(6, 3.6, 12, 3)),
+                ("4-sided prism", bb.Prism(8, 12, 4, pts_density_u=np.pi / 16, pts_density_h=0.35), prism(8, 12, 4, 0)),
+                ("skewed 6-sided prism", bb.Prism(8, 12, 6, skew=3, pts_density_u=np.pi / 16, pts_density_h=0.35), prism(8, 12, 6, 3)),
+                ("cone", bb.Cone(6, 12, pts_density_r=np.pi / 24, pts_density_h=0.35), cone(6, 12, 0)),
+                ("skewed cone", bb.Cone(6, 12, skew=3, pts_density_r=np.pi / 24, pts_density_h=0.35), cone(6, 12, 3))]
+
+    def test_convex_touching_points(self):
+
+        print("\n> testing that convex shape points touch the nominal surface from inside")
+        from unittest import mock
+
+        # shapes are kept in the frame of their nominal body
+        with mock.patch.object(bb.Structure, "center_to_origin"):
+            shapes = self._convex_shapes()
+
+        rng = np.random.default_rng(3)
+        for name, C, dist in shapes:
+            X = C.points[rng.choice(len(C.points), 200, replace=False)]
+            np.testing.assert_allclose(dist(X), C.properties["pt_radius"], atol=1e-6, err_msg=name)
+
+    def test_convex_ccs_numerical(self):
+
+        print("\n> testing convex shape CCS against the projected area of their points")
+        # projection approximation CCS of a point cloud: mean over directions of the area of the union of the projected discs.
+        # Each projection is cut in rows spaced by dy, and the union of the chords of every row is measured exactly.
+        def projected_ccs(points, rho, dirs, dy=0.1):
+            k = int(np.ceil(2 * rho / dy)) + 2
+            areas = []
+            for u in dirs:
+                e1 = np.cross(u, [1.0, 0, 0] if abs(u[0]) < 0.9 else [0, 1.0, 0])
+                e1 /= np.linalg.norm(e1)
+                e2 = np.cross(u, e1)
+                X = np.dot(points, e1)
+                Y = np.dot(points, e2)
+                Y = Y - Y.min() + rho
+                rows = np.floor((Y - rho) / dy).astype(int)[:, None] + np.arange(k)[None]
+                d2 = rho**2 - ((rows + 0.5) * dy - Y[:, None])**2
+                m = d2 > 0
+                half = np.sqrt(d2[m])
+                x = np.broadcast_to(X[:, None], rows.shape)[m]
+                # rows are placed one after the other along a single line, then chords are sorted by their start
+                shift = rows[m] * (2 * (np.abs(X).max() + rho) + 1)
+                order = np.argsort(x - half + shift)
+                start = (x - half + shift)[order]
+                end = (x + half + shift)[order]
+                reach = np.concatenate([[-np.inf], np.maximum.accumulate(end)[:-1]])
+                areas.append(np.sum(np.clip(end - np.maximum(start, reach), 0, None)) * dy)
+            return np.mean(areas)
+
+        dirs = self._golden_spiral(100)
+        gas = 1.0
+        for name, C, _ in self._convex_shapes():
+            rho = C.properties["pt_radius"] + gas
+            numerical = projected_ccs(C.points, rho, dirs)
+            analytical = C.ccs(gas=gas)
+            print("  %-25s %6d points, CCS analytical %8.2f, numerical %8.2f A^2 (%+.2f%%)" % (name, len(C.points), analytical, numerical, 100 * (numerical / analytical - 1)))
+            # the union of the point spheres lies inside the body the analytical CCS describes: the numerical value can exceed it only by
+            # the row discretisation (+0.12% for a single disc of radius 2 A), and falls short by the gaps between points (0.1-0.3% here,
+            # decreasing with the square of the point spacing). 100 directions average the projected area within about 0.05%
+            self.assertLess(numerical / analytical, 1.001, msg=name)
+            self.assertGreater(numerical / analytical, 0.995, msg=name)
+
+    def test_convex_measures(self):
+
+        print("\n> testing convex shape surfaces, volumes and CCS limits")
+        # a sphere: points radius and gas both enlarge the nominal radius
+        S = bb.Sphere(10, radius=1.9)
+        for gas in [0.0, 1.0, 2.5]:
+            self.assertAlmostEqual(S.ccs(gas=gas), np.pi * (10 + gas)**2, places=8)
+        self.assertAlmostEqual(S.get_surface(), 4 * np.pi * 10**2, places=8)
+        self.assertAlmostEqual(S.get_volume(), 4 * np.pi * 10**3 / 3, places=8)
+        np.testing.assert_allclose(np.linalg.norm(S.points, axis=1), 10 - 1.9)
+
+        # smooth shapes measure their nominal body: a prolate spheroid, as a squeezed sphere and as an ellipsoid
+        a, b = 15.0, 6.0
+        e = np.sqrt(1 - b**2 / a**2)
+        surface = 2 * np.pi * b**2 * (1 + a / (b * e) * np.arcsin(e))
+        E = bb.Ellipsoid(b, b, a)
+        S = bb.Sphere(10, radius=1.9)
+        S.squeeze([b / 10, b / 10, a / 10])
+        for shape in [E, S]:
+            self.assertAlmostEqual(shape.get_surface() / surface, 1.0, places=10)
+            self.assertAlmostEqual(shape.get_volume(), 4 * np.pi * a * b * b / 3, places=8)
+            # integral of mean curvature of a prolate spheroid: 2 pi int_{-1}^{1} sqrt(b^2 + (a^2 - b^2) t^2) dt = 2 pi (a + b^2 asinh(c / b) / c), c = sqrt(a^2 - b^2)
+            c = np.sqrt(a**2 - b**2)
+            M = 2 * np.pi * (a + b**2 * np.arcsinh(c / b) / c)
+            self.assertAlmostEqual(shape.ccs(gas=1.0) / ((surface + 2 * M + 4 * np.pi) / 4), 1.0, places=10)
+
+        # other shapes: the body traced by the points has the measures of the hull of the points centres enlarged by their radius (Steiner formula).
+        # The hull is exact for the prism, and inscribed in curved sides (relative error about 1e-5 with these densities)
+        from scipy.spatial import ConvexHull
+        shapes = [bb.Prism(10, 20, 6, skew=4, pts_density_u=np.pi / 64, pts_density_h=50),
+                  bb.Cylinder(10, 20, squeeze=0.7, skew=-3, pts_density_u=np.pi / 256, pts_density_h=50),
+                  bb.Cone(10, 20, skew=5, pts_density_r=np.pi / 256, pts_density_h=50)]
+        for C in shapes:
+            hull = ConvexHull(C.points)
+            nrm = hull.equations[:, :3]
+            M = 0
+            for i, simplex in enumerate(hull.simplices):
+                for k, j in enumerate(hull.neighbors[i]):
+                    if j > i:
+                        edge = hull.points[np.delete(simplex, k)]
+                        M += 0.5 * np.linalg.norm(edge[0] - edge[1]) * np.arccos(np.clip(np.dot(nrm[i], nrm[j]), -1, 1))
+            pr = C.properties["pt_radius"]
+            self.assertAlmostEqual(C.get_surface() / (hull.area + 2 * M * pr + 4 * np.pi * pr**2), 1.0, delta=5e-5)
+            self.assertAlmostEqual(C.get_volume() / (hull.volume + hull.area * pr + M * pr**2 + 4 * np.pi * pr**3 / 3), 1.0, delta=5e-5)
+            self.assertAlmostEqual(C.ccs(gas=1) / ((hull.area + 2 * M * (pr + 1) + 4 * np.pi * (pr + 1)**2) / 4), 1.0, delta=5e-5)
+
+        # squeezing is rebuilt from the nominal sphere, and preserves its volume
+        S1 = bb.Sphere(10, radius=1.9)
+        S1.translate(5, 0, 0)
+        S1.squeeze(2)
+        S2 = bb.Sphere(10, radius=1.9)
+        S2.translate(5, 0, 0)
+        S2.squeeze(2.0)
+        S2.squeeze(2.0)
+        np.testing.assert_allclose(S1.points, S2.points, atol=1e-12)
+        self.assertEqual([S1.properties[k] for k in ["a", "b", "c"]], [20.0, 10 / np.sqrt(2), 10 / np.sqrt(2)])
+        self.assertAlmostEqual(S1.get_volume(), 4 * np.pi * 10**3 / 3, places=8)
+        S1.squeeze([1.0, 1.0, 1.0])
+        np.testing.assert_allclose(S1.points, bb.Sphere(10, radius=1.9).points + [5, 0, 0], atol=1e-3)
+        self.assertEqual(list(S1.check_inclusion(np.array([[5, 0, 9.9], [5, 0, 10.1]]))), [True, False])
+
+        # points too large to touch the surface everywhere
+        before = S1.points.copy()
+        for build in [lambda: bb.Sphere(2, radius=2), lambda: S1.squeeze([0.3, 1.0, 1.0]), lambda: bb.Ellipsoid(3, 10, 10, radius=1.9),
+                      lambda: bb.Cylinder(5, 2), lambda: bb.Cylinder(5, 20, squeeze=0.3), lambda: bb.Prism(2, 20, 3),
+                      lambda: bb.Prism(10, 2, 6), lambda: bb.Cone(2, 3), lambda: bb.Cone(10, 20, skew=30, radius=4)]:
+            with self.assertRaises(Exception):
+                build()
+        np.testing.assert_array_equal(S1.points, before)
+        self.assertEqual(S1.properties["p1"], 1.0)
+
+    def test_convex_inclusion_and_contact_ratio(self):
+
+        print("\n> testing convex shape inclusion and Assembly contact ratio")
+        # the nominal ellipsoid, centred at the current center of geometry, decides inclusion
+        E = bb.Ellipsoid(6, 8, 10)
+        E.translate(1, 2, 3)
+        inside = E.check_inclusion(np.array([[1, 2, 3], [6.9, 2, 3], [7.1, 2, 3], [1, 2, 12.9], [1, 2, 13.1]]))
+        self.assertEqual(inside.dtype, bool)
+        self.assertEqual(list(inside), [True, True, False, True, False])
+
+        # fraction of the points of the second unit inside the first one
+        A = bb.Assembly()
+        A.load_list([bb.Ellipsoid(6, 8, 10), bb.Structure(np.array([[0.0, 0, 0], [0, 0, 9], [0, 0, 11], [20, 0, 0]]))], ["E", "P"])
+        self.assertEqual(A.contact_ratio("E", "P"), 0.5)
+        self.assertIsInstance(A.contact_ratio("E", "P"), float)
+        self.assertEqual(A.contact_ratio("E", "E"), 1.0)
+        with self.assertRaisesRegex(Exception, "unit P is a Structure"):
+            A.contact_ratio("P", "E")
 
     def test_global_grid_hull(self):
 
